@@ -1,65 +1,121 @@
-import Image from "next/image";
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+// Importamos los componentes de diseño "Apple Style"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Home() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [isSuccess, setIsSuccess] = useState(false)
+
+  // El Guardián de sesión (Igual que antes)
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) router.push('/dashboard')
+    }
+    checkSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') router.push('/dashboard')
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  const handleLogin = async (e: any) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+    
+    const { error } = await supabase.auth.signInWithOtp({ 
+      email,
+      options: {
+        emailRedirectTo: `${location.origin}/auth/callback`
+      }
+    })
+
+    if (error) {
+      setMessage(error.message)
+      setIsSuccess(false)
+    } else {
+      setMessage('¡Enlace enviado! Revisa tu bandeja de entrada.')
+      setIsSuccess(true)
+      setEmail('') // Limpiamos el campo
+    }
+    setLoading(false)
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    // Fondo gris muy suave (Slate-50) para dar sensación de limpieza
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      
+      {/* Tarjeta con sombra suave y bordes redondeados */}
+      <Card className="w-full max-w-md shadow-lg border-slate-200">
+        
+        <CardHeader className="space-y-1">
+          <div className="flex justify-center mb-4">
+            <span className="text-4xl">🚀</span>
+          </div>
+          <CardTitle className="text-2xl font-bold text-center tracking-tight">
+            Link Ventas
+          </CardTitle>
+          <CardDescription className="text-center text-slate-500">
+            Gestiona tu negocio de Instagram/TikTok en un solo lugar.
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          {!isSuccess ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-slate-600">Correo Electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="nombre@tuempresa.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-white" // Input blanco puro
+                />
+              </div>
+              
+              {/* Botón negro sólido (estilo Vercel/Apple) */}
+              <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium" disabled={loading}>
+                {loading ? 'Enviando enlace...' : '✨ Iniciar con Email'}
+              </Button>
+            </form>
+          ) : (
+            <div className="text-center py-6 space-y-4 animate-in fade-in zoom-in duration-300">
+              <div className="bg-green-100 text-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-3xl">
+                📩
+              </div>
+              <h3 className="text-lg font-medium">¡Revisa tu correo!</h3>
+              <p className="text-sm text-slate-500 px-4">
+                Te hemos enviado un enlace mágico para entrar. Ya puedes cerrar esta pestaña si deseas.
+              </p>
+              <Button variant="outline" onClick={() => setIsSuccess(false)} className="mt-4">
+                Intentar con otro correo
+              </Button>
+            </div>
+          )}
+        </CardContent>
+
+        <CardFooter className="justify-center border-t border-slate-100 mt-4 pt-4">
+          <p className="text-xs text-slate-400">
+            Sistema seguro sin contraseñas.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        </CardFooter>
+      </Card>
     </div>
-  );
+  )
 }
