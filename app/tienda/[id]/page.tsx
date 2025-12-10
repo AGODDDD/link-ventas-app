@@ -1,137 +1,130 @@
+'use client'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
+import { MessageCircle, Store } from 'lucide-react'
 
-// Icono de WhatsApp (SVG)
-function WhatsAppIcon() {
+// Recibimos el ID del vendedor por la URL
+export default function TiendaPage({ params }: { params: { id: string } }) {
+  const [productos, setProductos] = useState<any[]>([])
+  const [perfil, setPerfil] = useState<any>(null) // Aquí guardamos los datos de la tienda
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function cargarDatos() {
+      try {
+        // 1. Cargar datos de la TIENDA (Perfil)
+        const { data: datosPerfil } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', params.id)
+          .single()
+        
+        if (datosPerfil) setPerfil(datosPerfil)
+
+        // 2. Cargar PRODUCTOS de este vendedor
+        const { data: datosProductos } = await supabase
+          .from('products')
+          .select('*')
+          .eq('user_id', params.id) // Filtrar por el ID del dueño
+          .order('created_at', { ascending: false })
+
+        if (datosProductos) setProductos(datosProductos)
+        
+      } catch (error) {
+        console.error('Error cargando tienda:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarDatos()
+  }, [params.id])
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Cargando tienda... 🛒</div>
+
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-2">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-    </svg>
-  )
-}
+    <div className="min-h-screen bg-slate-50 pb-12">
+      {/* 🟢 CABECERA PERSONALIZADA */}
+      <div className="bg-slate-900 text-white py-12 px-4">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+          
+          {/* Logo Dinámico */}
+          <div className="h-24 w-24 rounded-full bg-white p-1 overflow-hidden shadow-lg">
+            {perfil?.avatar_url ? (
+              <img src={perfil.avatar_url} alt="Logo" className="w-full h-full object-cover rounded-full" />
+            ) : (
+              <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-500">
+                <Store size={40} />
+              </div>
+            )}
+          </div>
 
-export default async function TiendaPublica({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params 
-
-  // 1. Datos del Perfil (Negocio)
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('business_name, whatsapp_number')
-    .eq('id', id)
-    .single()
-
-  // 2. Productos
-  const { data: productos } = await supabase
-    .from('products')
-    .select('*')
-    .eq('user_id', id)
-    .eq('is_active', true) 
-
-  if (!perfil) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <h1 className="text-2xl font-bold text-slate-800">🚫 Tienda no encontrada</h1>
-        <p className="text-slate-500 mt-2">Verifica el enlace e intenta de nuevo.</p>
-        <Button variant="outline" className="mt-6" asChild>
-          <a href="/">Ir al Inicio</a>
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20">
-      {/* HEADER TIPO APP */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+          {/* Nombre y Descripción Dinámicos */}
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-              {perfil.business_name || 'Tienda Online'}
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              {perfil?.store_name || 'Tienda Online'}
             </h1>
-            <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Abierto ahora
+            <p className="text-slate-300 text-lg max-w-xl">
+              {perfil?.description || 'Los mejores productos al mejor precio.'}
             </p>
           </div>
-          {/* Botón flotante simulado (solo visual) */}
-          <div className="bg-slate-100 p-2 rounded-full">
-            <span className="text-xl">🛍️</span>
-          </div>
+
         </div>
       </div>
 
-      {/* BANNER DE BIENVENIDA */}
-      <div className="bg-slate-900 text-white py-12 px-4 text-center">
-        <div className="max-w-2xl mx-auto space-y-2">
-          <h2 className="text-3xl font-bold">Mis Favoritos ❤️</h2>
-          <p className="text-slate-300">Pide por WhatsApp, paga con Yape/Plin y recibe en casa.</p>
-        </div>
-      </div>
-
-      {/* GRILLA DE PRODUCTOS */}
-      <main className="max-w-3xl mx-auto px-4 -mt-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          
-          {productos?.map((prod) => (
-            <Card key={prod.id} className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
-              {/* Contenedor de Imagen */}
-              <div className="aspect-square bg-slate-100 relative overflow-hidden">
-                 <img 
-                    src={prod.image_url || 'https://via.placeholder.com/600'} 
-                    alt={prod.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                 />
-                 {/* Badge de Precio Flotante */}
-                 <Badge className="absolute bottom-3 right-3 text-lg px-3 py-1 bg-white/90 text-slate-900 shadow-sm backdrop-blur-sm hover:bg-white">
-                   S/ {prod.price}
-                 </Badge>
-              </div>
+      {/* 🛍️ LISTA DE PRODUCTOS */}
+      <div className="max-w-4xl mx-auto p-4 -mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {productos.map((prod) => (
+            <Card key={prod.id} className="hover:shadow-lg transition-shadow overflow-hidden border-0 shadow-md">
               
-              <CardHeader className="pb-2">
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">{prod.name}</h3>
-              </CardHeader>
+              {/* Imagen del Producto */}
+              <div className="aspect-square bg-slate-200 relative">
+                {prod.image_url ? (
+                  <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">📷</div>
+                )}
+                <Badge className="absolute top-3 right-3 text-lg px-3 py-1 bg-white/90 text-black hover:bg-white shadow-sm backdrop-blur-sm">
+                  S/ {prod.price}
+                </Badge>
+              </div>
 
-              <CardContent>
-                <p className="text-sm text-slate-500 line-clamp-2 min-h-[2.5rem]">
-                  {prod.description || "Sin descripción detallada."}
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xl">{prod.name}</CardTitle>
+              </CardHeader>
+              
+              <CardContent className="pb-4">
+                <p className="text-slate-500 text-sm line-clamp-2">
+                  {prod.description}
                 </p>
-                <Separator className="my-4" />
-                <div className="flex items-center justify-between">
-                   <span className="text-xs font-medium text-slate-400">Entrega inmediata</span>
-                   <span className="text-xs font-medium text-slate-400">Stock disponible</span>
-                </div>
               </CardContent>
 
-              <CardFooter className="pt-0">
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold" asChild>
-                  <a 
-                    href={`https://wa.me/${perfil.whatsapp_number}?text=Hola, quiero pedir: *${prod.name}* a S/${prod.price}.`}
-                    target="_blank"
-                  >
-                    <WhatsAppIcon />
-                    Pedir por WhatsApp
-                  </a>
+              <CardFooter>
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 h-12 text-lg" 
+                  onClick={() => {
+                    const mensaje = `Hola! Quiero pedir: ${prod.name} - S/${prod.price}`
+                    window.open(`https://wa.me/51999999999?text=${encodeURIComponent(mensaje)}`, '_blank')
+                  }}
+                >
+                  <MessageCircle size={20} />
+                  Pedir por WhatsApp
                 </Button>
               </CardFooter>
             </Card>
           ))}
-
         </div>
 
-        {productos?.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed border-slate-200 mt-8">
-            <p className="text-slate-400">No hay productos disponibles por ahora.</p>
+        {/* Estado Vacío */}
+        {productos.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-slate-400 text-xl">Esta tienda aún no tiene productos disponibles. 🛍️</p>
           </div>
         )}
-      </main>
-
-      {/* FOOTER */}
-      <footer className="text-center text-slate-400 text-sm py-8 mt-8">
-        <p>Powered by <span className="font-bold text-slate-600">Link Ventas 🚀</span></p>
-      </footer>
+      </div>
     </div>
   )
 }
