@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Upload, CheckCircle2, QrCode, MapPin, Phone, User, ShieldCheck, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Upload, CheckCircle2, QrCode, MapPin, Phone, User, ShieldCheck, ChevronRight, Store } from 'lucide-react'
 
 // Tipo para item del carrito
 type CartItem = {
