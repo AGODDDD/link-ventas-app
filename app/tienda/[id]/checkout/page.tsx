@@ -1,7 +1,7 @@
 'use client'
-import React, { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,36 +9,44 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Upload, CheckCircle2, QrCode, MapPin, Phone, User, ShieldCheck, ChevronRight } from 'lucide-react'
 
+// Tipo para item del carrito
+type CartItem = {
+    product: any
+    quantity: number
+}
+
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise)
     const router = useRouter()
-    const [cart, setCart] = useState<any[]>([])
-    const [perfil, setPerfil] = useState<any>(null)
+    const [cart, setCart] = useState<CartItem[]>([])
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
+    const [perfil, setPerfil] = useState<any>(null)
 
-    // Form State
+    // Form states
     const [nombre, setNombre] = useState('')
     const [telefono, setTelefono] = useState('')
     const [direccion, setDireccion] = useState('')
     const [comprobante, setComprobante] = useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     useEffect(() => {
-        // 1. Cargar carrito
+        // Cargar carrito y perfil del vendedor
         const savedCart = localStorage.getItem(`cart-${params.id}`)
         if (savedCart) {
             setCart(JSON.parse(savedCart))
         } else {
+            // Si no hay carrito, redirigir a tienda
             router.push(`/tienda/${params.id}`)
         }
 
-        // 2. Cargar datos del vendedor (para los QRs)
         const cargarPerfil = async () => {
             const { data } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', params.id)
                 .single()
+
             if (data) setPerfil(data)
             setLoading(false)
         }
@@ -46,6 +54,14 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     }, [params.id, router])
 
     const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0]
+            setComprobante(file)
+            setPreviewUrl(URL.createObjectURL(file))
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -56,6 +72,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             // 1. Subir Comprobante
             const fileExt = comprobante.name.split('.').pop()
             const fileName = `${params.id}-${Date.now()}.${fileExt}`
+
             const { error: uploadError } = await supabase.storage
                 .from('comprobantes')
                 .upload(fileName, comprobante)
@@ -97,6 +114,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             localStorage.removeItem(`cart-${params.id}`)
             alert('¡Fantástico! Pedido enviado.')
             router.push(`/tienda/${params.id}`)
+
         } catch (error: any) {
             console.error(error)
             alert('Error: ' + error.message)
@@ -105,207 +123,192 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         }
     }
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><div className="animate-pulse">Cargando checkout safe...</div></div>
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Cargando...</div>
+
+    const primaryColor = perfil?.primary_color || '#000000'
+    const secondaryColor = perfil?.secondary_color || '#C31432'
 
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-white">
+        <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
 
-            {/* 🟢 COLUMNA IZQUIERDA: Formulario (Order 2 en mobil, 1 en desktop) */}
-            <div className="w-full md:w-3/5 lg:w-1/2 p-6 md:p-12 lg:p-16 order-2 md:order-1">
-
-                <div className="max-w-xl mx-auto">
-                    {/* Header solo movil */}
-                    <div className="flex items-center gap-2 mb-8 md:mb-12 cursor-pointer text-slate-500 hover:text-black transition-colors" onClick={() => router.back()}>
-                        <ArrowLeft size={20} />
-                        <span className="text-sm font-medium">Volver a la tienda</span>
+            {/* LEFT: FORMULARIO */}
+            <div className="flex-1 p-6 md:p-12 lg:p-16 overflow-y-auto order-2 md:order-1">
+                <div className="max-w-xl mx-auto space-y-8">
+                    {/* Header Mobile */}
+                    <div className="flex items-center gap-4 mb-8">
+                        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-slate-200">
+                            <ArrowLeft size={24} />
+                        </Button>
+                        <h1 className="text-2xl font-bold text-slate-900">Finalizar Compra</h1>
                     </div>
 
-                    <div className="mb-8">
-                        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-2">Pago Seguro</h2>
-                        <p className="text-slate-500">Completa tus datos para el envío.</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-8">
-
-                        {/* Seccion 1: Contacto */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                <User size={20} /> Información de Contacto
-                            </h3>
+                    <form onSubmit={handleSubmit} className="space-y-10">
+                        {/* 1. Datos de Envío */}
+                        <section className="space-y-4">
+                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
+                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</div>
+                                Tus Datos
+                            </h2>
                             <div className="grid gap-4">
                                 <div className="space-y-2">
                                     <Label>Nombre Completo</Label>
-                                    <Input required placeholder="Ej: Juan Pérez" className="h-12 bg-slate-50 border-slate-200" value={nombre} onChange={e => setNombre(e.target.value)} />
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <Input className="pl-10 bg-white h-11" required value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan Pérez" />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Teléfono / WhatsApp</Label>
-                                    <Input required placeholder="Ej: 999 999 999" type="tel" className="h-12 bg-slate-50 border-slate-200" value={telefono} onChange={e => setTelefono(e.target.value)} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Seccion 2: Dirección */}
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                <MapPin size={20} /> Dirección de Entrega
-                            </h3>
-                            <div className="space-y-2">
-                                <Input required placeholder="Dirección exacta, Referencia..." className="h-12 bg-slate-50 border-slate-200" value={direccion} onChange={e => setDireccion(e.target.value)} />
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Seccion 3: Pago */}
-                        <div className="space-y-6">
-                            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                                <QrCode size={20} /> Método de Pago
-                            </h3>
-
-                            {/* Tarjetas QR */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="border rounded-xl p-4 text-center cursor-pointer hover:border-black transition-all bg-white shadow-sm">
-                                    <div className="mb-3 font-bold text-purple-600">Yape</div>
-                                    <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                        {perfil?.yape_image_url ? (
-                                            <img src={perfil.yape_image_url} className="w-full h-full object-cover" />
-                                        ) : <span className="text-xs text-slate-400">No QR</span>}
+                                    <Label>WhatsApp / Teléfono</Label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <Input className="pl-10 bg-white h-11" required type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 999 123 456" />
                                     </div>
                                 </div>
-                                <div className="border rounded-xl p-4 text-center cursor-pointer hover:border-black transition-all bg-white shadow-sm">
-                                    <div className="mb-3 font-bold text-cyan-600">Plin</div>
-                                    <div className="aspect-square bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-                                        {perfil?.plin_image_url ? (
-                                            <img src={perfil.plin_image_url} className="w-full h-full object-cover" />
-                                        ) : <span className="text-xs text-slate-400">No QR</span>}
+                                <div className="space-y-2">
+                                    <Label>Dirección de Entrega</Label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
+                                        <Input className="pl-10 bg-white h-11" required value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej: Av. Principal 123, Lima" />
                                     </div>
                                 </div>
                             </div>
+                        </section>
 
-                            <div className="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm flex gap-3 items-start">
-                                <ShieldCheck className="shrink-0 mt-0.5" size={18} />
-                                <p>Por favor, realiza el pago de <strong>S/ {total.toFixed(2)}</strong> a uno de los códigos QR y sube la captura de pantalla como comprobante.</p>
+                        <Separator />
+
+                        {/* 2. Pago */}
+                        <section className="space-y-6">
+                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
+                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</div>
+                                Realiza el Pago
+                            </h2>
+
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                                <p className="text-sm text-slate-600 text-center">Escanea un código QR para pagar <strong>S/ {total.toFixed(2)}</strong></p>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {perfil?.yape_image_url && (
+                                        <div className="text-center space-y-2">
+                                            <div className="bg-purple-50 p-2 rounded-lg border border-purple-100">
+                                                <img src={perfil.yape_image_url} className="w-full object-contain rounded-md" alt="Yape" />
+                                            </div>
+                                            <span className="text-xs font-bold text-purple-700">YAPE</span>
+                                        </div>
+                                    )}
+                                    {perfil?.plin_image_url && (
+                                        <div className="text-center space-y-2">
+                                            <div className="bg-cyan-50 p-2 rounded-lg border border-cyan-100">
+                                                <img src={perfil.plin_image_url} className="w-full object-contain rounded-md" alt="Plin" />
+                                            </div>
+                                            <span className="text-xs font-bold text-cyan-700">PLIN</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {!perfil?.yape_image_url && !perfil?.plin_image_url && (
+                                    <div className="text-center p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
+                                        El vendedor no ha configurado sus QRs de pago aún.
+                                    </div>
+                                )}
                             </div>
+                        </section>
 
-                            {/* Upload Area */}
+                        {/* 3. Comprobante */}
+                        <section className="space-y-4">
+                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
+                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</div>
+                                Sube la Captura
+                            </h2>
+
                             <div className="space-y-2">
-                                <Label>Subir Comprobante</Label>
-                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 hover:bg-slate-50 transition-colors relative text-center group">
+                                <Label>Comprobante de Pago</Label>
+                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer relative bg-white">
+                                    {previewUrl ? (
+                                        <div className="relative w-full">
+                                            <img src={previewUrl} className="max-h-48 mx-auto rounded-lg shadow-sm" />
+                                            <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full"><CheckCircle2 size={16} /></div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <div className="bg-slate-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto text-slate-400">
+                                                <Upload size={24} />
+                                            </div>
+                                            <p className="text-sm font-medium text-slate-600">Haz tap para subir foto</p>
+                                            <p className="text-xs text-slate-400">JPG, PNG, JPEG</p>
+                                        </div>
+                                    )}
                                     <Input
                                         type="file"
                                         accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        onChange={handleFileChange}
                                         required
-                                        onChange={e => {
-                                            if (e.target.files?.[0]) {
-                                                if (e.target.files[0].type.startsWith('image/')) setComprobante(e.target.files[0])
-                                                else alert('Solo imágenes')
-                                            }
-                                        }}
                                     />
-                                    <div className="flex flex-col items-center justify-center text-slate-500 group-hover:text-slate-700">
-                                        {comprobante ? (
-                                            <>
-                                                <CheckCircle2 className="text-green-500 mb-2" size={40} />
-                                                <span className="font-medium text-slate-900">{comprobante.name}</span>
-                                                <span className="text-xs">Clic para cambiar</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Upload className="mb-2" size={40} strokeWidth={1.5} />
-                                                <span className="font-medium">Haz clic o arrastra tu imagen aquí</span>
-                                                <span className="text-xs mt-1">Formatos: JPG, PNG, WEBP</span>
-                                            </>
-                                        )}
-                                    </div>
                                 </div>
                             </div>
+                        </section>
 
+                        <div className="pt-4 pb-12">
+                            <Button
+                                type="submit"
+                                style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
+                                className="w-full h-14 text-lg text-white rounded-xl shadow-xl transition-transform active:scale-[0.99] border-0 hover:opacity-90"
+                                disabled={submitting}
+                            >
+                                {submitting ? 'Procesando...' : `Pagar S/ ${total.toFixed(2)}`}
+                            </Button>
+
+                            <p className="text-center text-xs text-slate-400 mt-4 flex justify-center items-center gap-1">
+                                <ShieldCheck size={12} /> Pagos procesados seguramente por LinkVentas
+                            </p>
                         </div>
-
-                        <Button
-                            type="submit"
-                            style={{ background: 'linear-gradient(135deg, #240B36 0%, #C31432 100%)' }}
-                            className="w-full h-14 text-lg text-white rounded-xl shadow-xl transition-transform active:scale-[0.99] border-0 hover:opacity-90"
-                            disabled={submitting}
-                        >
-                            {submitting ? 'Procesando...' : `Pagar S/ ${total.toFixed(2)}`}
-                        </Button>
-
-                        <p className="text-center text-xs text-slate-400 mt-4 flex justify-center items-center gap-1">
-                            <ShieldCheck size={12} /> Pagos procesados seguramente por LinkVentas
-                        </p>
                     </form>
                 </div>
             </div>
 
-            {/* 🟠 COLUMNA DERECHA: Resumen (Order 1 en mobil, 2 en desktop) */}
-            <div className="w-full md:w-2/5 lg:w-1/2 p-6 md:p-12 lg:p-16 bg-slate-50 border-l border-slate-100 order-1 md:order-2 sticky top-0 h-fit min-h-fit md:min-h-screen">
-                <div className="max-w-lg mx-auto">
-                    {/* Store Brand in Summary */}
-                    <div className="flex items-center gap-3 mb-8 opacity-80">
-                        <div className="h-8 w-8 rounded-full bg-slate-200 overflow-hidden">
-                            {perfil?.avatar_url && <img src={perfil.avatar_url} className="w-full h-full object-cover" />}
-                        </div>
-                        <span className="font-bold text-slate-700">{perfil?.store_name || 'Tu Tienda'}</span>
+            {/* RIGHT: RESUMEN (Sticky on Desktop) */}
+            <div className="hidden md:block w-96 bg-white border-l border-slate-200 p-8 lg:p-12 sticky top-0 h-screen overflow-y-auto order-1 md:order-2">
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+                        <h3 className="font-bold text-slate-900">Resumen del Pedido</h3>
+                        <span className="text-sm text-slate-500">{cart.reduce((a, b) => a + b.quantity, 0)} items</span>
                     </div>
 
-                    <h2 className="text-xl font-semibold mb-6 flex items-center justify-between">
-                        Resumen del Pedido
-                        <span className="text-sm font-normal text-slate-500">{cart.reduce((a, b) => a + b.quantity, 0)} items</span>
-                    </h2>
-
-                    <div className="space-y-6">
-                        {cart.map((item, idx) => (
-                            <div key={idx} className="flex gap-4 items-center">
-                                <div className="relative h-20 w-20 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="space-y-4">
+                        {cart.map((item) => (
+                            <div key={item.product.id} className="flex gap-4">
+                                <div className="h-16 w-16 bg-slate-100 rounded-md overflow-hidden shrink-0">
                                     {item.product.image_url ? (
-                                        <img src={item.product.image_url} className="w-full h-full object-cover" />
+                                        <img src={item.product.image_url} className="h-full w-full object-cover" />
                                     ) : (
-                                        <span className="text-2xl">📦</span>
+                                        <Store className="h-full w-full p-4 text-slate-300" />
                                     )}
-                                    <span className="absolute -top-2 -right-2 bg-slate-500 text-white text-xs font-bold h-5 w-5 rounded-full flex items-center justify-center">
-                                        {item.quantity}
-                                    </span>
                                 </div>
-                                <div className="flex-1">
-                                    <h4 className="font-medium text-slate-900">{item.product.name}</h4>
-                                    <p className="text-sm text-slate-500">{item.product.description?.substring(0, 30)}...</p>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-900 line-clamp-2">{item.product.name}</p>
+                                    <p className="text-sm text-slate-500">Cant: {item.quantity}</p>
                                 </div>
-                                <div className="font-bold text-slate-900">
-                                    S/ {(item.product.price * item.quantity).toFixed(2)}
-                                </div>
+                                <p className="text-sm font-semibold text-slate-900">S/ {(item.product.price * item.quantity).toFixed(2)}</p>
                             </div>
                         ))}
                     </div>
 
-                    <Separator className="my-8" />
-
-                    <div className="space-y-3 text-slate-600">
-                        <div className="flex justify-between">
+                    <div className="pt-6 border-t border-slate-100 space-y-4">
+                        <div className="flex justify-between text-slate-500">
                             <span>Subtotal</span>
                             <span>S/ {total.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-slate-500">
                             <span>Envío</span>
                             <span className="text-green-600 font-medium">Gratis</span>
                         </div>
-                    </div>
-
-                    <Separator className="my-6" />
-
-                    <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold text-slate-900">Total</span>
-                        <div className="text-right">
-                            <span className="text-min text-slate-400 font-normal mr-2">PEN</span>
-                            <span className="text-3xl font-extrabold text-black">S/ {total.toFixed(2)}</span>
+                        <div className="flex justify-between text-xl font-bold text-slate-900 pt-4 border-t border-slate-100">
+                            <span>Total</span>
+                            <span>S/ {total.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     )
 }
