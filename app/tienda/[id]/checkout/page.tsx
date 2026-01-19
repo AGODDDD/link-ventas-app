@@ -227,7 +227,8 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
                         <Button
                             type="submit"
-                            className="w-full h-14 text-lg bg-black hover:bg-slate-800 text-white rounded-xl shadow-xl transition-transform active:scale-[0.99]"
+                            style={{ background: 'linear-gradient(135deg, #240B36 0%, #C31432 100%)' }}
+                            className="w-full h-14 text-lg text-white rounded-xl shadow-xl transition-transform active:scale-[0.99] border-0 hover:opacity-90"
                             disabled={submitting}
                         >
                             {submitting ? 'Procesando...' : `Pagar S/ ${total.toFixed(2)}`}
