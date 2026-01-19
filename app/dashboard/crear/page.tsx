@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 export default function CrearProducto() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  
+
   const [nombre, setNombre] = useState('')
   const [precio, setPrecio] = useState('')
   const [descripcion, setDescripcion] = useState('')
@@ -25,13 +25,35 @@ export default function CrearProducto() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No estás logueado')
 
+      // 1.5. Check defensivo: Asegurar request que existe el perfil
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      // Si no existe, INTENTAMOS CREARLO en lugar de fallar
+      if (!profile) {
+        // Asumimos que no existe y tratamos de insertar
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({ id: user.id, email: user.email })
+
+        // Si hay error y NO es por duplicado (code 23505), entonces sí es un problema real
+        if (createProfileError && createProfileError.code !== '23505') {
+          console.error('Error creando perfil:', createProfileError)
+          throw new Error(`Error creando perfil: ${createProfileError.message} (Código: ${createProfileError.code})`)
+        }
+        // Si fue éxito o fue duplicado, seguimos adelante seguros.
+      }
+
       let imageUrl = null
 
       // 2. Subir la imagen (si seleccionó una)
       if (archivo) {
         // Creamos un nombre único para el archivo (ej: 123-cocacola.jpg)
         const fileName = `${Date.now()}-${archivo.name}`
-        
+
         const { data, error: uploadError } = await supabase.storage
           .from('productos')
           .upload(fileName, archivo)
@@ -42,7 +64,7 @@ export default function CrearProducto() {
         const { data: publicData } = supabase.storage
           .from('productos')
           .getPublicUrl(fileName)
-          
+
         imageUrl = publicData.publicUrl
       }
 
@@ -77,10 +99,10 @@ export default function CrearProducto() {
         </CardHeader>
         <CardContent>
           <form onSubmit={guardarProducto} className="space-y-4">
-            
+
             <div className="space-y-2">
               <Label htmlFor="nombre">Nombre del Producto</Label>
-              <Input 
+              <Input
                 id="nombre"
                 required
                 value={nombre}
@@ -91,9 +113,9 @@ export default function CrearProducto() {
 
             <div className="space-y-2">
               <Label htmlFor="precio">Precio (S/)</Label>
-              <Input 
+              <Input
                 id="precio"
-                type="number" 
+                type="number"
                 required
                 step="0.01"
                 value={precio}
@@ -104,7 +126,7 @@ export default function CrearProducto() {
 
             <div className="space-y-2">
               <Label htmlFor="desc">Descripción</Label>
-              <Input 
+              <Input
                 id="desc"
                 value={descripcion}
                 onChange={(e) => setDescripcion(e.target.value)}
@@ -114,12 +136,20 @@ export default function CrearProducto() {
 
             <div className="space-y-2">
               <Label htmlFor="foto">Foto del Producto</Label>
-              <Input 
+              <Input
                 id="foto"
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
-                  if (e.target.files) setArchivo(e.target.files[0])
+                  if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0]
+                    if (!file.type.startsWith('image/')) {
+                      alert('Por favor selecciona una imagen válida.')
+                      e.target.value = '' // Reset input
+                      return
+                    }
+                    setArchivo(file)
+                  }
                 }}
                 className="cursor-pointer bg-slate-50"
               />

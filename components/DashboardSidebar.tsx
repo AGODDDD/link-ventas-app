@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, ShoppingBag, Settings, LogOut, Store, X } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Settings, LogOut, Store, X, Package } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -29,6 +29,7 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
 
   const menuItems = [
     { name: 'Resumen', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Pedidos', href: '/dashboard/pedidos', icon: Package },
     { name: 'Mis Productos', href: '/dashboard/productos', icon: ShoppingBag },
     { name: 'Configurar Tienda', href: '/dashboard/configuracion', icon: Settings },
   ]
@@ -42,9 +43,9 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* FONDO OSCURO (Solo en móvil cuando está abierto) */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={onClose} 
+          onClick={onClose}
         />
       )}
 
@@ -55,7 +56,7 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 
       `}>
-        
+
         {/* CABECERA CON LOGO Y BOTÓN CERRAR */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -73,15 +74,14 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
           {menuItems.map((item) => {
             const isActive = pathname === item.href
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 onClick={onClose} // Cierra el menú al hacer clic en un link (móvil)
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-blue-600 text-white' 
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? 'bg-blue-600 text-white'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`}
+                  }`}
               >
                 <item.icon size={20} />
                 <span className="font-medium">{item.name}</span>
@@ -92,16 +92,16 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* FOOTER */}
         <div className="p-4 border-t border-slate-800">
-           <Link 
-              href={userId ? `/tienda/${userId}` : '#'} 
-              target="_blank"
-              className={`flex items-center gap-3 px-4 py-3 text-emerald-400 hover:bg-slate-800 rounded-lg mb-2 ${!userId && 'opacity-50'}`}
-            >
-              <Store size={20} />
-              <span>Ver mi Tienda</span>
-            </Link>
+          <Link
+            href={userId ? `/tienda/${userId}` : '#'}
+            target="_blank"
+            className={`flex items-center gap-3 px-4 py-3 text-emerald-400 hover:bg-slate-800 rounded-lg mb-2 ${!userId && 'opacity-50'}`}
+          >
+            <Store size={20} />
+            <span>Ver mi Tienda</span>
+          </Link>
 
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
           >
