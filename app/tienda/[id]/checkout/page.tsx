@@ -3,25 +3,25 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
+import { useCartStore } from '@/store/useCartStore'
+import { Profile } from '@/types/tienda'
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Upload, CheckCircle2, QrCode, MapPin, Phone, User, ShieldCheck, ChevronRight, Store } from 'lucide-react'
 
-// Tipo para item del carrito
-type CartItem = {
-    product: any
-    quantity: number
-}
-
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise)
     const router = useRouter()
-    const [cart, setCart] = useState<CartItem[]>([])
+    
+    const storeId = params.id
+    const cartStore = useCartStore()
+    const cart = cartStore.carts[storeId] || []
+    
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
-    const [perfil, setPerfil] = useState<any>(null)
+    const [perfil, setPerfil] = useState<Profile | null>(null)
 
     // Form states
     const [nombre, setNombre] = useState('')
@@ -31,27 +31,23 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     useEffect(() => {
-        // Cargar carrito y perfil del vendedor
-        const savedCart = localStorage.getItem(`cart-${params.id}`)
-        if (savedCart) {
-            setCart(JSON.parse(savedCart))
-        } else {
-            // Si no hay carrito, redirigir a tienda
-            router.push(`/tienda/${params.id}`)
+        if (cart.length === 0) {
+            router.push(`/tienda/${storeId}`)
+            return;
         }
 
         const cargarPerfil = async () => {
             const { data } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', params.id)
+                .eq('id', storeId)
                 .single()
 
             if (data) setPerfil(data)
             setLoading(false)
         }
         cargarPerfil()
-    }, [params.id, router])
+    }, [storeId, router, cart.length])
 
     const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
 
@@ -111,9 +107,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             if (itemsError) throw itemsError
 
             // 4. Limpiar y Redirigir
-            localStorage.removeItem(`cart-${params.id}`)
+            cartStore.clearCart(storeId)
             alert('¡Fantástico! Pedido enviado.')
-            router.push(`/tienda/${params.id}`)
+            router.push(`/tienda/${storeId}`)
 
         } catch (error: any) {
             console.error(error)
