@@ -233,10 +233,10 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                             <p className="text-xs text-slate-400">JPG, PNG, JPEG</p>
                                         </div>
                                     )}
-                                    <Input
+                                    <input
                                         type="file"
                                         accept="image/*"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         onChange={handleFileChange}
                                         required
                                     />
