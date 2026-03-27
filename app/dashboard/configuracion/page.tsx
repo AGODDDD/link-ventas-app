@@ -98,6 +98,11 @@ export default function ConfiguracionPage() {
 
   // 3. Guardar Cambios en Base de Datos
   const guardarCambios = async () => {
+    if (!userId) {
+      alert('Error de sesión: Por favor recarga la página para verificar tu usuario antes de guardar.');
+      return;
+    }
+
     try {
       setLoading(true)
       const { error } = await supabase
