@@ -21,6 +21,13 @@ export interface Product {
   price: number;
   image_url?: string;
   created_at?: string;
+  // Advanced Catalog Fields
+  brand?: string;
+  original_price?: number;
+  is_free_shipping?: boolean;
+  shipping_today?: boolean;
+  rating?: number;
+  reviews_count?: number;
 }
 
 export interface CartItem {
