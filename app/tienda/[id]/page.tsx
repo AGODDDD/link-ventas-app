@@ -1,7 +1,8 @@
 import React from 'react'
 import { supabase } from '@/lib/supabase'
-import { Profile, Product } from '@/types/tienda'
-import ProductGrid from '@/components/tienda/ProductGrid'
+import { Profile } from '@/types/tienda'
+import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
+import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
 
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
@@ -21,13 +22,13 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   const params = await paramsPromise;
   
   // Fetching
-  const [perfilRes, productosRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', params.id).single(),
-    supabase.from('products').select('*').eq('user_id', params.id).order('created_at', { ascending: false })
-  ]);
+  const { data: perfil } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', params.id)
+    .single();
   
-  const perfil = perfilRes.data as Profile | null;
-  const productos = (productosRes.data || []) as Product[];
+
 
   if (!perfil) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Tienda no encontrada 🛒</div>
@@ -38,22 +39,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen">
       {/* TopAppBar */}
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,59,48,0.06)]">
-        <div className="flex justify-between items-center px-8 py-4 max-w-full">
-          <div className="text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate max-w-[200px] md:max-w-none">
-            {storeName}
-          </div>
-          <div className="hidden md:flex gap-8 items-center">
-            <a className="font-headline font-bold uppercase tracking-tighter text-primary border-b-2 border-primary pb-1 transition-transform duration-200 hover:scale-105 active:scale-95" href="#inicio">INICIO</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#catalogo">CATÁLOGO</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#ofertas">OFERTAS</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#contacto">CONTACTO</a>
-          </div>
-          <a href="#catalogo" className="bg-primary-container text-on-primary-container px-6 py-2 font-headline font-bold uppercase tracking-widest text-sm hover:scale-105 transition-transform duration-200 active:scale-95 text-center flex items-center justify-center">
-            ¡COMPRAR AHORA!
-          </a>
-        </div>
-      </nav>
+      <StoreNavbarKinetic storeName={storeName} storeId={params.id} />
 
       {/* Main Content Canvas */}
       <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
@@ -142,8 +128,6 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
           </div>
         </div>
 
-        <ProductGrid productos={productos} perfil={perfil} />
-
         {/* Promotional Bento Grid Section */}
         <section id="ofertas" className="max-w-7xl mx-auto px-6 py-24 scroll-mt-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -166,19 +150,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       </main>
 
       {/* Footer */}
-      <footer id="contacto" className="w-full py-12 border-t border-white/5 bg-background relative z-10">
-        <div className="flex flex-col md:flex-row justify-between items-center px-12 gap-6">
-          <div className="text-lg font-bold text-on-background font-headline tracking-widest uppercase">{storeName}</div>
-          <div className="flex gap-8">
-            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Privacidad</a>
-            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Términos</a>
-            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Soporte</a>
-          </div>
-          <div className="font-label text-[10px] uppercase tracking-widest text-primary">
-            © 2024 {storeName}. TODOS LOS DERECHOS RESERVADOS.
-          </div>
-        </div>
-      </footer>
+      <StoreFooterKinetic storeName={storeName} />
 
       {/* Floating WhatsApp Button */}
       <a
