@@ -35,18 +35,18 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   const storeName = perfil.store_name || "TU TIENDA";
 
   return (
-    <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-[#131313] text-[#e2e2e2] min-h-screen">
+    <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen">
       {/* TopAppBar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#131313]/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,180,170,0.06)]">
+      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,59,48,0.06)]">
         <div className="flex justify-between items-center px-8 py-4 max-w-full">
-          <div className="text-2xl font-black italic text-[#ff5545] tracking-widest font-headline uppercase truncate max-w-[200px] md:max-w-none">
+          <div className="text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate max-w-[200px] md:max-w-none">
             {storeName}
           </div>
           <div className="hidden md:flex gap-8 items-center">
-            <a className="font-headline font-bold uppercase tracking-tighter text-[#ffb4aa] border-b-2 border-[#ffb4aa] pb-1 transition-transform duration-200 hover:scale-105 active:scale-95" href="#">INICIO</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-[#e2e2e2] hover:text-[#ffb4aa] transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">OFERTAS</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-[#e2e2e2] hover:text-[#ffb4aa] transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">LIMITADAS</a>
-            <a className="font-headline font-bold uppercase tracking-tighter text-[#e2e2e2] hover:text-[#ffb4aa] transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">CONTACTO</a>
+            <a className="font-headline font-bold uppercase tracking-tighter text-primary border-b-2 border-primary pb-1 transition-transform duration-200 hover:scale-105 active:scale-95" href="#">INICIO</a>
+            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">OFERTAS</a>
+            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">LIMITADAS</a>
+            <a className="font-headline font-bold uppercase tracking-tighter text-on-background hover:text-primary transition-colors transition-transform duration-200 hover:scale-105 active:scale-95" href="#">CONTACTO</a>
           </div>
           <button className="bg-primary-container text-on-primary-container px-6 py-2 font-headline font-bold uppercase tracking-widest text-sm hover:scale-105 transition-transform duration-200 active:scale-95">
             ¡COMPRAR AHORA!
@@ -99,7 +99,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
             <div className="absolute -top-32 -left-20 w-80 h-80 hidden xl:block z-0 opacity-40 mix-blend-screen pointer-events-none">
               <img alt="Woman with shopping bags" className="object-cover w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgb0wIlzJugZ2QY_sqyzpFLws68eAsSQuoq2f9I4WclgcIdO1Njtsi7sbj0pQcyiAeb6V0GQscd6kGQm4hLihtRYI9mZffVDfU0QTq4kM9JHwQArRhWGxDFRKUxbArL-ij7Kj1hL5u0YdotSDF9mzOWi6PjQjll-2-bRb5VP2zTtDYvVnJtR4NElkH44rpPlCMCCvdODpXlRqM-EO_jxlxLDsiiBFuKnT5RrfJwR6zkE0q-IMHj2W_PMHHfwPZ-AkB1Tr271DVXBHO"/>
             </div>
-            <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,85,69,0.1)] border border-white/5">
+            <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,59,48,0.1)] border border-white/5">
               <h2 className="font-headline font-bold text-3xl mb-8 tracking-tighter uppercase italic">SUSCRÍBETE Y ANTICÍPATE</h2>
               <form className="space-y-6" action="#">
                 <div className="space-y-1">
@@ -133,7 +133,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
                   </label>
                 </div>
 
-                <button className="w-full bg-primary-container text-on-primary-container py-5 font-headline font-black text-xl tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-[0_20px_40px_rgba(255,85,69,0.3)]" type="button">
+                <button className="w-full bg-primary-container text-on-primary-container py-5 font-headline font-black text-xl tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-[0_20px_40px_rgba(255,59,48,0.3)]" type="button">
                   SUSCRIBIRSE
                 </button>
               </form>
@@ -163,15 +163,15 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       </main>
 
       {/* Footer */}
-      <footer className="w-full py-12 border-t border-white/5 bg-[#131313]">
+      <footer className="w-full py-12 border-t border-white/5 bg-background">
         <div className="flex flex-col md:flex-row justify-between items-center px-12 gap-6">
-          <div className="text-lg font-bold text-[#e2e2e2] font-headline tracking-widest uppercase">{storeName}</div>
+          <div className="text-lg font-bold text-on-background font-headline tracking-widest uppercase">{storeName}</div>
           <div className="flex gap-8">
-            <a className="font-label text-[10px] uppercase tracking-widest text-[#e2e2e2]/60 hover:text-[#ff5545] transition-colors" href="#">Privacidad</a>
-            <a className="font-label text-[10px] uppercase tracking-widest text-[#e2e2e2]/60 hover:text-[#ff5545] transition-colors" href="#">Términos</a>
-            <a className="font-label text-[10px] uppercase tracking-widest text-[#e2e2e2]/60 hover:text-[#ff5545] transition-colors" href="#">Soporte</a>
+            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Privacidad</a>
+            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Términos</a>
+            <a className="font-label text-[10px] uppercase tracking-widest text-on-background/60 hover:text-primary transition-colors" href="#">Soporte</a>
           </div>
-          <div className="font-label text-[10px] uppercase tracking-widest text-[#ff5545]">
+          <div className="font-label text-[10px] uppercase tracking-widest text-primary">
             © 2024 {storeName}. TODOS LOS DERECHOS RESERVADOS.
           </div>
         </div>
