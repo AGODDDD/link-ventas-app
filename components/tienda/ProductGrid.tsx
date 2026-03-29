@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
 import { Plus, Minus, Store } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
@@ -42,10 +43,12 @@ export default function ProductGrid({ productos, perfil }: Props) {
               {/* Image Container */}
               <div className="aspect-[4/5] w-full overflow-hidden rounded-none bg-black relative">
                 {prod.image_url ? (
-                  <img
+                  <Image
                     src={prod.image_url}
                     alt={prod.name}
-                    className="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-in-out opacity-80 group-hover:opacity-100"
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-in-out opacity-80 group-hover:opacity-100"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center text-outline-variant">

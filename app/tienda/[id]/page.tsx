@@ -1,4 +1,5 @@
 import React from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { Profile } from '@/types/tienda'
 import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
@@ -84,7 +85,13 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
           {/* Right Column: Lead Gen Form with Overlap */}
           <div className="lg:col-span-5 relative">
             <div className="absolute -top-32 -left-20 w-80 h-80 hidden xl:block z-0 opacity-40 mix-blend-screen pointer-events-none">
-              <img alt="Woman with shopping bags" className="object-cover w-full h-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgb0wIlzJugZ2QY_sqyzpFLws68eAsSQuoq2f9I4WclgcIdO1Njtsi7sbj0pQcyiAeb6V0GQscd6kGQm4hLihtRYI9mZffVDfU0QTq4kM9JHwQArRhWGxDFRKUxbArL-ij7Kj1hL5u0YdotSDF9mzOWi6PjQjll-2-bRb5VP2zTtDYvVnJtR4NElkH44rpPlCMCCvdODpXlRqM-EO_jxlxLDsiiBFuKnT5RrfJwR6zkE0q-IMHj2W_PMHHfwPZ-AkB1Tr271DVXBHO"/>
+              <Image 
+                alt="Woman with shopping bags" 
+                className="object-cover w-full h-full" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgb0wIlzJugZ2QY_sqyzpFLws68eAsSQuoq2f9I4WclgcIdO1Njtsi7sbj0pQcyiAeb6V0GQscd6kGQm4hLihtRYI9mZffVDfU0QTq4kM9JHwQArRhWGxDFRKUxbArL-ij7Kj1hL5u0YdotSDF9mzOWi6PjQjll-2-bRb5VP2zTtDYvVnJtR4NElkH44rpPlCMCCvdODpXlRqM-EO_jxlxLDsiiBFuKnT5RrfJwR6zkE0q-IMHj2W_PMHHfwPZ-AkB1Tr271DVXBHO"
+                fill
+                priority
+              />
             </div>
             <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,59,48,0.1)] border border-white/5">
               <h2 className="font-headline font-bold text-3xl mb-8 tracking-tighter uppercase italic">SUSCRÍBETE Y ANTICÍPATE</h2>
@@ -132,7 +139,12 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
         <section id="ofertas" className="max-w-7xl mx-auto px-6 py-24 scroll-mt-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2 bg-surface-container-low p-8 h-80 flex flex-col justify-end group overflow-hidden relative">
-              <img alt="Luxury items" className="absolute inset-0 object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK" />
+              <Image 
+                alt="Luxury items" 
+                className="absolute inset-0 object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK" 
+                fill
+              />
               <h3 className="font-headline font-bold text-4xl relative z-10 italic uppercase">ACCESORIOS <br/> <span className="text-primary">PREMIUM</span></h3>
             </div>
             
