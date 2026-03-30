@@ -25,7 +25,7 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   // Fetching
   const [perfilRes, productosRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', params.id).single(),
-    supabase.from('products').select('*').eq('user_id', params.id).order('created_at', { ascending: false })
+    supabase.from('products').select('*').eq('user_id', params.id).eq('is_active', true).order('created_at', { ascending: false })
   ]);
   
   const perfil = perfilRes.data as Profile | null;

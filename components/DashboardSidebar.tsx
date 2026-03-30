@@ -26,10 +26,12 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   }, [])
 
   const menuItems = [
-    { name: 'Inicio', href: '/dashboard', icon: 'dashboard' },
-    { name: 'Pedidos', href: '/dashboard/pedidos', icon: 'payments' },
+    { name: 'Dashboard', href: '/dashboard', icon: 'dashboard' },
+    { name: 'Órdenes', href: '/dashboard/pedidos', icon: 'payments' },
+    { name: 'Clientes (Leads)', href: '/dashboard/clientes', icon: 'group' },
     { name: 'Productos', href: '/dashboard/productos', icon: 'inventory_2' },
-    { name: 'Configuración', href: '/dashboard/configuracion', icon: 'settings' },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: 'analytics' },
+    { name: 'Ajustes Tienda', href: '/dashboard/configuracion', icon: 'settings' },
   ]
 
   const handleLogout = async () => {

@@ -1,12 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Eye, CheckCircle, Clock, X } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban } from 'lucide-react'
 
-// Definimos tipos básicos
 type Order = {
     id: string
     created_at: string
@@ -34,12 +30,12 @@ export default function PedidosPage() {
         const { data } = await supabase
             .from('orders')
             .select(`
-        *,
-        order_items (
-          *,
-          products (name)
-        )
-      `)
+                *,
+                order_items (
+                    *,
+                    products (name)
+                )
+            `)
             .eq('merchant_id', user.id)
             .order('created_at', { ascending: false })
 
@@ -63,10 +59,10 @@ export default function PedidosPage() {
     }
 
     const verComprobante = async (path: string) => {
+        if (path === 'CONTRA_ENTREGA') return; // No hay foto
         setProofLoading(true)
-        setSelectedProof(null) // Reset
+        setSelectedProof(null) 
         try {
-            // Generamos URL firmada por 1 hora
             const { data, error } = await supabase.storage
                 .from('comprobantes')
                 .createSignedUrl(path, 3600)
@@ -80,131 +76,173 @@ export default function PedidosPage() {
         }
     }
 
-    const getStatusBadge = (status: string) => {
+    const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'pending': return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 gap-1"><Clock size={12} /> Pendiente</Badge>
-            case 'paid': return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 gap-1"><CheckCircle size={12} /> Pagado</Badge>
-            case 'shipped': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Enviado</Badge>
-            case 'cancelled': return <Badge variant="destructive">Cancelado</Badge>
-            default: return <Badge>{status}</Badge>
+            case 'pending': return "bg-tertiary-container/10 text-tertiary border-tertiary/20"
+            case 'paid': return "bg-secondary-container/40 text-secondary border-secondary/20"
+            case 'shipped': return "bg-primary-container/40 text-primary border-primary/20"
+            case 'cancelled': return "bg-error-container/40 text-error border-error/20"
+            default: return "bg-surface-bright text-on-surface"
         }
     }
 
-    if (loading) return <div className="p-8 text-center">Cargando pedidos... 📦</div>
+    const getStatusName = (status: string) => {
+        switch (status) {
+            case 'pending': return "Pendiente"
+            case 'paid': return "Pagado"
+            case 'shipped': return "Enviado"
+            case 'cancelled': return "Cancelado"
+            default: return status
+        }
+    }
+
+    if (loading) return <div className="p-8 text-center text-on-surface-variant font-bold animate-pulse">Cargando pedidos... 🛰️</div>
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6 pb-12 relative">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6 pb-12 relative w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Pedidos 📦</h1>
-                    <p className="text-slate-500">Administra tus ventas y valida pagos.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Órdenes 📦</h1>
+                    <p className="text-on-surface-variant">Gestión logística y control de transacciones.</p>
                 </div>
-                <Button onClick={cargarPedidos} variant="outline" size="sm">Actualizar</Button>
+                <button onClick={cargarPedidos} className="px-6 py-2 bg-surface-bright text-on-surface border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors font-semibold text-sm">
+                    Actualizar Lista
+                </button>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-6">
                 {orders.length === 0 ? (
-                    <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                        <p className="text-slate-400 text-xl">Aún no tienes pedidos.</p>
-                        <p className="text-slate-300 text-sm">Comparte tu link para empezar a vender.</p>
+                    <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
+                        <p className="text-on-surface-variant text-xl font-bold">Aún no tienes pedidos.</p>
+                        <p className="text-on-surface-variant/70 text-sm mt-2">Empieza a compartir tu catálogo para recibir órdenes aquí.</p>
                     </div>
                 ) : (
                     orders.map((order) => (
-                        <Card key={order.id} className="overflow-hidden">
-                            <CardHeader className="bg-slate-50 py-3 flex flex-row items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <span className="font-mono text-xs text-slate-400">#{order.id.slice(0, 8)}</span>
-                                    {getStatusBadge(order.status)}
-                                    <span className="text-sm text-slate-500">
-                                        {new Date(order.created_at).toLocaleDateString()}
+                        <div key={order.id} className="bg-surface-container-high rounded-2xl border border-outline-variant/5 shadow-2xl overflow-hidden group">
+                            
+                            {/* Order Header */}
+                            <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant/5 gap-4">
+                                <div className="flex items-center gap-4 flex-wrap">
+                                    <span className="font-mono text-xs font-bold text-primary tracking-widest px-3 py-1 bg-primary/10 rounded-md">
+                                        #{order.id.split('-')[0].toUpperCase()}
+                                    </span>
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${getStatusStyle(order.status)}`}>
+                                        {getStatusName(order.status)}
+                                    </span>
+                                    <span className="text-xs font-medium text-on-surface-variant">
+                                        {new Date(order.created_at).toLocaleString()}
                                     </span>
                                 </div>
-                                <div className="font-bold text-lg">S/ {order.total_amount.toFixed(2)}</div>
-                            </CardHeader>
+                                <div className="font-bold text-xl tracking-tighter text-on-surface">S/ {parseFloat(order.total_amount as any).toFixed(2)}</div>
+                            </div>
 
-                            <CardContent className="pt-4 grid md:grid-cols-2 gap-6">
-
-                                {/* Info Cliente */}
-                                <div className="text-sm space-y-1">
-                                    <p className="font-bold text-slate-900">{order.customer_name}</p>
-                                    <p className="text-slate-600">📞 {order.customer_phone}</p>
-                                    <p className="text-slate-600">📍 {order.customer_address || 'Sin dirección'}</p>
-
-                                    <div className="mt-4">
-                                        <p className="font-medium text-xs text-slate-400 uppercase tracking-wider mb-2">Productos</p>
-                                        <ul className="space-y-1">
-                                            {order.order_items.map((item: any) => (
-                                                <li key={item.id} className="flex justify-between text-slate-700">
-                                                    <span>{item.quantity}x {item.products?.name}</span>
-                                                    {/* <span>S/ {item.price}</span> */}
-                                                </li>
-                                            ))}
-                                        </ul>
+                            {/* Order Body */}
+                            <div className="p-6 grid md:grid-cols-12 gap-6">
+                                {/* Zona Info Cliente */}
+                                <div className="md:col-span-5 space-y-4">
+                                    <div>
+                                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Cliente</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-surface-bright flex items-center justify-center font-black text-on-surface shadow-inner">
+                                                {order.customer_name ? order.customer_name.substring(0,2).toUpperCase() : '👤'}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-on-surface">{order.customer_name}</p>
+                                                <p className="text-sm font-medium text-primary">📞 {order.customer_phone}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1 mt-4">Dirección de Entrega</p>
+                                        <div className="bg-surface-bright/50 p-3 rounded-lg border border-outline-variant/10 flex items-start gap-2">
+                                            <span className="text-on-surface-variant pt-0.5">📍</span>
+                                            <p className="text-sm text-on-surface font-medium capitalize">{order.customer_address || 'Sin dirección proporcionada'}</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Acciones */}
-                                <div className="flex flex-col items-end gap-3 justify-center border-l pl-6 border-slate-100">
+                                {/* Zona Carrito */}
+                                <div className="md:col-span-4 border-l-0 md:border-l border-t md:border-t-0 border-outline-variant/10 pt-6 md:pt-0 md:pl-6 flex flex-col">
+                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Contenido del Pedido</p>
+                                    <div className="space-y-3 flex-1 overflow-y-auto max-h-[150px] pr-2 custom-scrollbar">
+                                        {order.order_items.map((item: any, idx: number) => (
+                                            <div key={idx} className="flex justify-between items-center text-sm bg-surface-container p-2 rounded-md">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="bg-surface-bright text-on-surface text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
+                                                    <span className="font-medium text-on-surface-variant line-clamp-1">{item.products?.name}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                    <Button
-                                        variant="outline"
-                                        className="w-full gap-2 border-dashed"
-                                        onClick={() => verComprobante(order.payment_proof_url)}
-                                    >
-                                        <Eye size={16} /> Ver Comprobante
-                                    </Button>
+                                {/* Zona de Acciones Operativas */}
+                                <div className="md:col-span-3 border-l-0 md:border-l border-t md:border-t-0 border-outline-variant/10 pt-6 md:pt-0 md:pl-6 flex flex-col justify-center gap-3">
+                                    
+                                    {order.payment_proof_url && order.payment_proof_url !== 'CONTRA_ENTREGA' ? (
+                                        <button 
+                                            onClick={() => verComprobante(order.payment_proof_url)}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-surface-container hover:bg-surface-bright text-primary text-sm font-bold rounded-xl border border-primary/20 transition-all hover:scale-[1.02] active:scale-95 shadow-[0_5px_15px_rgba(192,193,255,0.1)]"
+                                        >
+                                            <Eye size={18} /> Ver Voucher
+                                        </button>
+                                    ) : (
+                                        <div className="w-full text-center px-4 py-3 bg-surface-container text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 uppercase tracking-widest">
+                                            Pago Contra Entrega
+                                        </div>
+                                    )}
 
                                     {order.status === 'pending' && (
-                                        <>
-                                            <Button
-                                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <button 
                                                 onClick={() => actualizarEstado(order.id, 'paid')}
+                                                className="flex flex-col items-center justify-center gap-1 p-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-on-secondary rounded-lg transition-colors border border-secondary/20 hover:border-transparent font-bold text-xs"
                                             >
-                                                ✅ Confirmar Pago
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                className="w-full"
+                                                <CheckCircle size={18} /> Validar
+                                            </button>
+                                            <button 
                                                 onClick={() => actualizarEstado(order.id, 'cancelled')}
+                                                className="flex flex-col items-center justify-center gap-1 p-2 bg-error/10 hover:bg-error text-error hover:text-on-error rounded-lg transition-colors border border-error/20 hover:border-transparent font-bold text-xs"
                                             >
-                                                Rechazar
-                                            </Button>
-                                        </>
+                                                <Ban size={18} /> Cancelar
+                                            </button>
+                                        </div>
                                     )}
 
                                     {order.status === 'paid' && (
-                                        <Button
-                                            variant="outline"
-                                            className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                                        <button 
                                             onClick={() => actualizarEstado(order.id, 'shipped')}
+                                            className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-on-primary hover:brightness-110 text-sm font-bold rounded-xl transition-all shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95"
                                         >
-                                            🚀 Marcar como Enviado
-                                        </Button>
+                                            <Truck size={18} /> Marcar Enviado
+                                        </button>
                                     )}
-
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     ))
                 )}
             </div>
 
-            {/* MODAL DE COMPROBANTE - CUSTOM */}
+            {/* MODAL DE COMPROBANTE - DARK PREMIUM */}
             {(selectedProof || proofLoading) && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="relative bg-white rounded-lg max-w-sm w-full overflow-hidden shadow-2xl">
-                        <button
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="relative bg-surface rounded-2xl max-w-sm w-full overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-outline-variant/20">
+                        <button 
                             onClick={() => { setSelectedProof(null); setProofLoading(false) }}
-                            className="absolute top-2 right-2 p-1 bg-black/20 hover:bg-black/40 rounded-full text-white z-10"
+                            className="absolute top-4 right-4 p-2 bg-surface-container-high hover:bg-surface-bright rounded-full text-on-surface z-10 transition-colors border border-white/10"
                         >
                             <X size={20} />
                         </button>
-                        <div className="p-4 bg-slate-100 text-center font-bold border-b">
-                            Comprobante de Pago
+                        <div className="p-5 bg-surface-container-low text-center font-bold tracking-widest text-on-surface uppercase text-sm border-b border-outline-variant/10">
+                            VERIFICACIÓN DE PAGO
                         </div>
-                        <div className="aspect-[9/16] bg-slate-900 flex items-center justify-center">
+                        <div className="aspect-[9/16] bg-black flex items-center justify-center overflow-hidden">
                             {proofLoading ? (
-                                <span className="text-white animate-pulse">Cargando imagen...</span>
+                                <div className="text-primary font-bold animate-pulse text-sm flex flex-col items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                                    Descargando Voucher...
+                                </div>
                             ) : (
                                 <img src={selectedProof!} className="w-full h-full object-contain" alt="Comprobante" />
                             )}
