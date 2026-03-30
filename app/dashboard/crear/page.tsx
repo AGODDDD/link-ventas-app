@@ -91,12 +91,13 @@ export default function CrearProducto() {
           original_price: oldPrice,
           is_free_shipping: isFreeShipping,
           shipping_today: shippingToday,
+          is_active: false, // Por defecto se va a Bodega, no a la Vitrina
           rating: 5 // Default rating for new products to look good
         })
 
       if (dbError) throw dbError
 
-      toast.success('¡Producto publicado con éxito! 🚀')
+      toast.success('¡Guardado en Bodega! 📦')
       router.push('/dashboard/productos')
 
     } catch (error: any) {

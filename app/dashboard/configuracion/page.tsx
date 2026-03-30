@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon } from 'lucide-react'
+import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 
 export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
@@ -142,6 +143,9 @@ export default function ConfiguracionPage() {
       </div>
 
       <div className="grid gap-8">
+
+        {/* VITRINA PÚBLICA (CATALOG BUILDER) */}
+        {userId && <CatalogBuilder userId={userId} />}
 
         {/* IDENTIDAD VISUAL */}
         <Card>
