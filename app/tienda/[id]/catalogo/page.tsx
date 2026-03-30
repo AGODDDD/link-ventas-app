@@ -29,28 +29,7 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   ]);
   
   const perfil = perfilRes.data as Profile | null;
-  const rawProductos = (productosRes.data || []) as Product[];
-
-  // Inject Mock Data for advanced filtering to work while the DB has no values
-  const productos: Product[] = rawProductos.map((p, idx) => {
-    // Determine random but consistent mock data
-    const brands = ['SAMSUNG', 'APPLE', 'XIAOMI', 'SONY', 'LG'];
-    const mockBrand = brands[idx % brands.length];
-    
-    // Create an original price that is 10% to 50% higher than the current price
-    const mockMarkup = 1 + (0.1 + (idx % 4) * 0.1); 
-    const originalPrice = p.price * mockMarkup;
-
-    return {
-      ...p,
-      brand: mockBrand,
-      original_price: originalPrice,
-      is_free_shipping: idx % 2 === 0,
-      shipping_today: idx % 3 === 0,
-      rating: 3 + (idx % 3), // 3, 4, or 5 stars
-      reviews_count: 12 + (idx * 7)
-    }
-  });
+  const productos = (productosRes.data || []) as Product[];
 
   if (!perfil) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Tienda no encontrada 🛒</div>

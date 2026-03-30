@@ -4,6 +4,8 @@ import DashboardSidebar from '@/components/DashboardSidebar'
 import { useState } from 'react'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Toaster } from 'sonner'
+import RealtimeSalesTracker from '@/components/dashboard/RealtimeSalesTracker'
 
 export default function DashboardLayout({
   children,
@@ -15,8 +17,12 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       
+      {/* 0. Listeners and Providers */}
+      <Toaster richColors position="top-right" duration={4000} />
+      <RealtimeSalesTracker />
+
       {/* 1. BARRA SUPERIOR MÓVIL (Solo visible en celular) */}
-      <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-30">
+      <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold">L</div>
           <span className="font-bold text-lg">LinkVentas</span>
