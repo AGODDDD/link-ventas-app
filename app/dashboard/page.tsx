@@ -16,6 +16,26 @@ export default function DashboardPage() {
   const pedidosTotales = orders.length
   const ordenesRecientes = orders.slice(0, 5)
 
+  // KPIs dinámicos reales
+  const pedidosHoy = useMemo(() => {
+    const hoy = new Date().toDateString()
+    return orders.filter(o => new Date(o.created_at).toDateString() === hoy).length
+  }, [orders])
+
+  const crecimiento = useMemo(() => {
+    const ahora = Date.now()
+    const hace7dias = ahora - 7 * 24 * 60 * 60 * 1000
+    const hace14dias = ahora - 14 * 24 * 60 * 60 * 1000
+    const ventasSemanaActual = orders.filter(o => new Date(o.created_at).getTime() >= hace7dias)
+      .reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+    const ventasSemanaPasada = orders.filter(o => {
+      const t = new Date(o.created_at).getTime()
+      return t >= hace14dias && t < hace7dias
+    }).reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+    if (ventasSemanaPasada === 0) return ventasSemanaActual > 0 ? 100 : 0
+    return Math.round(((ventasSemanaActual - ventasSemanaPasada) / ventasSemanaPasada) * 100)
+  }, [orders])
+
   useEffect(() => {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -63,7 +83,7 @@ export default function DashboardPage() {
           <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Total de Ingresos</p>
           <div className="flex items-baseline gap-2 relative z-10">
               <span className="text-3xl font-bold tracking-tighter text-on-surface">S/ {ingresosTotales.toFixed(2)}</span>
-              <span className="text-secondary text-xs font-bold">+12%</span>
+              <span className={`text-xs font-bold ${crecimiento >= 0 ? 'text-secondary' : 'text-error'}`}>{crecimiento >= 0 ? '+' : ''}{crecimiento}%</span>
           </div>
           <div className="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden relative z-10">
               <div className="h-full bg-primary w-[75%]"></div>
@@ -74,7 +94,7 @@ export default function DashboardPage() {
           <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Pedidos Totales</p>
           <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tighter text-on-surface">{pedidosTotales}</span>
-              <span className="text-secondary text-xs font-bold">↑ 2 hoy</span>
+              <span className="text-secondary text-xs font-bold">↑ {pedidosHoy} hoy</span>
           </div>
           <div className="mt-4 flex items-center gap-1">
               <div className="h-4 w-1 bg-primary/20 rounded-full"></div>

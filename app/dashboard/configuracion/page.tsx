@@ -26,6 +26,7 @@ export default function ConfiguracionPage() {
   const [socialFacebook, setSocialFacebook] = useState('')
   const [socialInstagram, setSocialInstagram] = useState('')
   const [socialTikTok, setSocialTikTok] = useState('')
+  const [whatsappPhone, setWhatsappPhone] = useState('')
 
   // Nuevos campos para QRs
   const [yapeUrl, setYapeUrl] = useState('')
@@ -60,6 +61,7 @@ export default function ConfiguracionPage() {
         setSocialFacebook(data.social_facebook || '')
         setSocialInstagram(data.social_instagram || '')
         setSocialTikTok(data.social_tiktok || '')
+        setWhatsappPhone(data.whatsapp_phone || '')
       }
     }
     cargarPerfil()
@@ -124,6 +126,7 @@ export default function ConfiguracionPage() {
           social_facebook: socialFacebook,
           social_instagram: socialInstagram,
           social_tiktok: socialTikTok,
+          whatsapp_phone: whatsappPhone.replace(/\s/g, '') || null,
           updated_at: new Date(),
         })
         .eq('id', userId)
@@ -284,6 +287,14 @@ export default function ConfiguracionPage() {
                 <span className="absolute left-3 top-2.5 text-slate-400">@</span>
                 <Input className="pl-8" placeholder="usuario_tiktok" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>WhatsApp de Ventas (Número)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-slate-400">+</span>
+                <Input className="pl-8" placeholder="51999123456" value={whatsappPhone} onChange={(e) => setWhatsappPhone(e.target.value)} />
+              </div>
+              <p className="text-xs text-slate-400">Código de país + número. Ej: 51999123456 (Perú)</p>
             </div>
           </CardContent>
         </Card>

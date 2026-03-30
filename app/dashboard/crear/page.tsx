@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 export default function CrearProducto() {
   const router = useRouter()
@@ -89,6 +90,9 @@ export default function CrearProducto() {
         })
 
       if (dbError) throw dbError
+
+      // Invalidar caché para que la tabla de Bodega se refresque
+      await useDashboardStore.getState().cargarProductos(user.id, true)
 
       toast.success('¡Guardado en Bodega! 📦')
       router.push('/dashboard/productos')

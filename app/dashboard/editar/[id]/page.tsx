@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
 import { use } from 'react'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 export default function EditarProducto({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise)
@@ -102,6 +103,10 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
         .eq('id', params.id)
 
       if (dbError) throw dbError
+
+      // Invalidar caché de productos
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) await useDashboardStore.getState().cargarProductos(user.id, true)
 
       toast.success('Cambios guardados exitosamente')
       router.push('/dashboard/productos')

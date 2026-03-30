@@ -10,6 +10,7 @@ export interface Profile {
   social_instagram?: string;
   social_facebook?: string;
   social_tiktok?: string;
+  whatsapp_phone?: string;
   yape_image_url?: string;
   plin_image_url?: string;
 }

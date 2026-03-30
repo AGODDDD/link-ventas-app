@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
 import { ArrowLeft, Upload, CheckCircle2, User, Phone, MapPin, QrCode, Wallet, ShoppingBag, ShieldCheck, Store } from 'lucide-react'
+import { toast } from 'sonner'
 
 type PaymentMethod = 'transferencia' | 'contra_entrega'
 
@@ -63,7 +64,20 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (metodoPago === 'transferencia' && !comprobante) return alert('POR FAVOR SUBE LA CAPTURA DEL PAGO PARA VERIFICAR')
+
+        // Validaciones
+        if (!nombre.trim() || nombre.trim().length < 3) {
+            return toast.error('El nombre debe tener al menos 3 caracteres')
+        }
+        if (!telefono.trim() || !/^\d{7,15}$/.test(telefono.replace(/\s/g, ''))) {
+            return toast.error('Ingresa un número de teléfono válido (solo dígitos, 7-15 caracteres)')
+        }
+        if (!direccion.trim() || direccion.trim().length < 5) {
+            return toast.error('La dirección debe tener al menos 5 caracteres')
+        }
+        if (metodoPago === 'transferencia' && !comprobante) {
+            return toast.error('Por favor sube la captura del pago para verificar')
+        }
 
         setSubmitting(true)
         try {
