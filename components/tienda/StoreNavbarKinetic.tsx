@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import SlideOverCart from './SlideOverCart'
 
@@ -18,6 +18,7 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
   ]
 
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const cartStore = useCartStore()
   const cart = cartStore.carts[storeId] || []
@@ -29,11 +30,21 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,59,48,0.06)]">
-      <div className="flex justify-between items-center px-8 py-4 max-w-full">
-        <Link href={`/tienda/${storeId}`} className="text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate max-w-[200px] md:max-w-none">
-          {storeName}
-        </Link>
-        <div className="hidden md:flex gap-8 items-center">
+      <div className="flex justify-between items-center px-4 md:px-8 py-4 max-w-full">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button 
+            className="md:hidden text-on-background p-1 -ml-1 hover:text-primary transition-colors focus:outline-none"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          
+          <Link href={`/tienda/${storeId}`} className="text-xl md:text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate">
+            {storeName}
+          </Link>
+        </div>
+
+        <div className="hidden md:flex gap-8 items-center justify-center flex-1">
           {navLinks.map((link) => {
             // For hash links, we just don't highlight them as 'active page' 
             // unless we want to do scroll spying, but simple path matching is what's requested.
@@ -75,6 +86,33 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
           </button>
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-xl border-b border-t border-outline p-6 flex flex-col gap-4 shadow-2xl animate-in slide-in-from-top-4 duration-200">
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href.split('#')[0] && !link.href.includes('#')
+            return (
+              <Link 
+                key={link.name} 
+                href={link.href} 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`font-headline font-black uppercase tracking-widest text-lg p-2 transition-colors ${isActive ? 'text-primary' : 'text-on-background hover:text-primary'}`}
+              >
+                {link.name}
+              </Link>
+            )
+          })}
+          <Link 
+            href={`/tienda/${storeId}/catalogo`}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="bg-primary hover:bg-primary/80 transition-colors text-on-primary px-6 py-4 font-headline font-black text-xl uppercase tracking-widest text-center mt-4 italic"
+          >
+            ¡COMPRAR AHORA!
+          </Link>
+        </div>
+      )}
+
       <SlideOverCart storeId={storeId} isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   )
