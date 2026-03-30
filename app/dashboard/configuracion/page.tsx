@@ -17,6 +17,7 @@ export default function ConfiguracionPage() {
   const [storeName, setStoreName] = useState('')
   const [description, setDescription] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [slug, setSlug] = useState('')
 
   // Nuevos campos para Personalización
   const [bannerUrl, setBannerUrl] = useState('')
@@ -47,6 +48,7 @@ export default function ConfiguracionPage() {
 
       if (data) {
         setStoreName(data.store_name || '')
+        setSlug(data.slug || '')
         setDescription(data.description || '')
         setAvatarUrl(data.avatar_url || '')
         setYapeUrl(data.yape_image_url || '')
@@ -110,6 +112,7 @@ export default function ConfiguracionPage() {
         .from('profiles')
         .update({
           store_name: storeName,
+          slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || null,
           description: description,
           avatar_url: avatarUrl,
           yape_image_url: yapeUrl,
@@ -129,7 +132,11 @@ export default function ConfiguracionPage() {
       alert('✅ ¡Datos actualizados correctamente!')
 
     } catch (error: any) {
-      alert('Error guardando: ' + error.message)
+      if (error.code === '23505') {
+        alert('❌ Ese enlace ya está en uso por otra tienda. Por favor elige otro.')
+      } else {
+        alert('Error guardando: ' + error.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -178,6 +185,15 @@ export default function ConfiguracionPage() {
             <div className="space-y-2">
               <Label>Nombre de la Tienda</Label>
               <Input value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="Ej: Bodega Mark" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Enlace de tu Tienda (Slug)</Label>
+              <div className="flex items-center">
+                <span className="bg-slate-100 text-slate-500 px-3 py-2 border border-r-0 rounded-l-md text-sm whitespace-nowrap">linkventas.com/tienda/</span>
+                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="mi-nombre" className="rounded-l-none" />
+              </div>
+              <p className="text-xs text-slate-400">Solo minúsculas, números y guiones. Ejemplo: ropa-lima</p>
             </div>
 
             <div className="space-y-2">

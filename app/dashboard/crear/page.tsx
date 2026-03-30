@@ -2,26 +2,24 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { toast } from 'sonner'
+import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
 
 export default function CrearProducto() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
+  // Form Fields
   const [nombre, setNombre] = useState('')
   const [precio, setPrecio] = useState('')
   const [descripcion, setDescripcion] = useState('')
-  const [archivo, setArchivo] = useState<File | null>(null)
-  
-  // Advanced fields
   const [brand, setBrand] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
   const [isFreeShipping, setIsFreeShipping] = useState(false)
   const [shippingToday, setShippingToday] = useState(false)
+  
+  // Media handling
+  const [archivo, setArchivo] = useState<File | null>(null)
 
   const guardarProducto = async (e: any) => {
     e.preventDefault()
@@ -70,15 +68,10 @@ export default function CrearProducto() {
         imageUrl = publicData.publicUrl
       }
 
-      // Validate pricing logic
       const currentPrice = parseFloat(precio)
       const oldPrice = originalPrice ? parseFloat(originalPrice) : null
-      
-      if (oldPrice && oldPrice <= currentPrice) {
-         toast.warning('El Precio Original debería ser mayor al Precio Final para mostrar un descuento válido.')
-      }
 
-      // Save to DB
+      // Save to DB (Bodega initially)
       const { error: dbError } = await supabase
         .from('products')
         .insert({
@@ -101,158 +94,111 @@ export default function CrearProducto() {
       router.push('/dashboard/productos')
 
     } catch (error: any) {
-      toast.error(error.message || 'Ocurrió un error al publicar el producto')
+      toast.error(error.message || 'Ocurrió un error al guardar')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex justify-center py-10 px-4">
-      <Card className="w-full max-w-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-0">
-        <CardHeader className="border-b bg-white rounded-t-xl pb-8">
-          <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-500">
-            Nuevo Producto
-          </CardTitle>
-          <CardDescription className="text-base text-slate-500 mt-2">
-            Completa los detalles comerciales para activar tu tarjeta avanzada en el catálogo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-8 bg-white rounded-b-xl">
-          <form onSubmit={guardarProducto} className="space-y-8">
+    <div className="space-y-6 pb-12 relative w-full max-w-4xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
+        <div>
+          <button onClick={() => router.back()} className="text-primary flex items-center gap-2 mb-4 hover:brightness-125 transition-all text-sm font-bold uppercase tracking-widest">
+             <ArrowLeft size={16} /> Volver a Inventario
+          </button>
+          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Nuevo SKU</h1>
+          <p className="text-on-surface-variant">Agrega un nuevo producto a tu Bodega Maestra.</p>
+        </div>
+      </div>
 
-            {/* Basic Info */}
+      <div className="bg-surface-container-high rounded-2xl border border-outline-variant/10 shadow-2xl p-6 md:p-8">
+        <form onSubmit={guardarProducto} className="space-y-8">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                <span className="bg-slate-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">1</span>
-                Información Básica
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="nombre" className="text-slate-600">Nombre del Producto *</Label>
-                  <Input id="nombre" required value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Ej: Zapatillas Nike Air Max" className="h-11" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="marca" className="text-slate-600">Marca (Opcional)</Label>
-                  <Input id="marca" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Ej: NIKE" className="h-11 uppercase" />
-                  <p className="text-xs text-slate-400">Se mostrará como una etiqueta sobre el título.</p>
-                </div>
-
-                <div className="space-y-2">
-                   {/* Empty column for alignment if needed, or make Marca col-span-2. Let's make Marca full width too */}
-                </div>
-              </div>
+              <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Información Principal</h3>
               
               <div className="space-y-2">
-                <Label htmlFor="desc" className="text-slate-600">Descripción *</Label>
-                <textarea 
-                  id="desc" 
-                  required
-                  value={descripcion} 
-                  onChange={(e) => setDescripcion(e.target.value)} 
-                  placeholder="Detalles del producto, materiales, dimensiones..."
-                  className="w-full flex min-h-[100px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
-                />
+                <label className="text-xs font-bold text-primary uppercase tracking-widest">Nombre del Producto</label>
+                <input required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" />
               </div>
-            </div>
 
-            {/* Pricing Details */}
-            <div className="space-y-6 pt-6 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                <span className="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">2</span>
-                Precios y Descuentos
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="precio" className="text-slate-600">Precio Final / Oferta (S/) *</Label>
-                  <Input id="precio" type="number" required step="0.01" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder="0.00" className="h-11 border-blue-200 focus-visible:ring-blue-600" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="originalPrice" className="text-slate-600">Precio de Mercado (Para tachar)</Label>
-                  <Input id="originalPrice" type="number" step="0.01" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} placeholder="0.00" className="h-11" />
-                  <p className="text-xs text-slate-400">Deja en blanco si es precio regular. Si es mayor al Precio Final, se calculará el % descuento.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Fulfillment & Logistics */}
-            <div className="space-y-6 pt-6 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-green-600 uppercase tracking-widest flex items-center gap-2">
-                <span className="bg-green-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">3</span>
-                Logística Promocional
-              </h3>
-              
-              <div className="flex flex-col gap-4">
-                <label className="flex items-center justify-between p-4 border rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
-                  <div>
-                    <p className="font-semibold text-slate-900">Ofrecer Envío Gratis</p>
-                    <p className="text-xs text-slate-500">Agregará la insignia oscura "ENVÍO GRATIS" en tu catálogo.</p>
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={isFreeShipping} 
-                    onChange={(e) => setIsFreeShipping(e.target.checked)}
-                    className="w-5 h-5 accent-slate-900"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-4 border border-blue-100 rounded-lg bg-blue-50/50 cursor-pointer hover:bg-blue-50 transition-colors">
-                  <div>
-                    <p className="font-semibold text-blue-900">Entrega Inmediata (Envío Hoy)</p>
-                    <p className="text-xs text-blue-700/70">Muestra el rayo promocional "¡HOY!" en el producto y lo destaca en búsquedas urgentes.</p>
-                  </div>
-                  <input 
-                    type="checkbox" 
-                    checked={shippingToday} 
-                    onChange={(e) => setShippingToday(e.target.checked)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                </label>
-              </div>
-            </div>
-
-            {/* Media Upload */}
-            <div className="space-y-6 pt-6 border-t border-slate-100">
-               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                <span className="bg-slate-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">4</span>
-                Fotografía
-              </h3>
               <div className="space-y-2">
-                <Input
-                  id="foto"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      const file = e.target.files[0]
-                      if (!file.type.startsWith('image/')) {
-                        toast.error('Por favor selecciona una imagen válida.')
-                        e.target.value = ''
-                        return
-                      }
-                      setArchivo(file)
-                    }
-                  }}
-                  className="cursor-pointer h-12 py-3 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
+                <label className="text-xs font-bold text-primary uppercase tracking-widest">Marca (Badge)</label>
+                <input value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all uppercase" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-primary uppercase tracking-widest">Descripción Pública</label>
+                <textarea required value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all min-h-[120px] resize-y" />
               </div>
             </div>
 
-            <div className="flex gap-4 pt-8">
-              <Button type="button" variant="outline" className="w-1/3 h-12" onClick={() => router.back()}>
-                Cancelar
-              </Button>
-              <Button type="submit" className="w-2/3 h-12 bg-blue-600 hover:bg-blue-700 text-base" disabled={loading}>
-                {loading ? 'Subiendo a la Nube...' : 'Publicar Producto Ahora'}
-              </Button>
+            <div className="space-y-6">
+               <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Precios y Logística</h3>
+               
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-secondary uppercase tracking-widest">Precio Final (S/)</label>
+                    <input type="number" step="0.01" required value={precio} onChange={(e) => setPrecio(e.target.value)} className="w-full bg-surface-container-highest border border-secondary/30 rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary text-secondary font-bold p-3 transition-all text-xl" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Precio Tacha (S/)</label>
+                    <input type="number" step="0.01" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface-variant line-through p-3 transition-all text-xl" />
+                  </div>
+               </div>
+
+               <div className="space-y-4 pt-4">
+                  <label className="flex items-center justify-between p-4 border border-outline-variant/20 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors group">
+                    <div>
+                      <p className="font-bold text-on-surface">Ofrecer Envío Gratis</p>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Badge oscuro en catálogo</p>
+                    </div>
+                    <input type="checkbox" checked={isFreeShipping} onChange={(e) => setIsFreeShipping(e.target.checked)} className="w-5 h-5 accent-primary" />
+                  </label>
+
+                  <label className="flex items-center justify-between p-4 border border-secondary/20 rounded-xl bg-secondary/5 cursor-pointer hover:bg-secondary/10 transition-colors group">
+                    <div>
+                      <p className="font-bold text-secondary">Entrega Inmediata</p>
+                      <p className="text-[10px] text-secondary/60 uppercase tracking-widest mt-1">Etiqueta verde de emergencia</p>
+                    </div>
+                    <input type="checkbox" checked={shippingToday} onChange={(e) => setShippingToday(e.target.checked)} className="w-5 h-5 accent-secondary" />
+                  </label>
+               </div>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+
+          <div className="border-t border-outline-variant/10 pt-8 mt-8">
+            <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Fotografía Módulo</h3>
+            <div className="flex flex-col md:flex-row gap-6 items-center">
+               <div className="w-32 h-32 rounded-xl border border-outline-variant/20 bg-surface-container flex items-center justify-center overflow-hidden shrink-0">
+                  <ImageIcon className="text-on-surface-variant/30" size={32} />
+               </div>
+               <div className="flex-1 w-full">
+                 <p className="text-xs text-on-surface-variant mb-2">Sube una imagen o foto para identificarlo en Bodega.</p>
+                 <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) setArchivo(e.target.files[0])
+                    }}
+                    className="w-full cursor-pointer h-12 py-3 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-on-primary hover:file:brightness-110 text-on-surface"
+                  />
+               </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4 pt-8 border-t border-outline-variant/10">
+            <button type="button" onClick={() => router.back()} className="px-6 py-3 font-bold text-on-surface-variant hover:text-on-surface">
+              Descartar
+            </button>
+            <button type="submit" disabled={loading} className="px-8 py-3 bg-primary text-on-primary hover:brightness-110 font-bold rounded-xl shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center gap-2">
+              {loading ? 'Enviando a Bodega...' : <><Save size={18} /> Guardar en Bodega</>}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

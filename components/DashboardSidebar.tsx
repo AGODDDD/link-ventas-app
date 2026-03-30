@@ -16,11 +16,16 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
+  const [storeLink, setStoreLink] = useState<string | null>(null)
 
   useEffect(() => {
     const obtenerUsuario = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) setUserId(user.id)
+      if (user) {
+        setUserId(user.id)
+        const { data } = await supabase.from('profiles').select('slug').eq('id', user.id).single()
+        setStoreLink(data?.slug || user.id)
+      }
     }
     obtenerUsuario()
   }, [])
@@ -95,9 +100,9 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
         {/* FOOTER - USER PROFILE */}
         <div className="px-6 mt-auto">
           <Link
-            href={userId ? `/tienda/${userId}` : '#'}
+            href={storeLink ? `/tienda/${storeLink}` : '#'}
             target="_blank"
-            className={`text-on-surface-variant hover:text-primary flex items-center gap-3 py-3 transition-colors ${!userId && 'opacity-50 pointer-events-none'}`}
+            className={`text-on-surface-variant hover:text-primary flex items-center gap-3 py-3 transition-colors ${!storeLink && 'opacity-50 pointer-events-none'}`}
           >
             <span className="material-symbols-outlined text-[20px]">storefront</span>
             <span className="text-sm font-medium">Ver Tienda Pública</span>

@@ -1,5 +1,6 @@
 export interface Profile {
   id: string;
+  slug?: string;
   store_name?: string;
   description?: string;
   avatar_url?: string;

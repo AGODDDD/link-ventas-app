@@ -7,10 +7,11 @@ import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
 
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
   const { data: perfil } = await supabase
     .from('profiles')
     .select('store_name, description')
-    .eq('id', params.id)
+    .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
   return {
@@ -22,25 +23,37 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
 export default async function CatalogoPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
   
-  // Fetching
-  const [perfilRes, productosRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', params.id).single(),
-    supabase.from('products').select('*').eq('user_id', params.id).eq('is_active', true).order('created_at', { ascending: false })
-  ]);
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+
+  // Fetch Profile Secuencialmente por el ID o el Slug
+  const { data: perfilBase } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq(isUUID ? 'id' : 'slug', params.id)
+    .single();
   
-  const perfil = perfilRes.data as Profile | null;
-  const productos = (productosRes.data || []) as Product[];
+  const perfil = perfilBase as Profile | null;
 
   if (!perfil) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Tienda no encontrada 🛒</div>
   }
+
+  // Ahora sacamos los productos del UUID real
+  const { data: productosBase } = await supabase
+    .from('products')
+    .select('*')
+    .eq('user_id', perfil.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+    
+  const productos = (productosBase || []) as Product[];
 
   const storeName = perfil.store_name || "TU TIENDA";
 
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen flex flex-col pt-24">
       {/* TopAppBar */}
-      <StoreNavbarKinetic storeName={storeName} storeId={params.id} />
+      <StoreNavbarKinetic storeName={storeName} storeId={perfil.id} />
 
       {/* Main Content Canvas */}
       <main className="relative flex-grow overflow-hidden w-full">

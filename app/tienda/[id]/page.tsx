@@ -8,10 +8,13 @@ import LeadCaptureForm from '@/components/tienda/LeadCaptureForm'
 
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
+  
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+  
   const { data: perfil } = await supabase
     .from('profiles')
     .select('store_name, description')
-    .eq('id', params.id)
+    .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
   return {
@@ -23,13 +26,14 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
 export default async function TiendaPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
   
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+
   // Fetching
   const { data: perfil } = await supabase
     .from('profiles')
     .select('*')
-    .eq('id', params.id)
+    .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
-  
 
 
   if (!perfil) {
@@ -41,7 +45,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen">
       {/* TopAppBar */}
-      <StoreNavbarKinetic storeName={storeName} storeId={params.id} />
+      <StoreNavbarKinetic storeName={storeName} storeId={perfil.id} />
 
       {/* Main Content Canvas */}
       <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
@@ -85,7 +89,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
 
           {/* Right Column: Lead Gen Form with Overlap */}
           <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-            <LeadCaptureForm storeId={params.id} />
+            <LeadCaptureForm storeId={perfil.id} />
           </div>
         </div>
 

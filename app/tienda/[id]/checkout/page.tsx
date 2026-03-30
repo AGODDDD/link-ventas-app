@@ -37,10 +37,11 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         }
 
         const cargarPerfil = async () => {
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId);
             const { data } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', storeId)
+                .eq(isUUID ? 'id' : 'slug', storeId)
                 .single()
 
             if (data) setPerfil(data)
@@ -65,12 +66,14 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
         setSubmitting(true)
         try {
+            if (!perfil) throw new Error('Cargando datos de tienda... por favor intente de nuevo en un segundo')
+            
             let fileName = ''
 
             // 1. Subir Comprobante solo si es transferencia
             if (metodoPago === 'transferencia' && comprobante) {
                 const fileExt = comprobante.name.split('.').pop()
-                fileName = `${params.id}-${Date.now()}.${fileExt}`
+                fileName = `${perfil.id}-${Date.now()}.${fileExt}`
 
                 const { error: uploadError } = await supabase.storage
                     .from('comprobantes')
@@ -81,7 +84,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             // 2. Crear Orden
             const orderPayload = {
-                merchant_id: params.id,
+                merchant_id: perfil.id,
                 customer_name: nombre,
                 customer_phone: telefono,
                 customer_address: direccion,
