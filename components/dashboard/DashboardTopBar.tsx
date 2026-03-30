@@ -4,6 +4,7 @@ import { Search, Bell, PlusCircle, UserCircle, ShoppingBag, Check } from 'lucide
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 interface Notificacion {
     id: string;
@@ -71,6 +72,12 @@ export default function DashboardTopBar() {
                         leida: false
                     }
                     setNotificaciones(prev => [nuevaNotif, ...prev])
+
+                    // 3. Inyectar al Cerebro Central (Zustand) para auto-refrescar la tabla de Pedidos
+                    useDashboardStore.getState().agregarOrderLocal({
+                        ...nuevaOrden,
+                        order_items: [] // Los items se cargarán cuando el usuario abra el detalle
+                    })
                 }
             )
             .subscribe()

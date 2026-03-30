@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Eye, CheckCircle, Clock, X, Truck, Ban } from 'lucide-react'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 type Order = {
     id: string
@@ -16,36 +17,30 @@ type Order = {
 }
 
 export default function PedidosPage() {
-    const [orders, setOrders] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
+    const { orders, ordersCargadas, cargarOrders, actualizarEstadoOrderLocal } = useDashboardStore()
+    const [loading, setLoading] = useState(!ordersCargadas)
 
     // Estado para el Modal de Comprobante
     const [selectedProof, setSelectedProof] = useState<string | null>(null)
     const [proofLoading, setProofLoading] = useState(false)
 
-    const cargarPedidos = async () => {
+    useEffect(() => {
+        const init = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+            await cargarOrders(user.id)
+            setLoading(false)
+        }
+        init()
+    }, [cargarOrders])
+
+    const forceRefresh = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
-
-        const { data } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                order_items (
-                    *,
-                    products (name)
-                )
-            `)
-            .eq('merchant_id', user.id)
-            .order('created_at', { ascending: false })
-
-        if (data) setOrders(data)
+        setLoading(true)
+        await cargarOrders(user.id, true)
         setLoading(false)
     }
-
-    useEffect(() => {
-        cargarPedidos()
-    }, [])
 
     const actualizarEstado = async (id: string, nuevoEstado: string) => {
         const { error } = await supabase
@@ -54,7 +49,7 @@ export default function PedidosPage() {
             .eq('id', id)
 
         if (!error) {
-            setOrders(orders.map(o => o.id === id ? { ...o, status: nuevoEstado as any } : o))
+            actualizarEstadoOrderLocal(id, nuevoEstado)
         }
     }
 
@@ -105,7 +100,7 @@ export default function PedidosPage() {
                     <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Órdenes 📦</h1>
                     <p className="text-on-surface-variant">Gestión logística y control de transacciones.</p>
                 </div>
-                <button onClick={cargarPedidos} className="px-6 py-2 bg-surface-bright text-on-surface border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors font-semibold text-sm">
+                <button onClick={forceRefresh} className="px-6 py-2 bg-surface-bright text-on-surface border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors font-semibold text-sm">
                     Actualizar Lista
                 </button>
             </div>

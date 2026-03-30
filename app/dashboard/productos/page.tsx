@@ -3,33 +3,27 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { Trash2, Edit3, Image as ImageIcon, PlusCircle, Search } from 'lucide-react'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 export default function ProductosPage() {
     const router = useRouter()
-    const [productos, setProductos] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const { productos, productosCargados, cargarProductos, eliminarProductoLocal } = useDashboardStore()
+    const [loading, setLoading] = useState(!productosCargados)
     const [searchTerm, setSearchTerm] = useState('')
 
     useEffect(() => {
-        cargarProductos()
-    }, [])
-
-    const cargarProductos = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            router.push('/')
-            return
+        const init = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/')
+                return
+            }
+            // Esto tomará 0ms si ya estaban en caché (productosCargados)
+            await cargarProductos(user.id)
+            setLoading(false)
         }
-
-        const { data } = await supabase
-            .from('products')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-
-        if (data) setProductos(data)
-        setLoading(false)
-    }
+        init()
+    }, [cargarProductos, router])
 
     const borrarProducto = async (id: string, imageUrl: string) => {
         const confirmar = confirm('¿Borrar producto de la Bodega para siempre? ESTA ACCIÓN NO SE PUEDE DESHACER.')
@@ -49,7 +43,7 @@ export default function ProductosPage() {
                 .eq('id', id)
 
             if (error) throw error
-            setProductos(productos.filter(p => p.id !== id))
+            eliminarProductoLocal(id)
 
         } catch (error: any) {
             alert('Error al borrar: ' + error.message)
