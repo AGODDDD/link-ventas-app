@@ -14,12 +14,19 @@ export default function ClientCatalog({ initialProducts, perfil }: Props) {
   // State for filters
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [shippingTodayOnly, setShippingTodayOnly] = useState(false)
   const [sortOption, setSortOption] = useState('relevance')
 
   // Extract unique brands for the filter dropdown
   const brands = useMemo(() => {
     const unique = new Set(initialProducts.map(p => p.brand).filter(Boolean) as string[])
+    return Array.from(unique).sort()
+  }, [initialProducts])
+
+  // Extract unique categories
+  const categories = useMemo(() => {
+    const unique = new Set(initialProducts.map(p => p.category).filter(Boolean) as string[])
     return Array.from(unique).sort()
   }, [initialProducts])
 
@@ -42,7 +49,12 @@ export default function ClientCatalog({ initialProducts, perfil }: Props) {
       result = result.filter(p => p.brand === selectedBrand)
     }
 
-    // 3. Shipping Today Filter
+    // 3. Category Filter
+    if (selectedCategory) {
+      result = result.filter(p => p.category === selectedCategory)
+    }
+
+    // 4. Shipping Today Filter
     if (shippingTodayOnly) {
       result = result.filter(p => p.shipping_today)
     }
@@ -70,7 +82,7 @@ export default function ClientCatalog({ initialProducts, perfil }: Props) {
 
     return result
 
-  }, [initialProducts, searchQuery, selectedBrand, shippingTodayOnly, sortOption])
+  }, [initialProducts, searchQuery, selectedBrand, selectedCategory, shippingTodayOnly, sortOption])
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12">
@@ -81,8 +93,11 @@ export default function ClientCatalog({ initialProducts, perfil }: Props) {
 
       <CatalogFilters 
         brands={brands}
+        categories={categories}
         selectedBrand={selectedBrand}
         setSelectedBrand={setSelectedBrand}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
         shippingTodayOnly={shippingTodayOnly}
         setShippingTodayOnly={setShippingTodayOnly}
         sortOption={sortOption}

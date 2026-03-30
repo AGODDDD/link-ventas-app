@@ -5,8 +5,11 @@ import { Filter, ArrowUpDown } from 'lucide-react'
 
 interface Props {
   brands: string[];
+  categories: string[];
   selectedBrand: string;
   setSelectedBrand: (brand: string) => void;
+  selectedCategory: string;
+  setSelectedCategory: (cat: string) => void;
   shippingTodayOnly: boolean;
   setShippingTodayOnly: (val: boolean) => void;
   sortOption: string;
@@ -17,8 +20,11 @@ interface Props {
 
 export default function CatalogFilters({
   brands,
+  categories,
   selectedBrand,
   setSelectedBrand,
+  selectedCategory,
+  setSelectedCategory,
   shippingTodayOnly,
   setShippingTodayOnly,
   sortOption,
@@ -53,6 +59,15 @@ export default function CatalogFilters({
           >
             <option value="">MARCAS (Todas)</option>
             {brands.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+
+          <select 
+            className="bg-surface-variant border border-outline px-4 py-2 font-headline text-[10px] uppercase tracking-widest text-on-background appearance-none focus:border-primary outline-none font-bold shadow-sm"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">CATEGORÍAS (Todas)</option>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
           <label className="flex items-center gap-3 font-headline text-[10px] uppercase tracking-widest text-on-background bg-surface-variant border border-outline px-4 py-1.5 cursor-pointer font-bold shadow-sm shadow-primary/10">

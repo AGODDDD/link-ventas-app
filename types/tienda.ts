@@ -29,6 +29,7 @@ export interface Product {
   is_free_shipping?: boolean;
   shipping_today?: boolean;
   is_active?: boolean;
+  category?: string;
   rating?: number;
   reviews_count?: number;
 }

@@ -18,6 +18,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
   const [precio, setPrecio] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [brand, setBrand] = useState('')
+  const [category, setCategory] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
   const [isFreeShipping, setIsFreeShipping] = useState(false)
   const [shippingToday, setShippingToday] = useState(false)
@@ -44,6 +45,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
       setPrecio(data.price?.toString() || '')
       setDescripcion(data.description || '')
       setBrand(data.brand || '')
+      setCategory(data.category || '')
       setOriginalPrice(data.original_price?.toString() || '')
       setIsFreeShipping(!!data.is_free_shipping)
       setShippingToday(!!data.shipping_today)
@@ -96,6 +98,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           description: descripcion,
           image_url: imageUrl,
           brand: brand.toUpperCase() || null,
+          category: category || null,
           original_price: oldPrice,
           is_free_shipping: isFreeShipping,
           shipping_today: shippingToday,
@@ -147,6 +150,22 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
               <div className="space-y-2">
                 <label className="text-xs font-bold text-primary uppercase tracking-widest">Marca (Badge)</label>
                 <input value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all uppercase" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-primary uppercase tracking-widest">Categoría</label>
+                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all">
+                  <option value="">Sin categoría</option>
+                  <option value="Ropa">Ropa</option>
+                  <option value="Zapatos">Zapatos</option>
+                  <option value="Accesorios">Accesorios</option>
+                  <option value="Electrónica">Electrónica</option>
+                  <option value="Belleza">Belleza</option>
+                  <option value="Hogar">Hogar</option>
+                  <option value="Deportes">Deportes</option>
+                  <option value="Alimentos">Alimentos</option>
+                  <option value="Otros">Otros</option>
+                </select>
               </div>
 
               <div className="space-y-2">
