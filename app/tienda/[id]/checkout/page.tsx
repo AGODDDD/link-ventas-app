@@ -1,15 +1,14 @@
 'use client'
+
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Upload, CheckCircle2, QrCode, MapPin, Phone, User, ShieldCheck, ChevronRight, Store } from 'lucide-react'
+import { ArrowLeft, Upload, CheckCircle2, User, Phone, MapPin, QrCode, Wallet, ShoppingBag, ShieldCheck, Store } from 'lucide-react'
+
+type PaymentMethod = 'transferencia' | 'contra_entrega'
 
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise)
@@ -27,6 +26,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [nombre, setNombre] = useState('')
     const [telefono, setTelefono] = useState('')
     const [direccion, setDireccion] = useState('')
+    const [metodoPago, setMetodoPago] = useState<PaymentMethod>('transferencia')
     const [comprobante, setComprobante] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
@@ -61,31 +61,42 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!comprobante) return alert('Por favor sube la captura del pago')
+        if (metodoPago === 'transferencia' && !comprobante) return alert('POR FAVOR SUBE LA CAPTURA DEL PAGO PARA VERIFICAR')
 
         setSubmitting(true)
         try {
-            // 1. Subir Comprobante
-            const fileExt = comprobante.name.split('.').pop()
-            const fileName = `${params.id}-${Date.now()}.${fileExt}`
+            let fileName = ''
 
-            const { error: uploadError } = await supabase.storage
-                .from('comprobantes')
-                .upload(fileName, comprobante)
+            // 1. Subir Comprobante solo si es transferencia
+            if (metodoPago === 'transferencia' && comprobante) {
+                const fileExt = comprobante.name.split('.').pop()
+                fileName = `${params.id}-${Date.now()}.${fileExt}`
 
-            if (uploadError) throw uploadError
+                const { error: uploadError } = await supabase.storage
+                    .from('comprobantes')
+                    .upload(fileName, comprobante)
+
+                if (uploadError) throw uploadError
+            }
 
             // 2. Crear Orden
+            const orderPayload = {
+                merchant_id: params.id,
+                customer_name: nombre,
+                customer_phone: telefono,
+                customer_address: direccion,
+                total_amount: total,
+                status: metodoPago === 'contra_entrega' ? 'pending' : 'paid', // Against delivery is pending validation on door, transfers require manual checking but let's say pending for both until merchant clears. Actually, pending for transferred as the merchant must verify the voucher. 
+            }
+            // Add custom field mapping for payment method if the DB supported it, for now we map it conceptually.
+            // Assuming DB has 'status', both start as 'pending'.
+            
             const { data: orderData, error: orderError } = await supabase
                 .from('orders')
                 .insert({
-                    merchant_id: params.id,
-                    customer_name: nombre,
-                    customer_phone: telefono,
-                    customer_address: direccion,
-                    total_amount: total,
-                    status: 'pending',
-                    payment_proof_url: fileName,
+                    ...orderPayload,
+                    status: 'pending', 
+                    payment_proof_url: fileName || 'CONTRA_ENTREGA',
                 })
                 .select()
                 .single()
@@ -108,154 +119,231 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             // 4. Limpiar y Redirigir
             cartStore.clearCart(storeId)
-            alert('¡Fantástico! Pedido enviado.')
+            alert('¡PEDIDO REGISTRADO EXITOSAMENTE!')
             router.push(`/tienda/${storeId}`)
 
         } catch (error: any) {
             console.error(error)
-            alert('Error: ' + error.message)
+            alert('ERROR: ' + error.message)
         } finally {
             setSubmitting(false)
         }
     }
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50">Cargando...</div>
+    if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-primary font-headline font-black italic text-2xl uppercase tracking-widest">CARGANDO SECUENCIA_</div>
 
-    const primaryColor = perfil?.primary_color || '#000000'
-    const secondaryColor = perfil?.secondary_color || '#C31432'
+    const storeName = perfil?.store_name || "TU TIENDA"
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+        <div className="min-h-screen bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container font-body flex flex-col md:flex-row">
 
             {/* LEFT: FORMULARIO */}
-            <div className="flex-1 p-6 md:p-12 lg:p-16 overflow-y-auto order-2 md:order-1">
-                <div className="max-w-xl mx-auto space-y-8">
+            <div className="flex-1 p-6 md:p-12 lg:p-16 overflow-y-auto order-2 md:order-1 relative">
+                
+                {/* Background Grid Pattern */}
+                <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,59,48,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,48,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+                <div className="max-w-xl mx-auto space-y-12 relative z-10">
                     {/* Header Mobile */}
-                    <div className="flex items-center gap-4 mb-8">
-                        <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full hover:bg-slate-200">
+                    <div className="flex items-center gap-6 mb-8 border-b border-outline pb-6">
+                        <button onClick={() => router.back()} className="text-on-background hover:text-primary transition-colors bg-surface-variant p-2 border border-outline">
                             <ArrowLeft size={24} />
-                        </Button>
-                        <h1 className="text-2xl font-bold text-slate-900">Finalizar Compra</h1>
+                        </button>
+                        <div>
+                            <p className="font-label text-[10px] uppercase tracking-widest text-primary mb-1">PAGO SEGURO // {storeName}</p>
+                            <h1 className="text-3xl font-black font-headline uppercase tracking-tighter italic">FINALIZAR COMPRA</h1>
+                        </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-10">
+                    <form onSubmit={handleSubmit} className="space-y-12">
                         {/* 1. Datos de Envío */}
-                        <section className="space-y-4">
-                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
-                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</div>
-                                Tus Datos
-                            </h2>
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <Label>Nombre Completo</Label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-3 text-slate-400" size={18} />
-                                        <Input className="pl-10 bg-white h-11" required value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan Pérez" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>WhatsApp / Teléfono</Label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-3 top-3 text-slate-400" size={18} />
-                                        <Input className="pl-10 bg-white h-11" required type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 999 123 456" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Dirección de Entrega</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-3 top-3 text-slate-400" size={18} />
-                                        <Input className="pl-10 bg-white h-11" required value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Ej: Av. Principal 123, Lima" />
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        <Separator />
-
-                        {/* 2. Pago */}
                         <section className="space-y-6">
-                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
-                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</div>
-                                Realiza el Pago
+                            <h2 className="text-xl font-black font-headline uppercase tracking-widest flex items-center gap-4 text-on-background mb-6 border-l-4 border-primary pl-4">
+                                <span className="text-primary italic">01.</span> TUS DATOS DE ENTREGA
                             </h2>
-
-                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                                <p className="text-sm text-slate-600 text-center">Escanea un código QR para pagar <strong>S/ {total.toFixed(2)}</strong></p>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    {perfil?.yape_image_url && (
-                                        <div className="text-center space-y-2">
-                                            <div className="bg-purple-50 p-2 rounded-lg border border-purple-100">
-                                                <img src={perfil.yape_image_url} className="w-full object-contain rounded-md" alt="Yape" />
-                                            </div>
-                                            <span className="text-xs font-bold text-purple-700">YAPE</span>
+                            <div className="grid gap-6">
+                                <div className="space-y-2">
+                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">NOMBRE Y APELLIDO</label>
+                                    <div className="relative">
+                                        <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
+                                            <User size={18} />
                                         </div>
-                                    )}
-                                    {perfil?.plin_image_url && (
-                                        <div className="text-center space-y-2">
-                                            <div className="bg-cyan-50 p-2 rounded-lg border border-cyan-100">
-                                                <img src={perfil.plin_image_url} className="w-full object-contain rounded-md" alt="Plin" />
-                                            </div>
-                                            <span className="text-xs font-bold text-cyan-700">PLIN</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {!perfil?.yape_image_url && !perfil?.plin_image_url && (
-                                    <div className="text-center p-4 bg-yellow-50 text-yellow-800 rounded-lg text-sm">
-                                        El vendedor no ha configurado sus QRs de pago aún.
+                                        <input 
+                                            className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
+                                            required 
+                                            value={nombre} 
+                                            onChange={e => setNombre(e.target.value)} 
+                                            placeholder="EJ: JANE DOE" 
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        </section>
-
-                        {/* 3. Comprobante */}
-                        <section className="space-y-4">
-                            <h2 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
-                                <div className="bg-slate-900 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</div>
-                                Sube la Captura
-                            </h2>
-
-                            <div className="space-y-2">
-                                <Label>Comprobante de Pago</Label>
-                                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer relative bg-white">
-                                    {previewUrl ? (
-                                        <div className="relative w-full">
-                                            <img src={previewUrl} className="max-h-48 mx-auto rounded-lg shadow-sm" />
-                                            <div className="absolute top-2 right-2 bg-green-500 text-white p-1 rounded-full"><CheckCircle2 size={16} /></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">TELÉFONO / WHATSAPP</label>
+                                    <div className="relative">
+                                        <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
+                                            <Phone size={18} />
                                         </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <div className="bg-slate-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto text-slate-400">
-                                                <Upload size={24} />
-                                            </div>
-                                            <p className="text-sm font-medium text-slate-600">Haz tap para subir foto</p>
-                                            <p className="text-xs text-slate-400">JPG, PNG, JPEG</p>
+                                        <input 
+                                            className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
+                                            required 
+                                            type="tel" 
+                                            value={telefono} 
+                                            onChange={e => setTelefono(e.target.value)} 
+                                            placeholder="EJ: 999 123 456" 
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">DIRECCIÓN COMPLETA DE ENTREGA</label>
+                                    <div className="relative">
+                                        <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
+                                            <MapPin size={18} />
                                         </div>
-                                    )}
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                        onChange={handleFileChange}
-                                        required
-                                    />
+                                        <input 
+                                            className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
+                                            required 
+                                            value={direccion} 
+                                            onChange={e => setDireccion(e.target.value)} 
+                                            placeholder="AV. PRINCIPAL 123, DISTRITO" 
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </section>
 
-                        <div className="pt-4 pb-12">
+                        {/* 2. Método de Pago */}
+                        <section className="space-y-6">
+                            <h2 className="text-xl font-black font-headline uppercase tracking-widest flex items-center gap-4 text-on-background border-l-4 border-primary pl-4">
+                                <span className="text-primary italic">02.</span> MÉTODO DE PAGO
+                            </h2>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Option A */}
+                                <label 
+                                    className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 ${metodoPago === 'transferencia' ? 'border-primary bg-primary/5' : 'border-outline/50 bg-surface-variant hover:border-outline'}`}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="metodopago" 
+                                        value="transferencia" 
+                                        checked={metodoPago === 'transferencia'}
+                                        onChange={() => setMetodoPago('transferencia')}
+                                        className="absolute opacity-0" 
+                                    />
+                                    <QrCode size={24} className={metodoPago === 'transferencia' ? 'text-primary' : 'text-on-surface-variant'} />
+                                    <span className={`font-headline font-bold uppercase ${metodoPago === 'transferencia' ? 'text-primary' : 'text-on-background'}`}>YAPE / PLIN / TRANSFERENCIA</span>
+                                    {metodoPago === 'transferencia' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5"><CheckCircle2 size={16}/></span>}
+                                </label>
+
+                                {/* Option B */}
+                                <label 
+                                    className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 ${metodoPago === 'contra_entrega' ? 'border-primary bg-primary/5' : 'border-outline/50 bg-surface-variant hover:border-outline'}`}
+                                >
+                                    <input 
+                                        type="radio" 
+                                        name="metodopago" 
+                                        value="contra_entrega" 
+                                        checked={metodoPago === 'contra_entrega'}
+                                        onChange={() => setMetodoPago('contra_entrega')}
+                                        className="absolute opacity-0" 
+                                    />
+                                    <Wallet size={24} className={metodoPago === 'contra_entrega' ? 'text-primary' : 'text-on-surface-variant'} />
+                                    <span className={`font-headline font-bold uppercase ${metodoPago === 'contra_entrega' ? 'text-primary' : 'text-on-background'}`}>PAGO CONTRA ENTREGA (EFECTIVO)</span>
+                                    {metodoPago === 'contra_entrega' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5"><CheckCircle2 size={16}/></span>}
+                                </label>
+                            </div>
+                        </section>
+
+                        {/* 3. Escaneo y Voucher Condicional */}
+                        {metodoPago === 'transferencia' && (
+                            <section className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-300">
+                                <h2 className="text-xl font-black font-headline uppercase tracking-widest flex items-center gap-4 text-on-background border-l-4 border-primary pl-4">
+                                    <span className="text-primary italic">03.</span> ESCANEO Y VOUCHER
+                                </h2>
+
+                                <div className="bg-surface-variant p-6 border border-outline space-y-6 relative overflow-hidden">
+                                     {/* Fake barcode for aesthetic */}
+                                    <div className="absolute -right-16 -top-16 opacity-5 rotate-45 pointer-events-none">
+                                        <div className="flex gap-1 h-64">
+                                            <div className="w-2 bg-primary" /><div className="w-1 bg-primary" /><div className="w-4 bg-primary" /><div className="w-2 bg-primary" /><div className="w-6 bg-primary" /><div className="w-1 bg-primary" />
+                                        </div>
+                                    </div>
+
+                                    <p className="font-body text-sm text-on-surface-variant uppercase tracking-widest">
+                                        Total a transferir: <strong className="text-primary font-headline text-lg italic">S/ {total.toFixed(2)}</strong>
+                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {perfil?.yape_image_url && (
+                                            <div className="text-center bg-background border border-outline p-4 space-y-4">
+                                                <div className="aspect-square w-full relative">
+                                                    <img src={perfil.yape_image_url} className="absolute inset-0 w-full h-full object-contain" alt="Yape" />
+                                                </div>
+                                                <span className="font-headline font-black text-white bg-[#742284] px-4 py-1 inline-block uppercase tracking-widest">YAPE</span>
+                                            </div>
+                                        )}
+                                        {perfil?.plin_image_url && (
+                                            <div className="text-center bg-background border border-outline p-4 space-y-4">
+                                                <div className="aspect-square w-full relative">
+                                                    <img src={perfil.plin_image_url} className="absolute inset-0 w-full h-full object-contain" alt="Plin" />
+                                                </div>
+                                                <span className="font-headline font-black text-white bg-[#00E0D1] px-4 py-1 inline-block uppercase tracking-widest">PLIN</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {!perfil?.yape_image_url && !perfil?.plin_image_url && (
+                                        <div className="text-center p-4 bg-primary/10 border border-primary text-primary font-headline font-bold uppercase tracking-widest">
+                                            EL VENDEDOR AÚN NO HA CONFIGURADO SUS MÉTODOS DE PAGO / QRS.
+                                        </div>
+                                    )}
+
+                                    {/* Subir Comprobante */}
+                                    <div className="space-y-2 mt-8">
+                                        <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">SUBIR COMPROBANTE DE PAGO [REQUERIDO]</label>
+                                        <div className="border border-dashed border-primary bg-background p-6 hover:bg-primary/5 transition-colors cursor-pointer relative group">
+                                            {previewUrl ? (
+                                                <div className="relative w-full aspect-video flex items-center justify-center bg-black">
+                                                    <img src={previewUrl} className="max-h-full max-w-full object-contain opacity-80" />
+                                                    <div className="absolute top-2 right-2 bg-primary text-on-primary px-2 py-1 flex items-center gap-2 font-headline font-bold text-xs uppercase tracking-widest">
+                                                        <CheckCircle2 size={16} /> SUBIDO
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 pointer-events-none">
+                                                    <div className="bg-surface-variant w-16 h-16 rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                        <Upload size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-headline font-bold uppercase text-on-background tracking-widest">HAZ CLIC PARA SUBIR CAPTURA</p>
+                                                        <p className="font-label text-xs text-on-surface-variant tracking-widest mt-1">SOPORTE: JPG, PNG</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                onChange={handleFileChange}
+                                                required={metodoPago === 'transferencia'}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        <div className="pt-8 border-t border-outline">
                             <Button
                                 type="submit"
-                                style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}
-                                className="w-full h-14 text-lg text-white rounded-xl shadow-xl transition-transform active:scale-[0.99] border-0 hover:opacity-90"
+                                className="w-full h-16 bg-primary hover:bg-primary/80 text-on-primary rounded-none font-headline font-black text-xl tracking-widest uppercase transition-transform active:scale-[0.98]"
                                 disabled={submitting}
                             >
-                                {submitting ? 'Procesando...' : `Pagar S/ ${total.toFixed(2)}`}
+                                {submitting ? 'PROCESANDO TRANSACCION...' : `CONFIRMAR ORDEN POR S/ ${total.toFixed(2)}`}
                             </Button>
 
-                            <p className="text-center text-xs text-slate-400 mt-4 flex justify-center items-center gap-1">
-                                <ShieldCheck size={12} /> Pagos procesados seguramente por LinkVentas
+                            <p className="text-center font-label text-[10px] text-on-surface-variant/50 uppercase tracking-widest mt-6 flex justify-center items-center gap-2">
+                                <ShieldCheck size={14} /> SEGURIDAD KINETIC · PAGOS ENCRIPTADOS
                             </p>
                         </div>
                     </form>
@@ -263,44 +351,53 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             </div>
 
             {/* RIGHT: RESUMEN (Sticky on Desktop) */}
-            <div className="hidden md:block w-96 bg-white border-l border-slate-200 p-8 lg:p-12 sticky top-0 h-screen overflow-y-auto order-1 md:order-2">
-                <div className="space-y-6">
-                    <div className="flex items-center justify-between pb-6 border-b border-slate-100">
-                        <h3 className="font-bold text-slate-900">Resumen del Pedido</h3>
-                        <span className="text-sm text-slate-500">{cart.reduce((a, b) => a + b.quantity, 0)} items</span>
+            <div className="hidden md:block w-[400px] lg:w-[450px] bg-surface-variant border-l border-outline p-8 lg:p-12 sticky top-0 h-screen overflow-y-auto order-1 md:order-2">
+                <div className="space-y-8">
+                    <div className="flex items-center justify-between pb-6 border-b border-outline">
+                        <div className="flex items-center gap-3 text-primary">
+                            <ShoppingBag size={24} />
+                            <h3 className="font-black font-headline uppercase tracking-widest italic text-xl">RESUMEN</h3>
+                        </div>
+                        <span className="bg-primary text-on-primary px-3 py-1 font-headline font-bold text-xs">{cart.reduce((a, b) => a + b.quantity, 0)} ITEMS</span>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {cart.map((item) => (
-                            <div key={item.product.id} className="flex gap-4">
-                                <div className="h-16 w-16 bg-slate-100 rounded-md overflow-hidden shrink-0">
+                            <div key={item.product.id} className="flex gap-4 group">
+                                <div className="h-20 w-20 bg-background border border-outline relative shrink-0">
                                     {item.product.image_url ? (
-                                        <img src={item.product.image_url} className="h-full w-full object-cover" />
+                                        <img src={item.product.image_url} className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                     ) : (
-                                        <Store className="h-full w-full p-4 text-slate-300" />
+                                        <Store className="h-full w-full p-4 text-outline" />
                                     )}
+                                    <div className="absolute -top-2 -right-2 bg-on-background text-background font-headline font-bold text-[10px] w-5 h-5 flex items-center justify-center">
+                                        {item.quantity}
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-900 line-clamp-2">{item.product.name}</p>
-                                    <p className="text-sm text-slate-500">Cant: {item.quantity}</p>
+                                <div className="flex-1 min-w-0 py-1">
+                                    <p className="font-headline font-bold uppercase text-sm leading-tight text-on-background line-clamp-2">{item.product.name}</p>
+                                    <p className="font-headline text-primary font-black mt-2 tracking-tighter italic text-lg">
+                                        S/ {(item.product.price * item.quantity).toFixed(2)}
+                                    </p>
                                 </div>
-                                <p className="text-sm font-semibold text-slate-900">S/ {(item.product.price * item.quantity).toFixed(2)}</p>
                             </div>
                         ))}
                     </div>
 
-                    <div className="pt-6 border-t border-slate-100 space-y-4">
-                        <div className="flex justify-between text-slate-500">
-                            <span>Subtotal</span>
+                    <div className="pt-8 border-t border-outline space-y-4">
+                        <div className="flex justify-between font-label text-xs uppercase tracking-widest text-on-surface-variant">
+                            <span>SUBTOTAL</span>
                             <span>S/ {total.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between text-slate-500">
-                            <span>Envío</span>
-                            <span className="text-green-600 font-medium">Gratis</span>
+                        <div className="flex justify-between font-label text-xs uppercase tracking-widest text-on-surface-variant">
+                            <span>GASTOS DE ENVÍO</span>
+                            <span className="text-primary font-bold">--</span>
                         </div>
-                        <div className="flex justify-between text-xl font-bold text-slate-900 pt-4 border-t border-slate-100">
-                            <span>Total</span>
-                            <span>S/ {total.toFixed(2)}</span>
+                        <div className="flex justify-between items-end pt-6 border-t border-outline mt-6">
+                            <span className="font-headline font-bold text-on-surface-variant uppercase tracking-widest">TOTAL</span>
+                            <span className="font-headline font-black text-4xl text-on-background tracking-tighter italic">
+                                S/ {total.toFixed(2)}
+                            </span>
                         </div>
                     </div>
                 </div>

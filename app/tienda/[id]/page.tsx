@@ -83,16 +83,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
           </div>
 
           {/* Right Column: Lead Gen Form with Overlap */}
-          <div className="lg:col-span-5 relative">
-            <div className="absolute -top-32 -left-20 w-80 h-80 hidden xl:block z-0 opacity-40 mix-blend-screen pointer-events-none">
-              <Image 
-                alt="Woman with shopping bags" 
-                className="object-cover w-full h-full" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgb0wIlzJugZ2QY_sqyzpFLws68eAsSQuoq2f9I4WclgcIdO1Njtsi7sbj0pQcyiAeb6V0GQscd6kGQm4hLihtRYI9mZffVDfU0QTq4kM9JHwQArRhWGxDFRKUxbArL-ij7Kj1hL5u0YdotSDF9mzOWi6PjQjll-2-bRb5VP2zTtDYvVnJtR4NElkH44rpPlCMCCvdODpXlRqM-EO_jxlxLDsiiBFuKnT5RrfJwR6zkE0q-IMHj2W_PMHHfwPZ-AkB1Tr271DVXBHO"
-                fill
-                priority
-              />
-            </div>
+          <div className="lg:col-span-5 relative mt-8 lg:mt-0">
             <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,59,48,0.1)] border border-white/5">
               <h2 className="font-headline font-bold text-3xl mb-8 tracking-tighter uppercase italic">SUSCRÍBETE Y ANTICÍPATE</h2>
               <form className="space-y-6" action="#">

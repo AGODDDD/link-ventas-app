@@ -1,8 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ShoppingBag } from 'lucide-react'
+import { useCartStore } from '@/store/useCartStore'
+import SlideOverCart from './SlideOverCart'
 
 export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: string, storeId: string }) {
   const pathname = usePathname()
@@ -13,6 +16,16 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
     { name: 'OFERTAS', href: `/tienda/${storeId}#ofertas` },
     { name: 'CONTACTO', href: '#contacto' },
   ]
+
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const cartStore = useCartStore()
+  const cart = cartStore.carts[storeId] || []
+  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,59,48,0.06)]">
@@ -41,13 +54,28 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
             )
           })}
         </div>
-        <Link 
-          href={`/tienda/${storeId}/catalogo`}
-          className="bg-primary-container text-on-primary-container px-6 py-2 font-headline font-bold uppercase tracking-widest text-sm hover:scale-105 transition-transform duration-200 active:scale-95 text-center flex items-center justify-center cursor-pointer"
-        >
-          ¡COMPRAR AHORA!
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link 
+            href={`/tienda/${storeId}/catalogo`}
+            className="hidden sm:flex bg-primary-container text-on-primary-container px-6 py-2 font-headline font-bold uppercase tracking-widest text-sm hover:scale-105 transition-transform duration-200 active:scale-95 text-center items-center justify-center cursor-pointer"
+          >
+            ¡COMPRAR AHORA!
+          </Link>
+          
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 bg-surface-variant text-on-background hover:text-primary transition-colors duration-200 border border-outline hover:border-primary active:scale-95 flex items-center justify-center"
+          >
+            <ShoppingBag size={20} />
+            {mounted && totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-primary text-on-primary text-[10px] font-black font-headline w-5 h-5 flex items-center justify-center border border-background">
+                {totalItems}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+      <SlideOverCart storeId={storeId} isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   )
 }
