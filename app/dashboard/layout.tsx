@@ -33,10 +33,8 @@ export default function DashboardLayout({
         onClose={() => setSidebarOpen(false)} 
       />
 
-      {/* 3. TOP BAR (Solo Desktop o flotante) */}
-      <div className="hidden md:block">
-         <DashboardTopBar />
-      </div>
+      {/* 3. TOP BAR + ANTENA WEBSOCKET (Siempre montado para capturar ventas en vivo) */}
+      <DashboardTopBar />
 
       {/* 4. EL CONTENIDO PRINCIPAL */}
       {/* En desktop tiene margen izquierdo (ml-64) y padding superior (pt-24) por el TopBar extra. */}
