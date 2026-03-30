@@ -82,33 +82,32 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 if (uploadError) throw uploadError
             }
 
-            // 2. Crear Orden
+            // 2. Crear Orden (Generamos ID manualmente para evitar error de `.select()` en RLS)
+            const orderId = crypto.randomUUID()
+
             const orderPayload = {
+                id: orderId,
                 merchant_id: perfil.id,
                 customer_name: nombre,
                 customer_phone: telefono,
                 customer_address: direccion,
                 total_amount: total,
-                status: metodoPago === 'contra_entrega' ? 'pending' : 'paid', // Against delivery is pending validation on door, transfers require manual checking but let's say pending for both until merchant clears. Actually, pending for transferred as the merchant must verify the voucher. 
+                status: metodoPago === 'contra_entrega' ? 'pending' : 'paid', 
             }
-            // Add custom field mapping for payment method if the DB supported it, for now we map it conceptually.
-            // Assuming DB has 'status', both start as 'pending'.
             
-            const { data: orderData, error: orderError } = await supabase
+            const { error: orderError } = await supabase
                 .from('orders')
                 .insert({
                     ...orderPayload,
                     status: 'pending', 
                     payment_proof_url: fileName || 'CONTRA_ENTREGA',
                 })
-                .select()
-                .single()
 
             if (orderError) throw orderError
 
             // 3. Crear Items
             const orderItems = cart.map(item => ({
-                order_id: orderData.id,
+                order_id: orderId,
                 product_id: item.product.id,
                 quantity: item.quantity,
                 price: item.product.price
