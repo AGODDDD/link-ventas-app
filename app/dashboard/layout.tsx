@@ -4,7 +4,6 @@ import DashboardSidebar from '@/components/DashboardSidebar'
 import { useState } from 'react'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Toaster } from 'sonner'
 import RealtimeSalesTracker from '@/components/dashboard/RealtimeSalesTracker'
 
 export default function DashboardLayout({
@@ -18,7 +17,6 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       
       {/* 0. Listeners and Providers */}
-      <Toaster richColors position="top-right" duration={4000} />
       <RealtimeSalesTracker />
 
       {/* 1. BARRA SUPERIOR MÓVIL (Solo visible en celular) */}

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { Profile } from '@/types/tienda'
 import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
 import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
+import LeadCaptureForm from '@/components/tienda/LeadCaptureForm'
 
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
@@ -84,45 +85,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
 
           {/* Right Column: Lead Gen Form with Overlap */}
           <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-            <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,59,48,0.1)] border border-white/5">
-              <h2 className="font-headline font-bold text-3xl mb-8 tracking-tighter uppercase italic">SUSCRÍBETE Y ANTICÍPATE</h2>
-              <form className="space-y-6" action="#">
-                <div className="space-y-1">
-                  <label className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim">Nombre</label>
-                  <input className="w-full bg-surface-container-highest border-none border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder:text-on-surface-variant/30 py-3 px-0 font-body transition-all" placeholder="Tu nombre completo" type="text" />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim">Teléfono</label>
-                  <input className="w-full bg-surface-container-highest border-none border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder:text-on-surface-variant/30 py-3 px-0 font-body transition-all" placeholder="+34 000 000 000" type="tel" />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim">Email</label>
-                  <input className="w-full bg-surface-container-highest border-none border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-on-surface placeholder:text-on-surface-variant/30 py-3 px-0 font-body transition-all" placeholder="hola@tuemail.com" type="email" />
-                </div>
-
-                <div className="space-y-4 pt-4">
-                  <p className="font-label text-[10px] uppercase tracking-widest text-primary-fixed-dim">ELIGE TU OFERTA ESPECIAL</p>
-                  <label className="flex items-center gap-4 cursor-pointer group">
-                    <div className="relative flex items-center justify-center">
-                      <input className="peer h-5 w-5 appearance-none border-2 border-primary rounded-none checked:bg-primary transition-all" name="offer" type="radio" />
-                      <span className="material-symbols-outlined absolute text-on-primary text-xs opacity-0 peer-checked:opacity-100">done</span>
-                    </div>
-                    <span className="font-body text-sm uppercase tracking-tight group-hover:text-primary transition-colors">50% de descuento</span>
-                  </label>
-                  <label className="flex items-center gap-4 cursor-pointer group">
-                    <div className="relative flex items-center justify-center">
-                      <input className="peer h-5 w-5 appearance-none border-2 border-primary rounded-none checked:bg-primary transition-all" name="offer" type="radio" />
-                      <span className="material-symbols-outlined absolute text-on-primary text-xs opacity-0 peer-checked:opacity-100">done</span>
-                    </div>
-                    <span className="font-body text-sm uppercase tracking-tight group-hover:text-primary transition-colors">Compra uno, llévate uno gratis</span>
-                  </label>
-                </div>
-
-                <button className="w-full bg-primary-container text-on-primary-container py-5 font-headline font-black text-xl tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-[0_20px_40px_rgba(255,59,48,0.3)]" type="button">
-                  SUSCRIBIRSE
-                </button>
-              </form>
-            </div>
+            <LeadCaptureForm storeId={params.id} />
           </div>
         </div>
 
