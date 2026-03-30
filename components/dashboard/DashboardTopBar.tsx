@@ -73,11 +73,8 @@ export default function DashboardTopBar() {
                     }
                     setNotificaciones(prev => [nuevaNotif, ...prev])
 
-                    // 3. Inyectar al Cerebro Central (Zustand) para auto-refrescar la tabla de Pedidos
-                    useDashboardStore.getState().agregarOrderLocal({
-                        ...nuevaOrden,
-                        order_items: [] // Los items se cargarán cuando el usuario abra el detalle
-                    })
+                    // 3. Forzar recarga completa desde la DB para actualizar TODAS las tablas
+                    useDashboardStore.getState().cargarOrders(userId, true)
                 }
             )
             .subscribe()
