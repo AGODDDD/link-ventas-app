@@ -1,34 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 export default function DashboardPage() {
-  const [ingresosTotales, setIngresosTotales] = useState(0)
-  const [pedidosTotales, setPedidosTotales] = useState(0)
+  const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
   const [leadsNuevos, setLeadsNuevos] = useState(0)
-  const [ordenesRecientes, setOrdenesRecientes] = useState<any[]>([])
+
+  // Estadísticas calculadas reactivamente desde el cerebro Zustand
+  const ingresosTotales = useMemo(() => {
+    return orders.reduce((acc, obj) => acc + parseFloat(obj.total_amount || 0), 0)
+  }, [orders])
+
+  const pedidosTotales = orders.length
+  const ordenesRecientes = orders.slice(0, 5)
 
   useEffect(() => {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Cargar Orders
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('merchant_id', user.id)
-        .order('created_at', { ascending: false })
+      // Cargar Orders al cerebro Zustand (0ms si ya están en caché)
+      await cargarOrders(user.id)
 
-      if (orders) {
-        setPedidosTotales(orders.length)
-        const ingresos = orders.reduce((acc, obj) => acc + parseFloat(obj.total_amount || 0), 0)
-        setIngresosTotales(ingresos)
-        setOrdenesRecientes(orders.slice(0, 5))
-      }
-
-      // Cargar Leads
+      // Cargar Leads (independiente)
       const { data: leads } = await supabase
         .from('store_leads')
         .select('id')
@@ -38,7 +34,7 @@ export default function DashboardPage() {
     }
     
     loadStats()
-  }, [])
+  }, [cargarOrders])
 
   return (
     <>
