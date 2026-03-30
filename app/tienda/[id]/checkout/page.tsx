@@ -21,6 +21,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [loading, setLoading] = useState(true)
     const [submitting, setSubmitting] = useState(false)
     const [perfil, setPerfil] = useState<Profile | null>(null)
+    const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null)
 
     // Form states
     const [nombre, setNombre] = useState('')
@@ -31,7 +32,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     useEffect(() => {
-        if (cart.length === 0) {
+        if (cart.length === 0 && !orderSuccessId) {
             router.push(`/tienda/${storeId}`)
             return;
         }
@@ -48,7 +49,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             setLoading(false)
         }
         cargarPerfil()
-    }, [storeId, router, cart.length])
+    }, [storeId, router, cart.length, orderSuccessId])
 
     const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
 
@@ -119,10 +120,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             if (itemsError) throw itemsError
 
-            // 4. Limpiar y Redirigir
+            // 4. Limpiar y Redirigir Pantalla
             cartStore.clearCart(storeId)
-            alert('¡PEDIDO REGISTRADO EXITOSAMENTE!')
-            router.push(`/tienda/${storeId}`)
+            setOrderSuccessId(orderId)
 
         } catch (error: any) {
             console.error(error)
@@ -133,6 +133,53 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     }
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-background text-primary font-headline font-black italic text-2xl uppercase tracking-widest">CARGANDO SECUENCIA_</div>
+
+    if (orderSuccessId) {
+        return (
+            <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen flex items-center justify-center p-4">
+                <div className="max-w-md w-full relative animate-in fade-in zoom-in duration-500">
+                    {/* Glow effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary via-on-background to-primary rounded-sm blur-md opacity-20 animate-pulse"></div>
+                    
+                    <div className="relative bg-surface border-2 border-outline p-8 md:p-12 text-center overflow-hidden shadow-2xl">
+                        {/* Cut corner brutalist style */}
+                        <div className="absolute top-0 right-0 w-8 h-8 bg-background transform rotate-45 translate-x-4 -translate-y-4 border-l-2 border-b-2 border-outline"></div>
+                        <div className="absolute bottom-0 left-0 w-8 h-8 bg-background transform rotate-45 -translate-x-4 translate-y-4 border-r-2 border-t-2 border-outline"></div>
+
+                        <div className="w-20 h-20 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6 border border-primary/20">
+                            <CheckCircle2 className="w-10 h-10 text-primary" />
+                        </div>
+                        
+                        <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary mb-2">ORDEN EN CAJA</p>
+                        <h1 className="text-4xl font-black font-headline uppercase tracking-tight italic mb-2">ÓRDEN<br/>RECIBIDA</h1>
+                        
+                        <div className="bg-surface-variant p-4 my-8 border border-outline border-dashed">
+                            <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest mb-1">CÓDIGO DE RASTREO</p>
+                            <p className="font-mono text-3xl font-black text-on-surface">#{orderSuccessId.split('-')[0].toUpperCase()}</p>
+                        </div>
+                        
+                        <div className="space-y-4 mb-8 text-sm text-on-surface-variant text-left leading-relaxed">
+                            <p className="flex items-start gap-2">
+                                <ShieldCheck className="w-5 h-5 shrink-0 text-primary" /> 
+                                <span>Tu pedido ha ingresado con éxito a la bóveda de la tienda principal.</span>
+                            </p>
+                            <p className="flex items-start gap-2">
+                                <Phone className="w-5 h-5 shrink-0 text-on-surface" /> 
+                                <span>Nuestro equipo procesará los datos y <strong className="text-on-surface font-black">te contactaremos por WhatsApp</strong> en breve para coordinar la entrega.</span>
+                            </p>
+                        </div>
+
+                        <Button 
+                            onClick={() => router.push(`/tienda/${storeId}`)}
+                            className="w-full bg-on-background text-background hover:bg-primary hover:text-on-primary h-14 font-headline uppercase tracking-widest font-black transition-all"
+                        >
+                            <Store className="mr-2" /> VOLVER A LA VITRINA
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     const storeName = perfil?.store_name || "TU TIENDA"
 
