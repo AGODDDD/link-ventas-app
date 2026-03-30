@@ -1,0 +1,118 @@
+@theme inline {
+  --color-tertiary-fixed: var(--tertiary-fixed);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-inverse-primary: var(--inverse-primary);
+  --color-surface: var(--surface);
+  --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-tertiary-dim: var(--tertiary-dim);
+  --color-on-secondary-fixed: var(--on-secondary-fixed);
+  --color-surface-dim: var(--surface-dim);
+  --color-outline-variant: var(--outline-variant);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-secondary-dim: var(--secondary-dim);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-tertiary: var(--tertiary);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-primary-fixed: var(--primary-fixed);
+  --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+  --color-primary-dim: var(--primary-dim);
+  --color-error-dim: var(--error-dim);
+  --color-error-container: var(--error-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-error: var(--error);
+  --color-surface-variant: var(--surface-variant);
+  --color-primary-container: var(--primary-container);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-on-primary-fixed-variant: var(--on-primary-fixed-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-surface-tint: var(--surface-tint);
+  --color-on-error: var(--on-error);
+  --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+  --color-on-error-container: var(--on-error-container);
+  --color-on-primary-fixed: var(--on-primary-fixed);
+  --color-secondary-fixed: var(--secondary-fixed);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+}
+
+.dashboard-theme {
+    /* 
+      DARK PREMIUM PALETTE 
+      Isolates the dashboard strictly from the rest of the generic storefront tailwind settings
+    */
+    --primary: #c0c1ff;
+    --on-primary: #2724b8;
+    --primary-container: #2f2ebe;
+    --on-primary-container: #ccccff;
+    
+    --secondary: #06b77f;
+    --on-secondary: #002919;
+    --secondary-container: #00452d;
+    --on-secondary-container: #45d79c;
+    
+    --tertiary: #ffb148;
+    --on-tertiary: #573500;
+    --tertiary-container: #f8a010;
+    --on-tertiary-container: #4a2c00;
+    
+    --background: #0e0e11;
+    --on-background: #e6e4ef;
+    --surface: #0e0e11;
+    --on-surface: #e6e4ef;
+    
+    --surface-variant: #25252d;
+    --on-surface-variant: #abaab5;
+    --outline: #75747e;
+    --outline-variant: #474750;
+    
+    --surface-bright: #2b2b35;
+    --surface-dim: #0e0e11;
+    --surface-container-lowest: #000000;
+    --surface-container-low: #131317;
+    --surface-container: #19191f;
+    --surface-container-high: #1f1f26;
+    --surface-container-highest: #25252d;
+    
+    --error: #ec7c8a;
+    --on-error: #490013;
+    --error-container: #7f2737;
+    --on-error-container: #ff97a3;
+
+    /* Additional specific tailwind V4 variants for the design */
+    --tertiary-fixed: #f8a010;
+    --inverse-primary: #494bd7;
+    --on-tertiary-fixed: #2a1700;
+    --tertiary-fixed-dim: #e79400;
+    --tertiary-dim: #e79400;
+    --on-secondary-fixed: #004930;
+    --primary-fixed-dim: #d1d0ff;
+    --secondary-dim: #00b47d;
+    --on-tertiary-fixed-variant: #563400;
+    --primary-fixed: #e1e0ff;
+    --on-secondary-fixed-variant: #006947;
+    --primary-dim: #b0b2ff;
+    --error-dim: #b95463;
+    --on-primary-fixed-variant: #4647d3;
+    --inverse-surface: #fcf8fd;
+    --surface-tint: #c0c1ff;
+    --secondary-fixed-dim: #5fedb0;
+    --on-primary-fixed: #2622b7;
+    --secondary-fixed: #6ffbbe;
+    --inverse-on-surface: #555458;
+
+    background-color: var(--surface);
+    color: var(--on-surface);
+}
+
+.dashboard-theme .glass-panel {
+    background: rgba(43, 43, 53, 0.6);
+    backdrop-filter: blur(12px);
+}

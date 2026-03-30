@@ -1,49 +1,195 @@
 'use client'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DollarSign, Package, MousePointer, TrendingUp } from 'lucide-react'
+
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 export default function DashboardPage() {
-  
-  // Datos Falsos (Placeholder) para que se vea bonito por ahora
-  const stats = [
-    { title: "Ventas Totales", value: "S/ 0.00", icon: DollarSign, color: "text-green-500" },
-    { title: "Productos Activos", value: "3", icon: Package, color: "text-blue-500" }, // Aquí luego pondremos el count real
-    { title: "Visitas a la Tienda", value: "12", icon: MousePointer, color: "text-purple-500" },
-    { title: "Tasa de Conversión", value: "0%", icon: TrendingUp, color: "text-orange-500" },
-  ]
+  const [ingresosTotales, setIngresosTotales] = useState(0)
+  const [pedidosTotales, setPedidosTotales] = useState(0)
+  const [leadsNuevos, setLeadsNuevos] = useState(0)
+  const [ordenesRecientes, setOrdenesRecientes] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadStats() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // Cargar Orders
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('merchant_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (orders) {
+        setPedidosTotales(orders.length)
+        const ingresos = orders.reduce((acc, obj) => acc + parseFloat(obj.total_amount || 0), 0)
+        setIngresosTotales(ingresos)
+        setOrdenesRecientes(orders.slice(0, 5))
+      }
+
+      // Cargar Leads
+      const { data: leads } = await supabase
+        .from('store_leads')
+        .select('id')
+        .eq('store_id', user.id)
+
+      if (leads) setLeadsNuevos(leads.length)
+    }
+    
+    loadStats()
+  }, [])
 
   return (
-    <div className="space-y-8">
-      
-      {/* Título de Bienvenida */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Resumen General</h1>
-        <p className="text-slate-500">Bienvenido de vuelta, aquí está lo que pasa en tu negocio.</p>
+    <>
+      {/* Header & Filter Row */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+        <div>
+          <h2 className="text-3xl font-semibold tracking-tight text-on-surface mb-2">Resumen General</h2>
+          <p className="text-on-surface-variant">Control centralizado de transacciones y estados logísticos.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="px-4 py-2 text-sm font-medium border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">filter_list</span>
+              Filtrar por Estado
+          </button>
+          <button className="bg-primary text-on-primary px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 hover:brightness-110 transition-all flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">download</span>
+              Exportar
+          </button>
+        </div>
       </div>
 
-      {/* GRILLA DE TARJETAS (ESTILO TAILADMIN) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="shadow-sm border-slate-200 hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-slate-400 mt-1">+0% desde ayer</p>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Metrics Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Total de Ingresos</p>
+          <div className="flex items-baseline gap-2 relative z-10">
+              <span className="text-3xl font-bold tracking-tighter text-on-surface">S/ {ingresosTotales.toFixed(2)}</span>
+              <span className="text-secondary text-xs font-bold">+12%</span>
+          </div>
+          <div className="mt-4 h-1 w-full bg-surface-container rounded-full overflow-hidden relative z-10">
+              <div className="h-full bg-primary w-[75%]"></div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 relative overflow-hidden group">
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Pedidos Totales</p>
+          <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tracking-tighter text-on-surface">{pedidosTotales}</span>
+              <span className="text-secondary text-xs font-bold">↑ 2 hoy</span>
+          </div>
+          <div className="mt-4 flex items-center gap-1">
+              <div className="h-4 w-1 bg-primary/20 rounded-full"></div>
+              <div className="h-6 w-1 bg-primary/40 rounded-full"></div>
+              <div className="h-3 w-1 bg-primary/20 rounded-full"></div>
+              <div className="h-8 w-1 bg-primary/60 rounded-full"></div>
+              <div className="h-5 w-1 bg-primary/80 rounded-full"></div>
+              <div className="h-10 w-1 bg-primary rounded-full"></div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 relative overflow-hidden group">
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Nuevos Leads</p>
+          <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tracking-tighter text-on-surface">{leadsNuevos}</span>
+              <span className="text-primary text-xs font-bold">Potencial</span>
+          </div>
+          <div className="flex -space-x-2 mt-4 ml-2">
+              <div className="w-6 h-6 rounded-full border-2 border-surface-container-high bg-surface-bright flex items-center justify-center text-[8px] font-bold text-on-surface">ID</div>
+              <div className="w-6 h-6 rounded-full border-2 border-surface-container-high bg-primary/30 flex items-center justify-center text-[8px] font-bold text-primary">OP</div>
+              <div className="w-6 h-6 rounded-full border-2 border-surface-container-high bg-surface-bright flex items-center justify-center text-[8px] font-bold">{leadsNuevos > 2 ? `+${leadsNuevos - 2}` : '+0'}</div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 relative overflow-hidden group">
+          <p className="text-[10px] font-bold text-error uppercase tracking-widest mb-4">Alertas</p>
+          <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold tracking-tighter text-error">0</span>
+              <span className="text-on-surface-variant text-xs font-medium">Temas críticos</span>
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-xs text-secondary">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              Todo operando normal
+          </div>
+        </div>
       </div>
 
-      {/* AQUÍ PUEDES PONER GRÁFICOS O TABLA RECIENTE DESPUÉS */}
-      <div className="p-8 border-2 border-dashed border-slate-200 rounded-xl text-center text-slate-400">
-        Gráfico de ventas próximamente... 📈
+      {/* Orders Table Container */}
+      <div className="bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/5 shadow-2xl mb-12">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="bg-surface-container-high">
+                  <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">ID del Pedido</th>
+                  <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Cliente</th>
+                  <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Fecha</th>
+                  <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Total</th>
+                  <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Método</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/5">
+              {ordenesRecientes.length > 0 ? (
+                ordenesRecientes.map((order) => (
+                    <tr key={order.id} className="hover:bg-surface-container-high/50 transition-colors group">
+                        <td className="px-6 md:px-8 py-4 text-sm font-mono text-primary truncate max-w-[150px]">#{order.id.split('-')[0].toUpperCase()}</td>
+                        <td className="px-6 md:px-8 py-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-surface-bright flex items-center justify-center font-bold text-xs uppercase text-on-surface">
+                                    {order.customer_name ? order.customer_name.substring(0,2) : '--'}
+                                </div>
+                                <span className="text-sm font-medium">{order.customer_name}</span>
+                            </div>
+                        </td>
+                        <td className="px-6 md:px-8 py-4 text-sm text-on-surface-variant whitespace-nowrap">
+                            {new Date(order.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 md:px-8 py-4 text-sm font-bold text-right text-on-surface">S/ {parseFloat(order.total_amount).toFixed(2)}</td>
+                        <td className="px-6 md:px-8 py-4 text-sm text-on-surface-variant">
+                            {order.payment_proof_url === 'CONTRA_ENTREGA' ? (
+                                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-tertiary-container/10 text-tertiary border border-tertiary/20 whitespace-nowrap">Efectivo</span>
+                            ) : (
+                                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-secondary-container/40 text-secondary border border-secondary/20 whitespace-nowrap">Con QR</span>
+                            )}
+                        </td>
+                    </tr>
+                ))
+              ) : (
+                  <tr>
+                      <td colSpan={5} className="px-8 py-10 text-center text-on-surface-variant text-sm">
+                          Sin órdenes recientes. ¡Sal a vender! 💸
+                      </td>
+                  </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-    </div>
+      {/* Secondary Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-surface-container-high/40 p-8 rounded-2xl border border-outline-variant/10 relative overflow-hidden group">
+            <h3 className="text-xl font-bold text-on-surface mb-6">Análisis de Flujo Semanal (Pronto)</h3>
+            <div className="h-48 w-full flex items-end justify-between gap-4 mt-12 opacity-50">
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[40%] rounded-t-lg"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[65%] rounded-t-lg"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[50%] rounded-t-lg"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[90%] rounded-t-lg border-t-2 border-primary"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[70%] rounded-t-lg"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[30%] rounded-t-lg"></div></div>
+                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[15%] rounded-t-lg"></div></div>
+            </div>
+        </div>
+        <div className="bg-primary-container p-8 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-primary opacity-20 blur-3xl rounded-full"></div>
+            <div className="relative z-10">
+                <h3 className="text-xl font-bold text-on-primary-container mb-2">Ventas Premium</h3>
+                <p className="text-on-primary-container/70 text-sm leading-relaxed mb-6">Estás usando la arquitectura Dark Premium de LinkVentas para vender en milisegundos.</p>
+            </div>
+            <button className="relative z-10 bg-on-primary-container text-primary-container py-3 rounded-xl font-bold text-sm shadow-xl">Configurar Tienda</button>
+        </div>
+      </div>
+    </>
   )
 }
