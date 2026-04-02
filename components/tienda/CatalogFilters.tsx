@@ -36,10 +36,12 @@ export default function CatalogFilters({
     <div className="flex flex-col gap-4 border-b border-outline pb-6 mb-8 pt-4">
       {/* Search Bar Row */}
       <div className="flex-grow w-full">
+        <label htmlFor="search-products" className="sr-only">Buscar productos</label>
         <input 
+          id="search-products"
           type="text" 
           placeholder="BUSCAR UN PRODUCTO..." 
-          className="w-full bg-surface-variant text-on-background border border-outline px-4 py-4 font-body focus:border-primary focus:ring-0 outline-none placeholder:text-on-surface-variant/50 font-bold tracking-widest uppercase text-xs shadow-inner"
+          className="w-full bg-surface-variant text-on-background border border-outline px-4 py-4 font-body focus:border-primary focus:ring-0 outline-none placeholder:text-on-surface-variant font-bold tracking-widest uppercase text-xs shadow-inner"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -52,7 +54,9 @@ export default function CatalogFilters({
             <Filter size={14} className="text-primary"/> TODOS LOS FILTROS
           </button>
           
+          <label htmlFor="brand-filter" className="sr-only">Filtrar por marca</label>
           <select 
+            id="brand-filter"
             className="bg-surface-variant border border-outline px-4 py-2 font-headline text-[10px] uppercase tracking-widest text-on-background appearance-none focus:border-primary outline-none font-bold shadow-sm"
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value)}
@@ -61,7 +65,9 @@ export default function CatalogFilters({
             {brands.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
 
+          <label htmlFor="category-filter" className="sr-only">Filtrar por categoría</label>
           <select 
+            id="category-filter"
             className="bg-surface-variant border border-outline px-4 py-2 font-headline text-[10px] uppercase tracking-widest text-on-background appearance-none focus:border-primary outline-none font-bold shadow-sm"
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
@@ -82,7 +88,9 @@ export default function CatalogFilters({
         </div>
 
         <div className="flex items-center gap-0">
+          <label htmlFor="sort-order" className="sr-only">Orden de productos</label>
           <select 
+            id="sort-order"
             className="bg-surface-variant border border-outline px-4 py-2 font-headline text-[10px] uppercase tracking-widest text-on-background appearance-none focus:border-primary outline-none font-bold"
             value={sortOption}
             onChange={(e) => setSortOption(e.target.value)}

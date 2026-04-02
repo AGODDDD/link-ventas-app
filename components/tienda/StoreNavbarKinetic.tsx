@@ -35,6 +35,7 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
           <button 
             className="md:hidden text-on-background p-1 -ml-1 hover:text-primary transition-colors focus:outline-none"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -75,6 +76,7 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
           
           <button
             onClick={() => setIsCartOpen(true)}
+            aria-label="Ver carrito de compras"
             className="relative p-2 bg-surface-variant text-on-background hover:text-primary transition-colors duration-200 border border-outline hover:border-primary active:scale-95 flex items-center justify-center"
           >
             <ShoppingBag size={20} />

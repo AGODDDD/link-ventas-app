@@ -10,10 +10,20 @@ export default function LeadCaptureForm({ storeId }: { storeId: string }) {
   const [telefono, setTelefono] = useState('')
   const [email, setEmail] = useState('')
   const [preferencia, setPreferencia] = useState('50% de descuento')
+  const [honeypot, setHoneypot] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Si el honeypot tiene contenido, es un bot
+    if (honeypot) {
+      console.warn("Fuego amigo detectado 🤖")
+      setLoading(false)
+      toast.success("¡Gracias por suscribirte!") // Fake success
+      return
+    }
+
     setLoading(true)
     
     try {
@@ -55,9 +65,22 @@ export default function LeadCaptureForm({ storeId }: { storeId: string }) {
     <div className="relative z-20 bg-surface-container-high p-8 md:p-12 shadow-[40px_40px_0px_0px_rgba(255,59,48,0.1)] border border-white/5">
       <h2 className="font-headline font-bold text-3xl mb-8 tracking-tighter uppercase italic text-on-background">SUSCRÍBETE Y ANTICÍPATE</h2>
       <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="space-y-1">
-          <label className="font-label text-[10px] uppercase tracking-widest text-primary">Nombre</label>
+        {/* Honeypot field (Bot Protection) */}
+        <div style={{ display: 'none' }} aria-hidden="true">
           <input 
+            type="text" 
+            name="last_name_extra" 
+            tabIndex={-1} 
+            autoComplete="off" 
+            value={honeypot}
+            onChange={e => setHoneypot(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label htmlFor="lead-name" className="font-label text-[10px] uppercase tracking-widest text-primary">Nombre</label>
+          <input 
+            id="lead-name"
             required 
             value={nombre} 
             onChange={e => setNombre(e.target.value)}
@@ -67,8 +90,9 @@ export default function LeadCaptureForm({ storeId }: { storeId: string }) {
           />
         </div>
         <div className="space-y-1">
-          <label className="font-label text-[10px] uppercase tracking-widest text-primary">Teléfono</label>
+          <label htmlFor="lead-phone" className="font-label text-[10px] uppercase tracking-widest text-primary">Teléfono</label>
           <input 
+            id="lead-phone"
             required
             value={telefono} 
             onChange={e => setTelefono(e.target.value)}
@@ -78,8 +102,9 @@ export default function LeadCaptureForm({ storeId }: { storeId: string }) {
           />
         </div>
         <div className="space-y-1">
-          <label className="font-label text-[10px] uppercase tracking-widest text-primary">Email</label>
+          <label htmlFor="lead-email" className="font-label text-[10px] uppercase tracking-widest text-primary">Email</label>
           <input 
+            id="lead-email"
             required
             value={email} 
             onChange={e => setEmail(e.target.value)}

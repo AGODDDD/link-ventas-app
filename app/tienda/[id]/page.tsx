@@ -31,7 +31,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   // Fetching
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, store_name, description, whatsapp_phone')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
 
@@ -65,7 +65,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
 
             {/* Countdown Timer Component */}
             <div className="space-y-4 pt-8">
-              <h3 className="font-headline font-bold text-primary tracking-widest text-sm italic uppercase">TU TIEMPO ES AHORA!</h3>
+              <h2 className="font-headline font-bold text-primary tracking-widest text-sm italic uppercase">¡TU TIEMPO ES AHORA!</h2>
               <div className="flex gap-4 md:gap-8 overflow-x-auto pb-4 md:pb-0">
                 <div className="bg-surface-container-lowest/50 backdrop-blur-md p-4 min-w-[80px] md:min-w-[100px] border-b-4 border-primary">
                   <div className="font-headline font-black text-4xl md:text-6xl text-on-surface">03</div>
@@ -102,8 +102,9 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
                 className="absolute inset-0 object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" 
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK" 
                 fill
+                priority
               />
-              <h3 className="font-headline font-bold text-4xl relative z-10 italic uppercase">ACCESORIOS <br/> <span className="text-primary">PREMIUM</span></h3>
+              <h2 className="font-headline font-bold text-4xl relative z-10 italic uppercase">ACCESORIOS <br/> <span className="text-primary">PREMIUM</span></h2>
             </div>
             
             <div className="bg-primary-container p-8 h-80 flex flex-col justify-between">
@@ -128,6 +129,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
           href={`https://wa.me/${perfil.whatsapp_phone}?text=Hola%20${encodeURIComponent(storeName)},%20necesito%20ayuda%20con%20mi%20pedido`}
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="Contactar por WhatsApp"
           className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-[0_10px_30px_rgba(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">

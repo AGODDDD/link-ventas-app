@@ -165,7 +165,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         </div>
                         
                         <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary mb-2">ORDEN EN CAJA</p>
-                        <h1 className="text-4xl font-black font-headline uppercase tracking-tight italic mb-2">ÓRDEN<br/>RECIBIDA</h1>
+                        <h2 className="text-4xl font-black font-headline uppercase tracking-tight italic mb-2">ÓRDEN<br/>RECIBIDA</h2>
                         
                         <div className="bg-surface-variant p-4 my-8 border border-outline border-dashed">
                             <p className="font-label text-xs text-on-surface-variant uppercase tracking-widest mb-1">CÓDIGO DE RASTREO</p>
@@ -209,7 +209,11 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 <div className="max-w-xl mx-auto space-y-12 relative z-10">
                     {/* Header Mobile */}
                     <div className="flex items-center gap-6 mb-8 border-b border-outline pb-6">
-                        <button onClick={() => router.back()} className="text-on-background hover:text-primary transition-colors bg-surface-variant p-2 border border-outline">
+                        <button 
+                            onClick={() => router.back()} 
+                            aria-label="Volver atrás"
+                            className="text-on-background hover:text-primary transition-colors bg-surface-variant p-2 border border-outline"
+                        >
                             <ArrowLeft size={24} />
                         </button>
                         <div>
@@ -226,12 +230,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                             </h2>
                             <div className="grid gap-6">
                                 <div className="space-y-2">
-                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">NOMBRE Y APELLIDO</label>
+                                    <label htmlFor="customer-name" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">NOMBRE Y APELLIDO</label>
                                     <div className="relative">
                                         <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
                                             <User size={18} />
                                         </div>
                                         <input 
+                                            id="customer-name"
                                             className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
                                             required 
                                             value={nombre} 
@@ -241,12 +246,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">TELÉFONO / WHATSAPP</label>
+                                    <label htmlFor="customer-phone" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">TELÉFONO / WHATSAPP</label>
                                     <div className="relative">
                                         <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
                                             <Phone size={18} />
                                         </div>
                                         <input 
+                                            id="customer-phone"
                                             className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
                                             required 
                                             type="tel" 
@@ -257,12 +263,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">DIRECCIÓN COMPLETA DE ENTREGA</label>
+                                    <label htmlFor="customer-address" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">DIRECCIÓN COMPLETA DE ENTREGA</label>
                                     <div className="relative">
                                         <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
                                             <MapPin size={18} />
                                         </div>
                                         <input 
+                                            id="customer-address"
                                             className="w-full bg-background border border-outline h-12 pl-16 pr-4 font-headline uppercase font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline" 
                                             required 
                                             value={direccion} 
@@ -363,7 +370,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
                                     {/* Subir Comprobante */}
                                     <div className="space-y-2 mt-8">
-                                        <label className="font-label text-xs uppercase tracking-widest text-on-surface-variant">SUBIR COMPROBANTE DE PAGO [REQUERIDO]</label>
+                                        <label htmlFor="voucher-upload" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">SUBIR COMPROBANTE DE PAGO [REQUERIDO]</label>
                                         <div className="border border-dashed border-primary bg-background p-6 hover:bg-primary/5 transition-colors cursor-pointer relative group">
                                             {previewUrl ? (
                                                 <div className="relative w-full aspect-video flex items-center justify-center bg-black">
@@ -384,6 +391,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                                 </div>
                                             )}
                                             <input
+                                                id="voucher-upload"
                                                 type="file"
                                                 accept="image/*"
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
@@ -419,7 +427,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     <div className="flex items-center justify-between pb-6 border-b border-outline">
                         <div className="flex items-center gap-3 text-primary">
                             <ShoppingBag size={24} />
-                            <h3 className="font-black font-headline uppercase tracking-widest italic text-xl">RESUMEN</h3>
+                            <h2 className="font-black font-headline uppercase tracking-widest italic text-xl">RESUMEN</h2>
                         </div>
                         <span className="bg-primary text-on-primary px-3 py-1 font-headline font-bold text-xs">{cart.reduce((a, b) => a + b.quantity, 0)} ITEMS</span>
                     </div>

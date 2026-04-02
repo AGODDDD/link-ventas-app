@@ -2,14 +2,16 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { Trash2, Edit3, Image as ImageIcon, PlusCircle, Search } from 'lucide-react'
+import { Trash2, Edit3, Image as ImageIcon, PlusCircle, Search, FileSpreadsheet } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import ImportProductsModal from '@/components/dashboard/ImportProductsModal'
 
 export default function ProductosPage() {
     const router = useRouter()
     const { productos, productosCargados, cargarProductos, eliminarProductoLocal } = useDashboardStore()
     const [loading, setLoading] = useState(!productosCargados)
     const [searchTerm, setSearchTerm] = useState('')
+    const [isImportOpen, setIsImportOpen] = useState(false)
 
     useEffect(() => {
         const init = async () => {
@@ -73,6 +75,12 @@ export default function ProductosPage() {
                         />
                     </div>
                     <button 
+                        onClick={() => setIsImportOpen(true)}
+                        className="flex bg-surface-container hover:bg-surface-bright text-on-surface px-4 py-2 rounded-lg text-sm font-bold border border-outline-variant/10 transition-all items-center gap-2"
+                    >
+                        <FileSpreadsheet size={18} /> Importar
+                    </button>
+                    <button 
                         onClick={() => router.push('/dashboard/crear')}
                         className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-bold shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
                     >
@@ -80,6 +88,15 @@ export default function ProductosPage() {
                     </button>
                 </div>
             </div>
+
+            <ImportProductsModal 
+                isOpen={isImportOpen} 
+                onClose={() => setIsImportOpen(false)}
+                onSuccess={async () => {
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) await cargarProductos(user.id, true)
+                }}
+            />
 
             {/* VISTA DE TABLA COMPACTA (LISTA) */}
             <div className="bg-surface-container rounded-2xl overflow-hidden border border-outline-variant/5 shadow-2xl">

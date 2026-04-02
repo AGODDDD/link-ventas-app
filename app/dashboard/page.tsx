@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 
 export default function DashboardPage() {
   const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
@@ -35,6 +36,24 @@ export default function DashboardPage() {
     if (ventasSemanaPasada === 0) return ventasSemanaActual > 0 ? 100 : 0
     return Math.round(((ventasSemanaActual - ventasSemanaPasada) / ventasSemanaPasada) * 100)
   }, [orders])
+
+  const handleExportOrders = () => {
+    if (orders.length === 0) return;
+    
+    // Mapeo amigable para Excel
+    const dataToExport = orders.map(o => ({
+      "ID Pedido": o.id.split('-')[0].toUpperCase(),
+      "Cliente": o.customer_name || "Anónimo",
+      "Monto": `S/ ${parseFloat(o.total_amount).toFixed(2)}`,
+      "Fecha": new Date(o.created_at).toLocaleDateString(),
+      "Hora": new Date(o.created_at).toLocaleTimeString(),
+      "Metodo": o.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'QR/Voucher',
+      "Estado": o.status
+    }));
+
+    const csv = jsonToCSV(dataToExport);
+    downloadFile(csv, `Ventas_${new Date().toISOString().split('T')[0]}.csv`);
+  }
 
   useEffect(() => {
     async function loadStats() {
@@ -69,7 +88,10 @@ export default function DashboardPage() {
             <span className="material-symbols-outlined text-sm">filter_list</span>
               Filtrar por Estado
           </button>
-          <button className="bg-primary text-on-primary px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 hover:brightness-110 transition-all flex items-center gap-2">
+          <button 
+            onClick={handleExportOrders}
+            className="bg-primary text-on-primary px-6 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/10 hover:brightness-110 transition-all flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-sm">download</span>
               Exportar
           </button>
