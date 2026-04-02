@@ -36,23 +36,30 @@ export default function Home() {
     setLoading(true)
     setMessage('')
     
-    const { error } = await supabase.auth.signInWithOtp({ 
-      email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`
-      }
-    })
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ 
+        email,
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback`
+        }
+      })
 
-    if (error) {
-      setMessage(error.message)
+      if (error) {
+        setMessage(error.message)
+        setIsSuccess(false)
+      } else {
+        setMessage('¡Enlace enviado! Revisa tu bandeja de entrada.')
+        setIsSuccess(true)
+        setEmail('')
+      }
+    } catch (err: any) {
+      setMessage('Error de conexión. Espera unos minutos e intenta de nuevo.')
       setIsSuccess(false)
-    } else {
-      setMessage('¡Enlace enviado! Revisa tu bandeja de entrada.')
-      setIsSuccess(true)
-      setEmail('') // Limpiamos el campo
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
+
 
   return (
     // Fondo gris muy suave (Slate-50) para dar sensación de limpieza
