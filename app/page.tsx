@@ -115,10 +115,10 @@ export default function Home() {
         // ==========================================
         // VISTA DE LOGIN
         // ==========================================
-        <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden bg-transparent text-[#e7e4ee] font-body min-h-screen selection:bg-[#bdbefe]/30">
+        <main className="flex-grow flex flex-col items-center justify-center px-4 md:px-6 py-4 md:py-12 relative overflow-hidden bg-transparent text-[#e7e4ee] font-body min-h-[100dvh] selection:bg-[#bdbefe]/30">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#bdbefe]/5 rounded-full blur-[120px] pointer-events-none"></div>
           
-          <div className="mb-10 text-center z-10 pt-10">
+          <div className="mb-6 md:mb-10 text-center z-10 pt-4 md:pt-10">
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="material-symbols-outlined text-[#bdbefe] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
               <span className="font-headline text-3xl font-extrabold tracking-tighter text-[#bdbefe]">LinkVentas</span>
@@ -270,7 +270,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-[440px] z-10">
+          {/* Social Proof/Secondary Content in Bento Style - Hidden on Mobile */}
+          <div className="mt-8 md:mt-12 hidden md:grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-[440px] z-10">
             <div className="bg-[#13131a] p-4 rounded-2xl flex items-center gap-4 border border-[#48474f]/5">
               <div className="w-10 h-10 rounded-full bg-[#bdbefe]/10 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[#bdbefe]">analytics</span>
@@ -291,25 +292,23 @@ export default function Home() {
             </div>
           </div>
 
-          <footer className="w-full mt-auto py-12 border-t border-[#48474f]/20 bg-transparent">
-            <div className="flex flex-col md:flex-row items-center justify-between px-12 max-w-7xl mx-auto gap-4">
+          {/* Footer from Shared Components - Hidden on Mobile */}
+          <footer className="hidden md:flex w-full mt-auto py-12 border-t border-[#48474f]/20 bg-transparent flex-col md:flex-row items-center justify-between px-12 max-w-7xl mx-auto gap-4">
               <div className="flex flex-col md:flex-row items-center gap-8">
-                <p className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500">© 2026 LinkVentas. Protegido mediante Supabase Auth.</p>
+                <p className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500">© 2026 LinkVentas.</p>
               </div>
               <div className="flex gap-6">
                 <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Privacidad</a>
                 <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Términos</a>
-                <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Soporte</a>
               </div>
-            </div>
           </footer>
         </main>
       ) : view === 'register' ? (
         // ==========================================
         // VISTA DE REGISTRO
         // ==========================================
-        <div className="font-body text-[#e7e4ee] min-h-screen flex flex-col items-center justify-center p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
-            <header className="fixed top-0 left-0 w-full p-8 flex justify-center pointer-events-none">
+        <div className="font-body text-[#e7e4ee] min-h-[100dvh] flex flex-col items-center justify-center p-4 md:p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
+            <header className="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-center pointer-events-none">
                 <div className="flex items-center gap-2 opacity-80">
                     {/* RAYITO EN VEZ DE HUB */}
                     <span className="material-symbols-outlined text-[#bdbefe] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
@@ -317,7 +316,7 @@ export default function Home() {
                 </div>
             </header>
             
-            <main className="w-full max-w-md mt-16 mb-16 relative">
+            <main className="w-full max-w-md mt-12 md:mt-16 mb-6 md:mb-16 relative flex flex-col justify-center min-h-screen">
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#bdbefe]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#9193ff]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 
@@ -463,7 +462,7 @@ export default function Home() {
                     </div>
                 </div>
                 
-                <div className="mt-10 flex flex-col items-center gap-6">
+                <div className="mt-10 hidden md:flex flex-col items-center gap-6">
                     <div className="flex items-center gap-2 px-4 py-2 bg-[#25252f]/50 rounded-full border border-[#48474f]/10">
                         <span className="material-symbols-outlined text-sm text-[#f5f2ff]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
                         <span className="text-[11px] uppercase tracking-widest font-bold text-[#acaab4]">Protegido mediante Supabase Auth</span>
@@ -491,15 +490,15 @@ export default function Home() {
         // ==========================================
         // VISTA DE RECUPERAR CONTRASEÑA (Mismo diseño glasscard flotante)
         // ==========================================
-        <div className="font-body text-[#e7e4ee] min-h-screen flex flex-col items-center justify-center p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
-            <header className="fixed top-0 left-0 w-full p-8 flex justify-center pointer-events-none">
+        <div className="font-body text-[#e7e4ee] min-h-[100dvh] flex flex-col items-center justify-center p-4 md:p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
+            <header className="fixed top-0 left-0 w-full p-6 md:p-8 flex justify-center pointer-events-none">
                 <div className="flex items-center gap-2 opacity-80">
                     <span className="material-symbols-outlined text-[#bdbefe] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
                     <span className="font-headline font-extrabold text-2xl tracking-tight text-[#bdbefe]">LinkVentas</span>
                 </div>
             </header>
             
-            <main className="w-full max-w-md mt-16 mb-16 relative">
+            <main className="w-full max-w-md mt-12 md:mt-16 mb-6 md:mb-16 relative flex flex-col justify-center min-h-screen">
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#bdbefe]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#9193ff]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 
@@ -565,7 +564,7 @@ export default function Home() {
                     </div>
                 </div>
                 
-                <div className="mt-10 flex flex-col items-center gap-6">
+                <div className="mt-10 hidden md:flex flex-col items-center gap-6">
                     <div className="flex items-center gap-2 px-4 py-2 bg-[#25252f]/50 rounded-full border border-[#48474f]/10">
                         <span className="material-symbols-outlined text-sm text-[#f5f2ff]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
                         <span className="text-[11px] uppercase tracking-widest font-bold text-[#acaab4]">Protegido mediante Supabase Auth</span>
