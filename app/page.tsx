@@ -82,26 +82,26 @@ export default function Home() {
         }
       `}} />
       
-      <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden bg-background text-on-background font-body min-h-screen selection:bg-primary/30">
+      <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden bg-[#0e0e15] text-[#e7e4ee] font-body min-h-screen selection:bg-[#bdbefe]/30">
         {/* Ambient Glow Background Decoration */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#bdbefe]/5 rounded-full blur-[120px] pointer-events-none"></div>
         
         {/* Logo Header */}
         <div className="mb-10 text-center z-10 pt-10">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="material-symbols-outlined text-primary text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-            <span className="font-headline text-3xl font-extrabold tracking-tighter text-primary">LinkVentas</span>
+            <span className="material-symbols-outlined text-[#bdbefe] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+            <span className="font-headline text-3xl font-extrabold tracking-tighter text-[#bdbefe]">LinkVentas</span>
           </div>
-          <div className="inline-flex bg-surface-container-low p-1 rounded-xl">
+          <div className="inline-flex bg-[#13131a] p-1 rounded-xl">
             <button 
               onClick={() => { setIsLogin(true); setMessage('') }}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${isLogin ? 'text-primary bg-surface-container-highest shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${isLogin ? 'text-[#bdbefe] bg-[#25252f] shadow-sm' : 'text-[#acaab4] hover:text-[#e7e4ee]'}`}
             >
               Acceder
             </button>
             <button 
               onClick={() => { setIsLogin(false); setMessage('') }}
-              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${!isLogin ? 'text-primary bg-surface-container-highest shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+              className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${!isLogin ? 'text-[#bdbefe] bg-[#25252f] shadow-sm' : 'text-[#acaab4] hover:text-[#e7e4ee]'}`}
             >
               Nueva Cuenta
             </button>
@@ -109,12 +109,12 @@ export default function Home() {
         </div>
 
         {/* Login Card */}
-        <div className="w-full max-w-[440px] glass-effect rounded-[2rem] border border-outline-variant/10 shadow-[0_40px_80px_rgba(0,0,0,0.4)] p-8 md:p-10 z-10">
+        <div className="w-full max-w-[440px] glass-effect rounded-[2rem] border border-[#48474f]/10 shadow-[0_40px_80px_rgba(0,0,0,0.4)] p-8 md:p-10 z-10">
           <div className="mb-8">
-            <h1 className="font-headline text-2xl font-bold tracking-tight mb-2 text-on-surface">
+            <h1 className="font-headline text-2xl font-bold tracking-tight mb-2 text-[#e7e4ee]">
               {isLogin ? 'Bienvenido de vuelta' : 'Crea tu espacio'}
             </h1>
-            <p className="text-on-surface-variant text-sm font-medium">
+            <p className="text-[#acaab4] text-sm font-medium">
               {isLogin ? 'Introduce tus credenciales para acceder.' : 'Ingresa tu nuevo correo para empezar.'}
             </p>
           </div>
@@ -122,13 +122,13 @@ export default function Home() {
           <form className="space-y-6" onSubmit={handleAuth}>
             {/* Email Field */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">Correo Electrónico</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest text-[#acaab4] ml-1">Correo Electrónico</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-outline text-xl group-focus-within:text-primary transition-colors">mail</span>
+                  <span className="material-symbols-outlined text-[#76747e] text-xl group-focus-within:text-[#bdbefe] transition-colors">mail</span>
                 </div>
                 <input 
-                  className="w-full bg-surface-container-highest border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all outline-none" 
+                  className="w-full bg-[#25252f] border-none rounded-xl py-4 pl-12 pr-4 text-[#e7e4ee] placeholder:text-[#76747e]/50 focus:ring-2 focus:ring-[#bdbefe]/20 transition-all outline-none" 
                   placeholder="nombre@ejemplo.com" 
                   type="email"
                   required
@@ -140,13 +140,13 @@ export default function Home() {
             
             {/* Password Field */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant ml-1">Contraseña</label>
+              <label className="block text-xs font-semibold uppercase tracking-widest text-[#acaab4] ml-1">Contraseña</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="material-symbols-outlined text-outline text-xl group-focus-within:text-primary transition-colors">lock</span>
+                  <span className="material-symbols-outlined text-[#76747e] text-xl group-focus-within:text-[#bdbefe] transition-colors">lock</span>
                 </div>
                 <input 
-                  className="w-full bg-surface-container-highest border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all outline-none" 
+                  className="w-full bg-[#25252f] border-none rounded-xl py-4 pl-12 pr-4 text-[#e7e4ee] placeholder:text-[#76747e]/50 focus:ring-2 focus:ring-[#bdbefe]/20 transition-all outline-none" 
                   placeholder="••••••••" 
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -155,7 +155,7 @@ export default function Home() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button 
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-outline hover:text-primary transition-colors" 
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#76747e] hover:text-[#bdbefe] transition-colors" 
                   type="button" 
                   onClick={() => setShowPassword(!showPassword)}
                 >
@@ -167,7 +167,7 @@ export default function Home() {
             {/* Forgot Password */}
             {isLogin && (
               <div className="flex justify-end">
-                <a className="text-sm font-medium text-secondary hover:text-primary transition-colors decoration-2 underline-offset-4 hover:underline" href="#">
+                <a className="text-sm font-medium text-[#9193ff] hover:text-[#bdbefe] transition-colors decoration-2 underline-offset-4 hover:underline" href="#">
                     Olvidé mi contraseña
                 </a>
               </div>
@@ -175,7 +175,7 @@ export default function Home() {
 
             {/* Error Message */}
             {message && (
-              <div className={`p-4 rounded-xl text-sm font-medium ${messageType === 'error' ? 'bg-error-container/20 text-error-dim' : 'bg-green-500/10 text-green-400'}`}>
+              <div className={`p-4 rounded-xl text-sm font-medium ${messageType === 'error' ? 'bg-[#a70138]/20 text-[#d73357]' : 'bg-green-500/10 text-green-400'}`}>
                 {message}
               </div>
             )}
@@ -183,7 +183,7 @@ export default function Home() {
             {/* Submit Button */}
             <button 
               disabled={loading}
-              className="w-full primary-gradient text-on-primary font-bold py-4 rounded-xl flex items-center justify-center gap-2 group active:scale-[0.98] transition-transform shadow-lg shadow-primary/10 disabled:opacity-50" 
+              className="w-full primary-gradient text-[#37396f] font-bold py-4 rounded-xl flex items-center justify-center gap-2 group active:scale-[0.98] transition-transform shadow-lg shadow-[#bdbefe]/10 disabled:opacity-50" 
               type="submit"
             >
               <span>{loading ? 'Procesando...' : isLogin ? 'Acceder al Sistema' : 'Regístrate aquí'}</span>
@@ -193,83 +193,83 @@ export default function Home() {
             {/* Social Login Divider */}
             <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-outline-variant/20"></div>
+                <div className="w-full border-t border-[#48474f]/20"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase tracking-widest">
-                <span className="bg-surface-container-highest px-4 text-on-surface-variant font-semibold">O continuar con</span>
+                <span className="bg-[#25252f] px-4 text-[#acaab4] font-semibold">O continuar con</span>
               </div>
             </div>
             
             {/* Social Login Buttons */}
             <div className="grid grid-cols-2 gap-4 mb-4">
-              <button onClick={() => handleOAuth('google')} type="button" className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/20 bg-white/5 hover:bg-white/10 transition-all group">
+              <button onClick={() => handleOAuth('google')} type="button" className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[#48474f]/20 bg-white/5 hover:bg-white/10 transition-all group">
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
                 </svg>
-                <span className="text-sm font-semibold text-on-surface">Google</span>
+                <span className="text-sm font-semibold text-[#e7e4ee]">Google</span>
               </button>
               
-              <button onClick={() => handleOAuth('facebook')} type="button" className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/20 bg-white/5 hover:bg-[#1877F2]/20 hover:border-[#1877F2]/40 transition-all group">
+              <button onClick={() => handleOAuth('facebook')} type="button" className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[#48474f]/20 bg-white/5 hover:bg-[#1877F2]/20 hover:border-[#1877F2]/40 transition-all group">
                 <svg className="w-5 h-5 fill-[#1877F2]" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path>
                 </svg>
-                <span className="text-sm font-semibold text-on-surface">Facebook</span>
+                <span className="text-sm font-semibold text-[#e7e4ee]">Facebook</span>
               </button>
             </div>
 
-            <button onClick={() => handleOAuth('apple')} type="button" className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-outline-variant/20 bg-white/5 hover:bg-white/10 transition-all group">
+            <button onClick={() => handleOAuth('apple')} type="button" className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[#48474f]/20 bg-white/5 hover:bg-white/10 transition-all group">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
                  <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.641-.026 2.669-1.48 3.666-2.947 1.152-1.688 1.631-3.313 1.657-3.396-.039-.013-3.182-1.22-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.68.827-1.34 2.274-1.145 3.639 1.353.104 2.686-.615 3.432-1.627z"/>
               </svg>
-              <span className="text-sm font-semibold text-on-surface">Apple</span>
+              <span className="text-sm font-semibold text-[#e7e4ee]">Apple</span>
             </button>
           </form>
           
           {/* Trust Badge Section */}
-          <div className="mt-8 pt-8 border-t border-outline-variant/10 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-2 bg-tertiary-container/5 px-4 py-2 rounded-full">
-              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-tertiary-dim">Conexión de alta seguridad</span>
+          <div className="mt-8 pt-8 border-t border-[#48474f]/10 flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 bg-[#e5e2ff]/5 px-4 py-2 rounded-full">
+              <span className="material-symbols-outlined text-[#bdbefe] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#d7d4f0]">Conexión de alta seguridad</span>
             </div>
           </div>
         </div>
 
         {/* Social Proof/Secondary Content in Bento Style */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-[440px] z-10">
-          <div className="bg-surface-container-low p-4 rounded-2xl flex items-center gap-4 border border-outline-variant/5">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary">analytics</span>
+          <div className="bg-[#13131a] p-4 rounded-2xl flex items-center gap-4 border border-[#48474f]/5">
+            <div className="w-10 h-10 rounded-full bg-[#bdbefe]/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[#bdbefe]">analytics</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-on-surface">Gestión Real</p>
-              <p className="text-[10px] text-on-surface-variant">Analíticas en tiempo real.</p>
+              <p className="text-xs font-bold text-[#e7e4ee]">Gestión Real</p>
+              <p className="text-[10px] text-[#acaab4]">Analíticas en tiempo real.</p>
             </div>
           </div>
-          <div className="bg-surface-container-low p-4 rounded-2xl flex items-center gap-4 border border-outline-variant/5">
-            <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-secondary">support_agent</span>
+          <div className="bg-[#13131a] p-4 rounded-2xl flex items-center gap-4 border border-[#48474f]/5">
+            <div className="w-10 h-10 rounded-full bg-[#9193ff]/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[#9193ff]">support_agent</span>
             </div>
             <div>
-              <p className="text-xs font-bold text-on-surface">Soporte 24/7</p>
-              <p className="text-[10px] text-on-surface-variant">Estamos para ayudarte.</p>
+              <p className="text-xs font-bold text-[#e7e4ee]">Soporte 24/7</p>
+              <p className="text-[10px] text-[#acaab4]">Estamos para ayudarte.</p>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer from Shared Components */}
-      <footer className="w-full mt-auto py-12 border-t border-outline-variant/20 bg-background">
+      <footer className="w-full mt-auto py-12 border-t border-[#48474f]/20 bg-[#0e0e15]">
         <div className="flex flex-col md:flex-row items-center justify-between px-12 max-w-7xl mx-auto gap-4">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <p className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500">© 2026 LinkVentas. Protegido mediante Supabase Auth.</p>
           </div>
           <div className="flex gap-6">
-            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#BEBFFF] transition-all" href="#">Privacidad</a>
-            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#BEBFFF] transition-all" href="#">Términos</a>
-            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#BEBFFF] transition-all" href="#">Soporte</a>
+            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Privacidad</a>
+            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Términos</a>
+            <a className="font-inter text-xs font-medium uppercase tracking-widest text-slate-500 hover:text-[#bdbefe] transition-all" href="#">Soporte</a>
           </div>
         </div>
       </footer>
