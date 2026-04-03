@@ -5,7 +5,8 @@ import { supabase } from '@/lib/supabase'
 
 export default function Home() {
   const router = useRouter()
-  const [isLogin, setIsLogin] = useState(true)
+  // Utiliza 3 vistas principales: login, register y forgot
+  const [view, setView] = useState<'login' | 'register' | 'forgot'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -49,10 +50,10 @@ export default function Home() {
     setMessage('')
     
     try {
-      if (isLogin) {
+      if (view === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-      } else {
+      } else if (view === 'register') {
         if (password !== confirmPassword) {
             throw new Error("Las contraseñas no coinciden")
         }
@@ -66,6 +67,16 @@ export default function Home() {
         } else {
           setMessageType('success')
           setMessage('¡Cuenta creada correctamente! Ingresa ahora.')
+        }
+      } else if (view === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${location.origin}/dashboard/configuracion`, // Redirige al dash donde podrán setear la clave o al callback si lo manejan globalmente
+        })
+        if (error) {
+            throw error
+        } else {
+            setMessageType('success')
+            setMessage('Si el correo pertenece a una cuenta, se ha enviado un enlace para recuperarla.')
         }
       }
     } catch (err: any) {
@@ -100,15 +111,13 @@ export default function Home() {
         }
       `}} />
 
-      {isLogin ? (
+      {view === 'login' ? (
         // ==========================================
-        // VISTA DE LOGIN (El diseño original de 2 tabs)
+        // VISTA DE LOGIN
         // ==========================================
         <main className="flex-grow flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden bg-transparent text-[#e7e4ee] font-body min-h-screen selection:bg-[#bdbefe]/30">
-          {/* Ambient Glow Background Decoration */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#bdbefe]/5 rounded-full blur-[120px] pointer-events-none"></div>
           
-          {/* Logo Header */}
           <div className="mb-10 text-center z-10 pt-10">
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="material-symbols-outlined text-[#bdbefe] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
@@ -116,21 +125,20 @@ export default function Home() {
             </div>
             <div className="inline-flex bg-[#13131a] p-1 rounded-xl">
               <button 
-                onClick={() => { setIsLogin(true); setMessage('') }}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${isLogin ? 'text-[#bdbefe] bg-[#25252f] shadow-sm' : 'text-[#acaab4] hover:text-[#e7e4ee]'}`}
+                onClick={() => { setView('login'); setMessage('') }}
+                className="px-6 py-2 rounded-lg text-sm font-semibold transition-all text-[#bdbefe] bg-[#25252f] shadow-sm"
               >
                 Acceder
               </button>
               <button 
-                onClick={() => { setIsLogin(false); setMessage('') }}
-                className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${!isLogin ? 'text-[#bdbefe] bg-[#25252f] shadow-sm' : 'text-[#acaab4] hover:text-[#e7e4ee]'}`}
+                onClick={() => { setView('register'); setMessage('') }}
+                className="px-6 py-2 rounded-lg text-sm font-semibold transition-all text-[#acaab4] hover:text-[#e7e4ee]"
               >
                 Nueva Cuenta
               </button>
             </div>
           </div>
 
-          {/* Login Card */}
           <div className="w-full max-w-[440px] glass-effect rounded-[2rem] border border-[#48474f]/10 shadow-[0_40px_80px_rgba(0,0,0,0.4)] p-8 md:p-10 z-10">
             <div className="mb-8">
               <h1 className="font-headline text-2xl font-bold tracking-tight mb-2 text-[#e7e4ee]">
@@ -186,11 +194,15 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Forgot Password */}
+              {/* Forgot Password Link */}
               <div className="flex justify-end">
-                <a className="text-sm font-medium text-[#9193ff] hover:text-[#bdbefe] transition-colors decoration-2 underline-offset-4 hover:underline" href="#">
+                <button 
+                  onClick={() => { setView('forgot'); setMessage(''); }}
+                  type="button"
+                  className="text-sm font-medium text-[#9193ff] hover:text-[#bdbefe] transition-colors decoration-2 underline-offset-4 hover:underline"
+                >
                     Olvidé mi contraseña
-                </a>
+                </button>
               </div>
 
               {/* Error/Success Message */}
@@ -250,7 +262,6 @@ export default function Home() {
               </div>
             </form>
             
-            {/* Trust Badge Section */}
             <div className="mt-8 pt-8 border-t border-[#48474f]/10 flex flex-col items-center gap-4">
               <div className="flex items-center gap-2 bg-[#e5e2ff]/5 px-4 py-2 rounded-full">
                 <span className="material-symbols-outlined text-[#bdbefe] text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
@@ -259,7 +270,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Social Proof/Secondary Content in Bento Style */}
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-[440px] z-10">
             <div className="bg-[#13131a] p-4 rounded-2xl flex items-center gap-4 border border-[#48474f]/5">
               <div className="w-10 h-10 rounded-full bg-[#bdbefe]/10 flex items-center justify-center">
@@ -281,7 +291,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Footer from Shared Components */}
           <footer className="w-full mt-auto py-12 border-t border-[#48474f]/20 bg-transparent">
             <div className="flex flex-col md:flex-row items-center justify-between px-12 max-w-7xl mx-auto gap-4">
               <div className="flex flex-col md:flex-row items-center gap-8">
@@ -295,35 +304,30 @@ export default function Home() {
             </div>
           </footer>
         </main>
-      ) : (
+      ) : view === 'register' ? (
         // ==========================================
-        // VISTA DE REGISTRO (El nuevo diseño de HTML flotante)
+        // VISTA DE REGISTRO
         // ==========================================
         <div className="font-body text-[#e7e4ee] min-h-screen flex flex-col items-center justify-center p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
-            {/* Brand Header (Floating) */}
             <header className="fixed top-0 left-0 w-full p-8 flex justify-center pointer-events-none">
                 <div className="flex items-center gap-2 opacity-80">
-                    <span className="material-symbols-outlined text-[#bdbefe] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>hub</span>
+                    {/* RAYITO EN VEZ DE HUB */}
+                    <span className="material-symbols-outlined text-[#bdbefe] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
                     <span className="font-headline font-extrabold text-2xl tracking-tight text-[#bdbefe]">LinkVentas</span>
                 </div>
             </header>
             
             <main className="w-full max-w-md mt-16 mb-16 relative">
-                {/* Background Glow Effect */}
                 <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#bdbefe]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#9193ff]/10 rounded-full blur-[100px] pointer-events-none"></div>
                 
-                {/* Registration Card */}
                 <div className="glass-card rounded-xl p-8 shadow-2xl border border-white/5 relative z-10">
-                    {/* Title & Subtitle */}
                     <div className="mb-10 text-center">
                         <h1 className="font-headline text-3xl font-extrabold text-[#e7e4ee] tracking-tight mb-3">Crear Nueva Cuenta</h1>
                         <p className="text-[#acaab4] text-sm leading-relaxed">Únete a la plataforma de comercio para emprendedores</p>
                     </div>
                     
-                    {/* Registration Form */}
                     <form className="space-y-6" onSubmit={handleAuth}>
-                        {/* Name Field */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-[#acaab4] ml-1">Nombre Completo</label>
                             <div className="relative group">
@@ -341,7 +345,6 @@ export default function Home() {
                             </div>
                         </div>
                         
-                        {/* Email Field */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-[#acaab4] ml-1">Correo Electrónico</label>
                             <div className="relative group">
@@ -359,7 +362,6 @@ export default function Home() {
                             </div>
                         </div>
                         
-                        {/* Password Field */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-[#acaab4] ml-1">Contraseña</label>
                             <div className="relative group">
@@ -378,7 +380,6 @@ export default function Home() {
                             </div>
                         </div>
                         
-                        {/* Confirm Password Field */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-[#acaab4] ml-1">Confirmar Contraseña</label>
                             <div className="relative group">
@@ -397,14 +398,12 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* Error/Success Message */}
                         {message && (
                             <div className={`p-4 rounded-xl text-sm font-medium ${messageType === 'error' ? 'bg-[#a70138]/20 text-[#d73357]' : 'bg-green-500/10 text-green-400'}`}>
                                 {message}
                             </div>
                         )}
                         
-                        {/* Primary CTA */}
                         <button 
                             disabled={loading}
                             className="w-full bg-gradient-to-br from-[#bdbefe] to-[#9a9bd9] text-[#1b1c52] font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-[#bdbefe]/10 group disabled:opacity-50" 
@@ -423,18 +422,15 @@ export default function Home() {
                             )}
                         </button>
 
-                        {/* Social Login Divider */}
                         <div className="relative my-8">
                             <div className="absolute inset-0 flex items-center">
                             <div className="w-full border-t border-[#48474f]/20"></div>
                             </div>
                             <div className="relative flex justify-center text-xs uppercase tracking-widest">
-                            {/* matches the glass-card dark slightly */}
                             <span className="bg-[#191921] px-4 text-[#acaab4] font-semibold">O registrarte con</span>
                             </div>
                         </div>
                         
-                        {/* Social Login Buttons */}
                         <div className="grid grid-cols-2 gap-4 mb-4">
                             <button onClick={() => handleOAuth('google')} type="button" className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[#48474f]/20 bg-white/5 hover:bg-white/10 transition-all group">
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -455,11 +451,10 @@ export default function Home() {
                         </div>
                     </form>
                     
-                    {/* Bottom Link to return to Login */}
                     <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center">
                         <button 
                             type="button" 
-                            onClick={() => { setIsLogin(true); setMessage(''); }} 
+                            onClick={() => { setView('login'); setMessage(''); }} 
                             className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group"
                         >
                             ¿Ya tienes cuenta? Inicia sesión
@@ -468,7 +463,6 @@ export default function Home() {
                     </div>
                 </div>
                 
-                {/* Footer Info */}
                 <div className="mt-10 flex flex-col items-center gap-6">
                     <div className="flex items-center gap-2 px-4 py-2 bg-[#25252f]/50 rounded-full border border-[#48474f]/10">
                         <span className="material-symbols-outlined text-sm text-[#f5f2ff]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
@@ -482,7 +476,6 @@ export default function Home() {
                 </div>
             </main>
             
-            {/* Visual Accents (Curated Elements) */}
             <div className="hidden lg:block fixed bottom-12 left-12 w-48 opacity-20 pointer-events-none">
                 <div className="flex flex-col gap-4">
                     <div className="h-2 w-full bg-[#afb1f0] rounded-full"></div>
@@ -490,6 +483,100 @@ export default function Home() {
                     <div className="h-2 w-1/2 bg-[#afb1f0] rounded-full"></div>
                 </div>
             </div>
+            <div className="hidden lg:block fixed top-24 right-12 text-[#76747e]/10 select-none pointer-events-none">
+                <span className="font-headline font-black text-[120px] leading-none uppercase"><br/></span>
+            </div>
+        </div>
+      ) : (
+        // ==========================================
+        // VISTA DE RECUPERAR CONTRASEÑA (Mismo diseño glasscard flotante)
+        // ==========================================
+        <div className="font-body text-[#e7e4ee] min-h-screen flex flex-col items-center justify-center p-6 overflow-x-hidden bg-transparent selection:bg-[#bdbefe]/30">
+            <header className="fixed top-0 left-0 w-full p-8 flex justify-center pointer-events-none">
+                <div className="flex items-center gap-2 opacity-80">
+                    <span className="material-symbols-outlined text-[#bdbefe] text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                    <span className="font-headline font-extrabold text-2xl tracking-tight text-[#bdbefe]">LinkVentas</span>
+                </div>
+            </header>
+            
+            <main className="w-full max-w-md mt-16 mb-16 relative">
+                <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#bdbefe]/10 rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#9193ff]/10 rounded-full blur-[100px] pointer-events-none"></div>
+                
+                <div className="glass-card rounded-xl p-8 shadow-2xl border border-white/5 relative z-10">
+                    <div className="mb-10 text-center">
+                        <h1 className="font-headline text-3xl font-extrabold text-[#e7e4ee] tracking-tight mb-3">Recuperar Acceso</h1>
+                        <p className="text-[#acaab4] text-sm leading-relaxed">Ingresa tu correo y te enviaremos instrucciones para restaurar tu contraseña.</p>
+                    </div>
+                    
+                    <form className="space-y-6" onSubmit={handleAuth}>
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-[#acaab4] ml-1">Correo Electrónico</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#76747e] group-focus-within:text-[#bdbefe] transition-colors">
+                                    <span className="material-symbols-outlined text-[20px]">mail</span>
+                                </div>
+                                <input 
+                                    className="w-full bg-[#25252f] border-none rounded-xl py-3.5 pl-11 pr-4 text-[#e7e4ee] placeholder:text-[#76747e]/50 focus:ring-2 focus:ring-[#bdbefe]/20 transition-all outline-none" 
+                                    placeholder="ejemplo@linkventas.com" 
+                                    type="email" 
+                                    required 
+                                    value={email} 
+                                    onChange={e => setEmail(e.target.value)} 
+                                />
+                            </div>
+                        </div>
+
+                        {message && (
+                            <div className={`p-4 rounded-xl text-sm font-medium ${messageType === 'error' ? 'bg-[#a70138]/20 text-[#d73357]' : 'bg-green-500/10 text-green-400'}`}>
+                                {message}
+                            </div>
+                        )}
+                        
+                        <button 
+                            disabled={loading}
+                            className="w-full bg-gradient-to-br from-[#bdbefe] to-[#9a9bd9] text-[#1b1c52] font-headline font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-[#bdbefe]/10 group disabled:opacity-50" 
+                            type="submit"
+                        >
+                            {loading ? (
+                                <>
+                                    <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                                    <span>Enviando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    Recuperar Contraseña
+                                    <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">send</span>
+                                </>
+                            )}
+                        </button>
+                    </form>
+                    
+                    <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center">
+                        <button 
+                            type="button" 
+                            onClick={() => { setView('login'); setMessage(''); }} 
+                            className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group"
+                        >
+                            <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                            Volver al inicio de sesión
+                            <div className="h-[1px] w-0 group-hover:w-full bg-[#bdbefe] transition-all duration-300"></div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="mt-10 flex flex-col items-center gap-6">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-[#25252f]/50 rounded-full border border-[#48474f]/10">
+                        <span className="material-symbols-outlined text-sm text-[#f5f2ff]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                        <span className="text-[11px] uppercase tracking-widest font-bold text-[#acaab4]">Protegido mediante Supabase Auth</span>
+                    </div>
+                    <div className="flex gap-8">
+                        <a className="text-[12px] text-[#76747e] hover:text-[#e7e4ee] transition-colors" href="#">Privacidad</a>
+                        <a className="text-[12px] text-[#76747e] hover:text-[#e7e4ee] transition-colors" href="#">Términos</a>
+                        <a className="text-[12px] text-[#76747e] hover:text-[#e7e4ee] transition-colors" href="#">Soporte</a>
+                    </div>
+                </div>
+            </main>
         </div>
       )}
     </>
