@@ -451,14 +451,14 @@ export default function Home() {
                         </div>
                     </form>
                     
-                    <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center">
+                    <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center flex justify-center">
                         <button 
                             type="button" 
                             onClick={() => { setView('login'); setMessage(''); }} 
-                            className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group"
+                            className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group relative pb-1"
                         >
                             ¿Ya tienes cuenta? Inicia sesión
-                            <div className="h-[1px] w-0 group-hover:w-full bg-[#bdbefe] transition-all duration-300"></div>
+                            <div className="absolute bottom-0 left-0 h-[1px] w-full bg-[#bdbefe] scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                         </button>
                     </div>
                 </div>
@@ -552,15 +552,15 @@ export default function Home() {
                         </button>
                     </form>
                     
-                    <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center">
+                    <div className="mt-8 pt-8 border-t border-[#48474f]/10 text-center flex justify-center">
                         <button 
                             type="button" 
                             onClick={() => { setView('login'); setMessage(''); }} 
-                            className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group"
+                            className="text-[#bdbefe] hover:text-[#afb1f0] transition-colors text-sm font-medium inline-flex items-center gap-1 group relative pb-1"
                         >
                             <span className="material-symbols-outlined text-[16px] group-hover:-translate-x-1 transition-transform">arrow_back</span>
                             Volver al inicio de sesión
-                            <div className="h-[1px] w-0 group-hover:w-full bg-[#bdbefe] transition-all duration-300"></div>
+                            <div className="absolute bottom-0 left-0 h-[1px] w-full bg-[#bdbefe] scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                         </button>
                     </div>
                 </div>
