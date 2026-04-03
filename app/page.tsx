@@ -186,8 +186,17 @@ export default function Home() {
               className="w-full primary-gradient text-[#37396f] font-bold py-4 rounded-xl flex items-center justify-center gap-2 group active:scale-[0.98] transition-transform shadow-lg shadow-[#bdbefe]/10 disabled:opacity-50" 
               type="submit"
             >
-              <span>{loading ? 'Procesando...' : isLogin ? 'Acceder al Sistema' : 'Regístrate aquí'}</span>
-              {!loading && <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>}
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                  <span>Verificando...</span>
+                </>
+              ) : (
+                <>
+                  <span>{isLogin ? 'Acceder al Sistema' : 'Regístrate aquí'}</span>
+                  <span className="material-symbols-outlined text-lg transition-transform group-hover:translate-x-1">arrow_forward</span>
+                </>
+              )}
             </button>
             
             {/* Social Login Divider */}
@@ -219,13 +228,6 @@ export default function Home() {
                 <span className="text-sm font-semibold text-[#e7e4ee]">Facebook</span>
               </button>
             </div>
-
-            <button onClick={() => handleOAuth('apple')} type="button" className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-[#48474f]/20 bg-white/5 hover:bg-white/10 transition-all group">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white">
-                 <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.641-.026 2.669-1.48 3.666-2.947 1.152-1.688 1.631-3.313 1.657-3.396-.039-.013-3.182-1.22-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.68.827-1.34 2.274-1.145 3.639 1.353.104 2.686-.615 3.432-1.627z"/>
-              </svg>
-              <span className="text-sm font-semibold text-[#e7e4ee]">Apple</span>
-            </button>
           </form>
           
           {/* Trust Badge Section */}
