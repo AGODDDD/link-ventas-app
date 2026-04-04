@@ -54,13 +54,8 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Proteger rutas de /dashboard
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
+  // Eliminada comprobación SSR de sesión aquí para evitar conflictos con el Implicit Flow basado en localStorage
+  // La autorización a la data está resguardada de cualquier forma por RLS en Postgres
   return response
 }
 

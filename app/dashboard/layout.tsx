@@ -2,9 +2,10 @@
 
 import DashboardSidebar from '@/components/DashboardSidebar'
 import DashboardTopBar from '@/components/dashboard/DashboardTopBar'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,18 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    const guardAuth = async () => {
+      const { supabase } = await import('@/lib/supabase')
+      const { data } = await supabase.auth.getSession()
+      if (!data.session) {
+        router.replace('/')
+      }
+    }
+    guardAuth()
+  }, [router])
 
   return (
     <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
