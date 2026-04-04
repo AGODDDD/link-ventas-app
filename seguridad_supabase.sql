@@ -9,6 +9,13 @@ ALTER TABLE IF EXISTS store_leads ENABLE ROW LEVEL SECURITY;
 -- Módulo de Control de Inventario
 -- ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock integer DEFAULT NULL;
 
+-- Módulo de Facturación Electrónica (SUNAT)
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sol_ruc varchar(11) DEFAULT NULL;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sol_usuario varchar(255) DEFAULT NULL;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sol_password varchar(255) DEFAULT NULL;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS certificado_digital_url text DEFAULT NULL;
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS certificado_password varchar(255) DEFAULT NULL;
+
 -- 2. POLÍTICAS PARA 'PROFILES'
 -- Permitir que cualquiera vea perfiles públicos (necesario para la tienda)
 CREATE POLICY "Acceso público para tiendas"

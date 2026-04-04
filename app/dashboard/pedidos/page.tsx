@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Eye, CheckCircle, Clock, X, Truck, Ban } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { toast } from 'sonner'
 
 type Order = {
     id: string
@@ -68,6 +69,33 @@ export default function PedidosPage() {
             alert('Error cargando comprobante: ' + e.message)
         } finally {
             setProofLoading(false)
+        }
+    }
+
+    const emitirComprobante = async (orderId: string, tipo: 'BOLETA' | 'FACTURA') => {
+        const confirmacion = window.confirm(`¿Estás seguro que deseas generar y enviar esta ${tipo} a SUNAT usando tus credenciales? Esta acción emite valor legal.`);
+        if(!confirmacion) return;
+
+        try {
+            toast.loading(`Conectando con SUNAT y ensamblando XML de ${tipo}...`, { id: 'sunat-toast' })
+            
+            const response = await fetch('/api/sunat/emitir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, tipoComprobante: tipo })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Error desconocido al emitir comprobante');
+            }
+
+            toast.success(data.message, { id: 'sunat-toast', duration: 8000 })
+            // TODO: Podríamos recargar la tabla para mostrar el enlace al PDF generado aquí
+
+        } catch (error: any) {
+            toast.error(error.message, { id: 'sunat-toast', duration: 6000 });
         }
     }
 
@@ -205,12 +233,30 @@ export default function PedidosPage() {
                                     )}
 
                                     {order.status === 'paid' && (
-                                        <button 
-                                            onClick={() => actualizarEstado(order.id, 'shipped')}
-                                            className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-on-primary hover:brightness-110 text-sm font-bold rounded-xl transition-all shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95"
-                                        >
-                                            <Truck size={18} /> Marcar Enviado
-                                        </button>
+                                        <div className="space-y-2 mt-2 w-full">
+                                            <button 
+                                                onClick={() => actualizarEstado(order.id, 'shipped')}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-on-primary hover:brightness-110 text-sm font-bold rounded-xl transition-all shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95"
+                                            >
+                                                <Truck size={18} /> Marcar Enviado
+                                            </button>
+
+                                            {/* ACTION: SUNAT */}
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => emitirComprobante(order.id, 'BOLETA')}
+                                                    className="w-full text-[10px] font-bold tracking-widest uppercase border border-outline/30 hover:border-primary/50 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-lg py-2 transition-colors"
+                                                >
+                                                    Boleta
+                                                </button>
+                                                <button 
+                                                    onClick={() => emitirComprobante(order.id, 'FACTURA')}
+                                                    className="w-full text-[10px] font-bold tracking-widest uppercase border border-outline/30 hover:border-primary/50 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-lg py-2 transition-colors"
+                                                >
+                                                    Factura
+                                                </button>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             </div>

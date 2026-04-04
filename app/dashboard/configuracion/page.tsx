@@ -32,6 +32,13 @@ export default function ConfiguracionPage() {
   const [yapeUrl, setYapeUrl] = useState('')
   const [plinUrl, setPlinUrl] = useState('')
 
+  // Campos Tributarios SUNAT
+  const [solRuc, setSolRuc] = useState('')
+  const [solUsuario, setSolUsuario] = useState('')
+  const [solPassword, setSolPassword] = useState('')
+  const [certificadoUrl, setCertificadoUrl] = useState('')
+  const [certificadoPassword, setCertificadoPassword] = useState('')
+
   const [uploading, setUploading] = useState(false)
 
   // 1. Cargar datos al entrar
@@ -62,6 +69,12 @@ export default function ConfiguracionPage() {
         setSocialInstagram(data.social_instagram || '')
         setSocialTikTok(data.social_tiktok || '')
         setWhatsappPhone(data.whatsapp_phone || '')
+        // Load SUNAT
+        setSolRuc(data.sol_ruc || '')
+        setSolUsuario(data.sol_usuario || '')
+        setSolPassword(data.sol_password || '')
+        setCertificadoUrl(data.certificado_digital_url || '')
+        setCertificadoPassword(data.certificado_password || '')
       }
     }
     cargarPerfil()
@@ -127,6 +140,11 @@ export default function ConfiguracionPage() {
           social_instagram: socialInstagram,
           social_tiktok: socialTikTok,
           whatsapp_phone: whatsappPhone.replace(/\s/g, '') || null,
+          sol_ruc: solRuc || null,
+          sol_usuario: solUsuario || null,
+          sol_password: solPassword || null,
+          certificado_digital_url: certificadoUrl || null,
+          certificado_password: certificadoPassword || null,
           updated_at: new Date(),
         })
         .eq('id', userId)
@@ -348,6 +366,64 @@ export default function ConfiguracionPage() {
                 <Input id="plin-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setPlinUrl)} disabled={uploading} />
               </div>
 
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* FACTURACIÓN ELECTRÓNICA SUNAT */}
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-primary flex items-center gap-2">📄 Facturación SUNAT (UBL 2.1)</CardTitle>
+            <CardDescription>Credenciales fiscales de producción para emitir comprobantes electrónicos.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label>RUC (11 dígitos)</Label>
+                <Input placeholder="Ej: 20123456789" value={solRuc} onChange={(e) => setSolRuc(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Usuario SOL (Secundario)</Label>
+                <Input placeholder="Ej: MIVENTAS1" value={solUsuario} onChange={(e) => setSolUsuario(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Clave SOL (Secundario)</Label>
+                <Input type="password" placeholder="Tu contraseña secreta" value={solPassword} onChange={(e) => setSolPassword(e.target.value)} />
+              </div>
+            </div>
+
+            <Separator className="bg-primary/20" />
+
+            <div className="space-y-4">
+              <Label className="font-bold flex items-center gap-2">Certificado Digital (Firma Electrónica)</Label>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-16 w-16 bg-surface border border-primary/30 flex items-center justify-center shrink-0">
+                      {certificadoUrl ? (
+                         <span className="text-2xl text-primary material-symbols-outlined">verified_user</span>
+                      ) : (
+                         <span className="text-2xl text-on-surface-variant material-symbols-outlined">lock</span>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="certificado-upload" className="cursor-pointer">
+                        <div className="bg-primary text-on-primary font-bold px-4 py-2 hover:bg-primary/90 transition-colors inline-block text-sm">
+                          {uploading ? 'Suibendo...' : 'Subir Archivo .pfx / .p12'}
+                        </div>
+                      </Label>
+                      <Input id="certificado-upload" type="file" accept=".pfx,.p12" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setCertificadoUrl)} disabled={uploading} />
+                      <p className="text-xs text-on-surface-variant mt-2">Sube tu archivo criptográfico extraído de Sunat u otra Entidad Certificadora.</p>
+                      {certificadoUrl && <p className="text-xs font-bold text-primary mt-1 px-2 py-1 bg-primary/10 inline-block">CERTIFICADO REGISTRADO EN BÓVEDA</p>}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label>Contraseña del Certificado (PIN)</Label>
+                  <Input type="password" placeholder="La clave de tu .pfx" value={certificadoPassword} onChange={(e) => setCertificadoPassword(e.target.value)} />
+                  <p className="text-xs text-on-surface-variant">Obligatorio para que el robot firme los comprobantes.</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

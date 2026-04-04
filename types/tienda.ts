@@ -13,6 +13,12 @@ export interface Profile {
   whatsapp_phone?: string;
   yape_image_url?: string;
   plin_image_url?: string;
+  // Facturacion SUNAT
+  sol_ruc?: string;
+  sol_usuario?: string;
+  sol_password?: string;
+  certificado_digital_url?: string;
+  certificado_password?: string;
 }
 
 export interface Product {
