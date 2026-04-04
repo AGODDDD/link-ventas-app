@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 
 export default function Home() {
   const router = useRouter()
@@ -17,30 +16,49 @@ export default function Home() {
   const [messageType, setMessageType] = useState<'error' | 'success'>('error')
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) router.push('/dashboard')
-    }
-    checkSession()
+    let authSubscription: any = null
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') router.push('/dashboard')
-    })
-    return () => subscription.unsubscribe()
+    const initSupabaseAuth = async () => {
+      try {
+        const { supabase } = await import('@/lib/supabase')
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) router.push('/dashboard')
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_IN') router.push('/dashboard')
+        })
+        authSubscription = subscription
+      } catch (err) {
+        console.error("Error cargando el módulo de auth:", err)
+      }
+    }
+    
+    initSupabaseAuth()
+
+    return () => {
+      if (authSubscription) authSubscription.unsubscribe()
+    }
   }, [router])
 
   const handleOAuth = async (providerName: 'google' | 'facebook') => {
       setLoading(true)
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: providerName,
-        options: {
-          redirectTo: `${location.origin}/auth/callback`,
-        },
-      })
-      if(error){
-          setMessage(error.message)
-          setMessageType('error')
-          setLoading(false)
+      try {
+        const { supabase } = await import('@/lib/supabase')
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: providerName,
+          options: {
+            redirectTo: `${location.origin}/auth/callback`,
+          },
+        })
+        if(error){
+            setMessage(error.message)
+            setMessageType('error')
+            setLoading(false)
+        }
+      } catch (err: any) {
+        setMessage('Error al cargar la plataforma de autenticación.')
+        setMessageType('error')
+        setLoading(false)
       }
   }
 
@@ -50,6 +68,8 @@ export default function Home() {
     setMessage('')
     
     try {
+      const { supabase } = await import('@/lib/supabase')
+      
       if (view === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
@@ -70,7 +90,7 @@ export default function Home() {
         }
       } else if (view === 'forgot') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${location.origin}/dashboard/configuracion`, // Redirige al dash donde podrán setear la clave o al callback si lo manejan globalmente
+            redirectTo: `${location.origin}/dashboard/configuracion`, 
         })
         if (error) {
             throw error
