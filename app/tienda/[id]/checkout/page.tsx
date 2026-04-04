@@ -134,6 +134,17 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             if (itemsError) throw itemsError
 
+            // 3.5. Deducir Stock de la Base de Datos (Anti-Overselling Reduction)
+            for (const item of cart) {
+                if (item.product.stock !== null && item.product.stock !== undefined) {
+                    const remainingStock = Math.max(0, item.product.stock - item.quantity);
+                    await supabase
+                        .from('products')
+                        .update({ stock: remainingStock })
+                        .eq('id', item.product.id)
+                }
+            }
+
             // 4. Limpiar y Redirigir Pantalla
             cartStore.clearCart(storeId)
             setOrderSuccessId(orderId)

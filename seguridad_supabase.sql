@@ -1,10 +1,13 @@
 -- # SECURITY AUDIT: LINKVENTAS SUPABASE RLS
 -- Ejecuta este script en el SQL Editor de tu Dashboard de Supabase para activar el "cortafuegos" de la base de datos.
 
--- 1. Activar RLS en las tablas principales
+-- 1. Activar RLS en las tablas y Alteraciones de Módulos (Stock)
 ALTER TABLE IF EXISTS profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS store_leads ENABLE ROW LEVEL SECURITY;
+
+-- Módulo de Control de Inventario
+-- ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock integer DEFAULT NULL;
 
 -- 2. POLÍTICAS PARA 'PROFILES'
 -- Permitir que cualquiera vea perfiles públicos (necesario para la tienda)

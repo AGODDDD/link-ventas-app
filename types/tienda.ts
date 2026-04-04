@@ -23,6 +23,7 @@ export interface Product {
   price: number;
   image_url?: string;
   created_at?: string;
+  stock?: number;
   // Advanced Catalog Fields
   brand?: string;
   original_price?: number;

@@ -108,6 +108,7 @@ export default function ProductosPage() {
                                 <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Nombre del Producto</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Precio Base</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Estado (Vitrina)</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-center">Existencia</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest text-right">Acciones</th>
                             </tr>
                         </thead>
@@ -141,6 +142,17 @@ export default function ProductosPage() {
                                                 <span className="px-3 py-1 bg-surface-bright text-on-surface-variant border border-outline-variant/20 rounded-full text-[10px] font-bold uppercase tracking-widest">Solo Bodega</span>
                                             )}
                                         </td>
+                                        <td className="px-6 py-3 text-center">
+                                            {prod.stock === null || prod.stock === undefined ? (
+                                                <span className="text-xl font-bold font-mono text-on-surface-variant/50">∞</span>
+                                            ) : prod.stock <= 0 ? (
+                                                <span className="px-3 py-1 bg-error/10 text-error border border-error/20 rounded text-[10px] font-black uppercase tracking-widest">Agotado (0)</span>
+                                            ) : prod.stock <= 5 ? (
+                                                <span className="px-3 py-1 bg-[#d78a33]/10 text-[#d78a33] border border-[#d78a33]/20 rounded text-[10px] font-black uppercase tracking-widest">Quedan {prod.stock}</span>
+                                            ) : (
+                                                <span className="font-mono text-sm font-bold text-on-surface">{prod.stock} Und.</span>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                 <button 
@@ -163,7 +175,7 @@ export default function ProductosPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-16 text-center text-on-surface-variant text-sm border-2 border-dashed border-outline-variant/10 rounded-b-2xl">
+                                    <td colSpan={6} className="px-6 py-16 text-center text-on-surface-variant text-sm border-2 border-dashed border-outline-variant/10 rounded-b-2xl">
                                         Bodega vacía. Añade nuevos SKUs para empezar tu inventario.
                                     </td>
                                 </tr>

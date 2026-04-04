@@ -17,12 +17,19 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
   const storeCart = cartStore.carts[storeId] || []
   const inCart = storeCart.find(item => item.product.id === prod.id)
 
+  const isOutOfStock = prod.stock !== null && prod.stock !== undefined && prod.stock <= 0;
+
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     cartStore.addToCart(storeId, prod)
     toast.success(`${prod.name} agregado al carrito`)
   }
 
   const handleUpdateQuantity = (delta: number) => {
+    if (delta > 0 && prod.stock !== null && prod.stock !== undefined && inCart && (inCart.quantity + delta) > prod.stock) {
+      toast.error(`Solo quedan ${prod.stock} unidades en stock.`);
+      return;
+    }
     cartStore.updateQuantity(storeId, prod.id, delta)
   }
 
@@ -42,6 +49,11 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
         {prod.shipping_today && (
           <span className="bg-white text-black px-2 py-1 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 font-headline">
             <Zap size={10} className="fill-black" /> ¡HOY!
+          </span>
+        )}
+        {prod.stock !== null && prod.stock !== undefined && prod.stock > 0 && prod.stock <= 5 && (
+          <span className="bg-error px-2 py-1 text-[10px] font-bold text-on-error uppercase tracking-widest font-headline animate-pulse">
+            ¡Solo quedan {prod.stock}!
           </span>
         )}
       </div>
@@ -71,8 +83,18 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
           </div>
         )}
 
+        {/* Agotado Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 z-20 backdrop-blur-[2px] bg-background/50 flex items-center justify-center">
+            <div className="bg-error text-on-error border-y-[4px] border-black py-2 w-full text-center rotate-[-12deg] shadow-2xl">
+              <span className="font-headline font-black text-2xl tracking-widest uppercase italic">Agotado</span>
+            </div>
+          </div>
+        )}
+
         {/* Quick Add Overlay (Desktop) */}
-        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:block backdrop-blur-md bg-black/60 border-t border-primary/20">
+        {!isOutOfStock && (
+        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:block backdrop-blur-md bg-black/60 border-t border-primary/20 z-30">
           {inCart ? (
             <div className="flex items-center justify-between bg-zinc-900 border border-primary text-primary rounded-none px-4 py-2 shadow-xl">
               <button onClick={() => handleUpdateQuantity(-1)} className="hover:text-white transition-colors"><Minus size={16} /></button>
@@ -88,6 +110,7 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
             </Button>
           )}
         </div>
+        )}
       </div>
 
       {/* Info Section */}
@@ -139,7 +162,11 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
 
             {/* Mobile Add Button */}
             <div className="md:hidden">
-              {inCart ? (
+              {isOutOfStock ? (
+                <Button size="sm" disabled className="rounded-none bg-surface-bright text-on-surface-variant font-bold font-headline uppercase text-[10px] h-7 px-3">
+                  AGOTADO
+                </Button>
+              ) : inCart ? (
                 <div className="flex items-center gap-2 bg-zinc-900 border border-primary text-primary rounded-none px-2 py-1">
                   <button onClick={() => handleUpdateQuantity(-1)}><Minus size={12} /></button>
                   <span className="text-xs font-bold font-headline">{inCart.quantity}</span>

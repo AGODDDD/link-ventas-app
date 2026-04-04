@@ -36,6 +36,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Prop
         precio: "99.90",
         marca: "Kinetic",
         categoria: "Accesorios",
+        stock: "50",
         descripcion: "Descripción potente del producto"
       }
     ];
@@ -67,6 +68,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Prop
           price: price,
           brand: (row.marca || row.brand || "").toUpperCase(),
           category: (row.categoria || row.category || "").toUpperCase(),
+          stock: typeof row.stock !== 'undefined' ? parseInt(String(row.stock).replace(/[^0-9]/g, '')) || 0 : null,
           description: row.descripcion || row.description || "",
           is_active: true
         }
@@ -118,7 +120,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Prop
           <div className="bg-surface-container-high/50 p-4 border border-outline border-dashed">
             <p className="text-xs text-on-surface-variant leading-relaxed">
               Sube un archivo <strong className="text-on-surface">.CSV</strong> con las columnas: <br/> 
-              <span className="font-mono text-[10px] text-primary">NOMBRE, PRECIO, MARCA, CATEGORIA, DESCRIPCION</span>
+              <span className="font-mono text-[10px] text-primary">NOMBRE, PRECIO, MARCA, CATEGORIA, STOCK, DESCRIPCION</span>
             </p>
             <button 
                 onClick={downloadTemplate}

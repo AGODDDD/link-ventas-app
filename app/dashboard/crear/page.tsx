@@ -19,6 +19,7 @@ export default function CrearProducto() {
   const [originalPrice, setOriginalPrice] = useState('')
   const [isFreeShipping, setIsFreeShipping] = useState(false)
   const [shippingToday, setShippingToday] = useState(false)
+  const [stock, setStock] = useState('')
   
   // Media handling
   const [archivo, setArchivo] = useState<File | null>(null)
@@ -85,6 +86,7 @@ export default function CrearProducto() {
           brand: brand.toUpperCase() || null,
           category: category || null,
           original_price: oldPrice,
+          stock: stock ? parseInt(stock) : null,
           is_free_shipping: isFreeShipping,
           shipping_today: shippingToday,
           is_active: false, // Por defecto se va a Bodega, no a la Vitrina
@@ -170,6 +172,13 @@ export default function CrearProducto() {
                     <input type="number" step="0.01" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface-variant line-through p-3 transition-all text-xl" />
                   </div>
                </div>
+
+               <div className="space-y-2 pt-4">
+                    <label className="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
+                        Inventario Base (Unidades) <span className="bg-surface-container-highest px-2 py-0.5 rounded text-[9px]">Opcional</span>
+                    </label>
+                    <input type="number" min="0" placeholder="Ej: 50 o vacío para ilimitado" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all font-mono" />
+                </div>
 
                <div className="space-y-4 pt-4">
                   <label className="flex items-center justify-between p-4 border border-outline-variant/20 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors group">
