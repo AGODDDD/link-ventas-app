@@ -72,30 +72,13 @@ export default function PedidosPage() {
         }
     }
 
-    const emitirComprobante = async (orderId: string, tipo: 'BOLETA' | 'FACTURA') => {
-        const confirmacion = window.confirm(`¿Estás seguro que deseas generar y enviar esta ${tipo} a SUNAT usando tus credenciales? Esta acción emite valor legal.`);
-        if(!confirmacion) return;
-
-        try {
-            toast.loading(`Conectando con SUNAT y ensamblando XML de ${tipo}...`, { id: 'sunat-toast' })
-            
-            const response = await fetch('/api/sunat/emitir', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ orderId, tipoComprobante: tipo })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Error desconocido al emitir comprobante');
-            }
-
-            toast.success(data.message, { id: 'sunat-toast', duration: 8000 })
-            // TODO: Podríamos recargar la tabla para mostrar el enlace al PDF generado aquí
-
-        } catch (error: any) {
-            toast.error(error.message, { id: 'sunat-toast', duration: 6000 });
+    // Función Generar Ticket
+    const generarTicket = (orderId: string) => {
+        // En LinkVentas el merchant_id suele ser igual al userId de autenticacion usado para instanciar orders.
+        // Asumimos que orders[0].merchant_id existe.
+        const storeId = orders.length > 0 ? (orders[0] as any).merchant_id : ''
+        if (storeId) {
+             window.open(`/tienda/${storeId}/ticket/${orderId}`, '_blank')
         }
     }
 
@@ -241,21 +224,13 @@ export default function PedidosPage() {
                                                 <Truck size={18} /> Marcar Enviado
                                             </button>
 
-                                            {/* ACTION: SUNAT */}
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    onClick={() => emitirComprobante(order.id, 'BOLETA')}
-                                                    className="w-full text-[10px] font-bold tracking-widest uppercase border border-outline/30 hover:border-primary/50 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-lg py-2 transition-colors"
-                                                >
-                                                    Boleta
-                                                </button>
-                                                <button 
-                                                    onClick={() => emitirComprobante(order.id, 'FACTURA')}
-                                                    className="w-full text-[10px] font-bold tracking-widest uppercase border border-outline/30 hover:border-primary/50 hover:bg-primary/10 text-on-surface-variant hover:text-primary rounded-lg py-2 transition-colors"
-                                                >
-                                                    Factura
-                                                </button>
-                                            </div>
+                                            {/* ACTION: TICKET VISUAL */}
+                                            <button 
+                                                onClick={() => generarTicket(order.id)}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest"
+                                            >
+                                                🎟️ Generar Ticket
+                                            </button>
                                         </div>
                                     )}
                                 </div>
