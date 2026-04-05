@@ -4,10 +4,13 @@ import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
+import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
 
 export default function DashboardPage() {
   const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
   const [leadsNuevos, setLeadsNuevos] = useState(0)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [isFomoModalOpen, setIsFomoModalOpen] = useState(false)
 
   // Estadísticas calculadas reactivamente desde el cerebro Zustand
   const ingresosTotales = useMemo(() => {
@@ -59,6 +62,7 @@ export default function DashboardPage() {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      setUserId(user.id)
 
       // Cargar Orders al cerebro Zustand (0ms si ya están en caché)
       await cargarOrders(user.id)
@@ -280,12 +284,22 @@ export default function DashboardPage() {
                     </label>
                 </div>
             </div>
-            <button className="relative z-10 bg-on-background text-background hover:bg-primary hover:text-on-primary transition-colors py-3 px-4 flex justify-between items-center rounded-xl font-bold text-sm tracking-widest uppercase">
+            <button 
+                onClick={() => setIsFomoModalOpen(true)}
+                className="relative z-10 bg-on-background text-background hover:bg-primary hover:text-on-primary transition-colors py-3 px-4 flex justify-between items-center rounded-xl font-bold text-sm tracking-widest uppercase">
                 <span>Configurar Fuego</span>
                 <span className="material-symbols-outlined text-sm">settings</span>
             </button>
         </div>
       </div>
+
+      {userId && (
+          <FomoConfigModal 
+              isOpen={isFomoModalOpen} 
+              onClose={() => setIsFomoModalOpen(false)} 
+              userId={userId} 
+          />
+      )}
     </>
   )
 }

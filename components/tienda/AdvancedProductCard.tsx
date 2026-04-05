@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
 import { Product, Profile } from '@/types/tienda'
 import { toast } from 'sonner'
+import FomoBanner from './FomoBanner'
 
 
 export default function AdvancedProductCard({ prod, perfil }: { prod: Product; perfil: Profile | null; }) {
@@ -138,6 +139,15 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
             </div>
           </div>
         </div>
+        
+        {/* FOMO ENGINE 🔥 */}
+        {perfil?.fomo_enabled && (
+          <FomoBanner 
+             minViewers={perfil.fomo_min_viewers || 3} 
+             maxViewers={perfil.fomo_max_viewers || 24} 
+             messageTemplate={perfil.fomo_message || '{count} personas están evaluando esta oferta ahora mismo'} 
+          />
+        )}
 
         <div>
           <div className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-3 border-b border-white/10 pb-2">

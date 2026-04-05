@@ -19,6 +19,11 @@ export interface Profile {
   sol_password?: string;
   certificado_digital_url?: string;
   certificado_password?: string;
+  // Motor FOMO (Stock Social)
+  fomo_enabled?: boolean;
+  fomo_min_viewers?: number;
+  fomo_max_viewers?: number;
+  fomo_message?: string;
 }
 
 export interface Product {
