@@ -24,14 +24,14 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
     return (
         <div 
             ref={ref}
-            // Forzamos 380px de ancho típico the ticketera 80mm
-            style={{ width: '380px', backgroundColor: '#f4f4f4', color: '#333', fontFamily: '"Courier New", Courier, monospace', position: 'relative' }}
+            // Forzamos 380px the ancho y usamos HEX puro para el texto principal
+            style={{ width: '380px', backgroundColor: '#f4f4f4', color: '#111111', fontFamily: '"Courier New", Courier, monospace', position: 'relative' }}
             className="p-8 shadow-sm flex flex-col"
         >
             {/* Encabezado */}
             <div className="text-center space-y-2 mb-6">
                 <p className="tracking-widest uppercase font-bold text-xs">=== {store_name} ===</p>
-                <div className="border-b-2 border-dashed border-neutral-400 pb-4 mb-4"></div>
+                <div className="border-b-2 border-dashed pb-4 mb-4" style={{ borderColor: '#888888' }}></div>
                 <h1 className="text-2xl font-black tracking-widest uppercase">*** RECEIPT ***</h1>
             </div>
 
@@ -41,7 +41,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                 <span>{formattedDate} - {formattedTime}</span>
             </div>
             
-            <div className="border-b-2 border-dashed border-neutral-400 mb-4"></div>
+            <div className="border-b-2 border-dashed mb-4" style={{ borderColor: '#888888' }}></div>
 
             {/* Items */}
             <div className="flex flex-col gap-3 text-sm font-bold w-full uppercase">
@@ -56,7 +56,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                                 <span className="w-1/4 text-right">S/ {lineTotal}</span>
                             </div>
                             {item.quantity > 1 && (
-                                <div className="text-xs text-neutral-500 mt-0.5">
+                                <div className="text-xs mt-0.5" style={{ color: '#555555' }}>
                                     x{item.quantity} @ S/ {priceRaw.toFixed(2)}
                                 </div>
                             )}
@@ -65,7 +65,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                 })}
             </div>
 
-            <div className="border-b-2 border-dashed border-neutral-400 my-4"></div>
+            <div className="border-b-2 border-dashed my-4" style={{ borderColor: '#888888' }}></div>
 
             {/* Subtotales */}
             <div className="flex justify-between text-sm font-bold uppercase mb-4">
@@ -73,32 +73,32 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                 <span>S/ {total}</span>
             </div>
 
-            <div className="border-b-2 border-dashed border-neutral-400 mb-4"></div>
+            <div className="border-b-2 border-dashed mb-4" style={{ borderColor: '#888888' }}></div>
 
             {/* Totales Netos */}
             <div className="flex justify-between text-lg font-black uppercase mb-2">
                 <span>TOTAL AMOUNT</span>
                 <span>S/ {total}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold uppercase mb-2 text-neutral-600">
+            <div className="flex justify-between text-sm font-bold uppercase mb-2" style={{ color: '#444444' }}>
                 <span>METODO</span>
-                <span>{order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO (CONTRA ENTREGA)' : 'TRANSFERENCIA DIGITAL'}</span>
+                <span>{order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO' : 'TRANSFERENCIA'}</span>
             </div>
             {order.customer_name && (
-                <div className="flex justify-between text-xs font-bold uppercase mb-4 text-neutral-500">
+                <div className="flex justify-between text-xs font-bold uppercase mb-4" style={{ color: '#555555' }}>
                     <span>CLIENTE</span>
                     <span>{order.customer_name}</span>
                 </div>
             )}
 
-            <div className="border-b-2 border-dashed border-neutral-400 my-4"></div>
+            <div className="border-b-2 border-dashed my-4" style={{ borderColor: '#888888' }}></div>
             
             {/* Footer */}
             <div className="text-center font-bold text-sm tracking-widest mt-2 mb-6">
                 THANK YOU FOR SHOPPING!
             </div>
 
-            <div className="border-b-2 border-dashed border-neutral-400 mb-6"></div>
+            <div className="border-b-2 border-dashed mb-6" style={{ borderColor: '#888888' }}></div>
 
             {/* Falso Código the Barras */}
             <div className="flex justify-center mb-6">
@@ -110,13 +110,13 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                            y="0" 
                            width={Math.random() > 0.5 ? 2 : 1} 
                            height="40" 
-                           fill="#333" 
+                           fill="#111111" 
                        />
                    ))}
                 </svg>
             </div>
             
-            <p className="text-center text-[10px] uppercase font-bold text-neutral-400 tracking-widest pb-4">
+            <p className="text-center text-[10px] uppercase font-bold tracking-widest pb-4" style={{ color: '#888888' }}>
                 {shortId}
             </p>
 
