@@ -4,6 +4,9 @@ import { supabase } from '@/lib/supabase'
 import { Eye, CheckCircle, Clock, X, Truck, Ban } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
+import html2canvas from 'html2canvas'
+import { ThermalReceipt } from '@/components/dashboard/ThermalReceipt'
+import { useRef } from 'react'
 
 type Order = {
     id: string
@@ -30,10 +33,19 @@ export default function PedidosPage() {
     const [leads, setLeads] = useState<any[]>([])
     const [loadingLeads, setLoadingLeads] = useState(false)
 
+    // Referencias para Motor Térmico (html2canvas)
+    const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
+    const receiptRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+    const [perfil, setPerfil] = useState<any>(null)
+
     useEffect(() => {
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
+            
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+            if (profile) setPerfil(profile)
+
             await cargarOrders(user.id)
             setLoading(false)
             fetchLeads(user.id)
@@ -97,13 +109,31 @@ export default function PedidosPage() {
         }
     }
 
-    // Función Generar Ticket
-    const generarTicket = (orderId: string) => {
-        // En LinkVentas el merchant_id suele ser igual al userId de autenticacion usado para instanciar orders.
-        // Asumimos que orders[0].merchant_id existe.
-        const storeId = orders.length > 0 ? (orders[0] as any).merchant_id : ''
-        if (storeId) {
-             window.open(`/tienda/${storeId}/ticket/${orderId}`, '_blank')
+    // Función Mágica the Ticket The de Térmico (Descarga the PNG Directa)
+    const generarTicketTermico = async (order: any) => {
+        setImprimiendoId(order.id)
+        toast.loading('Generando ticket clásico 🖨️...', { id: 'thermal-toast' })
+        
+        try {
+             const element = receiptRefs.current[order.id]
+             if (!element) throw new Error("Motor térmico no inicializado")
+             
+             // Pequeño the delay temporal the para the the de el the theDOM the refresh
+             await new Promise(r => setTimeout(r, 100))
+             
+             const canvas = await html2canvas(element, { scale: 2, backgroundColor: null })
+             const image = canvas.toDataURL('image/png')
+             
+             const link = document.createElement('a')
+             link.href = image
+             link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+             link.click()
+
+             toast.success('Ticket the descargado con the éxito!', { id: 'thermal-toast' })
+        } catch (e: any) {
+             toast.error('Falló la the impresión the the de the the papel térmico: ' + e.message, { id: 'thermal-toast' })
+        } finally {
+             setImprimiendoId(null)
         }
     }
 
@@ -269,13 +299,23 @@ export default function PedidosPage() {
                                                 <Truck size={18} /> Marcar Enviado
                                             </button>
 
-                                            {/* ACTION: TICKET VISUAL */}
+                                            {/* ACTION: TICKET VISUAL DIRECTO */}
                                             <button 
-                                                onClick={() => generarTicket(order.id)}
-                                                className="w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest"
+                                                onClick={() => generarTicketTermico(order)}
+                                                disabled={imprimiendoId === order.id}
+                                                className={`w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
                                             >
-                                                🎟️ Generar Ticket
+                                                {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
                                             </button>
+                                            
+                                            {/* MOTOR TÉRMICO OCULTO (Renderizado the the invisible forzoso) */}
+                                            <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
+                                                <ThermalReceipt 
+                                                    ref={el => { receiptRefs.current[order.id] = el }} 
+                                                    order={order} 
+                                                    storeName={perfil?.store_name || "TU TIENDA"} 
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                 </div>
