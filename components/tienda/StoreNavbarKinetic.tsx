@@ -29,6 +29,7 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
   }, [])
 
   return (
+    <>
     <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md shadow-[0_60px_60px_rgba(255,59,48,0.06)]">
       <div className="flex justify-between items-center px-4 md:px-8 py-4 max-w-full">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -114,8 +115,9 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
           </Link>
         </div>
       )}
-
-      <SlideOverCart storeId={storeId} isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
+    
+    <SlideOverCart storeId={storeId} isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+    </>
   )
 }
