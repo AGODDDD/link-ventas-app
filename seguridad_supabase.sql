@@ -9,6 +9,10 @@ ALTER TABLE IF EXISTS store_leads ENABLE ROW LEVEL SECURITY;
 -- Módulo de Control de Inventario
 -- ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock integer DEFAULT NULL;
 
+-- Módulo de Vanity URLs (Store Slugs)
+-- MÚY IMPORTANTE: Ejecuta esta línea para soportar links personalizados:
+-- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+
 -- Módulo de Facturación Electrónica (SUNAT)
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sol_ruc varchar(11) DEFAULT NULL;
 -- ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS sol_usuario varchar(255) DEFAULT NULL;
