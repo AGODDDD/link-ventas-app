@@ -25,22 +25,47 @@ export default function PedidosPage() {
     const [selectedProof, setSelectedProof] = useState<string | null>(null)
     const [proofLoading, setProofLoading] = useState(false)
 
+    // Estado para Rescates (Leads Mágicos)
+    const [activeTab, setActiveTab] = useState<'orders' | 'leads'>('orders')
+    const [leads, setLeads] = useState<any[]>([])
+    const [loadingLeads, setLoadingLeads] = useState(false)
+
     useEffect(() => {
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
             await cargarOrders(user.id)
             setLoading(false)
+            fetchLeads(user.id)
         }
         init()
     }, [cargarOrders])
+
+    const fetchLeads = async (userId: string) => {
+        setLoadingLeads(true)
+        const { data } = await supabase
+            .from('abandoned_carts')
+            .select('*')
+            .eq('store_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(50)
+        
+        if (data) setLeads(data)
+        setLoadingLeads(false)
+    }
 
     const forceRefresh = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
         setLoading(true)
         await cargarOrders(user.id, true)
+        fetchLeads(user.id)
         setLoading(false)
+    }
+
+    const generarRescateWA = (lead: any) => {
+        const url = `https://api.whatsapp.com/send?phone=${lead.customer_phone.replace(/\s/g, '')}&text=Hola ${lead.customer_name}, %C2%A1vi que te interesaron algunos de nuestros productos! %C2%BFTe puedo ayudar aplic%C3%A1ndote un descuento especial para cerrar tu pedido hoy mismo? 👀`;
+        window.open(url, '_blank')
     }
 
     const actualizarEstado = async (id: string, nuevoEstado: string) => {
@@ -108,16 +133,36 @@ export default function PedidosPage() {
         <div className="space-y-6 pb-12 relative w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Órdenes 📦</h1>
-                    <p className="text-on-surface-variant">Gestión logística y control de transacciones.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Central Logística 📦</h1>
+                    <p className="text-on-surface-variant">Gestión de órdenes y radar de rescates de carritos.</p>
                 </div>
-                <button onClick={forceRefresh} className="px-6 py-2 bg-surface-bright text-on-surface border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors font-semibold text-sm">
-                    Actualizar Lista
+                <div className="flex gap-2">
+                    <button onClick={forceRefresh} className="px-6 py-2 bg-surface-bright text-on-surface border border-outline-variant/30 rounded-lg hover:bg-surface-container-high transition-colors font-semibold text-sm">
+                        Actualizar Sistema
+                    </button>
+                </div>
+            </div>
+
+            {/* TAB NAVIGATOR */}
+            <div className="flex gap-4 mb-6 border-b border-outline-variant/20 pb-2 overflow-x-auto custom-scrollbar">
+                <button 
+                    onClick={() => setActiveTab('orders')}
+                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+                >
+                    Órdenes Cerradas ({orders.length})
+                </button>
+                <button 
+                    onClick={() => setActiveTab('leads')}
+                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'leads' ? 'border-tertiary text-tertiary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+                >
+                    Rescates WhatsApp <span className="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px]">{leads.length}</span>
                 </button>
             </div>
 
             <div className="grid gap-6">
-                {orders.length === 0 ? (
+                {activeTab === 'orders' && (
+                    <>
+                        {orders.length === 0 ? (
                     <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
                         <p className="text-on-surface-variant text-xl font-bold">Aún no tienes pedidos.</p>
                         <p className="text-on-surface-variant/70 text-sm mt-2">Empieza a compartir tu catálogo para recibir órdenes aquí.</p>
@@ -237,6 +282,53 @@ export default function PedidosPage() {
                             </div>
                         </div>
                     ))
+                )}
+                </>)}
+
+                {activeTab === 'leads' && (
+                    <>
+                        {loadingLeads ? (
+                             <p className="text-center font-bold text-on-surface-variant animate-pulse py-10">Buscando leads fantasmas...</p>
+                        ) : leads.length === 0 ? (
+                            <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
+                                <p className="text-on-surface-variant text-xl font-bold">Sin actividad fantasma.</p>
+                                <p className="text-on-surface-variant/70 text-sm mt-2">Los clientes están cerrando todas sus cuentas correctamente.</p>
+                            </div>
+                        ) : (
+                            leads.map((lead) => (
+                                <div key={lead.id} className="bg-surface-container-high rounded-2xl border-l-[6px] border-l-tertiary border-y border-r border-outline-variant/5 shadow-2xl overflow-hidden flex flex-col md:flex-row">
+                                    <div className="p-6 md:w-1/3 flex flex-col justify-center border-b md:border-b-0 md:border-r border-outline-variant/10">
+                                        <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Vuelto fantasma el {new Date(lead.created_at).toLocaleString()}</p>
+                                        <h3 className="font-headline font-black text-2xl text-on-surface uppercase italic tracking-tight">{lead.customer_name}</h3>
+                                        <p className="text-tertiary font-bold mt-1">📞 {lead.customer_phone}</p>
+                                    </div>
+                                    <div className="p-6 md:w-1/3 flex flex-col justify-center">
+                                       <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">En el carrito ({lead.cart_json.length} items)</p>
+                                       <div className="space-y-2">
+                                         {lead.cart_json.map((item: any, idx: number) => (
+                                             <div key={idx} className="flex gap-2 text-sm">
+                                                <span className="font-black text-on-surface">{item.quantity}x</span>
+                                                <span className="text-on-surface-variant leading-tight truncate">{item.product?.name}</span>
+                                             </div>
+                                         ))}
+                                       </div>
+                                    </div>
+                                    <div className="p-6 md:w-1/3 flex flex-col justify-center items-center bg-surface-container">
+                                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Monto Perdido</p>
+                                        <p className="font-headline font-black text-3xl text-on-surface mb-4 italic">
+                                           S/ {lead.cart_json.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0).toFixed(2)}
+                                        </p>
+                                        <button 
+                                            onClick={() => generarRescateWA(lead)}
+                                            className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
+                                        >
+                                           💬 Intentar Rescate
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </>
                 )}
             </div>
 

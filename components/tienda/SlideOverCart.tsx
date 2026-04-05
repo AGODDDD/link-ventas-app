@@ -90,16 +90,16 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
                         <Store className="text-outline-variant" />
                      )}
                    </div>
-                   <div className="flex-1 flex flex-col justify-between py-1">
+                   <div className="flex-1 flex flex-col justify-between min-w-0 py-1">
                       <div>
-                        {item.product.brand && <p className="text-[10px] font-headline font-black uppercase text-on-surface-variant tracking-widest leading-none mb-1">{item.product.brand}</p>}
-                        <h4 className="font-bold font-headline uppercase text-sm leading-tight line-clamp-2 text-on-background">{item.product.name}</h4>
+                        {item.product.brand && <p className="text-[10px] font-headline font-black uppercase text-on-surface-variant tracking-widest leading-none mb-1 truncate">{item.product.brand}</p>}
+                        <h4 className="font-bold font-headline uppercase text-sm leading-tight line-clamp-2 text-on-background pr-6">{item.product.name}</h4>
                       </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="font-black font-headline text-primary italic text-lg">S/ {item.product.price.toFixed(2)}</span>
+                      <div className="flex items-center justify-between mt-3">
+                        <span className="font-black font-headline text-primary italic text-base md:text-lg">S/ {item.product.price.toFixed(2)}</span>
                         
                         {/* Quantity Controller */}
-                        <div className="flex items-center gap-3 bg-surface-variant border border-outline px-2 py-1">
+                        <div className="flex items-center gap-2 bg-surface-variant border border-outline px-2 py-1 ml-2 shrink-0">
                           <button onClick={() => handleUpdateQuantity(item.product.id, -1)} className="text-on-surface-variant hover:text-primary"><Minus size={14} /></button>
                           <span className="font-bold text-sm text-on-background w-4 text-center">{item.quantity}</span>
                           <button onClick={() => handleUpdateQuantity(item.product.id, 1)} className="text-on-surface-variant hover:text-primary"><Plus size={14} /></button>
@@ -108,7 +108,7 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
                    </div>
                    <button 
                      onClick={() => cartStore.removeFromCart(storeId, item.product.id)}
-                     className="absolute -top-2 -right-2 bg-background border border-outline p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary hover:text-white"
+                     className="absolute top-2 right-2 bg-background border border-outline p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error hover:text-white"
                    >
                      <X size={12} />
                    </button>

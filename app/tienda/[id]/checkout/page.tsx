@@ -23,6 +23,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [submitting, setSubmitting] = useState(false)
     const [perfil, setPerfil] = useState<Profile | null>(null)
     const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null)
+    const [leadId, setLeadId] = useState<string | null>(null)
 
     // Form states
     const [nombre, setNombre] = useState('')
@@ -51,6 +52,38 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         }
         cargarPerfil()
     }, [storeId, router, cart.length, orderSuccessId])
+
+    // ==============================================================
+    // STEALTH CAPTURE (Debounced Lead Saver)
+    // ==============================================================
+    useEffect(() => {
+        if (!telefono || telefono.replace(/\s/g, '').length < 7) return;
+        
+        const timeoutId = setTimeout(async () => {
+            try {
+                const response = await fetch('/api/abandoned-cart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        storeId,
+                        customerName: nombre,
+                        customerPhone: telefono,
+                        cart,
+                        existingLeadId: leadId
+                    })
+                });
+                const data = await response.json();
+                if (data.leadId && !leadId) {
+                    setLeadId(data.leadId); // Guardar referencia the este lead en esta sesión
+                }
+            } catch (error) {
+                console.error("Stealth capture error:", error);
+            }
+        }, 3000); // 3 segundos de debounce para no bombardear el servidor
+        
+        return () => clearTimeout(timeoutId);
+    }, [nombre, telefono, storeId, cart, leadId]);
+    // ==============================================================
 
     const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
 
@@ -143,6 +176,11 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         .update({ stock: remainingStock })
                         .eq('id', item.product.id)
                 }
+            }
+
+            // 3.8. Rescate Exitoso: Eliminar el Lead Fantasma pues completó su compra
+            if (leadId) {
+                 await supabase.from('abandoned_carts').delete().eq('id', leadId);
             }
 
             // 4. Limpiar y Redirigir Pantalla

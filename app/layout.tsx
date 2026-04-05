@@ -40,7 +40,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
       >
-        <Toaster richColors position="top-right" duration={4000} />
+        <Toaster richColors position="top-center" duration={4000} toastOptions={{ className: 'z-[99999]' }} />
         {children}
         <Analytics />
       </body>
