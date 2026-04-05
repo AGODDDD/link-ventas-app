@@ -207,25 +207,83 @@ export default function DashboardPage() {
 
       {/* Secondary Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* CHART REAL - Últimos 7 Días */}
         <div className="lg:col-span-2 bg-surface-container-high/40 p-8 rounded-2xl border border-outline-variant/10 relative overflow-hidden group">
-            <h3 className="text-xl font-bold text-on-surface mb-6">Análisis de Flujo Semanal (Pronto)</h3>
-            <div className="h-48 w-full flex items-end justify-between gap-4 mt-12 opacity-50">
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[40%] rounded-t-lg"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[65%] rounded-t-lg"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[50%] rounded-t-lg"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[90%] rounded-t-lg border-t-2 border-primary"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[70%] rounded-t-lg"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[30%] rounded-t-lg"></div></div>
-                <div className="w-full bg-surface-container rounded-t-lg relative group/bar"><div className="absolute bottom-0 w-full bg-primary/20 h-[15%] rounded-t-lg"></div></div>
-            </div>
+            <h3 className="text-xl font-bold text-on-surface mb-6">Flujo de Ingresos (Últimos 7 Días)</h3>
+            
+            {orders.length === 0 ? (
+                <div className="h-48 flex items-center justify-center text-on-surface-variant text-sm">
+                    Aún no hay suficientes datos para generar el gráfico.
+                </div>
+            ) : (
+                <div className="h-56 mt-8 flex items-end justify-between gap-2 md:gap-4 px-2">
+                    {Array.from({length: 7}).map((_, i) => {
+                        const d = new Date()
+                        d.setDate(d.getDate() - (6 - i))
+                        const dayString = d.toDateString()
+                        const dayOrders = orders.filter(o => new Date(o.created_at).toDateString() === dayString)
+                        const totalDay = dayOrders.reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+                        
+                        // Calculando alturas relativas
+                        const maxSales = Math.max(
+                            1, 
+                            ...Array.from({length: 7}).map((_, j) => {
+                                const dTemp = new Date()
+                                dTemp.setDate(dTemp.getDate() - (6 - j))
+                                const dOrders = orders.filter(o => new Date(o.created_at).toDateString() === dTemp.toDateString())
+                                return dOrders.reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+                            })
+                        )
+                        const heightPercentage = Math.max(5, (totalDay / maxSales) * 100)
+
+                        return (
+                            <div key={i} className="flex flex-col items-center gap-2 w-full group/bar relative">
+                                {/* Tooltip the Hover */}
+                                <div className="absolute -top-8 bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">
+                                    S/ {totalDay.toFixed(2)}
+                                </div>
+                                <div className="w-full bg-surface-container rounded-t-lg relative h-40 flex items-end justify-center transition-all bg-opacity-50 group-hover/bar:bg-opacity-100">
+                                    <div 
+                                        className="w-full bg-primary/40 rounded-t-lg hover:bg-primary transition-all flex border-t-2 border-primary" 
+                                        style={{ height: `${heightPercentage}%` }}
+                                    ></div>
+                                </div>
+                                <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest text-center">
+                                    {d.toLocaleDateString('es-ES', { weekday: 'short' })}
+                                </span>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
         </div>
-        <div className="bg-primary-container p-8 rounded-2xl relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-primary opacity-20 blur-3xl rounded-full"></div>
-            <div className="relative z-10">
-                <h3 className="text-xl font-bold text-on-primary-container mb-2">Ventas Premium</h3>
-                <p className="text-on-primary-container/70 text-sm leading-relaxed mb-6">Estás usando la arquitectura Dark Premium de LinkVentas para vender en milisegundos.</p>
+
+        {/* MOTOR DE URGENCIA / FOMO (Reemplazo the del Banner the Publicidad) */}
+        <div className="bg-surface-container p-8 rounded-2xl relative overflow-hidden flex flex-col justify-between border-2 border-primary/20">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+                <span className="material-symbols-outlined text-6xl text-primary">local_fire_department</span>
             </div>
-            <button className="relative z-10 bg-on-primary-container text-primary-container py-3 rounded-xl font-bold text-sm shadow-xl">Configurar Tienda</button>
+            <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-primary text-xl">local_fire_department</span>
+                    <h3 className="text-xl font-bold text-on-surface">Motor The Stock Social</h3>
+                </div>
+                <p className="text-on-surface-variant text-sm line-clamp-3 mb-6">
+                    Muestra a tus clientes notificaciones the tipo <strong className="text-on-surface">"14 personas están viendo esto ahora"</strong> para activar el FOMO y acelerar la the decisión de pago.
+                </p>
+                <div className="flex items-center justify-between bg-surface-container-high p-4 border border-outline-variant/10 rounded-xl mb-4">
+                    <span className="text-xs font-bold text-primary uppercase tracking-widest">ESTADO DEL MOTOR</span>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-surface-bright peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                </div>
+            </div>
+            <button className="relative z-10 bg-on-background text-background hover:bg-primary hover:text-on-primary transition-colors py-3 px-4 flex justify-between items-center rounded-xl font-bold text-sm tracking-widest uppercase">
+                <span>Configurar Fuego</span>
+                <span className="material-symbols-outlined text-sm">settings</span>
+            </button>
         </div>
       </div>
     </>
