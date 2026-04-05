@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LinkVentas ⚡
 
-## Getting Started
+Plataforma SaaS de e-commerce de alto rendimiento. Convierte tus enlaces en una tienda kinetica, profesional y optimizada para la conversión en segundos.
 
-First, run the development server:
+## 🌟 Características Principales
 
+-   **Tienda Kinetica**: Diseño brutalista y fluido enfocado en productos premium.
+-   **Dashboard Analytics**: Visualización en tiempo real de ingresos, leads y ticket promedio.
+-   **Motor FOMO (Social Stock)**: Generador de urgencia para maximizar ventas.
+-   **Gestión de Órdenes**: Panel de control intuitivo con impresión de tickets térmicos.
+-   **CRM de Leads**: Captura automática de contactos para recuperación de carritos abandonados.
+
+## 🚀 Inicio Rápido
+
+### 1. Clonar y Configurar
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone [repository-url]
+cd link-ventas
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Variables de Entorno
+Crea un archivo `.env.local` con tus credenciales de Supabase:
+```env
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Configurar Base de Datos
+Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de tu Dashboard de Supabase. Esto configurará todas las tablas y políticas de seguridad (RLS).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Lanzar el Proyecto
+```bash
+npm run dev
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🩺 Mantenimiento (El Doctor)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Este proyecto incluye un auditor inteligente para asegurar que tu base de datos y tu código estén siempre sincronizados.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Si algo no funciona, corre:
+```bash
+npx tsx scripts/doctor.ts
+```
+El "Doctor" analizará tu conexión y te dará los comandos SQL necesarios para arreglar cualquier fallo estructural.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📚 Documentación Completa
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Para detalles profundos sobre la arquitectura, el modelo de datos y los módulos internos, consulta:
+👉 **[DOCUMENTACION.md](./DOCUMENTACION.md)**
+
+---
+
+© 2026 LinkVentas - Built for High Conversion.

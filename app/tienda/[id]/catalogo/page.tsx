@@ -10,7 +10,7 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('store_name, description')
+    .select('store_name, description, primary_color, secondary_color, avatar_url')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
@@ -49,18 +49,39 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   const productos = (productosBase || []) as Product[];
 
   const storeName = perfil.store_name || "TU TIENDA";
+  const primaryColor = perfil.primary_color || '#bdbefe';
+  const secondaryColor = perfil.secondary_color || '#9193ff';
 
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen flex flex-col pt-24">
+      {/* Inyección Dinámica de Colores del Merchant 🎨 */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        :root {
+          --primary-color: ${primaryColor};
+          --secondary-color: ${secondaryColor};
+        }
+      `}} />
+
       {/* TopAppBar */}
-      <StoreNavbarKinetic storeName={storeName} storeId={perfil.id} />
+      <StoreNavbarKinetic 
+        storeName={storeName} 
+        storeId={perfil.id} 
+        avatarUrl={perfil.avatar_url}
+      />
 
       {/* Main Content Canvas */}
       <main className="relative flex-grow overflow-hidden w-full">
         <ClientCatalog initialProducts={productos} perfil={perfil} />
       </main>
 
-      <StoreFooterKinetic storeName={storeName} />
+      <StoreFooterKinetic 
+        storeName={storeName} 
+        socials={{
+          instagram: perfil.social_instagram,
+          facebook: perfil.social_facebook,
+          tiktok: perfil.social_tiktok
+        }}
+      />
 
       {/* Floating WhatsApp Button */}
       <a

@@ -7,7 +7,7 @@ import { ShoppingBag, Menu, X } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import SlideOverCart from './SlideOverCart'
 
-export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: string, storeId: string }) {
+export default function StoreNavbarKinetic({ storeName, storeId, avatarUrl }: { storeName: string, storeId: string, avatarUrl?: string | null }) {
   const pathname = usePathname()
 
   const navLinks = [
@@ -41,8 +41,11 @@ export default function StoreNavbarKinetic({ storeName, storeId }: { storeName: 
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
           
-          <Link href={`/tienda/${storeId}`} className="text-xl md:text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate">
-            {storeName}
+          <Link href={`/tienda/${storeId}`} className="text-xl md:text-2xl font-black italic text-primary tracking-widest font-headline uppercase truncate flex items-center gap-2">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={storeName} className="h-8 w-8 object-contain" />
+            ) : null}
+            <span className={avatarUrl ? "hidden sm:inline" : ""}>{storeName}</span>
           </Link>
         </div>
 

@@ -13,7 +13,7 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
   
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('store_name, description')
+    .select('store_name, description, primary_color, secondary_color, banner_url, avatar_url')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
@@ -31,7 +31,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   // Fetching
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('id, store_name, description, whatsapp_phone')
+    .select('*')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
 
@@ -41,11 +41,25 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   }
 
   const storeName = perfil.store_name || "TU TIENDA";
+  const primaryColor = perfil.primary_color || '#bdbefe';
+  const secondaryColor = perfil.secondary_color || '#9193ff';
 
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen">
+      {/* Inyección Dinámica de Colores del Merchant 🎨 */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        :root {
+          --primary-color: ${primaryColor};
+          --secondary-color: ${secondaryColor};
+        }
+      `}} />
+
       {/* TopAppBar */}
-      <StoreNavbarKinetic storeName={storeName} storeId={perfil.id} />
+      <StoreNavbarKinetic 
+        storeName={storeName} 
+        storeId={perfil.id} 
+        avatarUrl={perfil.avatar_url}
+      />
 
       {/* Main Content Canvas */}
       <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
@@ -98,9 +112,9 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2 bg-surface-container-low p-8 h-80 flex flex-col justify-end group overflow-hidden relative">
               <Image 
-                alt="Luxury items" 
+                alt="Store Banner" 
                 className="absolute inset-0 object-cover opacity-20 group-hover:scale-110 transition-transform duration-700" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK" 
+                src={perfil.banner_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK"} 
                 fill
                 priority
               />
@@ -121,7 +135,14 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       </main>
 
       {/* Footer */}
-      <StoreFooterKinetic storeName={storeName} />
+      <StoreFooterKinetic 
+        storeName={storeName} 
+        socials={{
+          instagram: perfil.social_instagram,
+          facebook: perfil.social_facebook,
+          tiktok: perfil.social_tiktok
+        }}
+      />
 
       {/* Floating WhatsApp Button */}
       {perfil.whatsapp_phone && (
