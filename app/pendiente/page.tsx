@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 
 export default function PendientePage() {
     const [email, setEmail] = useState('')
@@ -9,7 +9,6 @@ export default function PendientePage() {
 
     useEffect(() => {
         const getUser = async () => {
-            const supabase = createClient()
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 setEmail(user.email || '')
@@ -176,8 +175,8 @@ export default function PendientePage() {
                 </div>
 
                 {/* Botón WhatsApp */}
-
-                href="https://wa.me/51999999999?text=Hola,%20quiero%20activar%20mi%20cuenta%20de%20LinkVentas.%20Mi%20correo%20es:%20"
+                <a
+                    href="https://wa.me/51999999999?text=Hola,%20quiero%20activar%20mi%20cuenta%20de%20LinkVentas.%20Mi%20correo%20es:%20"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -207,7 +206,6 @@ export default function PendientePage() {
 
             <button
                 onClick={async () => {
-                    const supabase = createClient()
                     await supabase.auth.signOut()
                     window.location.href = '/auth/login'
                 }}

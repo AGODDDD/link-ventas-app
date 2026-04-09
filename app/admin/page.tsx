@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 
 type Merchant = {
     id: string
@@ -19,7 +19,6 @@ export default function AdminPage() {
 
     useEffect(() => {
         const init = async () => {
-            const supabase = createClient()
             const { data: { user } } = await supabase.auth.getUser()
             if (!user || user.id !== process.env.NEXT_PUBLIC_ADMIN_USER_ID) {
                 window.location.href = '/dashboard'
@@ -37,7 +36,6 @@ export default function AdminPage() {
     }, [])
 
     const activar = async (id: string, meses: number) => {
-        const supabase = createClient()
         const expires = new Date()
         expires.setMonth(expires.getMonth() + meses)
         await supabase
@@ -53,7 +51,6 @@ export default function AdminPage() {
     }
 
     const desactivar = async (id: string) => {
-        const supabase = createClient()
         await supabase
             .from('profiles')
             .update({ plan: 'inactivo', plan_expires_at: null })
