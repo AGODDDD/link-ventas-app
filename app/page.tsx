@@ -24,7 +24,12 @@ export default function Home() {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) router.push('/dashboard')
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (session) {
+            document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax; secure`
+          } else {
+            document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax; secure`
+          }
           if (event === 'SIGNED_IN') router.push('/dashboard')
         })
         authSubscription = subscription

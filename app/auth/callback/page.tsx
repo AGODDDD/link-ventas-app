@@ -11,6 +11,11 @@ export default function AuthCallback() {
     // El cliente de Supabase los detecta automáticamente al llamar getSession() o onAuthStateChange()
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        document.cookie = `sb-access-token=${session.access_token}; path=/; max-age=3600; SameSite=Lax; secure`
+      } else {
+        document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax; secure`
+      }
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         router.replace('/dashboard')
       }
