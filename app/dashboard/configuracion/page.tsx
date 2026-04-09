@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon } from 'lucide-react'
+import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 
 export default function ConfiguracionPage() {
@@ -20,6 +20,7 @@ export default function ConfiguracionPage() {
   const [slug, setSlug] = useState('')
 
   // Nuevos campos para Personalización
+  const [templateType, setTemplateType] = useState('comercio')
   const [bannerUrl, setBannerUrl] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#000000')
   const [secondaryColor, setSecondaryColor] = useState('#C31432')
@@ -55,6 +56,7 @@ export default function ConfiguracionPage() {
         setYapeUrl(data.yape_image_url || '')
         setPlinUrl(data.plin_image_url || '')
         // Load Personalization
+        setTemplateType(data.template_type || 'comercio')
         setBannerUrl(data.banner_url || '')
         setPrimaryColor(data.primary_color || '#000000')
         setSecondaryColor(data.secondary_color || '#C31432')
@@ -120,6 +122,7 @@ export default function ConfiguracionPage() {
           yape_image_url: yapeUrl,
           plin_image_url: plinUrl,
           // Personalization
+          template_type: templateType,
           banner_url: bannerUrl,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
@@ -156,6 +159,53 @@ export default function ConfiguracionPage() {
 
         {/* VITRINA PÚBLICA (CATALOG BUILDER) */}
         {userId && <CatalogBuilder userId={userId} />}
+
+        {/* PLANTILLA DE LA TIENDA */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Store size={20} /> Experiencia de Compra (Plantilla)</CardTitle>
+            <CardDescription>Elige cómo interactuarán tus clientes y cómo se verá tu catálogo.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Restaurante */}
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'restaurante' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+                <input type="radio" className="hidden" name="template" value="restaurante" checked={templateType === 'restaurante'} onChange={() => setTemplateType('restaurante')} />
+                <div className={`p-4 rounded-full ${templateType === 'restaurante' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <Store size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Restaurante / Food</h3>
+                  <p className="text-xs text-slate-500 mt-1">El pedido se envía directamente al WhatsApp. Destaca platos y menú. Sin carrito.</p>
+                </div>
+              </label>
+
+              {/* Comercio */}
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'comercio' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+                <input type="radio" className="hidden" name="template" value="comercio" checked={templateType === 'comercio'} onChange={() => setTemplateType('comercio')} />
+                <div className={`p-4 rounded-full ${templateType === 'comercio' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <ShoppingBag size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Comercio General</h3>
+                  <p className="text-xs text-slate-500 mt-1">Flujo de compra estándar. Carrito de compras, checkout y métodos de pago.</p>
+                </div>
+              </label>
+
+              {/* Moda */}
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'moda' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+                <input type="radio" className="hidden" name="template" value="moda" checked={templateType === 'moda'} onChange={() => setTemplateType('moda')} />
+                <div className={`p-4 rounded-full ${templateType === 'moda' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                  <Shirt size={28} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900">Moda / Boutique</h3>
+                  <p className="text-xs text-slate-500 mt-1">Look premium aspiracional. Soporta variantes obligatorias por producto (talla/color).</p>
+                </div>
+              </label>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* IDENTIDAD VISUAL */}
         <Card>
