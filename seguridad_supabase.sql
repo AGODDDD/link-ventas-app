@@ -14,9 +14,21 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS fomo_enabled boolean DEFAUL
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS fomo_min_viewers integer DEFAULT 3;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS fomo_max_viewers integer DEFAULT 24;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS fomo_message text DEFAULT '{count} personas están evaluando esta oferta ahora mismo';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS template_type text DEFAULT 'comercio';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS horario text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS direccion text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS whatsapp_order_template text;
 
 -- Productos (Products)
 ALTER TABLE public.products ADD COLUMN IF NOT EXISTS stock integer DEFAULT NULL;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS variants JSONB DEFAULT NULL;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS is_available boolean DEFAULT true;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS preparation_time text;
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gallery text[] DEFAULT NULL;
+
+-- Órdenes (Orders)
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_type text DEFAULT 'delivery';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS delivery_address text;
 
 -- ------------------------------------------------------------
 -- 2. ACTIVAR SEGURIDAD (RLS)
@@ -42,7 +54,7 @@ DROP POLICY IF EXISTS "Productos visibles para todos" ON products;
 CREATE POLICY "Productos visibles para todos" ON products FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Merchants gestionan sus productos" ON products;
-CREATE POLICY "Merchants gestionan sus productos" ON products ALL TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Merchants gestionan sus productos" ON products FOR ALL TO authenticated USING (auth.uid() = user_id);
 
 -- ORDERS
 DROP POLICY IF EXISTS "Merchants ven sus propias órdenes" ON orders;

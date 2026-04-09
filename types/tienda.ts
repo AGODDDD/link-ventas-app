@@ -24,6 +24,12 @@ export interface Profile {
   fomo_min_viewers?: number;
   fomo_max_viewers?: number;
   fomo_message?: string;
+
+  // Multi-Nicho / Plantillas
+  template_type?: 'restaurante' | 'comercio' | 'moda';
+  horario?: string;
+  direccion?: string;
+  whatsapp_order_template?: string;
 }
 
 export interface Product {
@@ -44,6 +50,12 @@ export interface Product {
   category?: string;
   rating?: number;
   reviews_count?: number;
+
+  // Restaurante & Moda Extensions
+  variants?: any[];
+  is_available?: boolean;
+  preparation_time?: string;
+  gallery?: string[];
 }
 
 export interface CartItem {
