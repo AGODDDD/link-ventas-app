@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { useEffect } from 'react'
 
 export default function CrearProducto() {
   const router = useRouter()
@@ -21,8 +22,26 @@ export default function CrearProducto() {
   const [shippingToday, setShippingToday] = useState(false)
   const [stock, setStock] = useState('')
   
+  // Niche Fields
+  const [templateType, setTemplateType] = useState('comercio')
+  const [preparationTime, setPreparationTime] = useState('')
+  const [isAvailable, setIsAvailable] = useState(true)
+  const [tallasInput, setTallasInput] = useState('')
+  const [coloresInput, setColoresInput] = useState('')
+  
   // Media handling
   const [archivo, setArchivo] = useState<File | null>(null)
+
+  useEffect(() => {
+    async function loadTemplate() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
+        if (data?.template_type) setTemplateType(data.template_type)
+      }
+    }
+    loadTemplate()
+  }, [])
 
   const guardarProducto = async (e: any) => {
     e.preventDefault()
@@ -74,6 +93,25 @@ export default function CrearProducto() {
       const currentPrice = parseFloat(precio)
       const oldPrice = originalPrice ? parseFloat(originalPrice) : null
 
+      // Formatear Variables Especiales
+      let variants = []
+      if (templateType === 'moda') {
+        const tList = tallasInput.split(',').map(s => s.trim()).filter(Boolean)
+        const cList = coloresInput.split(',').map(s => s.trim()).filter(Boolean)
+        
+        const tallasFinal = tList.length > 0 ? tList : [null]
+        const coloresFinal = cList.length > 0 ? cList : [null]
+
+        for (const t of tallasFinal) {
+          for (const c of coloresFinal) {
+            const variant: any = {}
+            if (t) variant.talla = t
+            if (c) variant.color = c
+            variants.push(variant)
+          }
+        }
+      }
+
       // Save to DB (Bodega initially)
       const { error: dbError } = await supabase
         .from('products')
@@ -89,8 +127,11 @@ export default function CrearProducto() {
           stock: stock ? parseInt(stock) : null,
           is_free_shipping: isFreeShipping,
           shipping_today: shippingToday,
-          is_active: false, // Por defecto se va a Bodega, no a la Vitrina
-          rating: 5 // Default rating for new products to look good
+          is_active: false,
+          rating: 5,
+          variants: variants,
+          preparation_time: preparationTime || null,
+          is_available: isAvailable
         })
 
       if (dbError) throw dbError
@@ -199,6 +240,47 @@ export default function CrearProducto() {
                </div>
             </div>
           </div>
+
+          {/* Nicho: Restaurantes */}
+          {templateType === 'restaurante' && (
+            <div className="border-t border-outline-variant/10 pt-8 mt-8">
+              <h3 className="text-[10px] font-bold text-[#d78a33] uppercase tracking-widest mb-4">🍽️ Ajustes de Restaurante</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Tiempo Estimado de Preparación</label>
+                  <input placeholder="Ej: 15-20 min" value={preparationTime} onChange={(e) => setPreparationTime(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                </div>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-4 border border-[#d78a33]/20 rounded-xl bg-[#d78a33]/5 cursor-pointer hover:bg-[#d78a33]/10 transition-colors">
+                    <div>
+                      <p className="font-bold text-[#d78a33]">Plato Disponible</p>
+                      <p className="text-[10px] text-[#d78a33]/60 uppercase tracking-widest mt-1">Desactiva si se acabaron los ingredientes hoy.</p>
+                    </div>
+                    <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="w-5 h-5 accent-[#d78a33]" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Nicho: Moda */}
+          {templateType === 'moda' && (
+            <div className="border-t border-outline-variant/10 pt-8 mt-8">
+              <h3 className="text-[10px] font-bold text-neutral-800 uppercase tracking-widest mb-4">👗 Variaciones y Atributos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Tallas Disponibles</label>
+                  <p className="text-[10px] text-on-surface-variant">Separadas por comas (Ej: S, M, L, XL)</p>
+                  <input value={tallasInput} onChange={(e) => setTallasInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Colores Disponibles</label>
+                  <p className="text-[10px] text-on-surface-variant">Separados por comas (Ej: Rojo, Azul Marino, Negro)</p>
+                  <input value={coloresInput} onChange={(e) => setColoresInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="border-t border-outline-variant/10 pt-8 mt-8">
             <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Fotografía Módulo</h3>
