@@ -207,7 +207,7 @@ export default function PendientePage() {
             <button
                 onClick={async () => {
                     await supabase.auth.signOut()
-                    window.location.href = '/auth/login'
+                    window.location.href = '/'
                 }}
                 style={{
                     background: 'none',
