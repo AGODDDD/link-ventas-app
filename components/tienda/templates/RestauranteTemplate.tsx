@@ -116,18 +116,22 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
 
   const handleOpenCheckout = () => {
     setIsCartOpen(false)
+    // Always show map first if no address saved
     if (!savedAddress) {
-      // No address yet - show map first
-      setIsAddressModalOpen(true)
+      setTimeout(() => setIsAddressModalOpen(true), 150)
     } else {
-      setIsCheckoutOpen(true)
+      setTimeout(() => setIsCheckoutOpen(true), 150)
     }
   }
 
   const handleAddressSaved = (data: { direccion: string; referencia: string; lat: number; lng: number }) => {
     setSavedAddress(data)
     setIsAddressModalOpen(false)
-    setIsCheckoutOpen(true)
+    setTimeout(() => setIsCheckoutOpen(true), 150)
+  }
+
+  const handleOpenAddressFromSidebar = () => {
+    setIsAddressModalOpen(true)
   }
 
   return (
@@ -168,13 +172,13 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
           <div className="relative -mt-10 px-4 z-10 w-full">
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-neutral-100 flex flex-col items-center text-center gap-2 relative">
               <span className="font-bold text-sm text-neutral-800 leading-tight block w-2/3 mx-auto">
-                Agrega tu dirección para activar promociones
+                {savedAddress ? savedAddress.direccion : 'Agrega tu dirección para activar promociones'}
               </span>
-              <button className="flex items-center gap-2 text-xs font-medium text-neutral-700 mt-2 hover:text-black">
-                <MapPin size={14} /> Agregar dirección
+              <button onClick={handleOpenAddressFromSidebar} className="flex items-center gap-2 text-xs font-medium text-neutral-700 mt-2 hover:text-black">
+                <MapPin size={14} /> {savedAddress ? 'Cambiar dirección' : 'Agregar dirección'}
               </button>
               <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-bold">
-                 <span>🛵</span> ---
+                 <span>🛵</span> {savedAddress ? 'Dirección guardada ✓' : '---'}
               </div>
             </div>
           </div>
@@ -224,8 +228,8 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
             )}
         </div>
         <div className="bg-white p-4 -mt-4 relative rounded-t-2xl shadow-sm z-10 border-b border-neutral-100 flex flex-col items-center text-center">
-            <span className="font-bold text-sm text-neutral-800 leading-tight">Agrega tu dirección para activar promociones</span>
-            <button className="flex items-center gap-2 text-xs font-medium text-neutral-500 mt-2"><MapPin size={14}/> Agregar dirección</button>
+            <span className="font-bold text-sm text-neutral-800 leading-tight">{savedAddress ? savedAddress.direccion : 'Agrega tu dirección para activar promociones'}</span>
+            <button onClick={handleOpenAddressFromSidebar} className="flex items-center gap-2 text-xs font-medium text-neutral-500 mt-2"><MapPin size={14}/> {savedAddress ? 'Cambiar dirección' : 'Agregar dirección'}</button>
         </div>
         <div className="w-full overflow-x-auto whitespace-nowrap px-4 py-3 bg-white sticky top-[60px] z-30 shadow-sm hide-scrollbar">
            <div className="flex gap-2">
