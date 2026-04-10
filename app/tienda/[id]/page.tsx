@@ -65,14 +65,13 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   }
 
   return (
-    <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen">
-      {/* Inyección Dinámica de Colores del Merchant 🎨 */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        :root {
-          --primary-color: ${primaryColor};
-          --secondary-color: ${secondaryColor};
-        }
-      `}} />
+    <div 
+      className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen"
+      style={{
+        '--primary-color': primaryColor,
+        '--secondary-color': secondaryColor
+      } as React.CSSProperties}
+    >
 
       {/* TopAppBar */}
       <StoreNavbarKinetic 
