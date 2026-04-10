@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { optimizeImage } from '@/lib/optimizeImage'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2 } from 'lucide-react'
@@ -75,12 +76,12 @@ export default function CrearProducto() {
       let imageUrl = null
 
       if (archivo) {
-        const fileExt = archivo.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+        // Optimize: convert to WebP + resize if needed
+        const { blob, fileName } = await optimizeImage(archivo, { maxDimension: 1400, quality: 0.90 })
 
         const { data, error: uploadError } = await supabase.storage
           .from('productos')
-          .upload(fileName, archivo)
+          .upload(fileName, blob, { contentType: 'image/webp' })
 
         if (uploadError) throw uploadError
 

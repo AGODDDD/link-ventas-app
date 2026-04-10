@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { optimizeImage } from '@/lib/optimizeImage'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -81,13 +82,13 @@ export default function ConfiguracionPage() {
         return
       }
 
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${userId}-${Math.random()}.${fileExt}`
-      const filePath = `${fileName}`
+      // Optimize: convert to WebP + resize if needed
+      const { blob, fileName } = await optimizeImage(file, { maxDimension: 1400, quality: 0.90 })
+      const filePath = `${userId}-${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(filePath, file)
+        .upload(filePath, blob, { contentType: 'image/webp' })
 
       if (uploadError) throw uploadError
 
