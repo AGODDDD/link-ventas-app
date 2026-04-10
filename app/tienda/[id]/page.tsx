@@ -69,7 +69,9 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen"
       style={{
         '--primary-color': primaryColor,
-        '--secondary-color': secondaryColor
+        '--secondary-color': secondaryColor,
+        '--primary': primaryColor,
+        '--secondary': secondaryColor
       } as React.CSSProperties}
     >
 
