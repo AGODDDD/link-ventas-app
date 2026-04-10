@@ -1,0 +1,43 @@
+
+> link-ventas@0.1.0 build
+> next build
+
+   ▲ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 2.5s
+   Running TypeScript ...
+   Collecting page data using 7 workers ...
+   Generating static pages using 7 workers (0/15) ...
+   Generating static pages using 7 workers (3/15) 
+   Generating static pages using 7 workers (7/15) 
+   Generating static pages using 7 workers (11/15) 
+ ✓ Generating static pages using 7 workers (15/15) in 849.4ms
+   Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ƒ /api/abandoned-cart
+├ ○ /auth/callback
+├ ○ /dashboard
+├ ○ /dashboard/analytics
+├ ○ /dashboard/clientes
+├ ○ /dashboard/configuracion
+├ ○ /dashboard/crear
+├ ƒ /dashboard/editar/[id]
+├ ○ /dashboard/pedidos
+├ ○ /dashboard/productos
+├ ○ /pendiente
+├ ƒ /tienda/[id]
+├ ƒ /tienda/[id]/catalogo
+└ ƒ /tienda/[id]/checkout
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

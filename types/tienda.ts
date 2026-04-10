@@ -61,4 +61,8 @@ export interface Product {
 export interface CartItem {
   product: Product;
   quantity: number;
+  variantDetails?: {
+    talla?: string;
+    color?: string;
+  };
 }

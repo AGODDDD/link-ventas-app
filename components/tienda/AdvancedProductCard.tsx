@@ -31,7 +31,7 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
       toast.error(`Solo quedan ${prod.stock} unidades en stock.`);
       return;
     }
-    cartStore.updateQuantity(storeId, prod.id, delta)
+    cartStore.updateQuantity(storeId, prod.id, undefined, delta)
   }
 
   const discountPercentage = prod.original_price && prod.original_price > prod.price

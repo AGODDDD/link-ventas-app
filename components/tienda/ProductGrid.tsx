@@ -20,12 +20,12 @@ export default function ProductGrid({ productos, perfil }: Props) {
   const storeCart = cartStore.carts[storeId] || []
 
   const handleAddToCart = (prod: Product) => {
-    cartStore.addToCart(storeId, prod)
+    cartStore.addToCart(storeId, prod, undefined)
     toast.success(`${prod.name} agregado al carrito`)
   }
 
   const handleUpdateQuantity = (prodId: string, delta: number) => {
-    cartStore.updateQuantity(storeId, prodId, delta)
+    cartStore.updateQuantity(storeId, prodId, undefined, delta)
   }
 
   return (

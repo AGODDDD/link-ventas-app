@@ -4,13 +4,15 @@ import React, { useState, useMemo } from 'react'
 import { Product, Profile } from '@/types/tienda'
 import CatalogFilters from './CatalogFilters'
 import AdvancedProductCard from './AdvancedProductCard'
+import ModaProductCard from './ModaProductCard'
 
 interface Props {
   initialProducts: Product[];
   perfil: Profile | null;
+  isModa?: boolean;
 }
 
-export default function ClientCatalog({ initialProducts, perfil }: Props) {
+export default function ClientCatalog({ initialProducts, perfil, isModa }: Props) {
   // State for filters
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('')
@@ -114,7 +116,9 @@ export default function ClientCatalog({ initialProducts, perfil }: Props) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredAndSortedProducts.map((prod) => (
-            <AdvancedProductCard key={prod.id} prod={prod} perfil={perfil} />
+            isModa 
+              ? <ModaProductCard key={prod.id} prod={prod} perfil={perfil} />
+              : <AdvancedProductCard key={prod.id} prod={prod} perfil={perfil} />
           ))}
         </div>
       )}

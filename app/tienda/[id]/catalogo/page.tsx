@@ -38,6 +38,12 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
     return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Tienda no encontrada 🛒</div>
   }
 
+  // Restaurante no tiene página de catálogo separada, todo vive en el index
+  if (perfil.template_type === 'restaurante') {
+    const { redirect } = await import('next/navigation');
+    redirect(`/tienda/${params.id}`);
+  }
+
   // Ahora sacamos los productos del UUID real
   const { data: productosBase } = await supabase
     .from('products')

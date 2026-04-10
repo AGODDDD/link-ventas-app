@@ -32,8 +32,8 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  const handleUpdateQuantity = (productId: string, delta: number) => {
-    cartStore.updateQuantity(storeId, productId, delta)
+  const handleUpdateQuantity = (productId: string, variantDetails: any, delta: number) => {
+    cartStore.updateQuantity(storeId, productId, variantDetails, delta)
   }
 
   const handleCheckout = () => {
@@ -81,8 +81,8 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
               </Button>
             </div>
           ) : (
-             cart.map(item => (
-                <div key={item.product.id} className="flex gap-4 bg-surface-container-low p-3 border border-outline relative group">
+             cart.map((item, index) => (
+                <div key={`${item.product.id}-${index}`} className="flex gap-4 bg-surface-container-low p-3 border border-outline relative group">
                    <div className="w-20 h-20 bg-black shrink-0 relative flex items-center justify-center">
                      {item.product.image_url ? (
                         <Image src={item.product.image_url} alt={item.product.name} fill className="object-cover opacity-80" />
@@ -94,20 +94,26 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
                       <div>
                         {item.product.brand && <p className="text-[10px] font-headline font-black uppercase text-on-surface-variant tracking-widest leading-none mb-1 truncate">{item.product.brand}</p>}
                         <h4 className="font-bold font-headline uppercase text-sm leading-tight line-clamp-2 text-on-background pr-6">{item.product.name}</h4>
+                        {item.variantDetails && (
+                          <div className="flex gap-2 mt-1">
+                            {item.variantDetails.talla && <span className="bg-slate-200 text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Talla: {item.variantDetails.talla}</span>}
+                            {item.variantDetails.color && <span className="bg-slate-200 text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Color: {item.variantDetails.color}</span>}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between mt-3">
                         <span className="font-black font-headline text-primary italic text-base md:text-lg">S/ {item.product.price.toFixed(2)}</span>
                         
                         {/* Quantity Controller */}
                         <div className="flex items-center gap-2 bg-surface-variant border border-outline px-2 py-1 ml-2 shrink-0">
-                          <button onClick={() => handleUpdateQuantity(item.product.id, -1)} className="text-on-surface-variant hover:text-primary"><Minus size={14} /></button>
+                          <button onClick={() => handleUpdateQuantity(item.product.id, item.variantDetails, -1)} className="text-on-surface-variant hover:text-primary"><Minus size={14} /></button>
                           <span className="font-bold text-sm text-on-background w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => handleUpdateQuantity(item.product.id, 1)} className="text-on-surface-variant hover:text-primary"><Plus size={14} /></button>
+                          <button onClick={() => handleUpdateQuantity(item.product.id, item.variantDetails, 1)} className="text-on-surface-variant hover:text-primary"><Plus size={14} /></button>
                         </div>
                       </div>
                    </div>
                    <button 
-                     onClick={() => cartStore.removeFromCart(storeId, item.product.id)}
+                     onClick={() => cartStore.removeFromCart(storeId, item.product.id, item.variantDetails)}
                      className="absolute top-2 right-2 bg-background border border-outline p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error hover:text-white"
                    >
                      <X size={12} />
