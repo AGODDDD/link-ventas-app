@@ -167,23 +167,59 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
 
         {/* Footer Checkout */}
         {cart.length > 0 && (
-          <div className={`p-6 space-y-4 ${isMinimalist ? 'border-t border-neutral-100 bg-white' : 'border-t border-primary/20 bg-surface-container-high'}`}>
-             <div className={`flex justify-between font-body ${isMinimalist ? 'text-neutral-500' : 'text-on-surface-variant'}`}>
-                <span>SUBTOTAL ({totalItems} items)</span>
-                <span>S/ {totalPrice.toFixed(2)}</span>
-             </div>
-             <div className={`flex justify-between font-black font-headline text-2xl uppercase tracking-tighter italic ${isMinimalist ? 'text-black' : 'text-on-background'}`}>
-                <span>TOTAL</span>
-                <span className={isMinimalist ? 'text-black' : 'text-primary'}>S/ {totalPrice.toFixed(2)}</span>
-             </div>
-             <p className={`text-[10px] uppercase font-label tracking-widest text-center pb-2 ${isMinimalist ? 'text-neutral-400' : 'text-on-surface-variant'}`}>Gastos de envío calculados en el checkout</p>
-             <Button 
-                onClick={handleCheckout}
-                className={`w-full border-none text-white h-14 font-headline font-black text-lg tracking-widest uppercase flex items-center justify-between px-6 transition-transform active:scale-[0.98] ${isMinimalist ? 'bg-black hover:bg-neutral-800 rounded-full' : 'bg-gradient-to-r from-primary to-secondary hover:brightness-110 rounded-none'}`}
-             >
-                <span>PROCEDER AL PAGO</span>
-                <ArrowRight />
-             </Button>
+          <div className={`p-6 ${isMinimalist ? 'border-t border-neutral-100 bg-white' : 'border-t border-primary/20 bg-surface-container-high'}`}>
+            {isMinimalist ? (
+               <div className="space-y-4">
+                  <div className="space-y-2 text-[14px] text-neutral-500 font-medium font-body">
+                     <div className="flex justify-between">
+                        <span>Productos:</span>
+                        <span>S/ {totalPrice.toFixed(2)}</span>
+                     </div>
+                     <div className="flex justify-between">
+                        <span>Delivery:</span>
+                        <span>S/ 8.00</span>
+                     </div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
+                     <span className="font-bold text-black text-lg">Total:</span>
+                     <span className="font-bold text-black text-lg">S/ {(totalPrice + 8).toFixed(2)}</span>
+                  </div>
+                  <div className="grid gap-3 pt-2">
+                     <Button 
+                        onClick={handleCheckout}
+                        className="w-full bg-black hover:bg-neutral-800 text-white rounded-full h-12 font-medium transition-transform active:scale-[0.98]"
+                     >
+                        Realizar el pedido
+                     </Button>
+                     <Button 
+                        onClick={onClose}
+                        variant="outline"
+                        className="w-full border-neutral-200 text-black hover:bg-neutral-50 rounded-full h-12 font-medium"
+                     >
+                        Seguir comprando
+                     </Button>
+                  </div>
+               </div>
+            ) : (
+               <div className="space-y-4">
+                 <div className="flex justify-between font-body text-on-surface-variant">
+                    <span>SUBTOTAL ({totalItems} items)</span>
+                    <span>S/ {totalPrice.toFixed(2)}</span>
+                 </div>
+                 <div className="flex justify-between font-black font-headline text-2xl uppercase tracking-tighter italic text-on-background">
+                    <span>TOTAL</span>
+                    <span className="text-primary">S/ {totalPrice.toFixed(2)}</span>
+                 </div>
+                 <p className="text-[10px] uppercase font-label tracking-widest text-center pb-2 text-on-surface-variant">Gastos de envío calculados en el checkout</p>
+                 <Button 
+                    onClick={handleCheckout}
+                    className="w-full border-none text-white h-14 font-headline font-black text-lg tracking-widest uppercase flex items-center justify-between px-6 transition-transform active:scale-[0.98] bg-gradient-to-r from-primary to-secondary hover:brightness-110 rounded-none"
+                 >
+                    <span>PROCEDER AL PAGO</span>
+                    <ArrowRight />
+                 </Button>
+               </div>
+            )}
           </div>
         )}
       </div>

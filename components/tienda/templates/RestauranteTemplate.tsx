@@ -5,6 +5,7 @@ import { Profile, Product } from '@/types/tienda'
 import { Search, ShoppingCart, User, ClipboardList, MapPin } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import RestauranteProductModal from './RestauranteProductModal'
+import RestauranteCheckoutModal from './RestauranteCheckoutModal'
 import SlideOverCart from '../SlideOverCart'
 
 interface Props {
@@ -16,6 +17,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
@@ -107,6 +109,11 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
     
     window.open(`https://wa.me/${perfil.whatsapp_phone}?text=${text}`, '_blank')
     cartStore.clearCart(perfil.id) // Optional: Clear after sending
+  }
+
+  const handleOpenCheckout = () => {
+    setIsCartOpen(false)
+    setIsCheckoutOpen(true)
   }
 
   return (
@@ -320,12 +327,21 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
         />
       )}
 
+      {/* RENDER FULLSCREEN CHECKOUT MODAL */}
+      {isCheckoutOpen && (
+        <RestauranteCheckoutModal
+           isOpen={isCheckoutOpen}
+           onClose={() => setIsCheckoutOpen(false)}
+           perfil={perfil}
+        />
+      )}
+
       {/* RENDER SLIDE OVER CART */}
       <SlideOverCart 
          storeId={perfil.id} 
          isOpen={isCartOpen} 
          onClose={() => setIsCartOpen(false)}
-         onCheckout={handleWhatsAppCheckout}
+         onCheckout={handleOpenCheckout}
          templateType="restaurante"
       />
     </div>
