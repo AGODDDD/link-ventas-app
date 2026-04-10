@@ -11,9 +11,10 @@ interface Props {
   storeId: string;
   isOpen: boolean;
   onClose: () => void;
+  onCheckout?: () => void;
 }
 
-export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
+export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout }: Props) {
   const router = useRouter()
   const cartStore = useCartStore()
   
@@ -38,7 +39,11 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
 
   const handleCheckout = () => {
     onClose();
-    router.push(`/tienda/${storeId}/checkout`)
+    if (onCheckout) {
+      onCheckout()
+    } else {
+      router.push(`/tienda/${storeId}/checkout`)
+    }
   }
 
   return (

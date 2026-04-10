@@ -64,5 +64,7 @@ export interface CartItem {
   variantDetails?: {
     talla?: string;
     color?: string;
+    notes?: string;
+    options?: Record<string, string>;
   };
 }

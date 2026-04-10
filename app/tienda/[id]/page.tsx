@@ -76,27 +76,31 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
     >
 
       {/* TopAppBar */}
-      <StoreNavbarKinetic 
-        storeName={storeName} 
-        storeId={perfil.id} 
-        avatarUrl={perfil.avatar_url}
-      />
+      {perfil.template_type !== 'restaurante' && (
+        <StoreNavbarKinetic 
+          storeName={storeName} 
+          storeId={perfil.id} 
+          avatarUrl={perfil.avatar_url}
+        />
+      )}
 
       {/* RENDER DYNAMIC TEMPLATE CORE */}
       {renderTemplate()}
 
       {/* Footer */}
-      <StoreFooterKinetic 
-        storeName={storeName} 
-        socials={{
-          instagram: perfil.social_instagram,
-          facebook: perfil.social_facebook,
-          tiktok: perfil.social_tiktok
-        }}
-      />
+      {perfil.template_type !== 'restaurante' && (
+        <StoreFooterKinetic 
+          storeName={storeName} 
+          socials={{
+            instagram: perfil.social_instagram,
+            facebook: perfil.social_facebook,
+            tiktok: perfil.social_tiktok
+          }}
+        />
+      )}
 
       {/* Floating WhatsApp Button */}
-      {perfil.whatsapp_phone && (
+      {perfil.template_type !== 'restaurante' && perfil.whatsapp_phone && (
         <a
           href={`https://wa.me/${perfil.whatsapp_phone}?text=Hola%20${encodeURIComponent(storeName)},%20necesito%20ayuda%20con%20mi%20pedido`}
           target="_blank"
