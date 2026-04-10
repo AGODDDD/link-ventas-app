@@ -200,7 +200,7 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
           {/* Geolocate button */}
           <button 
             onClick={handleGeolocate}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] bg-white shadow-lg border border-neutral-200 rounded-full px-4 py-2 text-sm font-medium text-neutral-700 flex items-center gap-2 hover:bg-neutral-50 transition-colors active:scale-95"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] bg-white shadow-lg border border-neutral-200 rounded-full px-4 py-2 text-sm font-medium text-[#333] flex items-center gap-2 hover:bg-neutral-50 transition-colors active:scale-95"
           >
             <Navigation size={14} className="text-blue-600" />
             Actualizar Ubicación
@@ -210,23 +210,23 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
         {/* Form */}
         <div className="p-5 space-y-4 overflow-y-auto">
           <div>
-            <label className="text-sm font-bold text-neutral-700 mb-1.5 block">Dirección</label>
+            <label className="text-sm font-bold text-[#333] mb-1.5 block">Dirección</label>
             <input 
               type="text"
               value={direccion}
               onChange={e => setDireccion(e.target.value)}
               placeholder="Ej. Av. Javier Prado 1234, San Isidro"
-              className="w-full border border-neutral-300 rounded-lg h-11 px-4 text-sm focus:ring-2 focus:ring-black/10 focus:border-black outline-none transition-all"
+              className="w-full border border-neutral-300 rounded-lg h-11 px-4 text-sm text-[#111] bg-white focus:ring-2 focus:ring-black/10 focus:border-black outline-none transition-all placeholder:text-neutral-400"
             />
           </div>
           <div>
-            <label className="text-sm font-bold text-neutral-700 mb-1.5 block">Referencia</label>
+            <label className="text-sm font-bold text-[#333] mb-1.5 block">Referencia</label>
             <textarea 
               value={referencia}
               onChange={e => setReferencia(e.target.value)}
               placeholder="Ej. Cerca de la plaza, edificio gris, piso 3"
               rows={2}
-              className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-black/10 focus:border-black outline-none transition-all resize-none"
+              className="w-full border border-neutral-300 rounded-lg px-4 py-3 text-sm text-[#111] bg-white focus:ring-2 focus:ring-black/10 focus:border-black outline-none transition-all resize-none placeholder:text-neutral-400"
             />
           </div>
         </div>

@@ -96,7 +96,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         
         {/* Header */}
         <div className="flex items-center justify-center relative py-5 border-b border-neutral-200 bg-white rounded-t-xl">
-          <h2 className="font-bold text-lg text-neutral-700">Detalles del pedido</h2>
+          <h2 className="font-bold text-lg text-[#333]">Detalles del pedido</h2>
           <button onClick={onClose} className="absolute right-4 text-neutral-400 hover:text-black hover:bg-neutral-100 p-2 rounded-full transition-colors">
             <X size={20} />
           </button>
@@ -110,7 +110,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
             
             {/* DIRECCIÓN */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
-               <h3 className="font-bold text-[14px] text-neutral-700 mb-3">Dirección de entrega</h3>
+               <h3 className="font-bold text-[14px] text-[#333] mb-3">Dirección de entrega</h3>
                <div className="relative">
                  <div className="absolute left-3 top-0 bottom-0 flex items-center justify-center text-neutral-400">
                    <MapPin size={18} />
@@ -119,7 +119,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
                    type="text" 
                    value={direccion}
                    onChange={e => setDireccion(e.target.value)}
-                   className="w-full bg-transparent border border-neutral-300 h-12 rounded-md pl-10 pr-4 text-sm focus:border-black focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-neutral-400"
+                   className="w-full bg-white border border-neutral-300 h-12 rounded-md pl-10 pr-4 text-sm text-[#111] focus:border-black focus:ring-1 focus:ring-black outline-none transition-all placeholder:text-neutral-400"
                    placeholder="Ej. Av. Javier Prado 1234, San Isidro"
                  />
                </div>
@@ -127,11 +127,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
             {/* HORARIO */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm relative overflow-hidden">
-               <h3 className="font-bold text-[14px] text-neutral-700 mb-3">Horario de entrega</h3>
+               <h3 className="font-bold text-[14px] text-[#333] mb-3">Horario de entrega</h3>
                <div className="flex items-center gap-3">
                  <label className={`flex items-center gap-2 text-sm ${isStoreClosed ? 'opacity-50' : 'cursor-pointer'}`}>
                    <input type="radio" checked={true} readOnly className="w-4 h-4 text-black accent-black focus:ring-black" disabled={isStoreClosed} />
-                   <span className="font-bold text-neutral-700">Entrega inmediata:</span>
+                   <span className="font-bold text-[#333]">Entrega inmediata:</span>
                  </label>
                  {isStoreClosed ? (
                    <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded text-xs font-bold flex items-center gap-1">
@@ -145,7 +145,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
             {/* PRODUCTOS */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm space-y-4">
-               <h3 className="font-bold text-[14px] text-neutral-700">Productos</h3>
+               <h3 className="font-bold text-[14px] text-[#333]">Productos</h3>
                <div className="space-y-3">
                  {cart.map((item, idx) => (
                     <div key={idx} className="flex items-start gap-4 py-3 border-b border-neutral-100 last:border-0 last:pb-0">
@@ -158,8 +158,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
                        </div>
                        <div className="flex-1 min-w-0">
                          <div className="flex justify-between items-start gap-2">
-                           <p className="font-bold text-sm text-neutral-700">{item.quantity} - {item.product.name}</p>
-                           <p className="font-medium text-sm text-neutral-700 whitespace-nowrap">S/ {((item.product.price) * item.quantity).toFixed(2)}</p>
+                           <p className="font-bold text-sm text-[#222]">{item.quantity} - {item.product.name}</p>
+                           <p className="font-medium text-sm text-[#222] whitespace-nowrap">S/ {((item.product.price) * item.quantity).toFixed(2)}</p>
                          </div>
                          {/* Display modifiers summary */}
                          {(item.variantDetails?.options) && (
@@ -177,31 +177,30 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
             {/* DATOS PERSONALES */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm space-y-4">
-               <h3 className="font-bold text-[14px] text-neutral-700 font-headline">Datos personales</h3>
+               <h3 className="font-bold text-[14px] text-[#333]">Datos personales</h3>
                <div className="space-y-3">
                  <div>
-                   <label className="text-xs font-bold text-neutral-500">* Nombre completo</label>
-                   <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm focus:border-black outline-none mt-1" />
+                   <label className="text-xs font-bold text-[#555]">* Nombre completo</label>
+                   <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm text-[#111] bg-white focus:border-black outline-none mt-1" />
                  </div>
                  <div>
-                   <label className="text-xs font-bold text-neutral-500">* Teléfono (WhatsApp)</label>
-                   <div className="flex rounded-md border border-red-500 focus-within:border-black overflow-hidden mt-1 h-10">
+                   <label className="text-xs font-bold text-[#555]">* Teléfono (WhatsApp)</label>
+                   <div className="flex rounded-md border border-neutral-300 focus-within:border-black overflow-hidden mt-1 h-10">
                       <div className="bg-red-50 text-red-600 font-bold px-3 flex items-center justify-center border-r border-red-200 text-sm">
                          +51
                       </div>
-                      <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} className="flex-1 px-3 text-sm focus:outline-none" />
+                      <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} className="flex-1 px-3 text-sm text-[#111] bg-white focus:outline-none" />
                    </div>
                    {!telefono && <p className="text-[10px] text-red-500 mt-1">Por favor, rellena Teléfono</p>}
                  </div>
                  <div>
-                   <label className="text-xs font-bold text-neutral-500">Correo electrónico (Opcional)</label>
-                   <input type="email" value={correo} onChange={e => setCorreo(e.target.value)} className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm focus:border-black outline-none mt-1" />
+                   <label className="text-xs font-bold text-[#555]">Correo electrónico (Opcional)</label>
+                   <input type="email" value={correo} onChange={e => setCorreo(e.target.value)} className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm text-[#111] bg-white focus:border-black outline-none mt-1" />
                  </div>
                  <div>
-                   <label className="text-xs font-bold text-neutral-500">* Tipo de documento</label>
-                   <select className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm focus:border-black outline-none mt-1 bg-white text-neutral-700">
+                   <label className="text-xs font-bold text-[#555]">* Tipo de documento</label>
+                   <select className="w-full border border-neutral-300 rounded-md h-10 px-3 text-sm text-[#111] focus:border-black outline-none mt-1 bg-white">
                       <option>Boleta simple</option>
-                      {/* Factura could be added here in phase 2 */}
                    </select>
                  </div>
                </div>
@@ -214,14 +213,14 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
             
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
-               <h3 className="font-bold text-[14px] text-neutral-700 mb-3">Seleccione método de pago</h3>
+               <h3 className="font-bold text-[14px] text-[#333] mb-3">Seleccione método de pago</h3>
                <div className="space-y-2">
                  <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${metodoPago === 'whatsapp' ? 'border-black bg-neutral-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
                     <input type="radio" name="pago" checked={metodoPago === 'whatsapp'} onChange={() => setMetodoPago('whatsapp')} className="w-4 h-4 text-black accent-black" />
                     <div className="w-8 h-8 rounded-full bg-green-100 flex flex-col items-center justify-center text-green-600 shrink-0"><MessageCircle size={16} /></div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-neutral-800">Coordinar por WhatsApp</p>
-                      <p className="text-[10px] text-neutral-500">Pago manual contra entrega o Yape/Plin</p>
+                      <p className="font-bold text-sm text-[#222]">Coordinar por WhatsApp</p>
+                      <p className="text-[10px] text-[#888]">Pago manual contra entrega o Yape/Plin</p>
                     </div>
                  </label>
                  
@@ -229,8 +228,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
                     <input type="radio" name="pago" checked={metodoPago === 'niubiz'} onChange={() => setMetodoPago('niubiz')} className="w-4 h-4 text-black accent-black" />
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex flex-col items-center justify-center text-blue-600 shrink-0"><CreditCard size={16} /></div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-neutral-800">Online - Niubiz</p>
-                      <p className="text-[10px] text-neutral-500">Paga en línea con tarjeta crédito/débito</p>
+                      <p className="font-bold text-sm text-[#222]">Online - Niubiz</p>
+                      <p className="text-[10px] text-[#888]">Paga en línea con tarjeta crédito/débito</p>
                     </div>
                  </label>
                </div>
@@ -238,8 +237,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
             {/* Resume */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
-               <h3 className="font-bold text-[14px] text-neutral-700 mb-4">Resumen de la compra</h3>
-               <div className="space-y-2 text-sm text-neutral-500 pb-4 border-b border-neutral-100 mb-4">
+               <h3 className="font-bold text-[14px] text-[#333] mb-4">Resumen de la compra</h3>
+               <div className="space-y-2 text-sm text-[#666] pb-4 border-b border-neutral-100 mb-4">
                  <div className="flex justify-between">
                     <span>Subtotal</span>
                     <span>S/ {subtotal.toFixed(2)}</span>
@@ -249,7 +248,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
                     <span>S/ {deliveryFee.toFixed(2)}</span>
                  </div>
                </div>
-               <div className="flex justify-between font-bold text-black text-lg">
+               <div className="flex justify-between font-bold text-[#111] text-lg">
                   <span>Total</span>
                   <span>S/ {total.toFixed(2)}</span>
                </div>
@@ -257,10 +256,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
             {/* Terms */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
-               <h3 className="font-bold text-[14px] text-neutral-700 mb-3">Términos y condiciones</h3>
+               <h3 className="font-bold text-[14px] text-[#333] mb-3">Términos y condiciones</h3>
                <label className="flex items-start gap-2 cursor-pointer">
                   <input type="checkbox" checked={acceptedTerms} onChange={e => setAcceptedTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded text-black accent-black" />
-                  <span className="text-sm text-neutral-600">Acepto los <strong className="text-black">términos y condiciones</strong> de compra.</span>
+                  <span className="text-sm text-[#555]">Acepto los <strong className="text-[#111]">términos y condiciones</strong> de compra.</span>
                </label>
             </div>
 
