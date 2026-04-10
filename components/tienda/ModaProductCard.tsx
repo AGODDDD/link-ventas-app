@@ -92,7 +92,7 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
       {/* Info Section */}
       <div className="flex-col flex flex-grow justify-between text-center px-2">
         <div className="mb-4">
-          <h3 className="font-light text-base md:text-lg text-neutral-900 line-clamp-2 uppercase tracking-widest mb-1">
+          <h3 className="font-light text-base md:text-lg text-on-background line-clamp-2 uppercase tracking-widest mb-1">
             {prod.name}
           </h3>
           <span className="text-sm md:text-base font-medium tracking-widest text-neutral-500">
@@ -111,8 +111,8 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
                     onClick={() => setSelectedTalla(t)}
                     className={`w-8 h-8 text-xs border flex items-center justify-center uppercase transition-colors ${
                       selectedTalla === t 
-                        ? 'border-neutral-900 bg-neutral-900 text-white font-medium' 
-                        : 'border-neutral-300 text-neutral-600 hover:border-neutral-900'
+                        ? 'border-primary bg-primary text-secondary font-medium' 
+                        : 'border-outline-variant text-on-surface hover:border-primary'
                     }`}
                   >
                     {t}
@@ -129,8 +129,8 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
                     onClick={() => setSelectedColor(c)}
                     className={`px-3 h-8 text-xs border flex items-center justify-center uppercase transition-colors ${
                       selectedColor === c 
-                        ? 'border-neutral-900 bg-neutral-900 text-white font-medium' 
-                        : 'border-neutral-300 text-neutral-600 hover:border-neutral-900'
+                        ? 'border-primary bg-primary text-secondary font-medium' 
+                        : 'border-outline-variant text-on-surface hover:border-primary'
                     }`}
                   >
                     {c}
@@ -141,15 +141,15 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
 
             {/* Add to cart */}
             {inCart ? (
-              <div className="flex items-center justify-between border border-neutral-900 text-neutral-900 px-4 py-2 mt-4 mx-8">
+              <div className="flex items-center justify-between border border-primary text-primary px-4 py-2 mt-4 mx-8">
                 <button onClick={() => handleUpdateQuantity(-1)} className="hover:opacity-50"><Minus size={16} /></button>
-                <span className="font-medium text-sm">{inCart.quantity}</span>
+                <span className="font-medium text-sm text-on-background">{inCart.quantity}</span>
                 <button onClick={() => handleUpdateQuantity(1)} className="hover:opacity-50"><Plus size={16} /></button>
               </div>
             ) : (
               <Button
                 variant="outline"
-                className="w-full rounded-none border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white uppercase tracking-widest font-light mt-4"
+                className="w-full rounded-none border-primary text-primary hover:bg-primary hover:text-secondary uppercase tracking-widest font-light mt-4"
                 onClick={handleAddToCart}
               >
                 Agregar

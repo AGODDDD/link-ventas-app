@@ -38,12 +38,12 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-4 text-sm font-medium text-slate-500 uppercase tracking-widest">
           {perfil.horario && (
             <div className="flex items-center gap-2">
-              <Clock size={16} className="text-orange-500" /> {perfil.horario}
+              <Clock size={16} className="text-primary" /> {perfil.horario}
             </div>
           )}
           {perfil.direccion && (
             <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-orange-500" /> {perfil.direccion}
+              <MapPin size={16} className="text-primary" /> {perfil.direccion}
             </div>
           )}
         </div>
@@ -53,13 +53,13 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-16">
         {Object.entries(categorias).map(([categoria, items]) => (
           <section key={categoria} className="space-y-8">
-            <h2 className="font-headline font-black text-3xl uppercase tracking-widest border-b-2 border-orange-500 pb-2 inline-block">
+            <h2 className="font-headline font-black text-3xl uppercase tracking-widest border-b-2 border-primary pb-2 inline-block">
               {categoria}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {items.map((item) => (
-                <div key={item.id} className="bg-white border hover:border-orange-200 transition-colors shadow-sm hover:shadow-md rounded-2xl overflow-hidden flex flex-col">
+                <div key={item.id} className="bg-white border hover:border-primary/40 transition-colors shadow-sm hover:shadow-md rounded-2xl overflow-hidden flex flex-col">
                   {/* Foto de la comida entra por los ojos */}
                   <div className="aspect-[4/3] bg-slate-100 relative group overflow-hidden">
                     {item.image_url ? (
@@ -78,11 +78,11 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
                     <div>
                       <div className="flex justify-between items-start gap-4">
                         <h3 className="font-bold text-xl leading-tight">{item.name}</h3>
-                        <span className="font-headline font-black text-orange-600 text-xl shrink-0">S/ {item.price.toFixed(2)}</span>
+                        <span className="font-headline font-black text-primary text-xl shrink-0">S/ {item.price.toFixed(2)}</span>
                       </div>
                       {item.description && <p className="text-slate-500 text-sm mt-2 line-clamp-2">{item.description}</p>}
                       {item.preparation_time && (
-                        <span className="inline-block mt-3 bg-orange-50 text-orange-700 text-xs font-bold px-2 py-1 rounded">
+                        <span className="inline-block mt-3 bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded">
                           ⏳ {item.preparation_time}
                         </span>
                       )}

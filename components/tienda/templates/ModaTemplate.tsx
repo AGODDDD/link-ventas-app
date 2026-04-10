@@ -10,7 +10,7 @@ interface Props {
 
 export default function ModaTemplate({ perfil, productos }: Props) {
   return (
-    <main className="min-h-screen bg-[#fafaf9] text-[#1c1917] font-sans pt-20">
+    <main className="min-h-screen bg-background text-on-background font-sans pt-20">
       {/* Editorial Hero */}
       <div className="relative w-full h-[60vh] md:h-[80vh] bg-stone-200 overflow-hidden">
         <Image 
@@ -27,7 +27,7 @@ export default function ModaTemplate({ perfil, productos }: Props) {
           <p className="text-xs md:text-sm tracking-[0.3em] uppercase max-w-xl mx-auto drop-shadow-md font-medium text-white/90">
             {perfil.description || "Nueva Colección Exclusiva"}
           </p>
-          <a href="#catalogo" className="mt-12 px-8 py-3 border border-white text-white hover:bg-white hover:text-black transition-colors uppercase tracking-[0.2em] text-xs font-semibold backdrop-blur-sm">
+          <a href="#catalogo" className="mt-12 px-8 py-3 border border-primary bg-primary/20 text-white hover:bg-primary hover:text-black transition-colors uppercase tracking-[0.2em] text-xs font-semibold backdrop-blur-sm">
             DESCUBRIR
           </a>
         </div>
