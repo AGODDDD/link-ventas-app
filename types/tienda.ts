@@ -32,6 +32,21 @@ export interface Profile {
   whatsapp_order_template?: string;
 }
 
+export interface ProductModifierOption {
+  id: string;
+  name: string;
+  price_modifier: number;
+}
+
+export interface ProductModifierGroup {
+  id: string;
+  name: string;
+  required: boolean;
+  min_selections: number;
+  max_selections: number;
+  options: ProductModifierOption[];
+}
+
 export interface Product {
   id: string;
   user_id: string;
@@ -52,7 +67,7 @@ export interface Product {
   reviews_count?: number;
 
   // Restaurante & Moda Extensions
-  variants?: any[];
+  variants?: any[]; // We'll store ProductModifierGroup[] in here for restaurants
   is_available?: boolean;
   preparation_time?: string;
   gallery?: string[];
@@ -65,6 +80,7 @@ export interface CartItem {
     talla?: string;
     color?: string;
     notes?: string;
-    options?: Record<string, string>;
+    // Map of GroupId -> Array of Selected Option IDs
+    options?: Record<string, string[]>;
   };
 }

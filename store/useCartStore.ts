@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { CartItem, Product } from '@/types/tienda'
+import { CartItem, Product, ProductModifierGroup } from '@/types/tienda'
 
 interface CartStore {
   // carts[storeId] = CartItem[]
@@ -67,7 +67,23 @@ export const useCartStore = create<CartStore>()(
       
       getTotalPrice: (storeId) => {
         const storeCart = get().carts[storeId] || []
-        return storeCart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
+        return storeCart.reduce((acc, item) => {
+           let modifiersPrice = 0;
+           if (item.variantDetails?.options && item.product.variants) {
+              const groups = item.product.variants as ProductModifierGroup[];
+              Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([groupId, optionIds]) => {
+                 const group = groups.find(g => g.id === groupId);
+                 if (group) {
+                    optionIds.forEach(optId => {
+                       const opt = group.options.find(o => o.id === optId);
+                       if (opt) modifiersPrice += opt.price_modifier;
+                    });
+                 }
+              });
+           }
+           const unitPrice = item.product.price + modifiersPrice;
+           return acc + (unitPrice * item.quantity);
+        }, 0)
       }
     }),
     {

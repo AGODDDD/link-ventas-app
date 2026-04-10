@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { X, Minus, Plus } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
-import { Product } from '@/types/tienda'
+import { Product, ProductModifierGroup } from '@/types/tienda'
 import { toast } from 'sonner'
 
 interface Props {
@@ -18,25 +18,68 @@ interface Props {
 export default function RestauranteProductModal({ product, storeId, isOpen, onClose }: Props) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({})
   const cartStore = useCartStore()
+
+  const modifiers = (product.variants as ProductModifierGroup[]) || []
 
   if (!isOpen) return null
 
-  // Calculate dynamic price based on options in the future. Right now, it's just price * quantity.
+  const handleToggleOption = (groupId: string, optionId: string, max: number) => {
+    setSelectedOptions(prev => {
+      const current = prev[groupId] || [];
+      if (current.includes(optionId)) {
+         return { ...prev, [groupId]: current.filter(id => id !== optionId) }
+      } else {
+         if (max === 1) {
+            return { ...prev, [groupId]: [optionId] }
+         } else if (current.length < max) {
+            return { ...prev, [groupId]: [...current, optionId] }
+         }
+         return prev;
+      }
+    })
+  }
+
+  const modifiersPrice = modifiers.reduce((sum, group) => {
+    const selected = selectedOptions[group.id] || [];
+    const groupSum = selected.reduce((s, optId) => {
+       const opt = group.options.find(o => o.id === optId);
+       return s + (opt?.price_modifier || 0);
+    }, 0);
+    return sum + groupSum;
+  }, 0);
+
   const basePrice = product.price
-  const totalPrice = basePrice * quantity
+  const totalPrice = (basePrice + modifiersPrice) * quantity
+
+  const isValid = modifiers.every(group => {
+    if (!group.required) return true;
+    const selected = selectedOptions[group.id] || [];
+    return selected.length >= group.min_selections;
+  });
 
   const handleAddToCart = () => {
-    cartStore.addToCart(storeId, product, { notes: notes.trim() !== '' ? notes : undefined })
+    if (!isValid) {
+      toast.error('Por favor completa todas las opciones obligatorias')
+      return
+    }
+
+    const cartOptions = { 
+      notes: notes.trim() !== '' ? notes : undefined,
+      options: selectedOptions
+    }
+
+    cartStore.addToCart(storeId, product, cartOptions)
     
-    // If quantity is > 1 we need to update since default addToCart adds 1
     if (quantity > 1) {
-      cartStore.updateQuantity(storeId, product.id, { notes: notes.trim() !== '' ? notes : undefined }, quantity - 1)
+      cartStore.updateQuantity(storeId, product.id, cartOptions, quantity - 1)
     }
 
     toast.success('Agregado a tu pedido')
     setQuantity(1)
     setNotes('')
+    setSelectedOptions({})
     onClose()
   }
 
@@ -76,6 +119,61 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
                 <p className="text-on-surface-variant text-sm mt-3 leading-relaxed">
                   {product.description}
                 </p>
+              )}
+
+              {/* Modifiers Sections */}
+              {modifiers.length > 0 && (
+                <div className="mt-8 space-y-6">
+                   {modifiers.map(group => {
+                     const selectedCount = (selectedOptions[group.id] || []).length;
+                     const isSatisfied = !group.required || selectedCount >= group.min_selections;
+                     
+                     return (
+                       <div key={group.id} className="space-y-4">
+                         <div className="flex items-center justify-between bg-neutral-50 px-4 py-3 rounded-xl border border-neutral-100">
+                            <div>
+                               <h3 className="font-bold text-sm text-neutral-800">{group.name}</h3>
+                               <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-0.5">
+                                 {group.required ? `Obligatorio (Mín ${group.min_selections})` : 'Opcional'} • Máx {group.max_selections}
+                               </p>
+                            </div>
+                            {!isSatisfied && <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full">Requerido</span>}
+                         </div>
+                         <div className="space-y-2">
+                            {group.options.map(opt => {
+                              const isSelected = (selectedOptions[group.id] || []).includes(opt.id);
+                              
+                              return (
+                                <label key={opt.id} className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${isSelected ? 'border-black bg-neutral-50' : 'border-neutral-200 hover:border-neutral-300 bg-white'}`}>
+                                  <input 
+                                     type="checkbox" 
+                                     className="hidden" 
+                                     checked={isSelected} 
+                                     onChange={() => handleToggleOption(group.id, opt.id, group.max_selections)} 
+                                  />
+                                  <div className="flex items-center gap-3">
+                                     {group.max_selections === 1 ? (
+                                       <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'border-black' : 'border-neutral-300'}`}>
+                                          {isSelected && <div className="w-2.5 h-2.5 bg-black rounded-full" />}
+                                       </div>
+                                     ) : (
+                                       <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-black border-black text-white' : 'border-neutral-300'}`}>
+                                          {isSelected && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                       </div>
+                                     )}
+                                     <span className={`text-sm ${isSelected ? 'font-bold text-black' : 'text-neutral-700'}`}>{opt.name}</span>
+                                  </div>
+                                  {opt.price_modifier > 0 && (
+                                     <span className="text-sm font-bold text-neutral-500">+ S/ {opt.price_modifier.toFixed(2)}</span>
+                                  )}
+                                </label>
+                              )
+                            })}
+                         </div>
+                       </div>
+                     )
+                   })}
+                </div>
               )}
 
               {/* Note Section */}

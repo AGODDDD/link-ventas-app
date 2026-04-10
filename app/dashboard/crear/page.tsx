@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2 } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { useEffect } from 'react'
 
@@ -28,6 +28,7 @@ export default function CrearProducto() {
   const [isAvailable, setIsAvailable] = useState(true)
   const [tallasInput, setTallasInput] = useState('')
   const [coloresInput, setColoresInput] = useState('')
+  const [modifiers, setModifiers] = useState<any[]>([])
   
   // Media handling
   const [archivo, setArchivo] = useState<File | null>(null)
@@ -110,6 +111,8 @@ export default function CrearProducto() {
             variants.push(variant)
           }
         }
+      } else if (templateType === 'restaurante') {
+        variants = modifiers
       }
 
       // Save to DB (Bodega initially)
@@ -245,7 +248,7 @@ export default function CrearProducto() {
           {templateType === 'restaurante' && (
             <div className="border-t border-outline-variant/10 pt-8 mt-8">
               <h3 className="text-[10px] font-bold text-[#d78a33] uppercase tracking-widest mb-4">🍽️ Ajustes de Restaurante</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Tiempo Estimado de Preparación</label>
                   <input placeholder="Ej: 15-20 min" value={preparationTime} onChange={(e) => setPreparationTime(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
@@ -258,6 +261,101 @@ export default function CrearProducto() {
                     </div>
                     <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="w-5 h-5 accent-[#d78a33]" />
                   </label>
+                </div>
+              </div>
+
+              {/* Modifiers Builder */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                   <div>
+                      <h4 className="text-sm font-bold text-on-surface">Constructor de Adicionales</h4>
+                      <p className="text-xs text-on-surface-variant mt-1">Agrega guarniciones, combinaciones o acompañamientos extra.</p>
+                   </div>
+                   <button 
+                     type="button" 
+                     onClick={() => setModifiers([...modifiers, { id: crypto.randomUUID(), name: '', required: false, min_selections: 1, max_selections: 1, options: [] }])}
+                     className="px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-lg text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-2"
+                   >
+                     <Settings2 size={14} /> Añadir Opciones
+                   </button>
+                </div>
+
+                <div className="space-y-4">
+                  {modifiers.map((group, groupIndex) => (
+                    <div key={group.id} className="border border-neutral-200 rounded-xl p-4 md:p-6 bg-white relative shadow-sm">
+                       <button 
+                         type="button" 
+                         onClick={() => setModifiers(modifiers.filter(m => m.id !== group.id))}
+                         className="absolute top-4 right-4 text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"
+                       >
+                         <Trash2 size={16} />
+                       </button>
+                       
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pr-12">
+                         <div className="space-y-2 md:col-span-2">
+                           <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Nombre del Grupo</label>
+                           <input placeholder="Ej: Elige tu guarnición" value={group.name} onChange={(e) => {
+                             const n = [...modifiers]; n[groupIndex].name = e.target.value; setModifiers(n);
+                           }} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg text-black p-3 font-bold" />
+                         </div>
+                         <label className="flex items-center justify-between p-3 border border-neutral-200 rounded-lg bg-neutral-50 cursor-pointer">
+                            <span className="text-xs font-bold text-neutral-700">Obligatorio</span>
+                            <input type="checkbox" checked={group.required} onChange={(e) => {
+                               const n = [...modifiers]; n[groupIndex].required = e.target.checked; setModifiers(n);
+                            }} className="w-4 h-4 accent-neutral-800" />
+                         </label>
+                         <div className="flex gap-2">
+                            <div className="flex-1 space-y-1">
+                               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Mín.</label>
+                               <input type="number" min="0" value={group.min_selections} onChange={(e) => {
+                                 const n = [...modifiers]; n[groupIndex].min_selections = parseInt(e.target.value) || 0; setModifiers(n);
+                               }} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg text-black p-2" />
+                            </div>
+                            <div className="flex-1 space-y-1">
+                               <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Máx.</label>
+                               <input type="number" min="1" value={group.max_selections} onChange={(e) => {
+                                 const n = [...modifiers]; n[groupIndex].max_selections = parseInt(e.target.value) || 1; setModifiers(n);
+                               }} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg text-black p-2" />
+                            </div>
+                         </div>
+                       </div>
+
+                       {/* Options UI */}
+                       <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-100">
+                          <div className="flex items-center justify-between mb-3">
+                             <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Elementos / Precios Extra</label>
+                             <button type="button" onClick={() => {
+                                 const n = [...modifiers];
+                                 n[groupIndex].options.push({ id: crypto.randomUUID(), name: '', price_modifier: 0 });
+                                 setModifiers(n);
+                             }} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+                                <Plus size={14} /> Fila
+                             </button>
+                          </div>
+                          <div className="space-y-2">
+                             {group.options.length === 0 && <p className="text-xs text-neutral-400 italic text-center py-2">No hay elementos creados aún.</p>}
+                             {group.options.map((opt: any, optIndex: number) => (
+                               <div key={opt.id} className="flex gap-2 items-center">
+                                 <input placeholder="Ej: Papas Fritas L" value={opt.name} onChange={(e) => {
+                                    const n = [...modifiers]; n[groupIndex].options[optIndex].name = e.target.value; setModifiers(n);
+                                 }} className="flex-1 bg-white border border-neutral-200 rounded-md p-2 text-sm text-black" />
+                                 <div className="flex items-center bg-white border border-neutral-200 rounded-md overflow-hidden w-24">
+                                     <span className="text-xs text-neutral-400 px-2">S/</span>
+                                     <input type="number" step="0.01" value={opt.price_modifier} onChange={(e) => {
+                                       const n = [...modifiers]; n[groupIndex].options[optIndex].price_modifier = parseFloat(e.target.value) || 0; setModifiers(n);
+                                     }} className="w-full py-2 bg-transparent text-sm text-black outline-none" />
+                                 </div>
+                                 <button type="button" onClick={() => {
+                                     const n = [...modifiers]; n[groupIndex].options.splice(optIndex, 1); setModifiers(n);
+                                 }} className="p-2 text-neutral-400 hover:text-red-500">
+                                   <Trash2 size={14} />
+                                 </button>
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

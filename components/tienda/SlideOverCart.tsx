@@ -21,7 +21,7 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout }: 
   // To prevent hydration errors, we ensure store binds correctly
   const cart = cartStore.carts[storeId] || []
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0)
-  const totalPrice = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
+  const totalPrice = cartStore.getTotalPrice(storeId)
 
   // Prevent scrolling when cart is open
   useEffect(() => {
@@ -100,14 +100,49 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout }: 
                         {item.product.brand && <p className="text-[10px] font-headline font-black uppercase text-on-surface-variant tracking-widest leading-none mb-1 truncate">{item.product.brand}</p>}
                         <h4 className="font-bold font-headline uppercase text-sm leading-tight line-clamp-2 text-on-background pr-6">{item.product.name}</h4>
                         {item.variantDetails && (
-                          <div className="flex gap-2 mt-1">
-                            {item.variantDetails.talla && <span className="bg-slate-200 text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Talla: {item.variantDetails.talla}</span>}
-                            {item.variantDetails.color && <span className="bg-slate-200 text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Color: {item.variantDetails.color}</span>}
-                          </div>
+                          <div className="flex flex-col gap-1 mt-1 pb-1">
+                        {item.variantDetails.talla && <span className="bg-slate-200 w-fit text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Talla: {item.variantDetails.talla}</span>}
+                        {item.variantDetails.color && <span className="bg-slate-200 w-fit text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Color: {item.variantDetails.color}</span>}
+                        {item.variantDetails.options && item.product.variants && (
+                            <div className="flex flex-col gap-0.5 w-full text-[11px] text-neutral-500 mt-1">
+                               {Object.entries(item.variantDetails.options as Record<string, string[]>).map(([groupId, optIds]) => {
+                                  const group = (item.product.variants as any[]).find(g => g.id === groupId);
+                                  if (!group || optIds.length === 0) return null;
+                                  const selectedNames = optIds.map(optId => {
+                                      const opt = group.options.find((o: any) => o.id === optId);
+                                      if (!opt) return null;
+                                      return opt.price_modifier > 0 ? `${opt.name} (+S/ ${opt.price_modifier})` : opt.name;
+                                  }).filter(Boolean);
+                                  return (
+                                    <span key={groupId} className="leading-tight">
+                                       <strong className="text-neutral-700">{group.name}:</strong> {selectedNames.join(', ')}
+                                    </span>
+                                  )
+                               })}
+                            </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="font-black font-headline text-primary italic text-base md:text-lg">S/ {item.product.price.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="font-black font-headline text-primary italic text-base md:text-lg">
+                      S/ {(() => {
+                         let itemModifiersPrice = 0;
+                         if (item.variantDetails?.options && item.product.variants) {
+                            const groups = item.product.variants as any[];
+                            Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([groupId, optionIds]) => {
+                               const group = groups.find(g => g.id === groupId);
+                               if (group) {
+                                  optionIds.forEach(optId => {
+                                     const opt = group.options.find((o:any) => o.id === optId);
+                                     if (opt) itemModifiersPrice += opt.price_modifier;
+                                  });
+                               }
+                            });
+                         }
+                         return (item.product.price + itemModifiersPrice).toFixed(2);
+                      })()}
+                    </span>
                         
                         {/* Quantity Controller */}
                         <div className="flex items-center gap-2 bg-surface-variant border border-outline px-2 py-1 ml-2 shrink-0">

@@ -73,12 +73,35 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
     
     let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A%0A`
     cart.forEach(item => {
-      text += `• ${item.quantity}x ${item.product.name} - S/ ${(item.product.price * item.quantity).toFixed(2)}%0A`
+      let itemModifiersPrice = 0;
+      let optionsText = '';
+      if (item.variantDetails?.options && item.product.variants) {
+         const groups = item.product.variants as any[];
+         Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([groupId, optionIds]) => {
+            const group = groups.find(g => g.id === groupId);
+            if (group && optionIds.length > 0) {
+               optionsText += `   _${group.name}:_%0A`;
+               optionIds.forEach(optId => {
+                  const opt = group.options.find((o:any) => o.id === optId);
+                  if (opt) {
+                     itemModifiersPrice += opt.price_modifier;
+                     optionsText += `   - ${opt.name}${opt.price_modifier > 0 ? ` (+S/ ${opt.price_modifier.toFixed(2)})` : ''}%0A`;
+                  }
+               });
+            }
+         });
+      }
+      
+      const unitPrice = item.product.price + itemModifiersPrice;
+      text += `• ${item.quantity}x ${item.product.name} - S/ ${(unitPrice * item.quantity).toFixed(2)}%0A`
+      if (optionsText) {
+         text += optionsText;
+      }
       if (item.variantDetails?.notes) {
         text += `   _Nota: ${item.variantDetails.notes}_%0A`
       }
     })
-    const total = cart.reduce((acc, i) => acc + (i.product.price * i.quantity), 0)
+    const total = cartStore.getTotalPrice(perfil.id)
     text += `%0A*TOTAL: S/ ${total.toFixed(2)}*%0A%0A`
     text += `Hola, deseo realizar este pedido.`
     
