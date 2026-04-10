@@ -20,7 +20,10 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [savedAddress, setSavedAddress] = useState<{ direccion: string; referencia: string; lat: number; lng: number } | null>(null)
+  const [profileName, setProfileName] = useState('')
+  const [profilePhone, setProfilePhone] = useState('')
   
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
@@ -137,20 +140,20 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   return (
     <div className="min-h-screen bg-[#F0F4F8] font-body flex flex-col relative pt-[60px]"> {/* Main Background */}
       
-      {/* GLOBAL TOP NAVBAR (Black Header) */}
-      <header className="fixed top-0 left-0 w-full h-[60px] bg-black text-white flex items-center justify-between px-4 z-50 shadow-md">
+      {/* GLOBAL TOP NAVBAR (White Header) */}
+      <header className="fixed top-0 left-0 w-full h-[60px] bg-white text-[#111] flex items-center justify-between px-4 z-50 shadow-sm border-b border-neutral-200">
         <div className="flex items-center gap-3">
           {perfil.avatar_url ? (
-            <img src={perfil.avatar_url} alt="Logo" className="w-8 h-8 rounded-full object-cover border border-neutral-700 bg-white" />
+            <img src={perfil.avatar_url} alt="Logo" className="w-9 h-9 rounded-full object-cover border border-neutral-200 bg-white" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
+            <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
               {perfil.store_name?.charAt(0) || 'R'}
             </div>
           )}
-          <span className="font-bold text-sm tracking-widest">{perfil.store_name}</span>
+          <span className="font-bold text-base text-[#111] tracking-wide">{perfil.store_name}</span>
         </div>
-        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black cursor-pointer hover:bg-neutral-200 transition-colors">
-          <Search size={16} strokeWidth={3} />
+        <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center text-[#333] cursor-pointer hover:bg-neutral-200 transition-colors">
+          <Search size={17} strokeWidth={2.5} />
         </div>
       </header>
 
@@ -205,8 +208,8 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
 
         {/* Bottom Nav Icons inside Sidebar */}
         <div className="absolute bottom-0 left-0 w-full bg-black text-white h-14 flex items-center justify-around px-4">
-           <User size={20} className="hover:text-neutral-300 cursor-pointer" />
-           <div className="relative hover:text-neutral-300 cursor-pointer">
+           <button onClick={() => setIsProfileOpen(true)} className="hover:text-neutral-300 cursor-pointer"><User size={20} /></button>
+           <div onClick={() => setIsCartOpen(true)} className="relative hover:text-neutral-300 cursor-pointer">
              <ClipboardList size={20} />
              {mounted && totalItems > 0 && (
                <div className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -320,20 +323,76 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
          </div>
       </main>
 
-      {/* FLOATING CART BUBBLE BUTTON (Quarter Circle at bottom right exactly like screenshot) */}
+      {/* FLOATING CART BUBBLE BUTTON */}
       <div 
         onClick={() => setIsCartOpen(true)}
         className="fixed bottom-0 right-0 z-50 cursor-pointer flex flex-col items-end"
       >
-        <div className="w-20 h-20 bg-black rounded-tl-full flex items-end justify-end p-5 shadow-[0_0_30px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 transition-transform origin-bottom-right relative">
-          <ShoppingCart size={28} className="text-white" strokeWidth={1.5} />
+        <div className="w-24 h-24 bg-black rounded-tl-full flex items-end justify-end p-6 shadow-[0_0_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-transform origin-bottom-right relative">
+          <ShoppingCart size={32} className="text-white" strokeWidth={1.5} />
           {mounted && totalItems > 0 && (
-            <span className="absolute top-2 left-2 bg-white text-black text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-sm">
+            <span className="absolute top-3 left-3 bg-white text-black text-xs w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md">
               {totalItems}
             </span>
           )}
         </div>
       </div>
+
+      {/* PROFILE PANEL */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-[110] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center" onClick={() => setIsProfileOpen(false)}>
+          <div className="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl p-6 space-y-5 animate-in slide-in-from-bottom duration-200" onClick={e => e.stopPropagation()}>
+            <h2 className="font-bold text-lg text-[#111] text-center">Mi perfil</h2>
+            
+            <div>
+              <label className="text-sm font-medium text-[#555] mb-1 block">Nombre:</label>
+              <input 
+                type="text" 
+                value={profileName} 
+                onChange={e => setProfileName(e.target.value)} 
+                placeholder="Tu nombre" 
+                className="w-full border border-neutral-300 rounded-lg h-11 px-4 text-sm text-[#111] bg-white focus:border-black outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-[#555] mb-1 block">* Teléfono:</label>
+              <div className="flex rounded-lg border border-neutral-300 overflow-hidden h-11">
+                <div className="bg-neutral-50 px-3 flex items-center justify-center border-r border-neutral-300 gap-1">
+                  <span className="text-sm">🇵🇪</span>
+                </div>
+                <input 
+                  type="tel" 
+                  value={profilePhone} 
+                  onChange={e => setProfilePhone(e.target.value)} 
+                  placeholder="+51 (9XX) XXX XXX" 
+                  className="flex-1 px-3 text-sm text-[#111] bg-white focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-[#333] mb-2">Mis direcciones</h3>
+              <div className="border border-dashed border-neutral-300 rounded-xl p-6 text-center">
+                <p className="text-sm text-[#999]">{savedAddress ? savedAddress.direccion : 'No hay direcciones registradas'}</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => { setIsProfileOpen(false); setIsAddressModalOpen(true); }}
+              className="w-full bg-black text-white rounded-full h-12 font-bold text-sm flex items-center justify-center gap-2 hover:bg-neutral-800 active:scale-[0.98] transition-all"
+            >
+              + Agregar Dirección
+            </button>
+
+            <div className="flex justify-center pt-2">
+              <button onClick={() => setIsProfileOpen(false)} className="px-6 py-2 text-sm font-medium text-[#666] border border-neutral-300 rounded-full bg-white hover:bg-neutral-50 transition-colors">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* RENDER MODAL */}
       {selectedProduct && (

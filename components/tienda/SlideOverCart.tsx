@@ -83,9 +83,15 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
               <ShoppingBag size={64} className={`mb-4 ${isMinimalist ? 'text-neutral-300' : 'text-outline-variant'}`} strokeWidth={1} />
               <p className={`font-headline font-bold uppercase tracking-widest text-lg ${isMinimalist ? 'text-black' : 'text-on-surface-variant'}`}>Tu carrito está vacío</p>
               <p className={`font-body text-sm mt-2 ${isMinimalist ? 'text-neutral-500' : 'text-on-surface-variant/70'}`}>Aprovecha nuestras ofertas y comienza a comprar.</p>
-              <Button onClick={onClose} variant="outline" className={`mt-8 rounded-none font-headline font-bold uppercase tracking-widest ${isMinimalist ? 'border-black text-black hover:bg-neutral-100' : 'border-primary text-primary hover:bg-primary/10'}`}>
-                SEGUIR COMPRANDO
-              </Button>
+              {isMinimalist ? (
+                <button onClick={onClose} className="mt-8 px-6 py-3 rounded-full border border-neutral-300 bg-white text-[#333] text-sm font-bold hover:bg-neutral-50 transition-colors">
+                  SEGUIR COMPRANDO
+                </button>
+              ) : (
+                <Button onClick={onClose} variant="outline" className="mt-8 rounded-none font-headline font-bold uppercase tracking-widest border-primary text-primary hover:bg-primary/10">
+                  SEGUIR COMPRANDO
+                </Button>
+              )}
             </div>
           ) : (
              cart.map((item, index) => (
