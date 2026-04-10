@@ -11,19 +11,29 @@ interface Props {
   onClose: () => void;
   perfil: Profile;
   savedAddress?: { direccion: string; referencia: string; lat: number; lng: number } | null;
+  profileData?: { nombre: string; telefono: string; correo: string };
+  onProfileUpdate?: (data: { nombre: string; telefono: string; correo: string }) => void;
 }
 
-export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, savedAddress }: Props) {
+export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, savedAddress, profileData, onProfileUpdate }: Props) {
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
   
-  // Data State
-  const [nombre, setNombre] = useState('')
-  const [telefono, setTelefono] = useState('')
-  const [correo, setCorreo] = useState('')
+  // Data State — initialize from profile if available
+  const [nombre, setNombre] = useState(profileData?.nombre || '')
+  const [telefono, setTelefono] = useState(profileData?.telefono || '')
+  const [correo, setCorreo] = useState(profileData?.correo || '')
   const [direccion, setDireccion] = useState(savedAddress?.direccion || '')
   const [metodoPago, setMetodoPago] = useState<'niubiz' | 'whatsapp'>('whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+
+  // Sync data back to parent when closing
+  const handleClose = () => {
+    if (onProfileUpdate) {
+      onProfileUpdate({ nombre, telefono, correo })
+    }
+    onClose()
+  }
   
   // Derived amounts
   const deliveryFee = 8.00;
@@ -47,6 +57,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         alert("Por favor completa los campos requeridos y acepta los términos.");
         return;
      }
+
+     // Sync profile data back
+     if (onProfileUpdate) onProfileUpdate({ nombre, telefono, correo });
 
      if (metodoPago === 'whatsapp') {
         let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A%0A`
@@ -97,7 +110,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         {/* Header */}
         <div className="flex items-center justify-center relative py-5 border-b border-neutral-200 bg-white rounded-t-xl">
           <h2 className="font-bold text-lg text-[#333]">Detalles del pedido</h2>
-          <button onClick={onClose} className="absolute right-4 text-neutral-400 hover:text-black hover:bg-neutral-100 p-2 rounded-full transition-colors">
+          <button onClick={handleClose} className="absolute right-4 text-neutral-400 hover:text-black hover:bg-neutral-100 p-2 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>

@@ -24,6 +24,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const [savedAddress, setSavedAddress] = useState<{ direccion: string; referencia: string; lat: number; lng: number } | null>(null)
   const [profileName, setProfileName] = useState('')
   const [profilePhone, setProfilePhone] = useState('')
+  const [profileEmail, setProfileEmail] = useState('')
   
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
@@ -140,9 +141,9 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   return (
     <div className="min-h-screen bg-[#F0F4F8] font-body flex flex-col relative pt-[60px]"> {/* Main Background */}
       
-      {/* GLOBAL TOP NAVBAR (White Header) */}
-      <header className="fixed top-0 left-0 w-full h-[60px] bg-white text-[#111] flex items-center justify-between px-4 z-50 shadow-sm border-b border-neutral-200">
-        <div className="flex items-center gap-3">
+      {/* GLOBAL TOP NAVBAR (Black with white pill for name) */}
+      <header className="fixed top-0 left-0 w-full h-[60px] bg-black flex items-center justify-between px-3 z-50 shadow-md">
+        <div className="flex items-center gap-2 bg-white rounded-full pl-1 pr-4 py-1">
           {perfil.avatar_url ? (
             <img src={perfil.avatar_url} alt="Logo" className="w-9 h-9 rounded-full object-cover border border-neutral-200 bg-white" />
           ) : (
@@ -150,9 +151,9 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
               {perfil.store_name?.charAt(0) || 'R'}
             </div>
           )}
-          <span className="font-bold text-base text-[#111] tracking-wide">{perfil.store_name}</span>
+          <span className="font-bold text-base text-[#444] tracking-wide">{perfil.store_name}</span>
         </div>
-        <div className="w-9 h-9 rounded-full bg-neutral-100 flex items-center justify-center text-[#333] cursor-pointer hover:bg-neutral-200 transition-colors">
+        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-white/30 transition-colors">
           <Search size={17} strokeWidth={2.5} />
         </div>
       </header>
@@ -372,6 +373,17 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
             </div>
 
             <div>
+              <label className="text-sm font-medium text-[#555] mb-1 block">Correo electrónico:</label>
+              <input 
+                type="email" 
+                value={profileEmail} 
+                onChange={e => setProfileEmail(e.target.value)} 
+                placeholder="correo@ejemplo.com" 
+                className="w-full border border-neutral-300 rounded-lg h-11 px-4 text-sm text-[#111] bg-white focus:border-black outline-none"
+              />
+            </div>
+
+            <div>
               <h3 className="text-sm font-bold text-[#333] mb-2">Mis direcciones</h3>
               <div className="border border-dashed border-neutral-300 rounded-xl p-6 text-center">
                 <p className="text-sm text-[#999]">{savedAddress ? savedAddress.direccion : 'No hay direcciones registradas'}</p>
@@ -411,6 +423,8 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
            onClose={() => setIsCheckoutOpen(false)}
            perfil={perfil}
            savedAddress={savedAddress}
+           profileData={{ nombre: profileName, telefono: profilePhone, correo: profileEmail }}
+           onProfileUpdate={(data) => { setProfileName(data.nombre); setProfilePhone(data.telefono); setProfileEmail(data.correo); }}
         />
       )}
 
