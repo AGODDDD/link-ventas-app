@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import { Profile, Product } from '@/types/tienda'
 import { MapPin, Clock, MessageCircle, ExternalLink } from 'lucide-react'
