@@ -281,9 +281,9 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
                       </div>
                       
                       <div className="p-4 flex-1 flex flex-col bg-white">
-                        <h3 className="font-bold text-neutral-900 text-[15px] leading-tight mb-2 line-clamp-2">{item.name}</h3>
+                        <h3 className="font-bold text-black text-[15px] leading-tight mb-2 line-clamp-2">{item.name}</h3>
                         {item.description && (
-                          <p className="text-neutral-500 text-[12px] leading-snug line-clamp-3">{item.description}</p>
+                          <p className="text-neutral-600 text-[12px] leading-snug line-clamp-3">{item.description}</p>
                         )}
                       </div>
                     </button>
@@ -326,6 +326,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
          isOpen={isCartOpen} 
          onClose={() => setIsCartOpen(false)}
          onCheckout={handleWhatsAppCheckout}
+         templateType="restaurante"
       />
     </div>
   )

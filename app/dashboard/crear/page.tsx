@@ -172,33 +172,46 @@ export default function CrearProducto() {
               <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Información Principal</h3>
               
               <div className="space-y-2">
-                <label className="text-xs font-bold text-primary uppercase tracking-widest">Nombre del Producto</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nombre del Producto</label>
                 <input required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-primary uppercase tracking-widest">Marca (Badge)</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Marca (Badge) / Opcional</label>
                 <input value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all uppercase" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-primary uppercase tracking-widest">Categoría</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all">
-                  <option value="">Sin categoría</option>
-                  <option value="Ropa">Ropa</option>
-                  <option value="Zapatos">Zapatos</option>
-                  <option value="Accesorios">Accesorios</option>
-                  <option value="Electrónica">Electrónica</option>
-                  <option value="Belleza">Belleza</option>
-                  <option value="Hogar">Hogar</option>
-                  <option value="Deportes">Deportes</option>
-                  <option value="Alimentos">Alimentos</option>
-                  <option value="Otros">Otros</option>
-                </select>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Categoría (Libre)</label>
+                <input 
+                   list="categorias-predeterminadas"
+                   value={category} 
+                   onChange={(e) => setCategory(e.target.value)} 
+                   placeholder="Ej: Combos, Bebidas, Casacas..."
+                   className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" 
+                />
+                <datalist id="categorias-predeterminadas">
+                  {templateType === 'restaurante' ? (
+                     <>
+                       <option value="Promociones y Combos" />
+                       <option value="Platos de Fondo" />
+                       <option value="Bebidas" />
+                       <option value="Guarniciones" />
+                       <option value="Postres" />
+                     </>
+                  ) : (
+                     <>
+                       <option value="Ropa" />
+                       <option value="Zapatos" />
+                       <option value="Accesorios" />
+                       <option value="Cuidado Personal" />
+                     </>
+                  )}
+                </datalist>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-primary uppercase tracking-widest">Descripción Pública</label>
+                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Descripción Pública</label>
                 <textarea required value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all min-h-[120px] resize-y" />
               </div>
             </div>
