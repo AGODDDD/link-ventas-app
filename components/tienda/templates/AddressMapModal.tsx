@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { X, MapPin, Navigation } from 'lucide-react'
 
 // Dynamically import Leaflet to avoid SSR issues
@@ -28,6 +28,26 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
   const mapRef = useRef<any>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<any>(null)
+  const direccionRef = useRef(direccion)
+  
+  // Keep ref in sync
+  useEffect(() => { direccionRef.current = direccion }, [direccion])
+
+  // Reverse geocode: convert lat/lng to address string via Nominatim (free, no key)
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=es`,
+        { headers: { 'User-Agent': 'LinkVentas/1.0' } }
+      )
+      const data = await res.json()
+      if (data?.display_name) {
+        setDireccion(data.display_name)
+      }
+    } catch {
+      // Silently fail — user can still type manually
+    }
+  }, [])
 
   // Load Leaflet dynamically (client-side only)
   useEffect(() => {
@@ -38,7 +58,7 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
         const leaflet = await import('leaflet')
         L = leaflet.default || leaflet
         
-        // Fix default marker icons (Leaflet bug with bundlers)
+        // Fix default marker icons (Leaflet webpack bug)
         delete (L.Icon.Default.prototype as any)._getIconUrl
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -56,7 +76,7 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
   useEffect(() => {
     if (!mapReady || !isOpen || !mapContainerRef.current || mapRef.current) return;
 
-    // Add Leaflet CSS
+    // Inject Leaflet CSS if not already present
     if (!document.getElementById('leaflet-css')) {
       const link = document.createElement('link')
       link.id = 'leaflet-css'
@@ -66,7 +86,7 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
     }
     
     // Small delay for CSS to load
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       if (!mapContainerRef.current || mapRef.current) return;
       
       const map = L.map(mapContainerRef.current).setView(position, 15)
@@ -79,28 +99,31 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
       markerRef.current = marker
       mapRef.current = map
       
-      // Click on map to move marker
+      // Click on map to move marker + reverse geocode
       map.on('click', (e: any) => {
         const { lat, lng } = e.latlng
         marker.setLatLng([lat, lng])
         setPosition([lat, lng])
+        reverseGeocode(lat, lng)
       })
       
-      // Drag marker
+      // Drag marker + reverse geocode
       marker.on('dragend', () => {
         const latlng = marker.getLatLng()
         setPosition([latlng.lat, latlng.lng])
+        reverseGeocode(latlng.lat, latlng.lng)
       })
-    }, 200)
+    }, 250)
 
     return () => {
+      clearTimeout(timer)
       if (mapRef.current) {
         mapRef.current.remove()
         mapRef.current = null
         markerRef.current = null
       }
     }
-  }, [mapReady, isOpen])
+  }, [mapReady, isOpen, reverseGeocode])
 
   // Geolocate user
   const handleGeolocate = () => {
@@ -115,6 +138,7 @@ export default function AddressMapModal({ isOpen, onClose, onSave, initialAddres
         if (markerRef.current) {
           markerRef.current.setLatLng(newPos)
         }
+        reverseGeocode(newPos[0], newPos[1])
       },
       () => alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.')
     )
