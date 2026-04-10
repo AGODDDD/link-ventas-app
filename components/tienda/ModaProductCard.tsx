@@ -149,7 +149,7 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
             ) : (
               <Button
                 variant="outline"
-                className="w-full rounded-none border-primary text-primary hover:bg-primary hover:text-secondary uppercase tracking-widest font-light mt-4"
+                className="w-full rounded-none border-none text-white bg-gradient-to-r from-primary to-secondary hover:brightness-110 uppercase tracking-widest font-bold mt-4 shadow-md"
                 onClick={handleAddToCart}
               >
                 Agregar

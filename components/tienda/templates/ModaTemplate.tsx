@@ -27,7 +27,7 @@ export default function ModaTemplate({ perfil, productos }: Props) {
           <p className="text-xs md:text-sm tracking-[0.3em] uppercase max-w-xl mx-auto drop-shadow-md font-medium text-white/90">
             {perfil.description || "Nueva Colección Exclusiva"}
           </p>
-          <a href="#catalogo" className="mt-12 px-8 py-3 border border-primary bg-primary/20 text-white hover:bg-primary hover:text-black transition-colors uppercase tracking-[0.2em] text-xs font-semibold backdrop-blur-sm">
+          <a href="#catalogo" className="mt-12 px-8 py-3 border-none bg-gradient-to-r from-primary to-secondary text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all uppercase tracking-[0.2em] text-xs font-bold backdrop-blur-sm">
             DESCUBRIR
           </a>
         </div>

@@ -137,7 +137,7 @@ export default function SlideOverCart({ storeId, isOpen, onClose }: Props) {
              <p className="text-[10px] uppercase font-label tracking-widest text-on-surface-variant text-center pb-2">Gastos de envío calculados en el checkout</p>
              <Button 
                 onClick={handleCheckout}
-                className="w-full rounded-none bg-primary hover:bg-primary/80 text-on-primary h-14 font-headline font-black text-lg tracking-widest uppercase flex items-center justify-between px-6 transition-transform active:scale-[0.98]"
+                className="w-full rounded-none border-none bg-gradient-to-r from-primary to-secondary hover:brightness-110 text-white h-14 font-headline font-black text-lg tracking-widest uppercase flex items-center justify-between px-6 transition-transform active:scale-[0.98]"
              >
                 <span>PROCEDER AL PAGO</span>
                 <ArrowRight />
