@@ -45,7 +45,6 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
       (entries) => {
         const visibleSections = entries.filter((entry) => entry.isIntersecting);
         if (visibleSections.length > 0) {
-          // Sort by intersection ratio or just pick the first standard one
           setActiveCategory(visibleSections[0].target.id);
         }
       },
@@ -63,7 +62,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const handleScrollToCategory = (catName: string) => {
     const element = document.getElementById(catName);
     if (element) {
-      const y = element.getBoundingClientRect().top + window.scrollY - 20;
+      const y = element.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top: y, behavior: 'smooth' });
       setActiveCategory(catName);
     }
@@ -88,48 +87,65 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F6F8] font-body flex flex-col md:flex-row relative">
+    <div className="min-h-screen bg-[#F0F4F8] font-body flex flex-col relative pt-[60px]"> {/* Main Background */}
       
-      {/* LEFT SIDEBAR (Desktop) / TOP (Mobile) */}
-      <aside className="w-full md:w-[320px] lg:w-[380px] bg-white border-r border-[#EFEFEF] md:fixed md:h-screen md:top-0 md:left-0 z-40 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-        
-        {/* Logo / Header */}
-        <div className="p-6 md:p-8 flex items-center gap-4">
+      {/* GLOBAL TOP NAVBAR (Black Header) */}
+      <header className="fixed top-0 left-0 w-full h-[60px] bg-black text-white flex items-center justify-between px-4 z-50 shadow-md">
+        <div className="flex items-center gap-3">
           {perfil.avatar_url ? (
-            <img src={perfil.avatar_url} alt={perfil.store_name} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover border border-neutral-100 shadow-sm" />
+            <img src={perfil.avatar_url} alt="Logo" className="w-8 h-8 rounded-full object-cover border border-neutral-700 bg-white" />
           ) : (
-            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+            <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
               {perfil.store_name?.charAt(0) || 'R'}
             </div>
           )}
-          <div>
-            <h1 className="font-bold text-lg md:text-xl text-neutral-900 leading-tight">{perfil.store_name}</h1>
+          <span className="font-bold text-sm tracking-widest">{perfil.store_name}</span>
+        </div>
+        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black cursor-pointer hover:bg-neutral-200 transition-colors">
+          <Search size={16} strokeWidth={3} />
+        </div>
+      </header>
+
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex flex-col w-[320px] lg:w-[350px] bg-white border-r border-neutral-200 fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40">
+        
+        {/* Banner with Address Card overlapping */}
+        <div className="relative pb-6">
+          <div className="w-full h-[180px] bg-neutral-200 overflow-hidden relative">
+            {(perfil.banner_url || perfil.avatar_url) ? (
+              <img src={perfil.banner_url || perfil.avatar_url || ''} className="w-full h-full object-cover opacity-90" alt="Banner" />
+            ) : (
+              <div className="w-full h-full flex justify-center items-center text-neutral-400 text-xs">Sin Banner</div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/30"></div>
+          </div>
+          
+          {/* Floating Address Card */}
+          <div className="relative -mt-10 px-4 z-10 w-full">
+            <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-neutral-100 flex flex-col items-center text-center gap-2 relative">
+              <span className="font-bold text-sm text-neutral-800 leading-tight block w-2/3 mx-auto">
+                Agrega tu dirección para activar promociones
+              </span>
+              <button className="flex items-center gap-2 text-xs font-medium text-neutral-700 mt-2 hover:text-black">
+                <MapPin size={14} /> Agregar dirección
+              </button>
+              <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-bold">
+                 <span>🛵</span> ---
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Address Banner */}
-        <div className="px-6 md:px-8 pb-6">
-          <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100 text-center space-y-3 shadow-inner shadow-neutral-100/50">
-             <p className="text-xs font-bold uppercase tracking-widest text-neutral-500">Dirección de Entrega</p>
-             <button className="w-full bg-white border border-neutral-200 hover:border-primary/50 text-neutral-700 py-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-colors shadow-sm">
-                <MapPin size={16} className="text-primary"/> Agregar dirección
-             </button>
-             {perfil.direccion && (
-               <p className="text-xs text-neutral-400 font-medium">De: {perfil.direccion}</p>
-             )}
-          </div>
-        </div>
-
-        {/* Desktop Category Navigation */}
-        <div className="hidden md:block flex-1 overflow-y-auto px-4 pb-24 custom-scrollbar">
+        {/* Category List */}
+        <div className="flex-1 overflow-y-auto px-4 pb-20 custom-scrollbar">
           <nav className="space-y-1">
             {catNames.map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleScrollToCategory(cat)}
-                className={`w-full text-left px-4 py-3 rounded-lg text-[13px] font-bold uppercase tracking-widest transition-all ${
+                className={`w-full text-left px-4 py-3 text-[13px] uppercase transition-all tracking-wider font-semibold rounded-lg ${
                   activeCategory === cat 
-                    ? 'bg-primary/10 text-primary bg-gradient-to-r from-primary/10 to-transparent' 
+                    ? 'text-black font-bold bg-neutral-100/80 shadow-sm' 
                     : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
                 }`}
               >
@@ -139,17 +155,42 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
           </nav>
         </div>
 
-        {/* Mobile Horizontal Category Scroller */}
-        <div className="md:hidden w-full overflow-x-auto whitespace-nowrap px-4 pb-4 border-b border-neutral-200 hide-scrollbar sticky top-0 bg-white z-20">
+        {/* Bottom Nav Icons inside Sidebar */}
+        <div className="absolute bottom-0 left-0 w-full bg-black text-white h-14 flex items-center justify-around px-4">
+           <User size={20} className="hover:text-neutral-300 cursor-pointer" />
+           <div className="relative hover:text-neutral-300 cursor-pointer">
+             <ClipboardList size={20} />
+             {mounted && totalItems > 0 && (
+               <div className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                 {totalItems}
+               </div>
+             )}
+           </div>
+           <svg className="w-5 h-5 hover:text-neutral-300 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        </div>
+      </aside>
+
+      {/* MOBILE LAYOUT SUPPORT (Banner & Horizontal nav) */}
+      <div className="md:hidden">
+        <div className="w-full h-40 relative">
+           {(perfil.banner_url || perfil.avatar_url) ? (
+              <img src={perfil.banner_url || perfil.avatar_url || ''} className="w-full h-full object-cover" alt="Banner" />
+            ) : (
+              <div className="w-full h-full bg-neutral-200"></div>
+            )}
+        </div>
+        <div className="bg-white p-4 -mt-4 relative rounded-t-2xl shadow-sm z-10 border-b border-neutral-100 flex flex-col items-center text-center">
+            <span className="font-bold text-sm text-neutral-800 leading-tight">Agrega tu dirección para activar promociones</span>
+            <button className="flex items-center gap-2 text-xs font-medium text-neutral-500 mt-2"><MapPin size={14}/> Agregar dirección</button>
+        </div>
+        <div className="w-full overflow-x-auto whitespace-nowrap px-4 py-3 bg-white sticky top-[60px] z-30 shadow-sm hide-scrollbar">
            <div className="flex gap-2">
              {catNames.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleScrollToCategory(cat)}
                   className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
-                    activeCategory === cat 
-                      ? 'bg-primary text-white' 
-                      : 'bg-neutral-100 text-neutral-600'
+                    activeCategory === cat ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-600'
                   }`}
                 >
                   {cat}
@@ -157,114 +198,104 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
               ))}
            </div>
         </div>
-
-        {/* Desktop Bottom Action Nav */}
-        <div className="hidden md:flex absolute bottom-0 left-0 w-full bg-black text-white px-2 py-4 justify-between items-center z-50">
-           <button className="flex-1 flex flex-col items-center gap-1 hover:text-primary transition-colors">
-              <User size={20}/>
-              <span className="text-[10px] uppercase font-bold tracking-widest">PERFIL</span>
-           </button>
-           <button className="flex-1 flex flex-col items-center gap-1 text-primary relative">
-              <ClipboardList size={20}/>
-              <span className="text-[10px] uppercase font-bold tracking-widest">MENÚ</span>
-           </button>
-           <button 
-              onClick={() => setIsCartOpen(true)}
-              className="flex-1 flex flex-col items-center gap-1 hover:text-primary transition-colors relative"
-           >
-              <ShoppingCart size={20}/>
-              <span className="text-[10px] uppercase font-bold tracking-widest">ORDEN</span>
-              {mounted && totalItems > 0 && (
-                <span className="absolute top-0 right-4 bg-primary text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {totalItems}
-                </span>
-              )}
-           </button>
-        </div>
-      </aside>
+      </div>
 
       {/* RIGHT MAIN CONTENT */}
-      <main className="flex-1 md:ml-[320px] lg:ml-[380px] p-4 md:p-8 lg:p-12 pb-24 md:pb-12 max-w-5xl">
-         
-         <div className="space-y-12 md:space-y-16">
+      <main className="flex-1 md:ml-[320px] lg:ml-[350px] p-4 sm:p-6 lg:p-8 pb-32 max-w-6xl w-full mx-auto self-start">
+         <div className="space-y-12">
             {catNames.map((categoria) => (
-              <section key={categoria} id={categoria} className="scroll-mt-24 md:scroll-mt-8">
-                <h2 className="font-headline font-black text-xl md:text-2xl uppercase tracking-widest text-[#2D3142] mb-6 md:mb-8 pb-2 border-b-2 inline-block relative">
-                  {categoria}
-                  <div className="absolute -bottom-[2px] left-0 w-1/2 h-[2px] bg-primary"></div>
-                </h2>
+              <section key={categoria} id={categoria} className="scroll-mt-28 md:scroll-mt-[100px]">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-                  {categorias[categoria].map((item) => (
+                {/* Section Title with Lines */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-[2px] flex-1 bg-neutral-200 rounded-full"></div>
+                  <h2 className="font-bold text-[15px] md:text-lg text-[#555761] uppercase tracking-widest whitespace-nowrap px-2">
+                    {categoria}
+                  </h2>
+                  <div className="h-[2px] flex-1 bg-neutral-200 rounded-full"></div>
+                </div>
+                
+                {/* Product Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                  {categorias[categoria].map((item) => {
+                    const priceDiscount = item.original_price && item.original_price > item.price 
+                        ? item.original_price - item.price : null;
+
+                    return (
                     <button 
                       key={item.id}
                       onClick={() => setSelectedProduct(item)}
-                      className="bg-white rounded-2xl overflow-hidden hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 border border-[#F0F0F0] hover:border-primary/20 text-left flex flex-col group h-full relative"
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col relative w-full h-full"
                     >
-                      <div className="relative w-full aspect-[4/3] bg-neutral-100 overflow-hidden shrink-0">
+                      <div className="relative w-full aspect-[4/3] bg-neutral-100">
                         {item.image_url ? (
-                          <img 
-                            src={item.image_url} 
-                            alt={item.name} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out" 
-                          />
+                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-neutral-300 bg-neutral-50 font-bold uppercase tracking-widest text-xs">Sin foto</div>
                         )}
                         
-                        {/* Status Tags */}
+                        {/* Status overlays */}
                         {item.is_available === false && (
-                          <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
-                            <span className="bg-red-500 text-white font-bold uppercase tracking-widest px-4 py-1.5 text-[10px] rounded-full shadow-lg">AGOTADO</span>
+                          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
+                            <span className="bg-red-500 text-white font-bold uppercase tracking-widest px-3 py-1 text-[10px] rounded-full">AGOTADO</span>
                           </div>
                         )}
 
-                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur shadow-sm px-3 py-1.5 rounded-full z-10 border border-neutral-100">
-                          <span className="font-headline font-black text-primary text-sm tracking-tight">
-                            S/ {item.price.toFixed(2)}
-                          </span>
+                        {/* White Price Pill (Top Left) */}
+                        <div className="absolute top-2 left-2 z-10 flex items-center bg-white rounded-full pl-3 pr-2 py-1 shadow-sm border border-neutral-100 gap-2 h-7 group">
+                          {item.original_price && item.original_price > item.price && (
+                             <span className="text-neutral-400 text-[10px] line-through font-medium">S/ {item.original_price.toFixed(2)}</span>
+                          )}
+                          <span className="font-black text-black text-[13px] tracking-tight">S/ {item.price.toFixed(2)}</span>
                         </div>
+
+                        {/* Black Discount Pill (Top Right) */}
+                        {priceDiscount && (
+                           <div className="absolute top-2 right-2 z-10 bg-black text-white h-7 px-3 rounded-full flex items-center justify-center font-bold text-[11px] shadow-sm">
+                             -S/ {priceDiscount.toFixed(2)}
+                           </div>
+                        )}
                       </div>
                       
-                      <div className="p-4 md:p-5 flex-1 flex flex-col">
-                        <h3 className="font-bold text-[#2D3142] text-[15px] leading-snug mb-1.5 line-clamp-2">{item.name}</h3>
+                      <div className="p-4 flex-1 flex flex-col bg-white">
+                        <h3 className="font-bold text-neutral-900 text-[15px] leading-tight mb-2 line-clamp-2">{item.name}</h3>
                         {item.description && (
-                          <p className="text-[#8E94A4] text-xs leading-relaxed line-clamp-2">{item.description}</p>
+                          <p className="text-neutral-500 text-[12px] leading-snug line-clamp-3">{item.description}</p>
                         )}
-                        <div className="mt-auto pt-4 flex items-center justify-end">
-                           <span className="text-primary font-bold text-xs uppercase tracking-widest group-hover:underline">Elegir</span>
-                        </div>
                       </div>
-
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             ))}
          </div>
-
       </main>
 
-      {/* FLOATING CART BUBBLE BUTTON (Mobile & Desktop overrides) */}
-      <button 
+      {/* FLOATING CART BUBBLE BUTTON (Quarter Circle at bottom right exactly like screenshot) */}
+      <div 
         onClick={() => setIsCartOpen(true)}
-        className="fixed bottom-6 right-6 z-50 md:hidden bg-black text-white w-14 h-14 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:scale-105 transition-transform flex items-center justify-center"
+        className="fixed bottom-0 right-0 z-50 cursor-pointer flex flex-col items-end"
       >
-        <ShoppingCart size={24} />
-        {mounted && totalItems > 0 && (
-          <span className="absolute -top-1 -right-1 bg-primary text-white text-[11px] w-6 h-6 rounded-full flex items-center justify-center font-bold border-2 border-background">
-            {totalItems}
-          </span>
-        )}
-      </button>
+        <div className="w-20 h-20 bg-black rounded-tl-full flex items-end justify-end p-5 shadow-[0_0_30px_rgba(0,0,0,0.15)] hover:scale-105 active:scale-95 transition-transform origin-bottom-right relative">
+          <ShoppingCart size={28} className="text-white" strokeWidth={1.5} />
+          {mounted && totalItems > 0 && (
+            <span className="absolute top-2 left-2 bg-white text-black text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold shadow-sm">
+              {totalItems}
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* RENDER MODAL */}
-      <RestauranteProductModal 
-         product={selectedProduct!}
-         storeId={perfil.id}
-         isOpen={!!selectedProduct}
-         onClose={() => setSelectedProduct(null)}
-      />
+      {selectedProduct && (
+        <RestauranteProductModal 
+           product={selectedProduct}
+           storeId={perfil.id}
+           isOpen={true}
+           onClose={() => setSelectedProduct(null)}
+        />
+      )}
 
       {/* RENDER SLIDE OVER CART */}
       <SlideOverCart 

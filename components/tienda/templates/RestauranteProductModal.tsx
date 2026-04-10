@@ -44,25 +44,29 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] transition-opacity flex items-end sm:items-center justify-center" onClick={onClose}>
         <div 
-          className="bg-background w-full sm:w-[500px] h-[85vh] sm:h-auto sm:max-h-[90vh] rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col relative shadow-2xl translate-y-0 animate-in slide-in-from-bottom-10"
+          className="bg-white w-full sm:w-[500px] h-[85vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col relative shadow-2xl translate-y-0 animate-in slide-in-from-bottom-10"
           onClick={e => e.stopPropagation()}
         >
-          {/* Close Button Top Right (Z-index high) */}
+          {/* Close Button Top Right (Outside image) */}
           <button 
             onClick={onClose} 
-            className="absolute top-4 right-4 z-[120] bg-black/50 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full transition-colors"
+            className="absolute top-4 right-4 z-[120] bg-black text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-neutral-800 transition-colors shadow-md"
           >
-            <X size={20} />
+            <X size={16} strokeWidth={3} />
           </button>
 
-          <div className="overflow-y-auto flex-1 pb-24">
-            {/* Header Image bleed */}
+          <div className="overflow-y-auto flex-1 pb-24 custom-scrollbar">
+            {/* Header Image bleed with Price Pill */}
             <div className="relative w-full aspect-video bg-neutral-100">
               {product.image_url ? (
                 <Image src={product.image_url} alt={product.name} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-neutral-400">Sin foto</div>
               )}
+              {/* Floating Price Pill inside the image */}
+              <div className="absolute top-4 left-4 z-10 flex items-center bg-white rounded-full px-4 py-1.5 shadow-md">
+                <span className="font-bold text-black text-sm">S/ {product.price.toFixed(2)}</span>
+              </div>
             </div>
 
             {/* Product Details */}
@@ -75,13 +79,10 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
               )}
 
               {/* Note Section */}
-              <div className="mt-8 space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold font-headline text-sm uppercase tracking-widest border-b-2 border-primary inline-block pb-1">Nota</h3>
-                  <span className="text-xs text-on-surface-variant">Opcional</span>
-                </div>
+              <div className="mt-6 space-y-4">
+                <h3 className="font-bold text-sm text-neutral-800">Nota</h3>
                 <textarea 
-                  className="w-full bg-surface-variant border border-outline rounded-xl p-4 text-sm text-on-background placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  className="w-full bg-white border border-neutral-300 rounded-lg p-3 text-sm text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-black resize-none"
                   rows={3}
                   placeholder="Ej: Sin mayonesa, papas bien doradas..."
                   value={notes}
@@ -93,32 +94,41 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
           </div>
 
           {/* Sticky Bottom Footer */}
-          <div className="absolute bottom-0 left-0 w-full bg-background border-t border-outline/50 p-6 flex flex-col gap-4 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-            <div className="flex items-center justify-between gap-4">
+          <div className="absolute bottom-0 left-0 w-full bg-white border-t border-neutral-100 p-6 flex flex-col shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-50">
+            <div className="flex justify-between items-center w-full mb-4 px-2">
+               <span className="font-bold text-sm text-neutral-500">Total:</span>
+               <span className="font-bold text-lg text-black">S/ {totalPrice.toFixed(2)}</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 mt-2">
               
               {/* Quantity */}
-              <div className="flex items-center gap-4 bg-surface-variant rounded-full px-4 py-2 border border-outline/50">
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="text-primary hover:opacity-70 p-1">
-                  <Minus size={20} />
+              <div className="flex items-center gap-4 bg-white rounded-full px-2 py-2 border border-neutral-200">
+                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="text-neutral-400 hover:text-black p-1 bg-neutral-100 rounded-full w-8 h-8 flex items-center justify-center">
+                  <Minus size={14} strokeWidth={3} />
                 </button>
-                <span className="font-bold w-6 text-center">{quantity}</span>
-                <button onClick={() => setQuantity(q => q + 1)} className="text-primary hover:opacity-70 p-1">
-                  <Plus size={20} />
+                <span className="font-bold text-sm w-4 text-center">{quantity}</span>
+                <button onClick={() => setQuantity(q => q + 1)} className="text-neutral-400 hover:text-black p-1 bg-neutral-100 rounded-full w-8 h-8 flex items-center justify-center">
+                  <Plus size={14} strokeWidth={3} />
                 </button>
               </div>
 
-              {/* Add Button */}
-              <Button 
-                onClick={handleAddToCart}
-                disabled={product.is_available === false}
-                className="flex-1 rounded-full bg-gradient-to-r from-primary to-secondary text-white h-12 font-headline font-bold text-lg uppercase shadow-lg shadow-primary/20 hover:brightness-110 border-none relative overflow-hidden group"
-              >
-                <span className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform"></span>
-                <span className="relative z-10 flex w-full items-center justify-between px-2">
-                  <span>Agregar</span>
-                  <span>S/ {totalPrice.toFixed(2)}</span>
-                </span>
-              </Button>
+              {/* Action Buttons */}
+              <div className="flex flex-1 gap-3">
+                 <button 
+                  onClick={onClose}
+                  className="flex-1 rounded-full border border-neutral-300 text-neutral-700 h-12 font-bold text-sm hover:bg-neutral-50 transition-colors"
+                 >
+                   Cancelar
+                 </button>
+                 <Button 
+                  onClick={handleAddToCart}
+                  disabled={product.is_available === false}
+                  className="flex-1 rounded-full bg-black text-white h-12 font-bold text-sm hover:bg-neutral-800 transition-colors border-none"
+                 >
+                   Agregar
+                 </Button>
+              </div>
             </div>
             {product.is_available === false && (
               <p className="text-error text-center text-xs font-bold uppercase tracking-widest">Agotado hoy</p>
