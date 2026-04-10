@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Profile } from '@/types/tienda'
 import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
+import { useCustomerStore, generateOrderId, Order, OrderItem } from '@/store/useCustomerStore'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -61,8 +62,60 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
      // Sync profile data back
      if (onProfileUpdate) onProfileUpdate({ nombre, telefono, correo });
 
+     // Build order items for history
+     const orderItems: OrderItem[] = cart.map(item => {
+       let modPrice = 0;
+       let optSummary = '';
+       if (item.variantDetails?.options && item.product.variants) {
+         const groups = item.product.variants as any[];
+         Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
+           const g = groups.find(x => x.id === gId);
+           if (g) oIds.forEach(oId => {
+             const o = g.options.find((x:any) => x.id === oId);
+             if (o) { modPrice += o.price_modifier; optSummary += `${o.name}, `; }
+           });
+         });
+       }
+       return {
+         name: item.product.name,
+         quantity: item.quantity,
+         unitPrice: item.product.price + modPrice,
+         totalPrice: (item.product.price + modPrice) * item.quantity,
+         image_url: item.product.image_url || undefined,
+         options: optSummary ? optSummary.slice(0, -2) : undefined,
+         notes: item.variantDetails?.notes || undefined,
+       };
+     });
+
+     // Generate store prefix from store name (first 4 chars uppercase)
+     const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
+     const orderId = generateOrderId(prefix);
+
+     // Save order to persistent store
+     const customerStore = useCustomerStore.getState();
+     const newOrder: Order = {
+       id: orderId,
+       storeId: perfil.id,
+       storeName: perfil.store_name || '',
+       date: new Date().toISOString(),
+       status: metodoPago === 'whatsapp' ? 'pendiente_pago' : 'pendiente',
+       items: orderItems,
+       subtotal,
+       deliveryFee,
+       total,
+       direccion,
+       referencia: savedAddress?.referencia,
+       lat: savedAddress?.lat,
+       lng: savedAddress?.lng,
+       cliente: { nombre, telefono, correo },
+       metodoPago,
+       estimatedTime: '50 - 60 min',
+     };
+     customerStore.addOrder(newOrder);
+
      if (metodoPago === 'whatsapp') {
-        let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A%0A`
+        let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A`
+        text += `*ID:* ${orderId}%0A%0A`
         text += `*Cliente:* ${nombre}%0A`
         text += `*Teléfono:* ${telefono}%0A`
         text += `*Dirección:* ${direccion}%0A%0A`

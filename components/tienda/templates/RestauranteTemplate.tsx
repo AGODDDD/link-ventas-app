@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { Profile, Product } from '@/types/tienda'
 import { Search, ShoppingCart, User, ClipboardList, MapPin } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
+import { useCustomerStore } from '@/store/useCustomerStore'
 import RestauranteProductModal from './RestauranteProductModal'
 import RestauranteCheckoutModal from './RestauranteCheckoutModal'
 import AddressMapModal from './AddressMapModal'
+import OrderHistoryPanel from './OrderHistoryPanel'
 import SlideOverCart from '../SlideOverCart'
 
 interface Props {
@@ -21,10 +23,14 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [savedAddress, setSavedAddress] = useState<{ direccion: string; referencia: string; lat: number; lng: number } | null>(null)
-  const [profileName, setProfileName] = useState('')
-  const [profilePhone, setProfilePhone] = useState('')
-  const [profileEmail, setProfileEmail] = useState('')
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false)
+  
+  // Persistent customer data
+  const customerStore = useCustomerStore()
+  const savedAddress = customerStore.savedAddress
+  const profileName = customerStore.profile.nombre
+  const profilePhone = customerStore.profile.telefono
+  const profileEmail = customerStore.profile.correo
   
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
@@ -120,7 +126,6 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
 
   const handleOpenCheckout = () => {
     setIsCartOpen(false)
-    // Always show map first if no address saved
     if (!savedAddress) {
       setTimeout(() => setIsAddressModalOpen(true), 150)
     } else {
@@ -129,7 +134,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   }
 
   const handleAddressSaved = (data: { direccion: string; referencia: string; lat: number; lng: number }) => {
-    setSavedAddress(data)
+    customerStore.setSavedAddress(data)
     setIsAddressModalOpen(false)
     setTimeout(() => setIsCheckoutOpen(true), 150)
   }
@@ -137,6 +142,10 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const handleOpenAddressFromSidebar = () => {
     setIsAddressModalOpen(true)
   }
+
+  const setProfileName = (v: string) => customerStore.setProfile({ nombre: v })
+  const setProfilePhone = (v: string) => customerStore.setProfile({ telefono: v })
+  const setProfileEmail = (v: string) => customerStore.setProfile({ correo: v })
 
   return (
     <div className="min-h-screen bg-[#F0F4F8] font-body flex flex-col relative pt-[60px]"> {/* Main Background */}
@@ -210,15 +219,15 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
         {/* Bottom Nav Icons inside Sidebar */}
         <div className="absolute bottom-0 left-0 w-full bg-black text-white h-14 flex items-center justify-around px-4">
            <button onClick={() => setIsProfileOpen(true)} className="hover:text-neutral-300 cursor-pointer"><User size={20} /></button>
-           <div onClick={() => setIsCartOpen(true)} className="relative hover:text-neutral-300 cursor-pointer">
+           <button onClick={() => setIsOrderHistoryOpen(true)} className="relative hover:text-neutral-300 cursor-pointer">
              <ClipboardList size={20} />
-             {mounted && totalItems > 0 && (
+             {mounted && customerStore.orders.filter(o => o.storeId === perfil.id).length > 0 && (
                <div className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                 {totalItems}
+                 {customerStore.orders.filter(o => o.storeId === perfil.id).length}
                </div>
              )}
-           </div>
-           <svg className="w-5 h-5 hover:text-neutral-300 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+           </button>
+           <svg onClick={() => setIsOrderHistoryOpen(true)} className="w-5 h-5 hover:text-neutral-300 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
         </div>
       </aside>
 
@@ -442,6 +451,13 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
          onClose={() => setIsCartOpen(false)}
          onCheckout={handleOpenCheckout}
          templateType="restaurante"
+      />
+
+      {/* ORDER HISTORY PANEL */}
+      <OrderHistoryPanel
+         isOpen={isOrderHistoryOpen}
+         onClose={() => setIsOrderHistoryOpen(false)}
+         storeId={perfil.id}
       />
     </div>
   )
