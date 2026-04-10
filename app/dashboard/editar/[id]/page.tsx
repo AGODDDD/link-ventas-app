@@ -215,30 +215,26 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
               <div className="space-y-2">
                 <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Categoría (Libre)</label>
                 <input 
-                   list="categorias-predeterminadas"
                    value={category} 
                    onChange={(e) => setCategory(e.target.value)} 
                    placeholder="Ej: Combos, Bebidas, Casacas..."
                    className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" 
                 />
-                <datalist id="categorias-predeterminadas">
-                  {templateType === 'restaurante' ? (
-                     <>
-                       <option value="Promociones y Combos" />
-                       <option value="Platos de Fondo" />
-                       <option value="Bebidas" />
-                       <option value="Guarniciones" />
-                       <option value="Postres" />
-                     </>
-                  ) : (
-                     <>
-                       <option value="Ropa" />
-                       <option value="Zapatos" />
-                       <option value="Accesorios" />
-                       <option value="Cuidado Personal" />
-                     </>
-                  )}
-                </datalist>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(templateType === 'restaurante' 
+                     ? ["Promociones y Combos", "Platos de Fondo", "Bebidas", "Guarniciones", "Postres"]
+                     : ["Ropa", "Zapatos", "Accesorios", "Cuidado Personal"]
+                  ).map(cat => (
+                     <button 
+                        key={cat} 
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        className="bg-surface-variant text-on-surface hover:bg-primary hover:text-white border border-outline/30 text-[11px] px-3 py-1 rounded-full font-bold uppercase tracking-widest transition-colors"
+                     >
+                        {cat}
+                     </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">

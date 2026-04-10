@@ -114,9 +114,9 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
 
             {/* Product Details */}
             <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold font-headline text-on-background">{product.name}</h2>
+              <h2 className="text-2xl font-bold font-headline text-black">{product.name}</h2>
               {product.description && (
-                <p className="text-on-surface-variant text-sm mt-3 leading-relaxed">
+                <p className="text-neutral-600 text-sm mt-3 leading-relaxed">
                   {product.description}
                 </p>
               )}
