@@ -191,13 +191,12 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
                      >
                         Realizar el pedido
                      </Button>
-                     <Button 
+                     <button 
                         onClick={onClose}
-                        variant="outline"
-                        className="w-full border-neutral-200 text-black hover:bg-neutral-50 rounded-full h-12 font-medium"
+                        className="w-full border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 rounded-full h-12 font-medium text-sm transition-colors"
                      >
                         Seguir comprando
-                     </Button>
+                     </button>
                   </div>
                </div>
             ) : (

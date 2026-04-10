@@ -6,6 +6,7 @@ import { Search, ShoppingCart, User, ClipboardList, MapPin } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import RestauranteProductModal from './RestauranteProductModal'
 import RestauranteCheckoutModal from './RestauranteCheckoutModal'
+import AddressMapModal from './AddressMapModal'
 import SlideOverCart from '../SlideOverCart'
 
 interface Props {
@@ -18,6 +19,8 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
+  const [savedAddress, setSavedAddress] = useState<{ direccion: string; referencia: string; lat: number; lng: number } | null>(null)
   
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
@@ -113,6 +116,17 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
 
   const handleOpenCheckout = () => {
     setIsCartOpen(false)
+    if (!savedAddress) {
+      // No address yet - show map first
+      setIsAddressModalOpen(true)
+    } else {
+      setIsCheckoutOpen(true)
+    }
+  }
+
+  const handleAddressSaved = (data: { direccion: string; referencia: string; lat: number; lng: number }) => {
+    setSavedAddress(data)
+    setIsAddressModalOpen(false)
     setIsCheckoutOpen(true)
   }
 
@@ -333,8 +347,16 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
            isOpen={isCheckoutOpen}
            onClose={() => setIsCheckoutOpen(false)}
            perfil={perfil}
+           savedAddress={savedAddress}
         />
       )}
+
+      {/* RENDER ADDRESS MAP MODAL */}
+      <AddressMapModal
+         isOpen={isAddressModalOpen}
+         onClose={() => setIsAddressModalOpen(false)}
+         onSave={handleAddressSaved}
+      />
 
       {/* RENDER SLIDE OVER CART */}
       <SlideOverCart 

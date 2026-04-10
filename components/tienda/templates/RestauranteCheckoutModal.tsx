@@ -10,9 +10,10 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   perfil: Profile;
+  savedAddress?: { direccion: string; referencia: string; lat: number; lng: number } | null;
 }
 
-export default function RestauranteCheckoutModal({ isOpen, onClose, perfil }: Props) {
+export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, savedAddress }: Props) {
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
   
@@ -20,7 +21,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil }: Pr
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [correo, setCorreo] = useState('')
-  const [direccion, setDireccion] = useState('')
+  const [direccion, setDireccion] = useState(savedAddress?.direccion || '')
   const [metodoPago, setMetodoPago] = useState<'niubiz' | 'whatsapp'>('whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   
