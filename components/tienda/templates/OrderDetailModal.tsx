@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { X } from 'lucide-react'
-import { Order } from '@/store/useCustomerStore'
+import { Order, useCustomerStore } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 
 let L: any = null
@@ -57,6 +57,8 @@ export default function OrderDetailModal({
   const [isMapExpanded, setIsMapExpanded] = useState(false)
   const [routeDrawn, setRouteDrawn]       = useState(false)
 
+  const updateOrderStatus = useCustomerStore(s => s.updateOrderStatus)
+
   const currentStepIdx = STATUS_STEPS.findIndex(s => s.key === order.status)
   const isEnCamino     = order.status === 'en_camino'
 
@@ -71,14 +73,19 @@ export default function OrderDetailModal({
       .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `id=eq.${order.id}` },
         (payload: any) => {
-          if (payload.new?.status) setOrder(prev => ({ ...prev, status: payload.new.status }))
+          if (payload.new?.status) {
+            setOrder(prev => ({ ...prev, status: payload.new.status }))
+            updateOrderStatus(order.id, payload.new.status) // persistir en localStorage
+          }
         }
       )
       .subscribe()
     const poll = setInterval(async () => {
       const { data } = await supabase.from('delivery_orders').select('status').eq('id', order.id).single()
-      if (data?.status && data.status !== order.status)
+      if (data?.status && data.status !== order.status) {
         setOrder(prev => ({ ...prev, status: data.status }))
+        updateOrderStatus(order.id, data.status) // persistir en localStorage
+      }
     }, 8000)
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [isOpen, order.id])

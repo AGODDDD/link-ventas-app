@@ -38,6 +38,30 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
 
   React.useEffect(() => setMounted(true), [])
 
+  // ── Sincronizar statuses desde Supabase al abrir ──
+  React.useEffect(() => {
+    if (!isOpen || !mounted) return
+    const storeOrders = customerStore.orders.filter(o => o.storeId === storeId)
+    if (!storeOrders.length) return
+
+    const ids = storeOrders.map(o => o.id)
+    import('@/lib/supabase').then(({ supabase }) => {
+      supabase
+        .from('delivery_orders')
+        .select('id, status')
+        .in('id', ids)
+        .then(({ data }) => {
+          if (!data) return
+          data.forEach(row => {
+            const local = storeOrders.find(o => o.id === row.id)
+            if (local && local.status !== row.status) {
+              customerStore.updateOrderStatus(row.id, row.status as Order['status'])
+            }
+          })
+        })
+    })
+  }, [isOpen, mounted, storeId])
+
   const orders = mounted ? customerStore.orders.filter(o => o.storeId === storeId) : []
 
   if (!isOpen) return null;
