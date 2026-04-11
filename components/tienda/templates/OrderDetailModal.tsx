@@ -24,8 +24,23 @@ const STATUS_STEPS = [
   { key: 'completado',      title: 'Completado',          description: 'Tu pedido ha sido entregado' },
 ]
 
-const MAP_COLLAPSED = 38   // vh
-const MAP_EXPANDED  = 85   // vh
+const MAP_COLLAPSED = 38
+const MAP_EXPANDED  = 85
+
+// ── Dibuja una polilínea animada con rAF y devuelve el handle para cancelarla ──
+function animatePolyline(dash: any): number {
+  let offset = 0
+  let rafId  = 0
+  const tick = () => {
+    offset -= 0.8
+    if (offset <= -24) offset = 0
+    const el: SVGPathElement | null = (dash as any)._path
+    if (el) el.setAttribute('stroke-dashoffset', String(offset))
+    rafId = requestAnimationFrame(tick)
+  }
+  rafId = requestAnimationFrame(tick)
+  return rafId
+}
 
 export default function OrderDetailModal({
   isOpen, onClose, order: initialOrder, storeLat, storeLng,
@@ -36,11 +51,11 @@ export default function OrderDetailModal({
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const dragRef         = useRef<{ startY: number } | null>(null)
 
-  const [mapReady, setMapReady]             = useState(false)
-  const [order, setOrder]                   = useState(initialOrder)
-  const [mapHeightVh, setMapHeightVh]       = useState(MAP_COLLAPSED)
-  const [isMapExpanded, setIsMapExpanded]   = useState(false)
-  const [routeDrawn, setRouteDrawn]         = useState(false)
+  const [mapReady, setMapReady]           = useState(false)
+  const [order, setOrder]                 = useState(initialOrder)
+  const [mapHeightVh, setMapHeightVh]     = useState(MAP_COLLAPSED)
+  const [isMapExpanded, setIsMapExpanded] = useState(false)
+  const [routeDrawn, setRouteDrawn]       = useState(false)
 
   const currentStepIdx = STATUS_STEPS.findIndex(s => s.key === order.status)
   const isEnCamino     = order.status === 'en_camino'
@@ -48,7 +63,7 @@ export default function OrderDetailModal({
   // ── Sync ──
   useEffect(() => { setOrder(initialOrder) }, [initialOrder])
 
-  // ── Realtime + polling fallback ──
+  // ── Realtime + polling ──
   useEffect(() => {
     if (!isOpen || !order.id) return
     const channel = supabase
@@ -60,18 +75,15 @@ export default function OrderDetailModal({
         }
       )
       .subscribe()
-
     const poll = setInterval(async () => {
-      const { data } = await supabase
-        .from('delivery_orders').select('status').eq('id', order.id).single()
+      const { data } = await supabase.from('delivery_orders').select('status').eq('id', order.id).single()
       if (data?.status && data.status !== order.status)
         setOrder(prev => ({ ...prev, status: data.status }))
     }, 8000)
-
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [isOpen, order.id])
 
-  // ── Leaflet loader ──
+  // ── Leaflet ──
   useEffect(() => {
     if (!isOpen) return
     ;(async () => {
@@ -84,66 +96,71 @@ export default function OrderDetailModal({
     })()
   }, [isOpen])
 
-  // ── drawAnimatedRoute: usa requestAnimationFrame, siempre funciona ──
-  const drawAnimatedRoute = useCallback(async (
+  // ── clearRoute helper ──
+  const clearRoute = useCallback((map: any) => {
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
+    routeLayersRef.current.forEach(l => { try { map?.removeLayer(l) } catch (_) {} })
+    routeLayersRef.current = []
+  }, [])
+
+  // ── drawRoute: línea recta INMEDIATA + ORS real encima si disponible ──
+  const drawRoute = useCallback(async (
     map: any,
     fromLat: number, fromLng: number,
-    toLat: number,   toLng: number
+    toLat:   number, toLng:   number
   ) => {
-    // Cancelar animación previa
-    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
-    // Limpiar capas previas
-    routeLayersRef.current.forEach(l => { try { map.removeLayer(l) } catch (_) {} })
-    routeLayersRef.current = []
+    clearRoute(map)
 
-    let coords: [number, number][] = []
+    // 1. Dibujar línea recta INMEDIATAMENTE (siempre visible)
+    const straightCoords: [number, number][] = [[fromLat, fromLng], [toLat, toLng]]
+    const baseLayer = L.polyline(straightCoords, {
+      color: '#15803d', weight: 7, opacity: 0.45, lineCap: 'round',
+    }).addTo(map)
+    const dashLayer = L.polyline(straightCoords, {
+      color: '#4ade80', weight: 5, opacity: 1, lineCap: 'round', dashArray: '14 10',
+    }).addTo(map)
+    routeLayersRef.current = [baseLayer, dashLayer]
+    map.fitBounds(baseLayer.getBounds(), { padding: [70, 70] })
+    setRouteDrawn(true)
+    // Iniciar animación sobre la línea recta
+    animFrameRef.current = animatePolyline(dashLayer)
 
-    // Intentar OSRM con timeout de 5s
+    // 2. Intentar obtener ruta real de OpenRouteService en background
+    const orsKey = process.env.NEXT_PUBLIC_ORS_API_KEY
+    if (!orsKey || orsKey === 'PEGA_TU_TOKEN_AQUI') return  // sin key → quedarse con la recta
+
     try {
       const ctrl = new AbortController()
-      const tid  = setTimeout(() => ctrl.abort(), 5000)
+      const tid  = setTimeout(() => ctrl.abort(), 8000)
       const res  = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`,
+        `https://api.openrouteservice.org/v2/directions/driving-car?api_key=${orsKey}&start=${fromLng},${fromLat}&end=${toLng},${toLat}`,
         { signal: ctrl.signal }
       )
       clearTimeout(tid)
+      if (!res.ok) return // ORS devolvió error → quedarse con la recta
+
       const json = await res.json()
-      coords = json?.routes?.[0]?.geometry?.coordinates?.map(([lng, lat]: number[]) => [lat, lng]) ?? []
+      const rawCoords: number[][] = json?.features?.[0]?.geometry?.coordinates ?? []
+      if (!rawCoords.length) return
+
+      // ORS devuelve [lng, lat], Leaflet necesita [lat, lng]
+      const realCoords: [number, number][] = rawCoords.map(([lng, lat]) => [lat, lng])
+
+      // Reemplazar línea recta con la ruta real (misma animación)
+      clearRoute(map)
+      const realBase = L.polyline(realCoords, {
+        color: '#15803d', weight: 7, opacity: 0.45, lineCap: 'round',
+      }).addTo(map)
+      const realDash = L.polyline(realCoords, {
+        color: '#4ade80', weight: 5, opacity: 1, lineCap: 'round', dashArray: '14 10',
+      }).addTo(map)
+      routeLayersRef.current = [realBase, realDash]
+      map.fitBounds(realBase.getBounds(), { padding: [60, 60] })
+      animFrameRef.current = animatePolyline(realDash)
     } catch (e) {
-      console.warn('OSRM fallo, usando línea recta')
+      console.warn('ORS no disponible, manteniendo línea recta')
     }
-
-    // Fallback: línea recta
-    if (!coords.length) coords = [[fromLat, fromLng], [toLat, toLng]]
-
-    // Capa 1: verde sólido (base)
-    const base = L.polyline(coords, {
-      color: '#15803d', weight: 7, opacity: 0.5,
-      lineCap: 'round', lineJoin: 'round',
-    }).addTo(map)
-
-    // Capa 2: verde brillante punteado (encima, se animará con rAF)
-    const dash = L.polyline(coords, {
-      color: '#4ade80', weight: 5, opacity: 1,
-      lineCap: 'round', lineJoin: 'round',
-      dashArray: '14 10',
-    }).addTo(map)
-
-    routeLayersRef.current = [base, dash]
-    map.fitBounds(base.getBounds(), { padding: [60, 60] })
-    setRouteDrawn(true)
-
-    // Animación rAF: mueve el dashOffset continuamente
-    let offset = 0
-    const tick = () => {
-      offset -= 0.7
-      if (offset <= -24) offset = 0
-      const el = (dash as any)._path
-      if (el) el.setAttribute('stroke-dashoffset', String(offset))
-      animFrameRef.current = requestAnimationFrame(tick)
-    }
-    animFrameRef.current = requestAnimationFrame(tick)
-  }, [])
+  }, [clearRoute])
 
   // ── Map init ──
   useEffect(() => {
@@ -151,7 +168,7 @@ export default function OrderDetailModal({
 
     if (!document.getElementById('leaflet-css')) {
       const link = document.createElement('link')
-      link.id = 'leaflet-css'; link.rel = 'stylesheet'
+      link.id   = 'leaflet-css'; link.rel = 'stylesheet'
       link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css'
       document.head.appendChild(link)
     }
@@ -159,33 +176,36 @@ export default function OrderDetailModal({
     const timer = setTimeout(() => {
       if (!mapContainerRef.current || mapRef.current) return
 
-      const cLat = order.lat || -12.0464
-      const cLng = order.lng || -77.0428
+      const cLat = order.lat  || -12.0464
+      const cLng = order.lng  || -77.0428
       const map  = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false })
         .setView([cLat, cLng], 15)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
 
       // Marcador cliente (pin negro)
-      const customerIcon = L.divIcon({
-        html: `<div style="width:34px;height:34px;background:#111;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#111"/></svg>
-        </div>`,
-        iconSize: [34, 34], iconAnchor: [17, 17], className: '',
-      })
-      L.marker([cLat, cLng], { icon: customerIcon }).bindTooltip('📍 Tu dirección').addTo(map)
-
-      // Marcador local (casa verde) + ruta si ya está en camino
-      if (storeLat && storeLng) {
-        const storeIcon = L.divIcon({
-          html: `<div style="width:34px;height:34px;background:#16a34a;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="1.5" fill="none"/></svg>
+      L.marker([cLat, cLng], {
+        icon: L.divIcon({
+          html: `<div style="width:34px;height:34px;background:#111;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#111"/></svg>
           </div>`,
           iconSize: [34, 34], iconAnchor: [17, 17], className: '',
-        })
-        L.marker([storeLat, storeLng], { icon: storeIcon }).bindTooltip('🏠 Nuestro local').addTo(map)
+        }),
+      }).bindTooltip('📍 Tu dirección').addTo(map)
 
+      // Marcador local (casa verde)
+      if (storeLat && storeLng) {
+        L.marker([storeLat, storeLng], {
+          icon: L.divIcon({
+            html: `<div style="width:34px;height:34px;background:#16a34a;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="1.5" fill="none"/></svg>
+            </div>`,
+            iconSize: [34, 34], iconAnchor: [17, 17], className: '',
+          }),
+        }).bindTooltip('🏠 Nuestro local').addTo(map)
+
+        // Si ya está en camino al abrir el modal → dibujar ruta
         if (order.status === 'en_camino') {
-          drawAnimatedRoute(map, storeLat, storeLng, cLat, cLng)
+          drawRoute(map, storeLat, storeLng, cLat, cLng)
         }
       }
 
@@ -194,43 +214,40 @@ export default function OrderDetailModal({
 
     return () => {
       clearTimeout(timer)
-      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
+      clearRoute(mapRef.current)
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; routeLayersRef.current = [] }
     }
   }, [mapReady, isOpen])
 
-  // ── Dibujar/quitar ruta cuando cambia el status ──
+  // ── Dibujar/quitar ruta al cambiar status ──
   useEffect(() => {
     if (!mapRef.current || !storeLat || !storeLng) return
     const cLat = order.lat || -12.0464
     const cLng = order.lng || -77.0428
     if (order.status === 'en_camino' && !routeDrawn) {
-      drawAnimatedRoute(mapRef.current, storeLat, storeLng, cLat, cLng)
+      drawRoute(mapRef.current, storeLat, storeLng, cLat, cLng)
     }
     if (order.status !== 'en_camino' && routeDrawn) {
-      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
-      routeLayersRef.current.forEach(l => { try { mapRef.current?.removeLayer(l) } catch (_) {} })
-      routeLayersRef.current = []
+      clearRoute(mapRef.current)
       setRouteDrawn(false)
     }
-  }, [order.status, storeLat, storeLng, routeDrawn])
+  }, [order.status, storeLat, storeLng, routeDrawn, clearRoute])
 
   // ── Cleanup al cerrar ──
   useEffect(() => {
     if (!isOpen) {
-      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
+      clearRoute(mapRef.current)
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; routeLayersRef.current = [] }
       setMapReady(false); setMapHeightVh(MAP_COLLAPSED); setIsMapExpanded(false); setRouteDrawn(false)
     }
-  }, [isOpen])
+  }, [isOpen, clearRoute])
 
-  // Block scroll
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : 'unset'
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  // ── Drag handle ──
+  // ── Drag ──
   const onDragStart = (y: number) => { dragRef.current = { startY: y } }
   const onDragMove  = (y: number) => {
     if (!dragRef.current) return
@@ -241,7 +258,7 @@ export default function OrderDetailModal({
   const onDragEnd = () => {
     if (!dragRef.current) return
     dragRef.current = null
-    const mid      = (MAP_COLLAPSED + MAP_EXPANDED) / 2
+    const mid = (MAP_COLLAPSED + MAP_EXPANDED) / 2
     const expanded = mapHeightVh > mid
     setMapHeightVh(expanded ? MAP_EXPANDED : MAP_COLLAPSED)
     setIsMapExpanded(expanded)
@@ -249,8 +266,7 @@ export default function OrderDetailModal({
   }
   const toggleMap = () => {
     const next = !isMapExpanded
-    setIsMapExpanded(next)
-    setMapHeightVh(next ? MAP_EXPANDED : MAP_COLLAPSED)
+    setIsMapExpanded(next); setMapHeightVh(next ? MAP_EXPANDED : MAP_COLLAPSED)
     setTimeout(() => mapRef.current?.invalidateSize(), 250)
   }
 
@@ -266,32 +282,26 @@ export default function OrderDetailModal({
       >
         <div ref={mapContainerRef} className="w-full h-full" />
 
-        {/* Header pill */}
+        {/* Header */}
         <div className="absolute top-0 left-0 right-0 flex justify-center pt-3 z-[500] pointer-events-none">
-          <div
-            className="bg-[#1a1a1a]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg shadow-lg pointer-events-auto text-center"
-            style={{ minWidth: '260px' }}
-          >
+          <div className="bg-[#1a1a1a]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg shadow-lg pointer-events-auto text-center" style={{ minWidth: '260px' }}>
             <p className="text-[11px] font-medium tracking-wide opacity-80">Pedido en Curso</p>
             <p className="font-mono font-bold text-[13px] tracking-wider mt-0.5">{order.id}</p>
           </div>
         </div>
 
-        {/* Badge animado "En camino" */}
+        {/* Badge En camino */}
         {isEnCamino && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500]">
             <div className="bg-green-500 text-white text-[12px] font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2 animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-white inline-block" />
+              <span className="w-2 h-2 rounded-full bg-white" />
               Repartidor en camino
             </div>
           </div>
         )}
 
         {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 z-[500] bg-white w-9 h-9 rounded-full flex items-center justify-center text-[#333] shadow-lg hover:bg-neutral-100"
-        >
+        <button onClick={onClose} className="absolute top-3 right-3 z-[500] bg-white w-9 h-9 rounded-full flex items-center justify-center text-[#333] shadow-lg hover:bg-neutral-100">
           <X size={20} strokeWidth={2.5} />
         </button>
       </div>
@@ -301,8 +311,7 @@ export default function OrderDetailModal({
         className="flex justify-center items-center py-3 bg-white border-b border-neutral-100 cursor-ns-resize touch-none select-none shrink-0"
         onMouseDown={e => onDragStart(e.clientY)}
         onMouseMove={e => { if (dragRef.current) onDragMove(e.clientY) }}
-        onMouseUp={onDragEnd}
-        onMouseLeave={onDragEnd}
+        onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
         onTouchStart={e => onDragStart(e.touches[0].clientY)}
         onTouchMove={e => onDragMove(e.touches[0].clientY)}
         onTouchEnd={onDragEnd}
@@ -326,27 +335,15 @@ export default function OrderDetailModal({
                   <div key={step.key} className="flex-1 flex flex-col items-start">
                     <div className="flex items-center w-full mb-2">
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-500 ${
-                        done    ? 'bg-[#222] border-[#222]'
-                        : current ? 'border-[#222] bg-white'
-                        : 'border-neutral-300 bg-white'
+                        done ? 'bg-[#222] border-[#222]' : current ? 'border-[#222] bg-white' : 'border-neutral-300 bg-white'
                       }`}>
-                        {done && (
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
+                        {done && <svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                         {current && <div className="w-2 h-2 rounded-full bg-[#222] animate-pulse" />}
                       </div>
-                      {!last && (
-                        <div className={`flex-1 h-[2px] mx-1 transition-all duration-700 ${done ? 'bg-[#222]' : 'bg-neutral-200'}`} />
-                      )}
+                      {!last && <div className={`flex-1 h-[2px] mx-1 transition-all duration-700 ${done ? 'bg-[#222]' : 'bg-neutral-200'}`} />}
                     </div>
-                    <p className={`text-[11px] font-bold leading-tight pr-2 ${done || current ? 'text-[#333]' : 'text-[#bbb]'}`}>
-                      {step.title}
-                    </p>
-                    <p className={`text-[10px] leading-[1.35] mt-0.5 pr-2 ${current ? 'text-[#555]' : done ? 'text-[#888]' : 'text-[#ccc]'}`}>
-                      {step.description}
-                    </p>
+                    <p className={`text-[11px] font-bold leading-tight pr-2 ${done || current ? 'text-[#333]' : 'text-[#bbb]'}`}>{step.title}</p>
+                    <p className={`text-[10px] leading-[1.35] mt-0.5 pr-2 ${current ? 'text-[#555]' : done ? 'text-[#888]' : 'text-[#ccc]'}`}>{step.description}</p>
                   </div>
                 )
               })}
