@@ -458,6 +458,8 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
          isOpen={isOrderHistoryOpen}
          onClose={() => setIsOrderHistoryOpen(false)}
          storeId={perfil.id}
+         storeLat={(perfil as any).store_lat ?? null}
+         storeLng={(perfil as any).store_lng ?? null}
       />
     </div>
   )

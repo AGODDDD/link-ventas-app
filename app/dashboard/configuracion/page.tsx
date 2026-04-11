@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { optimizeImage } from '@/lib/optimizeImage'
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
+import dynamic from 'next/dynamic'
+const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
 
 export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
@@ -29,6 +31,14 @@ export default function ConfiguracionPage() {
   const [socialInstagram, setSocialInstagram] = useState('')
   const [socialTikTok, setSocialTikTok] = useState('')
   const [whatsappPhone, setWhatsappPhone] = useState('')
+
+  // Ubicación del local
+  const [storeAddress, setStoreAddress]   = useState('')
+  const [storeLat, setStoreLat]           = useState<number | null>(null)
+  const [storeLng, setStoreLng]           = useState<number | null>(null)
+  const storeMapRef                       = useRef<any>(null)
+  const storeMapContainerRef              = useRef<HTMLDivElement>(null)
+  const storeMarkerRef                    = useRef<any>(null)
 
   // Nuevos campos para QRs
   const [yapeUrl, setYapeUrl] = useState('')
@@ -65,6 +75,9 @@ export default function ConfiguracionPage() {
         setSocialInstagram(data.social_instagram || '')
         setSocialTikTok(data.social_tiktok || '')
         setWhatsappPhone(data.whatsapp_phone || '')
+        setStoreAddress(data.store_address || '')
+        setStoreLat(data.store_lat || null)
+        setStoreLng(data.store_lng || null)
       }
     }
     cargarPerfil()
@@ -131,6 +144,9 @@ export default function ConfiguracionPage() {
           social_instagram: socialInstagram,
           social_tiktok: socialTikTok,
           whatsapp_phone: whatsappPhone.replace(/\s/g, '') || null,
+          store_address: storeAddress || null,
+          store_lat: storeLat,
+          store_lng: storeLng,
           updated_at: new Date(),
         })
         .eq('id', userId)
@@ -399,6 +415,40 @@ export default function ConfiguracionPage() {
                 <Input id="plin-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setPlinUrl)} disabled={uploading} />
               </div>
 
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── UBICACIÓN DEL LOCAL ── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>📍</span> Ubicación del Local
+            </CardTitle>
+            <CardDescription>Marca en el mapa dónde está tu local. Esto se mostrará como punto de salida en el mapa del cliente cuando el pedido esté "en camino".</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>Dirección del local (texto)</Label>
+              <Input
+                value={storeAddress}
+                onChange={e => setStoreAddress(e.target.value)}
+                placeholder="Ej: Av. Larco 1234, Miraflores"
+              />
+            </div>
+
+            {storeLat && storeLng && (
+              <p className="text-xs text-green-600 font-medium">✅ Ubicación guardada: {storeLat.toFixed(5)}, {storeLng.toFixed(5)}</p>
+            )}
+
+            <div className="space-y-2">
+              <Label>Marca tu local en el mapa</Label>
+              <p className="text-xs text-slate-500">Haz clic en el mapa para marcar la ubicación exacta de tu local.</p>
+              <StoreMapPicker
+                initialLat={storeLat}
+                initialLng={storeLng}
+                onPick={(lat, lng) => { setStoreLat(lat); setStoreLng(lng) }}
+              />
             </div>
           </CardContent>
         </Card>

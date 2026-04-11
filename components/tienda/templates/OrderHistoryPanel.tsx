@@ -9,6 +9,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   storeId: string;
+  storeLat?: number | null;
+  storeLng?: number | null;
 }
 
 const STATUS_LABELS: Record<Order['status'], string> = {
@@ -29,7 +31,7 @@ const STATUS_COLORS: Record<Order['status'], string> = {
   completado: 'bg-neutral-100 text-neutral-600 border-neutral-200',
 }
 
-export default function OrderHistoryPanel({ isOpen, onClose, storeId }: Props) {
+export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, storeLng }: Props) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const customerStore = useCustomerStore()
   const [mounted, setMounted] = useState(false)
@@ -110,6 +112,8 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId }: Props) {
           isOpen={true}
           onClose={() => setSelectedOrder(null)}
           order={selectedOrder}
+          storeLat={storeLat}
+          storeLng={storeLng}
         />
       )}
     </>
