@@ -460,6 +460,7 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
          storeId={perfil.id}
          storeLat={(perfil as any).store_lat ?? null}
          storeLng={(perfil as any).store_lng ?? null}
+         whatsappPhone={(perfil as any).whatsapp_phone ?? null}
       />
     </div>
   )

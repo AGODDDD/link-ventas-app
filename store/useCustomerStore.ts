@@ -16,7 +16,7 @@ export interface Order {
   storeId: string;
   storeName: string;
   date: string; // ISO string
-  status: 'pendiente_pago' | 'pendiente' | 'en_preparacion' | 'alistando' | 'en_camino' | 'completado';
+  status: 'pendiente_pago' | 'pendiente' | 'en_preparacion' | 'alistando' | 'en_camino' | 'completado' | 'cancelado';
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;

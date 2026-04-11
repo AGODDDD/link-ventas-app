@@ -148,6 +148,7 @@ export default function PedidosPage() {
         alistando: 'bg-indigo-100 text-indigo-700 border-indigo-200',
         en_camino: 'bg-green-100 text-green-700 border-green-200',
         completado: 'bg-neutral-100 text-neutral-600 border-neutral-200',
+        cancelado: 'bg-red-200 text-red-800 border-red-300',
     }
 
     const avanzarEstadoDelivery = async (orderId: string, currentStatus: string) => {
@@ -165,6 +166,21 @@ export default function PedidosPage() {
             toast.success(`Estado actualizado a: ${DELIVERY_LABELS[nextStatus]}`)
         } else {
             toast.error('Error actualizando estado: ' + error.message)
+        }
+    }
+
+    const cancelarPedido = async (orderId: string) => {
+        const confirmed = window.confirm('¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.')
+        if (!confirmed) return
+        const { error } = await supabase
+            .from('delivery_orders')
+            .update({ status: 'cancelado' })
+            .eq('id', orderId)
+        if (!error) {
+            setDeliveryOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'cancelado' } : o))
+            toast.error('Pedido cancelado')
+        } else {
+            toast.error('Error al cancelar: ' + error.message)
         }
     }
 
@@ -394,17 +410,29 @@ export default function PedidosPage() {
                                                     ))}
                                                 </div>
 
-                                                {/* Action button */}
-                                                {!isCompleted && (
-                                                    <button
-                                                        onClick={() => avanzarEstadoDelivery(order.id, order.status)}
-                                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-500/20"
-                                                    >
-                                                        <ChevronRight size={16} />
-                                                        Avanzar a: {DELIVERY_LABELS[DELIVERY_STATUSES[statusIdx + 1]] || 'Completado'}
-                                                    </button>
-                                                )}
-                                                {isCompleted && (
+                                                {/* Botones de acción */}
+                                                {order.status === 'cancelado' ? (
+                                                    <div className="w-full text-center px-4 py-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-200 uppercase tracking-widest">
+                                                        ❌ Pedido Cancelado
+                                                    </div>
+                                                ) : !isCompleted ? (
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => avanzarEstadoDelivery(order.id, order.status)}
+                                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-500/20"
+                                                        >
+                                                            <ChevronRight size={16} />
+                                                            Avanzar a: {DELIVERY_LABELS[DELIVERY_STATUSES[statusIdx + 1]] || 'Completado'}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => cancelarPedido(order.id)}
+                                                            title="Cancelar pedido"
+                                                            className="flex items-center justify-center px-3 py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl transition-all active:scale-95 border border-red-200"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                ) : (
                                                     <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
                                                         ✅ Entregado
                                                     </div>
