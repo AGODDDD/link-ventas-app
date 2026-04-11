@@ -5,30 +5,7 @@ import { X } from 'lucide-react'
 import { Order } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 
-// CSS keyframes inyectado una sola vez
-const ROUTE_CSS = `
-@keyframes dash-flow {
-  to { stroke-dashoffset: -24; }
-}
-@keyframes route-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
-}
-.route-base   { stroke: #16a34a; stroke-width: 5; fill: none; stroke-linecap: round; }
-.route-dash   { stroke: #4ade80; stroke-width: 4; fill: none; stroke-linecap: round;
-                stroke-dasharray: 12 12; animation: dash-flow 0.7s linear infinite, route-pulse 1.8s ease-in-out infinite; }
-`
-
 let L: any = null
-let routeCSSInjected = false
-
-function injectRouteCSS() {
-  if (routeCSSInjected) return
-  const style = document.createElement('style')
-  style.textContent = ROUTE_CSS
-  document.head.appendChild(style)
-  routeCSSInjected = true
-}
 
 interface Props {
   isOpen: boolean
@@ -39,39 +16,41 @@ interface Props {
 }
 
 const STATUS_STEPS = [
-  { key: 'pendiente_pago',  title: 'Pagar pedido',      description: 'Esperando pago por parte del cliente' },
-  { key: 'pendiente',       title: 'Pendiente',          description: 'En breve iniciaremos la preparación de tu pedido' },
-  { key: 'en_preparacion',  title: 'En preparación',     description: 'Estamos preparando tu pedido' },
+  { key: 'pendiente_pago',  title: 'Pagar pedido',       description: 'Esperando pago por parte del cliente' },
+  { key: 'pendiente',       title: 'Pendiente',           description: 'En breve iniciaremos la preparación de tu pedido' },
+  { key: 'en_preparacion',  title: 'En preparación',      description: 'Estamos preparando tu pedido' },
   { key: 'alistando',       title: 'Alistando tu pedido', description: 'Estamos alistando tu pedido' },
-  { key: 'en_camino',       title: 'En camino',          description: 'El repartidor va en camino' },
-  { key: 'completado',      title: 'Completado',         description: 'Tu pedido ha sido entregado' },
+  { key: 'en_camino',       title: 'En camino',           description: 'El repartidor va en camino' },
+  { key: 'completado',      title: 'Completado',          description: 'Tu pedido ha sido entregado' },
 ]
 
 const MAP_COLLAPSED = 38   // vh
 const MAP_EXPANDED  = 85   // vh
 
-export default function OrderDetailModal({ isOpen, onClose, order: initialOrder, storeLat, storeLng }: Props) {
+export default function OrderDetailModal({
+  isOpen, onClose, order: initialOrder, storeLat, storeLng,
+}: Props) {
   const mapRef          = useRef<any>(null)
-  const routeLayersRef  = useRef<any[]>([])   // base + dash polylines
+  const routeLayersRef  = useRef<any[]>([])
+  const animFrameRef    = useRef<number | null>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const dragRef         = useRef<{ startY: number } | null>(null)
 
-  const [mapReady, setMapReady]         = useState(false)
-  const [order, setOrder]               = useState(initialOrder)
-  const [mapHeightVh, setMapHeightVh]   = useState(MAP_COLLAPSED)
-  const [isMapExpanded, setIsMapExpanded] = useState(false)
-  const [routeDrawn, setRouteDrawn]     = useState(false)
+  const [mapReady, setMapReady]             = useState(false)
+  const [order, setOrder]                   = useState(initialOrder)
+  const [mapHeightVh, setMapHeightVh]       = useState(MAP_COLLAPSED)
+  const [isMapExpanded, setIsMapExpanded]   = useState(false)
+  const [routeDrawn, setRouteDrawn]         = useState(false)
 
   const currentStepIdx = STATUS_STEPS.findIndex(s => s.key === order.status)
-  const isEnCamino = order.status === 'en_camino'
+  const isEnCamino     = order.status === 'en_camino'
 
   // ── Sync ──
   useEffect(() => { setOrder(initialOrder) }, [initialOrder])
 
-  // ── REALTIME + polling fallback ──
+  // ── Realtime + polling fallback ──
   useEffect(() => {
     if (!isOpen || !order.id) return
-
     const channel = supabase
       .channel(`order-detail-${order.id}`)
       .on('postgres_changes',
@@ -82,7 +61,6 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
       )
       .subscribe()
 
-    // Polling cada 8 s por si el realtime falla
     const poll = setInterval(async () => {
       const { data } = await supabase
         .from('delivery_orders').select('status').eq('id', order.id).single()
@@ -93,7 +71,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
   }, [isOpen, order.id])
 
-  // ── Leaflet load ──
+  // ── Leaflet loader ──
   useEffect(() => {
     if (!isOpen) return
     ;(async () => {
@@ -102,62 +80,69 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
         L = lf.default || lf
         delete (L.Icon.Default.prototype as any)._getIconUrl
       }
-      injectRouteCSS()
       setMapReady(true)
     })()
   }, [isOpen])
 
-  // ── drawAnimatedRoute ──
+  // ── drawAnimatedRoute: usa requestAnimationFrame, siempre funciona ──
   const drawAnimatedRoute = useCallback(async (
     map: any,
     fromLat: number, fromLng: number,
     toLat: number,   toLng: number
   ) => {
-    // Limpiar capas anteriores
+    // Cancelar animación previa
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
+    // Limpiar capas previas
     routeLayersRef.current.forEach(l => { try { map.removeLayer(l) } catch (_) {} })
     routeLayersRef.current = []
 
+    let coords: [number, number][] = []
+
+    // Intentar OSRM con timeout de 5s
     try {
+      const ctrl = new AbortController()
+      const tid  = setTimeout(() => ctrl.abort(), 5000)
       const res  = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`
+        `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`,
+        { signal: ctrl.signal }
       )
+      clearTimeout(tid)
       const json = await res.json()
-      const coords: [number, number][] =
-        json?.routes?.[0]?.geometry?.coordinates?.map(([lng, lat]: number[]) => [lat, lng]) ?? []
-
-      if (!coords.length) return
-
-      // Capa base: verde sólido semi-opaco
-      const base = L.polyline(coords, {
-        color: '#16a34a', weight: 6, opacity: 0.55,
-        lineCap: 'round', lineJoin: 'round',
-        className: 'route-base',
-      }).addTo(map)
-
-      // Capa dash animada encima
-      const dash = L.polyline(coords, {
-        color: '#4ade80', weight: 4, opacity: 1,
-        lineCap: 'round', lineJoin: 'round',
-        dashArray: '12, 12',
-        className: 'route-dash',
-      }).addTo(map)
-
-      // Forzar clase CSS animada al path SVG
-      setTimeout(() => {
-        try {
-          const basePath = base.getElement()
-          const dashPath = dash.getElement()
-          if (basePath) basePath.classList.add('route-base')
-          if (dashPath) { dashPath.classList.add('route-dash'); dashPath.style.animation = 'dash-flow 0.7s linear infinite, route-pulse 1.8s ease-in-out infinite' }
-        } catch (_) {}
-      }, 100)
-
-      routeLayersRef.current = [base, dash]
-      map.fitBounds(base.getBounds(), { padding: [50, 50] })
-      setRouteDrawn(true)
+      coords = json?.routes?.[0]?.geometry?.coordinates?.map(([lng, lat]: number[]) => [lat, lng]) ?? []
     } catch (e) {
-      console.warn('Route fetch failed', e)
+      console.warn('OSRM fallo, usando línea recta')
     }
+
+    // Fallback: línea recta
+    if (!coords.length) coords = [[fromLat, fromLng], [toLat, toLng]]
+
+    // Capa 1: verde sólido (base)
+    const base = L.polyline(coords, {
+      color: '#15803d', weight: 7, opacity: 0.5,
+      lineCap: 'round', lineJoin: 'round',
+    }).addTo(map)
+
+    // Capa 2: verde brillante punteado (encima, se animará con rAF)
+    const dash = L.polyline(coords, {
+      color: '#4ade80', weight: 5, opacity: 1,
+      lineCap: 'round', lineJoin: 'round',
+      dashArray: '14 10',
+    }).addTo(map)
+
+    routeLayersRef.current = [base, dash]
+    map.fitBounds(base.getBounds(), { padding: [60, 60] })
+    setRouteDrawn(true)
+
+    // Animación rAF: mueve el dashOffset continuamente
+    let offset = 0
+    const tick = () => {
+      offset -= 0.7
+      if (offset <= -24) offset = 0
+      const el = (dash as any)._path
+      if (el) el.setAttribute('stroke-dashoffset', String(offset))
+      animFrameRef.current = requestAnimationFrame(tick)
+    }
+    animFrameRef.current = requestAnimationFrame(tick)
   }, [])
 
   // ── Map init ──
@@ -176,62 +161,64 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
 
       const cLat = order.lat || -12.0464
       const cLng = order.lng || -77.0428
-
-      const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false })
+      const map  = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false })
         .setView([cLat, cLng], 15)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
 
       // Marcador cliente (pin negro)
       const customerIcon = L.divIcon({
-        html: `<div style="width:34px;height:34px;background:#111;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.4)">
+        html: `<div style="width:34px;height:34px;background:#111;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#111"/></svg>
         </div>`,
         iconSize: [34, 34], iconAnchor: [17, 17], className: '',
       })
       L.marker([cLat, cLng], { icon: customerIcon }).bindTooltip('📍 Tu dirección').addTo(map)
 
-      // Marcador local (casa verde)
+      // Marcador local (casa verde) + ruta si ya está en camino
       if (storeLat && storeLng) {
         const storeIcon = L.divIcon({
-          html: `<div style="width:34px;height:34px;background:#16a34a;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.4)">
+          html: `<div style="width:34px;height:34px;background:#16a34a;border-radius:50%;border:3px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22" stroke="white" strokeWidth="1.5" fill="none"/></svg>
           </div>`,
           iconSize: [34, 34], iconAnchor: [17, 17], className: '',
         })
         L.marker([storeLat, storeLng], { icon: storeIcon }).bindTooltip('🏠 Nuestro local').addTo(map)
 
-        // Si ya está en camino al cargar: dibujar ruta animada
         if (order.status === 'en_camino') {
           drawAnimatedRoute(map, storeLat, storeLng, cLat, cLng)
         }
       }
 
       mapRef.current = map
-    }, 250)
+    }, 300)
 
     return () => {
       clearTimeout(timer)
+      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; routeLayersRef.current = [] }
     }
   }, [mapReady, isOpen])
 
-  // ── Actualizar ruta cuando cambie a "en_camino" ──
+  // ── Dibujar/quitar ruta cuando cambia el status ──
   useEffect(() => {
     if (!mapRef.current || !storeLat || !storeLng) return
+    const cLat = order.lat || -12.0464
+    const cLng = order.lng || -77.0428
     if (order.status === 'en_camino' && !routeDrawn) {
-      const cLat = order.lat || -12.0464
-      const cLng = order.lng || -77.0428
       drawAnimatedRoute(mapRef.current, storeLat, storeLng, cLat, cLng)
     }
     if (order.status !== 'en_camino' && routeDrawn) {
+      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       routeLayersRef.current.forEach(l => { try { mapRef.current?.removeLayer(l) } catch (_) {} })
-      routeLayersRef.current = []; setRouteDrawn(false)
+      routeLayersRef.current = []
+      setRouteDrawn(false)
     }
   }, [order.status, storeLat, storeLng, routeDrawn])
 
-  // Reset route state when modal closes/opens
+  // ── Cleanup al cerrar ──
   useEffect(() => {
     if (!isOpen) {
+      if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; routeLayersRef.current = [] }
       setMapReady(false); setMapHeightVh(MAP_COLLAPSED); setIsMapExpanded(false); setRouteDrawn(false)
     }
@@ -254,7 +241,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
   const onDragEnd = () => {
     if (!dragRef.current) return
     dragRef.current = null
-    const mid = (MAP_COLLAPSED + MAP_EXPANDED) / 2
+    const mid      = (MAP_COLLAPSED + MAP_EXPANDED) / 2
     const expanded = mapHeightVh > mid
     setMapHeightVh(expanded ? MAP_EXPANDED : MAP_COLLAPSED)
     setIsMapExpanded(expanded)
@@ -262,7 +249,8 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
   }
   const toggleMap = () => {
     const next = !isMapExpanded
-    setIsMapExpanded(next); setMapHeightVh(next ? MAP_EXPANDED : MAP_COLLAPSED)
+    setIsMapExpanded(next)
+    setMapHeightVh(next ? MAP_EXPANDED : MAP_COLLAPSED)
     setTimeout(() => mapRef.current?.invalidateSize(), 250)
   }
 
@@ -272,19 +260,24 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
     <div className="fixed inset-0 z-[140] bg-white flex flex-col">
 
       {/* ══ MAP ══ */}
-      <div className="relative w-full bg-neutral-200 shrink-0 transition-[height] duration-200"
-           style={{ height: `${mapHeightVh}vh` }}>
+      <div
+        className="relative w-full bg-neutral-200 shrink-0 transition-[height] duration-200"
+        style={{ height: `${mapHeightVh}vh` }}
+      >
         <div ref={mapContainerRef} className="w-full h-full" />
 
         {/* Header pill */}
         <div className="absolute top-0 left-0 right-0 flex justify-center pt-3 z-[500] pointer-events-none">
-          <div className="bg-[#1a1a1a]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg shadow-lg pointer-events-auto text-center" style={{ minWidth: '260px' }}>
+          <div
+            className="bg-[#1a1a1a]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg shadow-lg pointer-events-auto text-center"
+            style={{ minWidth: '260px' }}
+          >
             <p className="text-[11px] font-medium tracking-wide opacity-80">Pedido en Curso</p>
             <p className="font-mono font-bold text-[13px] tracking-wider mt-0.5">{order.id}</p>
           </div>
         </div>
 
-        {/* "En camino" badge animado */}
+        {/* Badge animado "En camino" */}
         {isEnCamino && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500]">
             <div className="bg-green-500 text-white text-[12px] font-bold px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2 animate-pulse">
@@ -295,8 +288,10 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
         )}
 
         {/* Close */}
-        <button onClick={onClose}
-          className="absolute top-3 right-3 z-[500] bg-white w-9 h-9 rounded-full flex items-center justify-center text-[#333] shadow-lg hover:bg-neutral-100">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-[500] bg-white w-9 h-9 rounded-full flex items-center justify-center text-[#333] shadow-lg hover:bg-neutral-100"
+        >
           <X size={20} strokeWidth={2.5} />
         </button>
       </div>
@@ -306,7 +301,8 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
         className="flex justify-center items-center py-3 bg-white border-b border-neutral-100 cursor-ns-resize touch-none select-none shrink-0"
         onMouseDown={e => onDragStart(e.clientY)}
         onMouseMove={e => { if (dragRef.current) onDragMove(e.clientY) }}
-        onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
+        onMouseUp={onDragEnd}
+        onMouseLeave={onDragEnd}
         onTouchStart={e => onDragStart(e.touches[0].clientY)}
         onTouchMove={e => onDragMove(e.touches[0].clientY)}
         onTouchEnd={onDragEnd}
@@ -319,7 +315,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
       {!isMapExpanded && (
         <div className="flex-1 overflow-y-auto bg-white">
 
-          {/* ---- TIMELINE ---- */}
+          {/* TIMELINE */}
           <div className="px-4 py-5 border-b border-neutral-100 overflow-x-auto">
             <div className="flex items-start min-w-[680px]">
               {STATUS_STEPS.map((step, idx) => {
@@ -329,7 +325,6 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
                 return (
                   <div key={step.key} className="flex-1 flex flex-col items-start">
                     <div className="flex items-center w-full mb-2">
-                      {/* Circle */}
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-500 ${
                         done    ? 'bg-[#222] border-[#222]'
                         : current ? 'border-[#222] bg-white'
@@ -342,20 +337,23 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
                         )}
                         {current && <div className="w-2 h-2 rounded-full bg-[#222] animate-pulse" />}
                       </div>
-                      {/* Connector */}
                       {!last && (
                         <div className={`flex-1 h-[2px] mx-1 transition-all duration-700 ${done ? 'bg-[#222]' : 'bg-neutral-200'}`} />
                       )}
                     </div>
-                    <p className={`text-[11px] font-bold leading-tight pr-2 ${done || current ? 'text-[#333]' : 'text-[#bbb]'}`}>{step.title}</p>
-                    <p className={`text-[10px] leading-[1.35] mt-0.5 pr-2 ${current ? 'text-[#555]' : done ? 'text-[#888]' : 'text-[#ccc]'}`}>{step.description}</p>
+                    <p className={`text-[11px] font-bold leading-tight pr-2 ${done || current ? 'text-[#333]' : 'text-[#bbb]'}`}>
+                      {step.title}
+                    </p>
+                    <p className={`text-[10px] leading-[1.35] mt-0.5 pr-2 ${current ? 'text-[#555]' : done ? 'text-[#888]' : 'text-[#ccc]'}`}>
+                      {step.description}
+                    </p>
                   </div>
                 )
               })}
             </div>
           </div>
 
-          {/* ---- ADDRESS ---- */}
+          {/* ADDRESS */}
           <div className="flex items-start gap-3 px-4 py-3.5 border-b border-neutral-100">
             <svg className="mt-0.5 shrink-0" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -363,7 +361,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
             <p className="text-[13px] text-[#333] leading-snug">{order.direccion}</p>
           </div>
 
-          {/* ---- TIME ---- */}
+          {/* TIME */}
           <div className="flex items-center gap-3 px-4 py-3.5 border-b border-neutral-100">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -371,7 +369,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
             <p className="text-[13px] text-[#333]">{order.estimatedTime || '50 - 60 min'}</p>
           </div>
 
-          {/* ---- PRODUCTS ---- */}
+          {/* PRODUCTS */}
           <div className="border-b border-neutral-100">
             {order.items.map((item, idx) => (
               <div key={idx} className="px-4 py-3 border-b border-neutral-50 last:border-b-0">
@@ -386,7 +384,7 @@ export default function OrderDetailModal({ isOpen, onClose, order: initialOrder,
             ))}
           </div>
 
-          {/* ---- TOTALS ---- */}
+          {/* TOTALS */}
           <div className="px-4 py-4 pb-8">
             <div className="flex justify-between py-1.5">
               <span className="text-[13px] text-[#555]">Subtotal</span>
