@@ -10,6 +10,7 @@ import RestauranteCheckoutModal from './RestauranteCheckoutModal'
 import AddressMapModal from './AddressMapModal'
 import OrderHistoryPanel from './OrderHistoryPanel'
 import SlideOverCart from '../SlideOverCart'
+import { isStoreClosed, getTodayScheduleText } from '@/lib/storeSchedule'
 
 interface Props {
   perfil: Profile;
@@ -180,6 +181,22 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
             )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/30"></div>
           </div>
+
+          {/* ── Banner CERRADO si está fuera de horario ── */}
+          {isStoreClosed((perfil as any).store_schedule ?? null) && (
+            <div className="mx-4 mt-3 bg-red-600 text-white rounded-xl px-4 py-3 flex items-center gap-3 shadow-md">
+              <span className="text-xl">🔴</span>
+              <div>
+                <p className="font-bold text-sm leading-tight">Tienda cerrada en este momento</p>
+                <p className="text-xs opacity-80 mt-0.5">
+                  {getTodayScheduleText((perfil as any).store_schedule ?? null) === 'Cerrado hoy'
+                    ? 'Hoy no hay servicio de delivery'
+                    : `Horario de hoy: ${getTodayScheduleText((perfil as any).store_schedule ?? null)}`
+                  }
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* Floating Address Card */}
           <div className="relative -mt-10 px-4 z-10 w-full">

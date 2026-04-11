@@ -30,6 +30,14 @@ export interface Profile {
   horario?: string;
   direccion?: string;
   whatsapp_order_template?: string;
+
+  // Ubicación del local
+  store_lat?: number;
+  store_lng?: number;
+  store_address?: string;
+
+  // Estrategia Horaria
+  store_schedule?: Record<string, { active: boolean; open: string; close: string }>;
 }
 
 export interface ProductModifierOption {

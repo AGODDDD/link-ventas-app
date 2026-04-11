@@ -7,6 +7,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore, generateOrderId, Order, OrderItem } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
 
 interface Props {
   isOpen: boolean;
@@ -49,8 +50,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  // Simple validation based on user constraints logic Phase 1 (Time logic mocked)
-  const isStoreClosed = false; // Phase 2 logic will go here
+  // Estrategia Horaria: bloquear checkout si la tienda está cerrada
+  const isStoreClosed = checkStoreClosed((perfil as any).store_schedule ?? null)
 
   if (!isOpen) return null;
 

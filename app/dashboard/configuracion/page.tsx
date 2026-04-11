@@ -11,6 +11,8 @@ import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Sto
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 import dynamic from 'next/dynamic'
 const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
+import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
+import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
 
 export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
@@ -39,6 +41,9 @@ export default function ConfiguracionPage() {
   const storeMapRef                       = useRef<any>(null)
   const storeMapContainerRef              = useRef<HTMLDivElement>(null)
   const storeMarkerRef                    = useRef<any>(null)
+
+  // Estrategia Horaria
+  const [storeSchedule, setStoreSchedule] = useState<StoreSchedule>(DEFAULT_SCHEDULE)
 
   // Nuevos campos para QRs
   const [yapeUrl, setYapeUrl] = useState('')
@@ -78,6 +83,7 @@ export default function ConfiguracionPage() {
         setStoreAddress(data.store_address || '')
         setStoreLat(data.store_lat || null)
         setStoreLng(data.store_lng || null)
+        if (data.store_schedule) setStoreSchedule({ ...DEFAULT_SCHEDULE, ...data.store_schedule })
       }
     }
     cargarPerfil()
@@ -147,6 +153,7 @@ export default function ConfiguracionPage() {
           store_address: storeAddress || null,
           store_lat: storeLat,
           store_lng: storeLng,
+          store_schedule: storeSchedule,
           updated_at: new Date(),
         })
         .eq('id', userId)
@@ -450,6 +457,21 @@ export default function ConfiguracionPage() {
                 onPick={(lat, lng) => { setStoreLat(lat); setStoreLng(lng) }}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* ── ESTRATEGIA HORARIA ── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span>🕐</span> Estrategia Horaria
+            </CardTitle>
+            <CardDescription>
+              Define los días y horarios en que tu tienda acepta pedidos. El checkout se bloqueará automáticamente fuera de este horario.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScheduleEditor value={storeSchedule} onChange={setStoreSchedule} />
           </CardContent>
         </Card>
 
