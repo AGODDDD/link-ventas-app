@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
-import { X, MapPin, Clock, Check } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Order } from '@/store/useCustomerStore'
 
 let L: any = null;
@@ -12,13 +12,13 @@ interface Props {
   order: Order;
 }
 
-const STATUS_STEPS: { key: Order['status']; label: string; description: string }[] = [
-  { key: 'pendiente_pago', label: 'Pagar pedido', description: 'Esperando pago por parte del cliente' },
-  { key: 'pendiente', label: 'Pendiente', description: 'En breve iniciaremos la preparación de tu pedido' },
-  { key: 'en_preparacion', label: 'En preparación', description: 'Estamos preparando tu pedido' },
-  { key: 'alistando', label: 'Alistando tu pedido', description: 'Estamos alistando tu pedido' },
-  { key: 'en_camino', label: 'En camino', description: 'El repartidor va en camino' },
-  { key: 'completado', label: 'Completado', description: 'Tu pedido ha sido entregado' },
+const STATUS_STEPS = [
+  { key: 'pendiente_pago', description: 'Esperando pago por parte del cliente' },
+  { key: 'pendiente', description: 'En breve iniciaremos la preparación de tu pedido' },
+  { key: 'en_preparacion', description: 'Estamos preparando tu pedido' },
+  { key: 'alistando', description: 'Estamos alistando tu pedido' },
+  { key: 'en_camino', description: 'El repartidor va en camino' },
+  { key: 'completado', description: 'Tu pedido ha sido entregado' },
 ]
 
 export default function OrderDetailModal({ isOpen, onClose, order }: Props) {
@@ -26,7 +26,6 @@ export default function OrderDetailModal({ isOpen, onClose, order }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const [mapReady, setMapReady] = useState(false)
 
-  // Current step index
   const currentStepIdx = STATUS_STEPS.findIndex(s => s.key === order.status)
 
   // Load leaflet
@@ -62,10 +61,8 @@ export default function OrderDetailModal({ isOpen, onClose, order }: Props) {
       if (!mapContainerRef.current || mapRef.current) return;
       const lat = order.lat || -12.0464
       const lng = order.lng || -77.0428
-      const map = L.map(mapContainerRef.current).setView([lat, lng], 15)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map)
+      const map = L.map(mapContainerRef.current, { zoomControl: false, attributionControl: false }).setView([lat, lng], 15)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
       L.marker([lat, lng]).addTo(map)
       mapRef.current = map
     }, 250)
@@ -93,109 +90,119 @@ export default function OrderDetailModal({ isOpen, onClose, order }: Props) {
 
   if (!isOpen) return null;
 
-  const orderDate = new Date(order.date)
-  const dateStr = orderDate.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-
   return (
     <div className="fixed inset-0 z-[140] bg-white flex flex-col animate-in fade-in duration-150">
-      {/* Header with map */}
-      <div className="relative w-full h-[200px] md:h-[260px] bg-neutral-200">
+      
+      {/* ========== MAP SECTION ========== */}
+      <div className="relative w-full h-[38vh] min-h-[200px] max-h-[320px] bg-neutral-200 shrink-0">
         <div ref={mapContainerRef} className="w-full h-full" />
         
-        {/* Overlay header */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-center pt-3 z-[500]">
-          <div className="bg-[#333]/90 backdrop-blur-sm text-white px-5 py-2 rounded-lg text-center">
-            <p className="text-xs font-medium">Pedido en Curso</p>
-            <p className="font-mono font-bold text-sm">{order.id}</p>
+        {/* Overlay: Order ID Header */}
+        <div className="absolute top-0 left-0 right-0 flex items-start justify-center pt-3 px-4 z-[500]">
+          <div className="bg-[#2d2d2d]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg text-center shadow-lg" style={{ minWidth: '280px' }}>
+            <p className="text-[11px] font-medium tracking-wide opacity-90">Pedido en Curso</p>
+            <p className="font-mono font-bold text-[13px] tracking-wider mt-0.5">{order.id}</p>
           </div>
         </div>
         
-        <button onClick={onClose} className="absolute top-3 right-3 z-[500] bg-white/90 backdrop-blur-sm w-9 h-9 rounded-full flex items-center justify-center text-[#333] hover:bg-white shadow-md transition-colors">
-          <X size={18} />
+        {/* Close button */}
+        <button 
+          onClick={onClose} 
+          className="absolute top-3 right-3 z-[500] bg-white w-9 h-9 rounded-full flex items-center justify-center text-[#333] shadow-lg hover:bg-neutral-100 transition-colors"
+        >
+          <X size={20} strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* ========== PULL HANDLE ========== */}
+      <div className="flex justify-center py-2 bg-white">
+        <div className="w-10 h-1 rounded-full bg-neutral-300"></div>
+      </div>
+
+      {/* ========== SCROLLABLE CONTENT ========== */}
+      <div className="flex-1 overflow-y-auto bg-white">
         
-        {/* Status Timeline */}
-        <div className="px-4 py-5 border-b border-neutral-100">
-          <div className="flex items-start gap-0 overflow-x-auto hide-scrollbar pb-2">
+        {/* ---- STATUS TIMELINE ---- */}
+        <div className="px-3 py-4 border-b border-neutral-100">
+          <div className="grid grid-cols-6 gap-0">
             {STATUS_STEPS.map((step, idx) => {
               const isCompleted = idx < currentStepIdx
               const isCurrent = idx === currentStepIdx
-              const isPending = idx > currentStepIdx
+              const isActive = isCompleted || isCurrent
               
               return (
-                <div key={step.key} className="flex-1 min-w-[120px] flex flex-col items-center text-center px-1">
-                  {/* Circle */}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 ${
-                    isCompleted ? 'bg-green-500 text-white' :
-                    isCurrent ? 'bg-blue-500 text-white animate-pulse' :
-                    'bg-neutral-200 text-neutral-400'
+                <div 
+                  key={step.key} 
+                  className={`px-2 py-3 border-r last:border-r-0 border-neutral-100 ${
+                    isCurrent ? 'bg-[#E8F5E9]' : isCompleted ? 'bg-[#F1F8F1]' : ''
+                  }`}
+                >
+                  <p className={`text-[10px] leading-[1.4] ${
+                    isActive ? 'text-[#444]' : 'text-[#bbb]'
                   }`}>
-                    {isCompleted ? <Check size={14} strokeWidth={3} /> : 
-                     <span className="text-xs font-bold">{idx + 1}</span>}
-                  </div>
-                  {/* Label */}
-                  <p className={`text-[10px] font-bold leading-tight ${
-                    isCurrent ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-[#aaa]'
-                  }`}>{step.label}</p>
-                  {/* Description */}
-                  <p className={`text-[9px] leading-tight mt-0.5 ${
-                    isCurrent || isCompleted ? 'text-[#666]' : 'text-[#ccc]'
-                  }`}>{step.description}</p>
+                    {step.description}
+                  </p>
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* Address */}
-        <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
-          <MapPin size={16} className="text-[#888] shrink-0" />
-          <p className="text-sm text-[#333]">{order.direccion}</p>
+        {/* ---- ADDRESS ---- */}
+        <div className="flex items-start gap-3 px-4 py-3.5 border-b border-neutral-100">
+          <div className="mt-0.5 shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <p className="text-[13px] text-[#333] leading-snug">{order.direccion}</p>
         </div>
 
-        {/* Time */}
-        <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-3">
-          <Clock size={16} className="text-[#888] shrink-0" />
-          <p className="text-sm text-[#333]">{order.estimatedTime || '50 - 60 min'}</p>
+        {/* ---- ESTIMATED TIME ---- */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-neutral-100">
+          <div className="shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <p className="text-[13px] text-[#333]">{order.estimatedTime || '50 - 60 min'}</p>
         </div>
 
-        {/* Products */}
-        <div className="px-4 py-4 border-b border-neutral-100 space-y-3">
+        {/* ---- PRODUCTS ---- */}
+        <div className="border-b border-neutral-100">
           {order.items.map((item, idx) => (
-            <div key={idx} className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm text-[#222] font-medium">{item.quantity} - {item.name}</p>
-                {item.options && <p className="text-[11px] text-[#999] mt-0.5">{item.options}</p>}
+            <div key={idx} className="px-4 py-3 border-b border-neutral-50 last:border-b-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-[13px] text-[#222]">{item.quantity} - {item.name}</p>
+                  {item.options && (
+                    <p className="text-[11px] text-[#999] mt-0.5">{item.quantity} - {item.options}</p>
+                  )}
+                </div>
+                <p className="text-[13px] text-[#222] font-medium whitespace-nowrap">S/ {item.totalPrice.toFixed(2)}</p>
               </div>
-              <p className="text-sm font-medium text-[#222] whitespace-nowrap">S/ {item.totalPrice.toFixed(2)}</p>
             </div>
           ))}
         </div>
 
-        {/* Totals */}
-        <div className="px-4 py-4 space-y-2">
-          <div className="flex justify-between text-sm text-[#666]">
-            <span>Subtotal</span>
-            <span>S/ {order.subtotal.toFixed(2)}</span>
+        {/* ---- TOTALS ---- */}
+        <div className="px-4 py-4">
+          <div className="flex justify-between py-1.5">
+            <span className="text-[13px] text-[#444]">Subtotal</span>
+            <span className="text-[13px] text-[#444]">S/ {order.subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-sm text-[#666]">
-            <span>Envío</span>
-            <span>S/ {order.deliveryFee.toFixed(2)}</span>
+          <div className="flex justify-between py-1.5">
+            <span className="text-[13px] text-[#444]">Envío</span>
+            <span className="text-[13px] text-[#444]">S/ {order.deliveryFee.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-base font-bold text-[#111] pt-2 border-t border-neutral-100">
-            <span>Total</span>
-            <span>S/ {order.total.toFixed(2)}</span>
+          <div className="flex justify-between py-1.5 mt-1">
+            <span className="text-[14px] font-bold text-[#c62828]">Total</span>
+            <span className="text-[14px] font-bold text-[#c62828]">S/ {order.total.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Date */}
-        <div className="px-4 py-3 text-center">
-          <p className="text-xs text-[#aaa]">Pedido realizado el {dateStr}</p>
-        </div>
       </div>
     </div>
   )
