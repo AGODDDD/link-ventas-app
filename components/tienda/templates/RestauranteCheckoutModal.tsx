@@ -5,6 +5,7 @@ import { Profile } from '@/types/tienda'
 import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore, generateOrderId, Order, OrderItem } from '@/store/useCustomerStore'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -53,7 +54,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
 
   if (!isOpen) return null;
 
-  const handlePagar = () => {
+  const handlePagar = async () => {
      if (!nombre || !telefono || !direccion || !acceptedTerms) {
         alert("Por favor completa los campos requeridos y acepta los términos.");
         return;
@@ -113,6 +114,29 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
      };
      customerStore.addOrder(newOrder);
 
+     // Save to Supabase for vendor dashboard + realtime tracking
+     try {
+       await supabase.from('delivery_orders').insert({
+         id: orderId,
+         store_id: perfil.id,
+         status: newOrder.status,
+         customer_name: nombre,
+         customer_phone: telefono,
+         customer_email: correo,
+         direccion,
+         referencia: savedAddress?.referencia || null,
+         lat: savedAddress?.lat || null,
+         lng: savedAddress?.lng || null,
+         items: orderItems,
+         subtotal,
+         delivery_fee: deliveryFee,
+         total,
+         metodo_pago: metodoPago,
+         estimated_time: '50 - 60 min',
+       });
+     } catch (e) {
+       console.error('Error saving to Supabase:', e);
+     }
      if (metodoPago === 'whatsapp') {
         let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A`
         text += `*ID:* ${orderId}%0A%0A`

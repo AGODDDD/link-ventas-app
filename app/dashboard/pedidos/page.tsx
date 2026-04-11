@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
@@ -29,9 +29,13 @@ export default function PedidosPage() {
     const [proofLoading, setProofLoading] = useState(false)
 
     // Estado para Rescates (Leads Mágicos)
-    const [activeTab, setActiveTab] = useState<'orders' | 'leads'>('orders')
+    const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'delivery'>('delivery')
     const [leads, setLeads] = useState<any[]>([])
     const [loadingLeads, setLoadingLeads] = useState(false)
+
+    // Delivery orders
+    const [deliveryOrders, setDeliveryOrders] = useState<any[]>([])
+    const [loadingDelivery, setLoadingDelivery] = useState(true)
 
     // Referencias para Motor Térmico (html2canvas)
     const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
@@ -49,6 +53,7 @@ export default function PedidosPage() {
             await cargarOrders(user.id)
             setLoading(false)
             fetchLeads(user.id)
+            fetchDeliveryOrders(user.id)
         }
         init()
     }, [cargarOrders])
@@ -72,7 +77,55 @@ export default function PedidosPage() {
         setLoading(true)
         await cargarOrders(user.id, true)
         fetchLeads(user.id)
+        fetchDeliveryOrders(user.id)
         setLoading(false)
+    }
+
+    const fetchDeliveryOrders = async (userId: string) => {
+        setLoadingDelivery(true)
+        const { data } = await supabase
+            .from('delivery_orders')
+            .select('*')
+            .eq('store_id', userId)
+            .order('created_at', { ascending: false })
+        if (data) setDeliveryOrders(data)
+        setLoadingDelivery(false)
+    }
+
+    const DELIVERY_STATUSES = ['pendiente_pago', 'pendiente', 'en_preparacion', 'alistando', 'en_camino', 'completado']
+    const DELIVERY_LABELS: Record<string, string> = {
+        pendiente_pago: 'Pagar pedido',
+        pendiente: 'Pendiente',
+        en_preparacion: 'En preparación',
+        alistando: 'Alistando',
+        en_camino: 'En camino',
+        completado: 'Completado',
+    }
+    const DELIVERY_COLORS: Record<string, string> = {
+        pendiente_pago: 'bg-red-100 text-red-700 border-red-200',
+        pendiente: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        en_preparacion: 'bg-blue-100 text-blue-700 border-blue-200',
+        alistando: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+        en_camino: 'bg-green-100 text-green-700 border-green-200',
+        completado: 'bg-neutral-100 text-neutral-600 border-neutral-200',
+    }
+
+    const avanzarEstadoDelivery = async (orderId: string, currentStatus: string) => {
+        const currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
+        if (currentIdx < 0 || currentIdx >= DELIVERY_STATUSES.length - 1) return
+        const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
+        
+        const { error } = await supabase
+            .from('delivery_orders')
+            .update({ status: nextStatus })
+            .eq('id', orderId)
+        
+        if (!error) {
+            setDeliveryOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o))
+            toast.success(`Estado actualizado a: ${DELIVERY_LABELS[nextStatus]}`)
+        } else {
+            toast.error('Error actualizando estado: ' + error.message)
+        }
     }
 
     const generarRescateWA = (lead: any) => {
@@ -176,6 +229,12 @@ export default function PedidosPage() {
             {/* TAB NAVIGATOR */}
             <div className="flex gap-4 mb-6 border-b border-outline-variant/20 pb-2 overflow-x-auto custom-scrollbar">
                 <button 
+                    onClick={() => setActiveTab('delivery')}
+                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+                >
+                    🛵 Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{deliveryOrders.filter(o => o.status !== 'completado').length}</span>
+                </button>
+                <button 
                     onClick={() => setActiveTab('orders')}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                 >
@@ -190,6 +249,135 @@ export default function PedidosPage() {
             </div>
 
             <div className="grid gap-6">
+
+                {/* ========== DELIVERY TAB ========== */}
+                {activeTab === 'delivery' && (
+                    <>
+                        {loadingDelivery ? (
+                            <p className="text-center font-bold text-on-surface-variant animate-pulse py-10">Cargando pedidos delivery... 🛵</p>
+                        ) : deliveryOrders.length === 0 ? (
+                            <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
+                                <p className="text-on-surface-variant text-xl font-bold">Sin pedidos delivery aún</p>
+                                <p className="text-on-surface-variant/70 text-sm mt-2">Los pedidos del restaurante aparecerán aquí en tiempo real.</p>
+                            </div>
+                        ) : (
+                            deliveryOrders.map(order => {
+                                const statusIdx = DELIVERY_STATUSES.indexOf(order.status)
+                                const isCompleted = order.status === 'completado'
+                                const items = order.items || []
+
+                                return (
+                                    <div key={order.id} className={`bg-surface-container-high rounded-2xl border overflow-hidden shadow-xl ${isCompleted ? 'border-outline-variant/10 opacity-60' : 'border-green-300/30'}`}>
+                                        
+                                        {/* Header */}
+                                        <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant/5 gap-3">
+                                            <div className="flex items-center gap-3 flex-wrap">
+                                                <span className="font-mono text-xs font-bold text-green-600 tracking-widest px-3 py-1 bg-green-50 rounded-md border border-green-200">
+                                                    {order.id}
+                                                </span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${DELIVERY_COLORS[order.status] || 'bg-neutral-100 text-neutral-500'}`}>
+                                                    {DELIVERY_LABELS[order.status] || order.status}
+                                                </span>
+                                                <span className="text-xs text-on-surface-variant">
+                                                    {new Date(order.created_at).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div className="font-bold text-xl tracking-tighter text-on-surface">S/ {parseFloat(order.total).toFixed(2)}</div>
+                                        </div>
+
+                                        {/* Body */}
+                                        <div className="p-6 grid md:grid-cols-12 gap-6">
+                                            
+                                            {/* Cliente + Dirección */}
+                                            <div className="md:col-span-4 space-y-4">
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Cliente</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                                                            <User size={18} className="text-green-600" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-on-surface text-sm">{order.customer_name || 'Sin nombre'}</p>
+                                                            <p className="text-xs text-green-600 font-medium">📞 {order.customer_phone || '-'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Dirección</p>
+                                                    <div className="bg-surface-bright/50 p-3 rounded-lg border border-outline-variant/10 flex items-start gap-2">
+                                                        <MapPin size={14} className="text-on-surface-variant mt-0.5 shrink-0" />
+                                                        <p className="text-xs text-on-surface">{order.direccion || 'Sin dirección'}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Items */}
+                                            <div className="md:col-span-4 border-l-0 md:border-l border-t md:border-t-0 border-outline-variant/10 pt-4 md:pt-0 md:pl-6">
+                                                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">Productos</p>
+                                                <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
+                                                    {items.map((item: any, idx: number) => (
+                                                        <div key={idx} className="flex justify-between text-sm bg-surface-container p-2 rounded-md">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="bg-surface-bright text-on-surface text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
+                                                                <span className="font-medium text-on-surface-variant text-xs line-clamp-1">{item.name}</span>
+                                                            </div>
+                                                            <span className="text-xs font-bold text-on-surface whitespace-nowrap">S/ {parseFloat(item.totalPrice || 0).toFixed(2)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Timeline + Action */}
+                                            <div className="md:col-span-4 border-l-0 md:border-l border-t md:border-t-0 border-outline-variant/10 pt-4 md:pt-0 md:pl-6 flex flex-col">
+                                                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">Estado del Pedido</p>
+                                                
+                                                {/* Mini timeline */}
+                                                <div className="flex-1 space-y-1.5 mb-4">
+                                                    {DELIVERY_STATUSES.map((s, i) => (
+                                                        <div key={s} className="flex items-center gap-2">
+                                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                                                i < statusIdx ? 'bg-green-500 border-green-500' :
+                                                                i === statusIdx ? 'border-green-500 bg-white' :
+                                                                'border-neutral-300 bg-white'
+                                                            }`}>
+                                                                {i < statusIdx && (
+                                                                    <svg width="8" height="8" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="4">
+                                                                        <polyline points="20 6 9 17 4 12" />
+                                                                    </svg>
+                                                                )}
+                                                                {i === statusIdx && <div className="w-1.5 h-1.5 rounded-full bg-green-500" />}
+                                                            </div>
+                                                            <span className={`text-[11px] ${
+                                                                i <= statusIdx ? 'text-on-surface font-medium' : 'text-on-surface-variant/50'
+                                                            }`}>{DELIVERY_LABELS[s]}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Action button */}
+                                                {!isCompleted && (
+                                                    <button
+                                                        onClick={() => avanzarEstadoDelivery(order.id, order.status)}
+                                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-500/20"
+                                                    >
+                                                        <ChevronRight size={16} />
+                                                        Avanzar a: {DELIVERY_LABELS[DELIVERY_STATUSES[statusIdx + 1]] || 'Completado'}
+                                                    </button>
+                                                )}
+                                                {isCompleted && (
+                                                    <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
+                                                        ✅ Entregado
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )
+                            })
+                        )}
+                    </>
+                )}
+
                 {activeTab === 'orders' && (
                     <>
                         {orders.length === 0 ? (
