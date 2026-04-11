@@ -54,8 +54,48 @@ export default function PedidosPage() {
             setLoading(false)
             fetchLeads(user.id)
             fetchDeliveryOrders(user.id)
+
+            // Pedir permiso de notificaciones del navegador
+            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                Notification.requestPermission()
+            }
+
+            // ── Realtime: escuchar nuevos pedidos delivery ──
+            const channel = supabase.channel('pedidos_delivery_page')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'delivery_orders',
+                        filter: `store_id=eq.${user.id}`
+                    },
+                    (payload) => {
+                        // Agregar al inicio de la lista sin refrescar
+                        setDeliveryOrders(prev => [payload.new as any, ...prev])
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'delivery_orders',
+                        filter: `store_id=eq.${user.id}`
+                    },
+                    (payload) => {
+                        // Actualizar estado en la lista existente
+                        setDeliveryOrders(prev =>
+                            prev.map(o => o.id === payload.new.id ? { ...o, ...payload.new } : o)
+                        )
+                    }
+                )
+                .subscribe()
+
+            return () => { supabase.removeChannel(channel) }
         }
-        init()
+        const cleanup = init()
+        return () => { cleanup.then(fn => fn && fn()) }
     }, [cargarOrders])
 
     const fetchLeads = async (userId: string) => {

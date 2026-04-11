@@ -44,7 +44,8 @@ export default function DashboardTopBar() {
     useEffect(() => {
         if (!userId) return
 
-        const channel = supabase.channel('realtime_orders')
+        // ── Canal 1: órdenes clásicas (tabla orders) ──
+        const channelOrders = supabase.channel('realtime_orders')
             .on(
                 'postgres_changes',
                 {
@@ -55,15 +56,11 @@ export default function DashboardTopBar() {
                 },
                 (payload) => {
                     const nuevaOrden = payload.new
-                    
-                    // 1. Sonar la alarma verde en la pantalla
                     toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount}`, {
                         description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
                         duration: 8000,
                         icon: <ShoppingBag className="text-secondary" />
                     })
-
-                    // 2. Guardar en la bandeja de la campana
                     const nuevaNotif: Notificacion = {
                         id: nuevaOrden.id,
                         mensaje: `Compra de ${nuevaOrden.customer_name}`,
@@ -72,15 +69,61 @@ export default function DashboardTopBar() {
                         leida: false
                     }
                     setNotificaciones(prev => [nuevaNotif, ...prev])
-
-                    // 3. Forzar recarga completa desde la DB para actualizar TODAS las tablas
                     useDashboardStore.getState().cargarOrders(userId, true)
                 }
             )
             .subscribe()
 
+        // ── Canal 2: pedidos delivery (tabla delivery_orders) ──
+        const channelDelivery = supabase.channel('realtime_delivery_orders')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'delivery_orders',
+                    filter: `store_id=eq.${userId}`
+                },
+                (payload) => {
+                    const pedido = payload.new
+
+                    // 1. Toast de alerta
+                    toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
+                        description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)} — ${pedido.direccion || ''}`,
+                        duration: 10000,
+                        icon: <ShoppingBag className="text-green-500" />
+                    })
+
+                    // 2. Guardar en bandeja de campana
+                    const nuevaNotif: Notificacion = {
+                        id: pedido.id,
+                        mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id}`,
+                        monto: parseFloat(pedido.total || 0),
+                        fecha: new Date(),
+                        leida: false
+                    }
+                    setNotificaciones(prev => [nuevaNotif, ...prev])
+
+                    // 3. Sonido de notificación (si el navegador lo permite)
+                    try {
+                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA...') 
+                        audio.play().catch(() => {}) // silent fail si no hay permiso
+                    } catch (_) {}
+
+                    // 4. Notificación del navegador (si tiene permisos)
+                    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                        new Notification('🛵 Nuevo Pedido Delivery', {
+                            body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
+                            icon: '/favicon.ico',
+                        })
+                    }
+                }
+            )
+            .subscribe()
+
         return () => {
-             supabase.removeChannel(channel)
+             supabase.removeChannel(channelOrders)
+             supabase.removeChannel(channelDelivery)
         }
     }, [userId])
 
