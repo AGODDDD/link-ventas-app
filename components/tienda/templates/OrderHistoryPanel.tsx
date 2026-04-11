@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, ChevronRight, Package, MessageCircle } from 'lucide-react'
+import { X, ChevronRight, Package, MessageCircle, Trash2 } from 'lucide-react'
 import { Order, useCustomerStore } from '@/store/useCustomerStore'
 import OrderDetailModal from './OrderDetailModal'
+
+const EXPIRE_MS = 24 * 60 * 60 * 1000  // 24 horas en ms
 
 interface Props {
   isOpen: boolean;
@@ -11,7 +13,7 @@ interface Props {
   storeId: string;
   storeLat?: number | null;
   storeLng?: number | null;
-  whatsappPhone?: string | null;  // para reconstituir el link de pago
+  whatsappPhone?: string | null;
 }
 
 const STATUS_LABELS: Record<Order['status'], string> = {
@@ -31,10 +33,9 @@ const STATUS_COLORS: Record<Order['status'], string> = {
   alistando: 'bg-indigo-50 text-indigo-600 border-indigo-200',
   en_camino: 'bg-green-50 text-green-600 border-green-200',
   completado: 'bg-neutral-100 text-neutral-600 border-neutral-200',
-  cancelado: 'bg-red-100 text-red-700 border-red-300',
+  cancelado: 'bg-red-100 text-red-700 border-red-200',
 }
 
-// Genera el mensaje de WhatsApp igual que el checkout original
 function buildWhatsappUrl(order: Order, phone: string): string {
   const items = order.items.map(i =>
     `• ${i.quantity}x ${i.name}${i.options ? ` (${i.options})` : ''} - S/ ${i.totalPrice.toFixed(2)}`
@@ -54,7 +55,6 @@ function buildWhatsappUrl(order: Order, phone: string): string {
     ``,
     `⏳ Por favor confirme el pago para iniciar la preparación.`,
   ].filter(Boolean).join('\n')
-
   const cleaned = phone.replace(/\D/g, '')
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(msg)}`
 }
@@ -62,16 +62,30 @@ function buildWhatsappUrl(order: Order, phone: string): string {
 export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, storeLng, whatsappPhone }: Props) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const customerStore = useCustomerStore()
+  const removeOrder = useCustomerStore(s => s.removeOrder)
   const [mounted, setMounted] = useState(false)
 
   React.useEffect(() => setMounted(true), [])
 
-  // ── Sincronizar statuses desde Supabase al abrir ──
+  // ── 1. Auto-expirar pendiente_pago > 24h al abrir ──
+  React.useEffect(() => {
+    if (!isOpen || !mounted) return
+    const now = Date.now()
+    customerStore.orders
+      .filter(o => o.storeId === storeId && o.status === 'pendiente_pago')
+      .forEach(o => {
+        const age = now - new Date(o.date).getTime()
+        if (age > EXPIRE_MS) {
+          removeOrder(o.id)  // elimina silenciosamente del localStorage
+        }
+      })
+  }, [isOpen, mounted, storeId])
+
+  // ── 2. Sincronizar statuses desde Supabase al abrir ──
   React.useEffect(() => {
     if (!isOpen || !mounted) return
     const storeOrders = customerStore.orders.filter(o => o.storeId === storeId)
     if (!storeOrders.length) return
-
     const ids = storeOrders.map(o => o.id)
     import('@/lib/supabase').then(({ supabase }) => {
       supabase
@@ -92,7 +106,15 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
 
   const orders = mounted ? customerStore.orders.filter(o => o.storeId === storeId) : []
 
-  if (!isOpen) return null;
+  // ── Descartar manualmente (solo pendiente_pago y cancelado) ──
+  const handleDismiss = (order: Order) => {
+    const msg = order.status === 'pendiente_pago'
+      ? '¿Eliminar este pedido de tu historial? (Si ya pagaste por WhatsApp, el vendedor lo procesará igualmente)'
+      : '¿Eliminar este pedido cancelado de tu historial?'
+    if (window.confirm(msg)) removeOrder(order.id)
+  }
+
+  if (!isOpen) return null
 
   return (
     <>
@@ -122,48 +144,84 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
               </div>
             ) : (
               orders.map(order => {
-                const isCancelado = order.status === 'cancelado'
+                const isCancelado  = order.status === 'cancelado'
+                const isPendPago   = order.status === 'pendiente_pago'
+                const isDismissible = isPendPago || isCancelado
+                const orderAge     = Date.now() - new Date(order.date).getTime()
+                const horasRestantes = Math.max(0, Math.ceil((EXPIRE_MS - orderAge) / 3600000))
+
                 return (
                   <div
                     key={order.id}
-                    className={`bg-white border rounded-xl p-4 shadow-sm space-y-3 ${isCancelado ? 'border-red-200 opacity-70' : 'border-neutral-200'}`}
+                    className={`bg-white border rounded-xl p-4 shadow-sm space-y-3 transition-opacity ${
+                      isCancelado ? 'border-red-200 opacity-70' : 'border-neutral-200'
+                    }`}
                   >
                     {/* Top row */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-[12px] text-[#666]">
-                        {isCancelado ? '❌ Pedido cancelado' : 'Pedido en curso'}
+                        {isCancelado ? '❌ Cancelado' : isPendPago ? '⏳ Pendiente de pago' : 'Pedido en curso'}
                       </span>
                       <span className="text-[13px] font-mono font-bold text-[#222]">{order.id}</span>
                     </div>
 
-                    {/* Status badge */}
-                    <div className="flex items-center justify-between gap-3">
+                    {/* Status + Pagar / Dismiss */}
+                    <div className="flex items-center justify-between gap-2">
                       <span className={`text-xs font-bold px-3 py-1 rounded-full border ${STATUS_COLORS[order.status]}`}>
                         {STATUS_LABELS[order.status]}
                       </span>
 
-                      {/* Botón Pagar: redirige a WhatsApp con resumen del pedido */}
-                      {order.status === 'pendiente_pago' && whatsappPhone && (
-                        <a
-                          href={buildWhatsappUrl(order, whatsappPhone)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 bg-[#25D366] text-white text-sm font-bold px-4 py-2 rounded-full hover:bg-[#1ebe5d] active:scale-[0.97] transition-all shadow-sm"
-                        >
-                          <MessageCircle size={15} />
-                          Pagar
-                        </a>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {/* Botón Pagar → WhatsApp */}
+                        {isPendPago && whatsappPhone && (
+                          <a
+                            href={buildWhatsappUrl(order, whatsappPhone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 bg-[#25D366] text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-[#1ebe5d] active:scale-[0.97] transition-all shadow-sm"
+                          >
+                            <MessageCircle size={13} />
+                            Pagar
+                          </a>
+                        )}
+
+                        {/* Botón descartar (pendiente_pago o cancelado) */}
+                        {isDismissible && (
+                          <button
+                            onClick={() => handleDismiss(order)}
+                            title="Eliminar del historial"
+                            className="p-1.5 rounded-full text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Ver detalles (solo si no está cancelado) */}
-                    {!isCancelado && (
+                    {/* Aviso de expiración automática */}
+                    {isPendPago && horasRestantes <= 24 && (
+                      <p className="text-[10px] text-neutral-400 leading-tight">
+                        ⏱ Se eliminará automáticamente en {horasRestantes}h si no se procesa el pago
+                      </p>
+                    )}
+
+                    {/* Ver detalles */}
+                    {!isCancelado && !isPendPago && (
                       <button
                         onClick={() => setSelectedOrder(order)}
                         className="flex items-center justify-center gap-1 text-sm text-[#555] hover:text-[#111] font-medium transition-colors w-full py-1"
                       >
                         Ver detalles
                         <ChevronRight size={14} />
+                      </button>
+                    )}
+                    {isPendPago && (
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="flex items-center justify-center gap-1 text-xs text-neutral-400 hover:text-[#111] transition-colors w-full py-0.5"
+                      >
+                        Ver resumen
+                        <ChevronRight size={12} />
                       </button>
                     )}
                   </div>
@@ -181,7 +239,6 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
         </div>
       </div>
 
-      {/* Order Detail Modal */}
       {selectedOrder && (
         <OrderDetailModal
           isOpen={true}

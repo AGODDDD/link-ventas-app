@@ -53,6 +53,7 @@ interface CustomerStore {
   orders: Order[];
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  removeOrder: (orderId: string) => void;
   getOrdersByStore: (storeId: string) => Order[];
 }
 
@@ -76,6 +77,9 @@ export const useCustomerStore = create<CustomerStore>()(
       })),
       updateOrderStatus: (orderId, status) => set((state) => ({
         orders: state.orders.map(o => o.id === orderId ? { ...o, status } : o)
+      })),
+      removeOrder: (orderId) => set((state) => ({
+        orders: state.orders.filter(o => o.id !== orderId)
       })),
       getOrdersByStore: (storeId) => get().orders.filter(o => o.storeId === storeId),
     }),
