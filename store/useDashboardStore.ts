@@ -20,6 +20,7 @@ interface DashboardState {
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => void
+    normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -144,6 +145,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 id: d.id,
                 created_at: d.created_at,
                 customer_name: d.customer_name || 'Sin nombre',
+                customer_phone: d.customer_phone || '-',
+                direccion: d.direccion || d.address || 'Sin dirección',
+                referencia: d.referencia || '',
                 total_amount: d.total ? d.total.toString() : '0',
                 status: d.status,
                 payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
@@ -158,7 +162,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             const coreOrders = unifiedRes.data.map(o => ({
                 id: o.id,
                 created_at: o.created_at,
-                customer_name: o.customer_name,
+                customer_name: o.customer_name || 'Sin nombre',
+                customer_phone: o.customer_phone || '-',
+                direccion: o.direccion || 'Sin dirección',
+                referencia: o.referencia || '',
                 total_amount: o.total ? o.total.toString() : '0',
                 status: o.status,
                 payment_proof_url: 'NUEVO_CORE',
@@ -175,15 +182,52 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     },
 
     agregarOrderLocal: (order: any) => {
-        // Inyecta el pedido nuevo al principio de la matriz (como un feed de Instagram)
-        set((state) => ({
-            orders: [order, ...state.orders]
-        }))
+        // Inyecta el pedido nuevo al principio de la matriz (evitando duplicados)
+        set((state) => {
+            const exists = state.orders.some(o => o.id === order.id);
+            if (exists) return state;
+            return { orders: [order, ...state.orders] };
+        });
     },
 
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => {
         set((state) => ({
             orders: state.orders.map(o => o.id === orderId ? { ...o, status: nuevoEstado } : o)
         }))
+    },
+
+    // Helper para normalizar cualquier fuente de orden (Legacy o Core)
+    normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => {
+        if (source === 'legacy_delivery') {
+            return {
+                id: raw.id,
+                created_at: raw.created_at,
+                customer_name: raw.customer_name || 'Sin nombre',
+                customer_phone: raw.customer_phone || '-',
+                direccion: raw.direccion || raw.address || 'Sin dirección',
+                referencia: raw.referencia || '',
+                total_amount: raw.total ? raw.total.toString() : '0',
+                status: raw.status,
+                payment_proof_url: raw.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
+                order_items: raw.items || [],
+                _source: 'legacy_delivery'
+            }
+        }
+        if (source === 'core') {
+            return {
+                id: raw.id,
+                created_at: raw.created_at,
+                customer_name: raw.customer_name || 'Sin nombre',
+                customer_phone: raw.customer_phone || '-',
+                direccion: raw.direccion || 'Sin dirección',
+                referencia: raw.referencia || '',
+                total_amount: raw.total ? raw.total.toString() : '0',
+                status: raw.status,
+                payment_proof_url: 'NUEVO_CORE',
+                order_items: raw.order_items || [],
+                _source: 'core'
+            }
+        }
+        return { ...raw, _source: 'legacy_standard' }
     }
 }))

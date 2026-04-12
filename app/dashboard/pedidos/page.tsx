@@ -59,27 +59,40 @@ export default function PedidosPage() {
                 Notification.requestPermission()
             }
 
-            // ── Realtime: Sincronización continua de la central ──
+            // ── Realtime: Sincronización instantánea de la central ──
+            const { agregarOrderLocal, normalizarOrder, actualizarEstadoOrderLocal } = useDashboardStore.getState()
+            
             const channel = supabase.channel('dashboard_pedidos_unified')
                 .on(
                     'postgres_changes',
                     { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${user.id}` },
-                    () => { cargarOrders(user.id, true) }
+                    (payload) => { 
+                        const norm = normalizarOrder(payload.new, 'core')
+                        agregarOrderLocal(norm)
+                        // Trigger de sonido o notificación si prefieres
+                    }
                 )
                 .on(
                     'postgres_changes',
                     { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${user.id}` },
-                    () => { cargarOrders(user.id, true) }
+                    (payload) => { 
+                        const norm = normalizarOrder(payload.new, 'legacy_delivery')
+                        agregarOrderLocal(norm)
+                    }
                 )
                 .on(
                     'postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${user.id}` },
-                    () => { cargarOrders(user.id, true) }
+                    (payload) => { 
+                        actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
+                    }
                 )
                 .on(
                     'postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${user.id}` },
-                    () => { cargarOrders(user.id, true) }
+                    (payload) => { 
+                        actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
+                    }
                 )
                 .subscribe()
 
