@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { useCustomerStore } from '@/store/useCustomerStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
 
