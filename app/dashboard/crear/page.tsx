@@ -34,15 +34,30 @@ export default function CrearProducto() {
   // Media handling
   const [archivo, setArchivo] = useState<File | null>(null)
 
+  const [availableCategories, setAvailableCategories] = useState<any[]>([])
+
   useEffect(() => {
-    async function loadTemplate() {
+    async function loadStoreAndExtensions() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
-        if (data?.template_type) setTemplateType(data.template_type)
+        // 1. Cargar Identidad del Core
+        const { data: store } = await supabase.from('stores').select('id, template_type').eq('id', user.id).single()
+        if (store) {
+          setTemplateType(store.template_type)
+          
+          // 2. Cargar Extensión de Categorías (solo si es restaurante)
+          if (store.template_type === 'restaurante') {
+            const { data: cats } = await supabase.from('menu_categories').select('*').eq('store_id', store.id).order('position')
+            if (cats) setAvailableCategories(cats)
+          }
+        } else {
+          // Fallback legacy mientras el usuario migra
+          const { data: profile } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
+          if (profile?.template_type) setTemplateType(profile.template_type)
+        }
       }
     }
-    loadTemplate()
+    loadStoreAndExtensions()
   }, [])
 
   const guardarProducto = async (e: any) => {
@@ -56,20 +71,26 @@ export default function CrearProducto() {
         return
       }
 
-      // Profile Check/Create
-      const { data: profile } = await supabase
-        .from('profiles')
+      // 1. Store Check (Identity Core)
+      const { data: store } = await supabase
+        .from('stores')
         .select('id')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (!profile) {
-        const { error: createProfileError } = await supabase
-          .from('profiles')
-          .insert({ id: user.id, email: user.email })
-
-        if (createProfileError && createProfileError.code !== '23505') {
-          throw new Error(`Error creando perfil: ${createProfileError.message}`)
+      if (!store) {
+        // Migración On-the-fly si no existe en stores
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        if (profile) {
+            await supabase.from('stores').insert({
+                id: profile.id,
+                owner_id: profile.id,
+                slug: profile.slug || `store-${profile.id.slice(0,5)}`,
+                name: profile.store_name || 'Nueva Tienda',
+                template_type: profile.template_type || 'comercio'
+            })
+        } else {
+            throw new Error('No se encontró identidad de tienda activa.')
         }
       }
 
@@ -116,8 +137,8 @@ export default function CrearProducto() {
         variants = modifiers
       }
 
-      // Save to DB (Bodega initially)
-      const { error: dbError } = await supabase
+      // 2. Guardar Producto Base
+      const { data: newProduct, error: dbError } = await supabase
         .from('products')
         .insert({
           user_id: user.id,
@@ -133,12 +154,26 @@ export default function CrearProducto() {
           shipping_today: shippingToday,
           is_active: false,
           rating: 5,
-          variants: variants,
+          variants: variants, // Mantenemos JSONB por ahora para compatibilidad UI
           preparation_time: preparationTime || null,
           is_available: isAvailable
         })
+        .select()
+        .single()
 
       if (dbError) throw dbError
+
+      // 3. Extensión: product_variants (Relacional)
+      if (templateType === 'moda' && variants.length > 0 && newProduct) {
+        const relVariants = variants.map((v: any) => ({
+            store_id: user.id,
+            product_id: newProduct.id,
+            name: v.talla ? (v.color ? `${v.talla} / ${v.color}` : v.talla) : v.color,
+            value: v.talla || v.color,
+            price_delta: 0
+        }))
+        await supabase.from('product_variants').insert(relVariants)
+      }
 
       // Invalidar caché para que la tabla de Bodega se refresque
       await useDashboardStore.getState().cargarProductos(user.id, true)
@@ -191,15 +226,17 @@ export default function CrearProducto() {
                    className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" 
                 />
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {(templateType === 'restaurante' 
-                     ? ["Promociones y Combos", "Platos de Fondo", "Bebidas", "Guarniciones", "Postres"]
-                     : ["Ropa", "Zapatos", "Accesorios", "Cuidado Personal"]
+                  {(availableCategories.length > 0 
+                     ? availableCategories.map(c => c.name)
+                     : (templateType === 'restaurante' 
+                        ? ["Promociones", "Platos", "Bebidas", "Postres"]
+                        : ["Ropa", "Zapatos", "Accesorios"])
                   ).map(cat => (
                      <button 
                         key={cat} 
                         type="button"
                         onClick={() => setCategory(cat)}
-                        className="bg-surface-variant text-on-surface hover:bg-primary hover:text-white border border-outline/30 text-[11px] px-3 py-1 rounded-full font-bold uppercase tracking-widest transition-colors"
+                        className={`border text-[11px] px-3 py-1 rounded-full font-bold uppercase tracking-widest transition-colors ${category === cat ? 'bg-primary text-white border-primary' : 'bg-surface-variant text-on-surface hover:bg-primary/20 border-outline/30'}`}
                      >
                         {cat}
                      </button>

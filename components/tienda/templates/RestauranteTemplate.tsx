@@ -15,9 +15,13 @@ import { isStoreClosed, getTodayScheduleText } from '@/lib/storeSchedule'
 interface Props {
   perfil: Profile;
   productos: Product[];
+  extensionData?: {
+    deliverySettings?: any;
+    menuCategories?: any[];
+  }
 }
 
-export default function RestauranteTemplate({ perfil, productos }: Props) {
+export default function RestauranteTemplate({ perfil, productos, extensionData }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -48,13 +52,29 @@ export default function RestauranteTemplate({ perfil, productos }: Props) {
     }
   }, [customerStore.orders])
 
-  // Agrupar platos por categoría
-  const categorias = productos.reduce((acc: Record<string, Product[]>, item) => {
-    const cat = item.category || 'Otros';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(item);
-    return acc;
-  }, {});
+  // Agrupar platos por categoría (Priorizando Extensiones)
+  const categorias = useMemo(() => {
+    // Si tenemos categorías reales de la extensión 'menu_categories'
+    if (extensionData?.menuCategories && extensionData.menuCategories.length > 0) {
+      const grouped: Record<string, Product[]> = {};
+      extensionData.menuCategories.forEach(cat => {
+        grouped[cat.name] = productos.filter(p => p.category === cat.name);
+      });
+      // Agregar productos sin categoría asignada en 'Otros'
+      const assignedNames = extensionData.menuCategories.map(c => c.name);
+      const others = productos.filter(p => !assignedNames.includes(p.category || ''));
+      if (others.length > 0) grouped['Otros'] = others;
+      return grouped;
+    }
+
+    // Fallback: Agrupamiento automático por string
+    return productos.reduce((acc: Record<string, Product[]>, item) => {
+      const cat = item.category || 'Otros';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {});
+  }, [productos, extensionData]);
 
   const catNames = Object.keys(categorias);
   if (catNames.length > 0 && !activeCategory) {

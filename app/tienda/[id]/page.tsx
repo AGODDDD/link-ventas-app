@@ -31,19 +31,52 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
 
-  // Fetching
-  const { data: perfil } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq(isUUID ? 'id' : 'slug', params.id)
-    .single();
+  // 1. CARGA DE CORE (Identidad y Config)
+  // Intentamos cargar de 'stores' (Nuevo Core), fallback a 'profiles' (Legacy)
+  const [storeRes, profileRes] = await Promise.all([
+    supabase.from('stores').select('*').eq(isUUID ? 'id' : 'slug', params.id).single(),
+    supabase.from('profiles').select('*').eq(isUUID ? 'id' : 'slug', params.id).single()
+  ]);
 
+  const profile = profileRes.data;
+  const store = storeRes.data;
+
+  // Si no hay perfil legacy ni tienda nueva, 404
+  if (!profile && !store) return <div>Tienda no encontrada</div>;
+
+  // Normalizar datos para las plantillas (Prioridad Core)
+  const perfil = {
+    ...(profile || {}),
+    ...(store ? {
+        id: store.id,
+        store_name: store.name,
+        description: store.description,
+        avatar_url: store.avatar_url,
+        banner_url: store.banner_url,
+        template_type: store.template_type,
+        whatsapp_phone: store.whatsapp_phone
+    } : {})
+  } as any;
+
+  // 2. CARGA DE EXTENSIONES (Solo si es restaurante)
+  let extensionData: any = {};
+  if (perfil.template_type === 'restaurante') {
+    const [delRes, catRes] = await Promise.all([
+        supabase.from('delivery_settings').select('*').eq('store_id', perfil.id).single(),
+        supabase.from('menu_categories').select('*').eq('store_id', perfil.id).order('position', { ascending: true })
+    ]);
+    extensionData = {
+        deliverySettings: delRes.data,
+        menuCategories: catRes.data
+    };
+  }
+
+  // 3. CARGA DE PRODUCTOS
   const { data: productosBase } = await supabase
     .from('products')
     .select('*')
     .eq('user_id', perfil.id)
     .eq('is_active', true)
-    // .order('created_at', { ascending: false }); // Add back if needed
 
   const productos = (productosBase || []) as any[];
 
@@ -55,12 +88,18 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   const renderTemplate = () => {
     switch (perfil.template_type) {
       case 'restaurante':
-        return <RestauranteTemplate perfil={perfil} productos={productos} />;
+        return (
+          <RestauranteTemplate 
+            perfil={perfil} 
+            productos={productos} 
+            extensionData={extensionData} 
+          />
+        );
       case 'moda':
-        return <ModaTemplate perfil={perfil} productos={productos} />;
+        return <ModaTemplate perfil={perfil} productos={productos} extensionData={extensionData} />;
       case 'comercio':
       default:
-        return <ComercioTemplate perfil={perfil} />;
+        return <ComercioTemplate perfil={perfil} extensionData={extensionData} />;
     }
   }
 

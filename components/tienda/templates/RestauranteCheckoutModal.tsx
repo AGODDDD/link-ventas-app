@@ -115,9 +115,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
      };
      customerStore.addOrder(newOrder);
 
-      // Save to Supabase for vendor dashboard + realtime tracking
+      // Save to Supabase for vendor dashboard + realtime tracking (Double Write Strategy)
       try {
-        // 1. Guardar el pedido
+        // 1. Guardar el pedido en Legacy (Restaurante) - MODO SOMBRA
         const { error: orderError } = await supabase.from('delivery_orders').insert({
           id: orderId,
           store_id: perfil.id,
@@ -136,9 +136,48 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
           metodo_pago: metodoPago,
           estimated_time: '50 - 60 min',
         });
-        if (orderError) console.error('Error guardando pedido:', orderError.message);
+        
+        if (orderError) console.error('⚠️ Error en tabla legacy:', orderError.message);
+
+        // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
+        const { error: coreError } = await supabase.from('orders').insert({
+          id: orderId, // Mismo ID para consistencia
+          store_id: perfil.id,
+          status: newOrder.status,
+          order_type: 'delivery',
+          customer_name: nombre,
+          customer_phone: telefono,
+          customer_email: correo,
+          direccion: direccion,
+          referencia: savedAddress?.referencia || null,
+          lat: savedAddress?.lat || null,
+          lng: savedAddress?.lng || null,
+          delivery_fee: deliveryFee,
+          subtotal: subtotal,
+          total: total,
+          metodo_pago: metodoPago,
+          estimated_time: '50 - 60 min',
+          legacy_id: orderId // Trazabilidad inmediata
+        });
+
+        if (!coreError) {
+          // 3. Guardar items en tabla relacional (NUEVO CORE)
+          const relationalItems = orderItems.map((item: any) => ({
+            order_id: orderId,
+            product_id: item.id.length > 20 ? item.id : null, // Solo si es UUID
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            modifiers: item.modifiers || {}
+          }));
+          const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
+          if (itemsError) console.error('⚠️ Error en order_items core:', itemsError.message);
+        } else {
+          console.error('⚠️ Error en orders core:', coreError.message);
+        }
+
       } catch (e) {
-        console.error('Error crítico en pedido:', e);
+        console.error('❌ Error crítico en persistencia dual:', e);
       }
 
       // 2. Registrar como Lead (INDEPENDIENTE del pedido para que no se pierda)
