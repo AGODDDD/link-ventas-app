@@ -137,14 +137,14 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
          estimated_time: '50 - 60 min',
        });
 
-       // 2. Registrar/Actualizar como Lead automáticamente (Captura de Clientes)
-       await supabase.from('store_leads').upsert({
+       // 2. Registrar como Lead automáticamente (Captura de Clientes)
+       await supabase.from('store_leads').insert({
          store_id: perfil.id,
          name: nombre,
          phone: telefono,
          email: correo,
          preference: 'Delivery Restaurante',
-       }, { onConflict: 'phone, store_id' }); // Si soporta el constraint, genial. Si no, lo insertará normal (según RLS).
+       }); 
        
      } catch (e) {
        console.error('Error saving to Supabase:', e);

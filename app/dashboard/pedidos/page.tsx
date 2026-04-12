@@ -101,7 +101,7 @@ export default function PedidosPage() {
     const fetchLeads = async (userId: string) => {
         setLoadingLeads(true)
         const { data } = await supabase
-            .from('abandoned_carts')
+            .from('store_leads')
             .select('*')
             .eq('store_id', userId)
             .order('created_at', { ascending: false })
@@ -594,32 +594,27 @@ export default function PedidosPage() {
                             leads.map((lead) => (
                                 <div key={lead.id} className="bg-surface-container-high rounded-2xl border-l-[6px] border-l-tertiary border-y border-r border-outline-variant/5 shadow-2xl overflow-hidden flex flex-col md:flex-row">
                                     <div className="p-6 md:w-1/3 flex flex-col justify-center border-b md:border-b-0 md:border-r border-outline-variant/10">
-                                        <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Vuelto fantasma el {new Date(lead.created_at).toLocaleString()}</p>
-                                        <h3 className="font-headline font-black text-2xl text-on-surface uppercase italic tracking-tight">{lead.customer_name}</h3>
-                                        <p className="text-tertiary font-bold mt-1">📞 {lead.customer_phone}</p>
+                                        <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Capturado el {new Date(lead.created_at).toLocaleString()}</p>
+                                        <h3 className="font-headline font-black text-2xl text-on-surface uppercase italic tracking-tight">{lead.name || 'Sin nombre'}</h3>
+                                        <p className="text-tertiary font-bold mt-1">📞 {lead.phone || '-'}</p>
                                     </div>
                                     <div className="p-6 md:w-1/3 flex flex-col justify-center">
-                                       <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">En el carrito ({lead.cart_json.length} items)</p>
-                                       <div className="space-y-2">
-                                         {lead.cart_json.map((item: any, idx: number) => (
-                                             <div key={idx} className="flex gap-2 text-sm">
-                                                <span className="font-black text-on-surface">{item.quantity}x</span>
-                                                <span className="text-on-surface-variant leading-tight truncate">{item.product?.name}</span>
-                                             </div>
-                                         ))}
-                                       </div>
+                                        <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Email / Origen</p>
+                                        <p className="text-sm font-medium text-on-surface truncate">{lead.email || 'Sin correo'}</p>
+                                        <p className="text-[10px] font-bold text-primary mt-1 uppercase">{lead.preference || 'Lead Directo'}</p>
                                     </div>
-                                    <div className="p-6 md:w-1/3 flex flex-col justify-center items-center bg-surface-container">
-                                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Monto Perdido</p>
-                                        <p className="font-headline font-black text-3xl text-on-surface mb-4 italic">
-                                           S/ {lead.cart_json.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0).toFixed(2)}
-                                        </p>
-                                        <button 
-                                            onClick={() => generarRescateWA(lead)}
-                                            className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
-                                        >
-                                           💬 Intentar Rescate
-                                        </button>
+                                    <div className="p-6 md:flex-1 flex flex-col justify-center items-center bg-surface-container">
+                                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Acción Rápida</p>
+                                        <div className="flex gap-2 w-full mt-2">
+                                            <a 
+                                                href={`https://wa.me/${lead.phone.replace(/\s/g, '')}?text=Hola%20${encodeURIComponent(lead.name)},%20te%20escribimos%20de%20nuestra%20tienda`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
+                                            >
+                                               💬 Escribir WhatsApp
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             ))
