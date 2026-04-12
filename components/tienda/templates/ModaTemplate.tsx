@@ -6,9 +6,13 @@ import ClientCatalog from '@/components/tienda/ClientCatalog'
 interface Props {
   perfil: Profile;
   productos: Product[];
+  extensionData?: {
+    deliverySettings?: any;
+    menuCategories?: any[];
+  }
 }
 
-export default function ModaTemplate({ perfil, productos }: Props) {
+export default function ModaTemplate({ perfil, productos, extensionData }: Props) {
   return (
     <main className="min-h-screen bg-background text-on-background font-sans pt-20">
       {/* Editorial Hero */}

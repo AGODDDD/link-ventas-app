@@ -30,6 +30,12 @@ export interface StoreConfig {
   store_lng?: number;
   store_address?: string;
   store_schedule?: any;
+  // FOMO Extensions
+  fomo_enabled?: boolean;
+  fomo_min_viewers?: number;
+  fomo_max_viewers?: number;
+  fomo_message?: string;
+  created_at?: string;
   updated_at: string;
 }
 

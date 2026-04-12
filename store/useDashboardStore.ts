@@ -47,23 +47,27 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 set({
                     storeInfo: {
                         id: profile.id,
+                        owner_id: profile.id,
                         slug: profile.slug || '',
                         name: profile.store_name || '',
                         template_type: profile.template_type || 'comercio',
+                        whatsapp_phone: profile.whatsapp_phone || '', // Movido aquí (Core)
                         avatar_url: profile.avatar_url,
                         banner_url: profile.banner_url,
-                        created_at: profile.created_at
+                        is_active: true,
+                        created_at: profile.created_at,
+                        updated_at: profile.created_at
                     },
                     storeConfig: {
-                        id: profile.id, // ID temporal
                         store_id: profile.id,
                         primary_color: profile.primary_color || '#000000',
                         secondary_color: profile.secondary_color || '#ffffff',
-                        whatsapp_phone: profile.whatsapp_phone || '',
                         fomo_enabled: profile.fomo_enabled || false,
                         fomo_min_viewers: profile.fomo_min_viewers || 3,
                         fomo_max_viewers: profile.fomo_max_viewers || 24,
-                        fomo_message: profile.fomo_message || ''
+                        fomo_message: profile.fomo_message || '',
+                        created_at: profile.created_at,
+                        updated_at: profile.created_at
                     }
                 });
             }

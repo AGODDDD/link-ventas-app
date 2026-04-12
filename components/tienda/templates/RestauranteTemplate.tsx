@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Profile, Product } from '@/types/tienda'
 import { Search, ShoppingCart, User, ClipboardList, MapPin } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'

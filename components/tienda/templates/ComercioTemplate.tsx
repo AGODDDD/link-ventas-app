@@ -5,9 +5,13 @@ import LeadCaptureForm from '@/components/tienda/LeadCaptureForm'
 
 interface Props {
   perfil: Profile;
+  extensionData?: {
+    deliverySettings?: any;
+    menuCategories?: any[];
+  }
 }
 
-export default function ComercioTemplate({ perfil }: Props) {
+export default function ComercioTemplate({ perfil, extensionData }: Props) {
   return (
     <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
       {/* Hero Section Asymmetric Layout */}
