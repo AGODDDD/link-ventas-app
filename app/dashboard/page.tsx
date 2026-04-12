@@ -8,9 +8,20 @@ import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
 
 export default function DashboardPage() {
   const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
+  const customerStore = useCustomerStore()
   const [leadsNuevos, setLeadsNuevos] = useState(0)
   const [userId, setUserId] = useState<string | null>(null)
   const [isFomoModalOpen, setIsFomoModalOpen] = useState(false)
+
+  // Saneamiento: Limpiar pedidos UUID (huérfanos de pruebas de hoy)
+  useEffect(() => {
+    if (customerStore.orders.some(o => o.id.length > 20)) {
+        console.log('🧹 Limpiando pedidos huérfanos (UUIDs)...')
+        const cleanOrders = customerStore.orders.filter(o => o.id.length <= 20)
+        // Usamos set para actualizar (necesitamos acceder al estado interno del store)
+        useCustomerStore.setState({ orders: cleanOrders })
+    }
+  }, [customerStore.orders])
 
   // Estadísticas calculadas reactivamente desde el cerebro Zustand
   const ingresosTotales = useMemo(() => {
