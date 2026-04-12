@@ -47,24 +47,48 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     ordersCargadas: false,
 
     cargarOrders: async (userId: string, force: boolean = false) => {
-        // Misma lógica de supermemoria.
         if (get().ordersCargadas && !force) return;
 
-        const { data, error } = await supabase
-            .from('orders')
-            .select(`
-                *,
-                order_items (
-                    *,
-                    products (name)
-                )
-            `)
-            .eq('merchant_id', userId)
-            .order('created_at', { ascending: false });
+        // Fetch de ambas tablas en paralelo (Simultaneidad Extrema)
+        const [ordersRes, deliveryRes] = await Promise.all([
+            supabase
+                .from('orders')
+                .select(`*, order_items (*, products (name))`)
+                .eq('merchant_id', userId)
+                .order('created_at', { ascending: false }),
+            supabase
+                .from('delivery_orders')
+                .select('*')
+                .eq('store_id', userId)
+                .order('created_at', { ascending: false })
+        ]);
 
-        if (!error && data) {
-            set({ orders: data, ordersCargadas: true });
+        let unifiedOrders: any[] = [];
+
+        // 1. Agregar órdenes estándar
+        if (ordersRes.data) {
+            unifiedOrders = [...ordersRes.data.map(o => ({ ...o, _source: 'standard' }))];
         }
+
+        // 2. Agregar órdenes de delivery normalizadas para el dashboard
+        if (deliveryRes.data) {
+            const normalizedDelivery = deliveryRes.data.map(d => ({
+                id: d.id,
+                created_at: d.created_at,
+                customer_name: d.customer_name,
+                total_amount: d.total.toString(),
+                status: d.status,
+                payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
+                order_items: d.items || [],
+                _source: 'delivery'
+            }));
+            unifiedOrders = [...unifiedOrders, ...normalizedDelivery];
+        }
+
+        // 3. Re-ordenar por fecha de creación descendente
+        unifiedOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        set({ orders: unifiedOrders, ordersCargadas: true });
     },
 
     agregarOrderLocal: (order: any) => {

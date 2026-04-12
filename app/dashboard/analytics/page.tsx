@@ -23,12 +23,32 @@ export default function AnalyticsPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const [ordersRes, leadsRes] = await Promise.all([
+            const [ordersRes, deliveryRes, leadsRes] = await Promise.all([
                 supabase.from('orders').select('*').eq('merchant_id', user.id).order('created_at', { ascending: true }),
+                supabase.from('delivery_orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
                 supabase.from('store_leads').select('*').eq('store_id', user.id)
             ])
 
-            if (ordersRes.data) setOrders(ordersRes.data)
+            let unified: Order[] = []
+            if (ordersRes.data) {
+                unified = [...ordersRes.data]
+            }
+            if (deliveryRes.data) {
+                const normalized = deliveryRes.data.map((d: any) => ({
+                    id: d.id,
+                    created_at: d.created_at,
+                    total_amount: d.total.toString(),
+                    status: d.status,
+                    customer_name: d.customer_name,
+                    payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP'
+                }))
+                unified = [...unified, ...normalized]
+            }
+
+            // Ordenar por fecha para los gráficos
+            unified.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+            setOrders(unified)
             if (leadsRes.data) setLeads(leadsRes.data)
             setLoading(false)
         }
