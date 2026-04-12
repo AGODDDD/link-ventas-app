@@ -115,40 +115,49 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
      };
      customerStore.addOrder(newOrder);
 
-     // Save to Supabase for vendor dashboard + realtime tracking
-     try {
-       // 1. Guardar el pedido
-       await supabase.from('delivery_orders').insert({
-         id: orderId,
-         store_id: perfil.id,
-         status: newOrder.status,
-         customer_name: nombre,
-         customer_phone: telefono,
-         customer_email: correo,
-         direccion,
-         referencia: savedAddress?.referencia || null,
-         lat: savedAddress?.lat || null,
-         lng: savedAddress?.lng || null,
-         items: orderItems,
-         subtotal,
-         delivery_fee: deliveryFee,
-         total,
-         metodo_pago: metodoPago,
-         estimated_time: '50 - 60 min',
-       });
+      // Save to Supabase for vendor dashboard + realtime tracking
+      try {
+        // 1. Guardar el pedido
+        const { error: orderError } = await supabase.from('delivery_orders').insert({
+          id: orderId,
+          store_id: perfil.id,
+          status: newOrder.status,
+          customer_name: nombre,
+          customer_phone: telefono,
+          customer_email: correo,
+          direccion,
+          referencia: savedAddress?.referencia || null,
+          lat: savedAddress?.lat || null,
+          lng: savedAddress?.lng || null,
+          items: orderItems,
+          subtotal,
+          delivery_fee: deliveryFee,
+          total,
+          metodo_pago: metodoPago,
+          estimated_time: '50 - 60 min',
+        });
+        if (orderError) console.error('Error guardando pedido:', orderError.message);
+      } catch (e) {
+        console.error('Error crítico en pedido:', e);
+      }
 
-       // 2. Registrar como Lead automáticamente (Captura de Clientes)
-       await supabase.from('store_leads').insert({
-         store_id: perfil.id,
-         name: nombre,
-         phone: telefono,
-         email: correo,
-         preference: 'Delivery Restaurante',
-       }); 
-       
-     } catch (e) {
-       console.error('Error saving to Supabase:', e);
-     }
+      // 2. Registrar como Lead (INDEPENDIENTE del pedido para que no se pierda)
+      try {
+        const { error: leadError } = await supabase.from('store_leads').insert({
+          store_id: perfil.id,
+          name: nombre,
+          phone: telefono || null,
+          email: correo || null,
+          preference: 'Delivery Restaurante',
+        });
+        if (leadError) {
+          console.error('Error guardando lead:', leadError.message, leadError.details, leadError.hint);
+        } else {
+          console.log('✅ Lead capturado correctamente:', nombre);
+        }
+      } catch (e) {
+        console.error('Error crítico en lead:', e);
+      }
      if (metodoPago === 'whatsapp') {
         let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A`
         text += `*ID:* ${orderId}%0A%0A`
