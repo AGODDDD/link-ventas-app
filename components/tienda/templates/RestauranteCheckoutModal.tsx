@@ -236,6 +236,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         text += `%0A*TOTAL FINAL: S/ ${total.toFixed(2)}*%0A%0A`
         
         window.open(`https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`, '_blank')
+        
+        // Limpiar el carrito y cerrar el modal después de procesar el pedido
+        cartStore.clearCart(perfil.id)
+        handleClose()
      } else {
         alert("Pasarela Online (Niubiz) programada para conectarse en la Fase 2.");
      }
