@@ -44,8 +44,8 @@ export default function DashboardTopBar() {
     useEffect(() => {
         if (!userId) return
 
-        let channelOrders: ReturnType<typeof supabase.channel>
-        let channelDelivery: ReturnType<typeof supabase.channel>
+        let channelOrders: any
+        let channelDelivery: any
 
         const setupRealtime = async () => {
             // Obtener ID correcto de la tienda
