@@ -136,10 +136,12 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             const orderPayload = {
                 id: orderId,
                 merchant_id: perfil.id,
+                store_id: perfil.id, // Agregado para sincronización en tiempo real
                 customer_name: nombre,
                 customer_phone: telefono,
                 customer_address: direccion,
                 total_amount: total,
+                total: total, // Para el nuevo esquema unificado
                 status: metodoPago === 'contra_entrega' ? 'pending' : 'paid', 
             }
             
@@ -345,8 +347,8 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         type="radio" 
                                         name="metodopago" 
                                         value="transferencia" 
-                                        checked={metodoPago === 'transferencia'}
                                         onChange={() => setMetodoPago('transferencia')}
+                                        checked={metodoPago === 'transferencia'}
                                         className="absolute opacity-0" 
                                     />
                                     <QrCode size={24} className={metodoPago === 'transferencia' ? 'text-primary' : 'text-on-surface-variant'} />

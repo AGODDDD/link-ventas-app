@@ -79,6 +79,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
          });
        }
        return {
+         id: item.product.id,
          name: item.product.name,
          quantity: item.quantity,
          unitPrice: item.product.price + modPrice,
@@ -164,11 +165,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
           // 3. Guardar items en tabla relacional (NUEVO CORE)
           const relationalItems = orderItems.map((item: any) => ({
             order_id: orderId,
-            product_id: item.id.length > 20 ? item.id : null, // Solo si es UUID
+            product_id: item.id && item.id.length > 20 ? item.id : null, // Ahora sí tiene ID
             name: item.name,
-            price: item.price,
+            price: item.unitPrice, // Cambiado de .price (undefined) a .unitPrice
             quantity: item.quantity,
-            modifiers: item.modifiers || {}
+            modifiers: item.options || {}
           }));
           const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
           if (itemsError) console.error('⚠️ Error en order_items core:', itemsError.message);

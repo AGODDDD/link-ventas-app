@@ -40,12 +40,19 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
   useEffect(() => {
     async function loadProduct() {
       const { data: { user } } = await supabase.auth.getUser()
-      let currentTemplateType = 'comercio'
       if (user) {
-        const { data: profile } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
-        if (profile?.template_type) {
-          currentTemplateType = profile.template_type
-          setTemplateType(profile.template_type)
+        // 1. Intentar cargar desde el Core (stores) prioritize identification
+        const { data: store } = await supabase.from('stores').select('template_type').eq('id', user.id).single()
+        if (store?.template_type) {
+          currentTemplateType = store.template_type
+          setTemplateType(store.template_type)
+        } else {
+          // 2. Fallback a Profiles (Legacy)
+          const { data: profile } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
+          if (profile?.template_type) {
+            currentTemplateType = profile.template_type
+            setTemplateType(profile.template_type)
+          }
         }
       }
 
@@ -147,6 +154,9 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
         variants = modifiers
       }
 
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuario no autenticado')
+
       const { error: dbError } = await supabase
         .from('products')
         .update({
@@ -162,7 +172,9 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           shipping_today: shippingToday,
           variants: templateType === 'moda' ? variants : (templateType === 'restaurante' ? variants : []),
           preparation_time: preparationTime || null,
-          is_available: isAvailable
+          is_available: isAvailable,
+          store_id: user.id, // Self-healing: asegurar link al Core
+          user_id: user.id   // Mantener compatibilidad Legacy
         })
         .eq('id', params.id)
 

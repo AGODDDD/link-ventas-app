@@ -67,9 +67,14 @@ export default function PedidosPage() {
                     'postgres_changes',
                     { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${user.id}` },
                     (payload) => { 
+                        console.log('🔔 NUEVA ORDEN DETECTADA:', payload.new)
                         const norm = normalizarOrder(payload.new, 'core')
                         agregarOrderLocal(norm)
                         // Trigger de sonido o notificación si prefieres
+                        toast.success(`¡Nuevo pedido de ${norm.customer_name}! 🚀`, { 
+                            description: `Por S/ ${parseFloat(norm.total_amount).toFixed(2)}`,
+                            icon: '📦' 
+                        })
                     }
                 )
                 .on(

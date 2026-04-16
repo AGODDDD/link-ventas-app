@@ -158,7 +158,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }
 
         // 3. Agregar órdenes del NUEVO CORE (Unificadas)
-        if (unifiedRes.data) {
             const coreOrders = unifiedRes.data.map(o => ({
                 id: o.id,
                 created_at: o.created_at,
@@ -166,7 +165,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 customer_phone: o.customer_phone || '-',
                 direccion: o.direccion || 'Sin dirección',
                 referencia: o.referencia || '',
-                total_amount: o.total ? o.total.toString() : '0',
+                total_amount: (o.total || o.total_amount || 0).toString(),
                 status: o.status,
                 payment_proof_url: 'NUEVO_CORE',
                 order_items: o.order_items || [],
@@ -219,11 +218,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 created_at: raw.created_at,
                 customer_name: raw.customer_name || 'Sin nombre',
                 customer_phone: raw.customer_phone || '-',
-                direccion: raw.direccion || 'Sin dirección',
+                direccion: raw.direccion || raw.customer_address || 'Sin dirección',
                 referencia: raw.referencia || '',
-                total_amount: raw.total ? raw.total.toString() : '0',
+                total_amount: (raw.total || raw.total_amount || 0).toString(),
                 status: raw.status,
-                payment_proof_url: 'NUEVO_CORE',
+                payment_proof_url: raw.payment_proof_url || 'NUEVO_CORE',
                 order_items: raw.order_items || [],
                 _source: 'core'
             }

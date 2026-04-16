@@ -23,26 +23,67 @@ export default function AnalyticsPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const [ordersRes, deliveryRes, leadsRes] = await Promise.all([
+            const [ordersRes, deliveryRes, coreRes, leadsRes] = await Promise.all([
+                // Legacy Standard
                 supabase.from('orders').select('*').eq('merchant_id', user.id).order('created_at', { ascending: true }),
+                // Legacy Delivery
                 supabase.from('delivery_orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
+                // New Core (Unified)
+                supabase.from('orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
+                // Leads
                 supabase.from('store_leads').select('*').eq('store_id', user.id)
             ])
 
             let unified: Order[] = []
-            if (ordersRes.data) {
-                unified = [...ordersRes.data]
+            const coreLegacyIds = new Set<string>()
+
+            // 1. New Core - Prioridad (Unified)
+            if (coreRes.data) {
+                coreRes.data.forEach((o: any) => {
+                    if (o.legacy_id) coreLegacyIds.add(o.legacy_id)
+                    unified.push({
+                        id: o.id,
+                        created_at: o.created_at,
+                        total_amount: o.total?.toString() || '0',
+                        status: o.status,
+                        customer_name: o.customer_name || 'Sin nombre',
+                        payment_proof_url: 'NUEVO_CORE'
+                    })
+                })
             }
+
+            // 2. Legacy Delivery (Deduplicar contra Core)
             if (deliveryRes.data) {
-                const normalized = deliveryRes.data.map((d: any) => ({
-                    id: d.id,
-                    created_at: d.created_at,
-                    total_amount: d.total.toString(),
-                    status: d.status,
-                    customer_name: d.customer_name,
-                    payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP'
-                }))
-                unified = [...unified, ...normalized]
+                deliveryRes.data.forEach((d: any) => {
+                    // Si ya existe en el Core vía legacy_id, no lo duplicamos en Analytics
+                    if (coreLegacyIds.has(d.id)) return 
+
+                    unified.push({
+                        id: d.id,
+                        created_at: d.created_at,
+                        total_amount: d.total?.toString() || '0',
+                        status: d.status,
+                        customer_name: d.customer_name || 'Sin nombre',
+                        payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP'
+                    })
+                })
+            }
+
+            // 3. Legacy Standard (Otros pedidos viejos no-delivery)
+            if (ordersRes.data) {
+                ordersRes.data.forEach((o: any) => {
+                    // Evitar duplicar si por error tuviera store_id
+                    if (o.store_id) return 
+                    
+                    unified.push({
+                        id: o.id,
+                        created_at: o.created_at,
+                        total_amount: o.total_amount?.toString() || '0',
+                        status: o.status,
+                        customer_name: o.customer_name || 'Sin nombre',
+                        payment_proof_url: o.payment_proof_url || ''
+                    })
+                })
             }
 
             // Ordenar por fecha para los gráficos
