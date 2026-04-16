@@ -114,7 +114,7 @@ export default function DashboardTopBar() {
 
                         // 3. Sonido de notificación (si el navegador lo permite)
                         try {
-                            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhxAYAAH1+/QADACMA2/+6/8//9//q/9P/yP/h/yYAZv+O/xcAuQASACsAqP/x/9H/wv/A/9v/wP+Z/0//NP8XAPMAuACyAMIAvQCT/3T/R/8u/xT//P4B/4v/b/+H/2f/UP+D/7v/4P8PABkAGQArACwAKQAuAC4A0P88/7z/z/8RAB4AKQAuAC0AKAAlACkALwAdABcAEADT/0H/sf+4/zAA1v8sABIAHQAqACkAJQAhACAALAAsAC4AHgAIAPL/G//h/6b/kf9x/2D/YP+I...) 
+                            const audio = new Audio('/notification.mp3') 
                             audio.play().catch(() => {}) // silent fail si no hay permiso
                         } catch (_) {}
 
