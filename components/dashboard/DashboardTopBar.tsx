@@ -44,86 +44,97 @@ export default function DashboardTopBar() {
     useEffect(() => {
         if (!userId) return
 
-        // ── Canal 1: órdenes clásicas (tabla orders) ──
-        const channelOrders = supabase.channel('realtime_orders')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'orders',
-                    filter: `merchant_id=eq.${userId}`
-                },
-                (payload) => {
-                    const nuevaOrden = payload.new
-                    toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount}`, {
-                        description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
-                        duration: 8000,
-                        icon: <ShoppingBag className="text-secondary" />
-                    })
-                    const nuevaNotif: Notificacion = {
-                        id: nuevaOrden.id,
-                        mensaje: `Compra de ${nuevaOrden.customer_name}`,
-                        monto: nuevaOrden.total_amount,
-                        fecha: new Date(),
-                        leida: false
-                    }
-                    setNotificaciones(prev => [nuevaNotif, ...prev])
-                    useDashboardStore.getState().cargarOrders(userId, true)
-                }
-            )
-            .subscribe()
+        let channelOrders: ReturnType<typeof supabase.channel>
+        let channelDelivery: ReturnType<typeof supabase.channel>
 
-        // ── Canal 2: pedidos delivery (tabla delivery_orders) ──
-        const channelDelivery = supabase.channel('realtime_delivery_orders')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'delivery_orders',
-                    filter: `store_id=eq.${userId}`
-                },
-                (payload) => {
-                    const pedido = payload.new
+        const setupRealtime = async () => {
+            // Obtener ID correcto de la tienda
+            const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', userId).single()
+            const targetId = storeData?.id || userId;
 
-                    // 1. Toast de alerta
-                    toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
-                        description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)} — ${pedido.direccion || ''}`,
-                        duration: 10000,
-                        icon: <ShoppingBag className="text-green-500" />
-                    })
-
-                    // 2. Guardar en bandeja de campana
-                    const nuevaNotif: Notificacion = {
-                        id: pedido.id,
-                        mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id}`,
-                        monto: parseFloat(pedido.total || 0),
-                        fecha: new Date(),
-                        leida: false
-                    }
-                    setNotificaciones(prev => [nuevaNotif, ...prev])
-
-                    // 3. Sonido de notificación (si el navegador lo permite)
-                    try {
-                        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAA...') 
-                        audio.play().catch(() => {}) // silent fail si no hay permiso
-                    } catch (_) {}
-
-                    // 4. Notificación del navegador (si tiene permisos)
-                    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                        new Notification('🛵 Nuevo Pedido Delivery', {
-                            body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
-                            icon: '/favicon.ico',
+            // ── Canal 1: órdenes clásicas y nuevas (tabla orders) ──
+            channelOrders = supabase.channel('realtime_orders')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'orders',
+                        filter: `store_id=eq.${targetId}`
+                    },
+                    (payload) => {
+                        const nuevaOrden = payload.new
+                        toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
+                            description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
+                            duration: 8000,
+                            icon: <ShoppingBag className="text-secondary" />
                         })
+                        const nuevaNotif: Notificacion = {
+                            id: nuevaOrden.id,
+                            mensaje: `Compra de ${nuevaOrden.customer_name}`,
+                            monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
+                            fecha: new Date(),
+                            leida: false
+                        }
+                        setNotificaciones(prev => [nuevaNotif, ...prev])
+                        useDashboardStore.getState().cargarOrders(userId, true)
                     }
-                }
-            )
-            .subscribe()
+                )
+                .subscribe()
+
+            // ── Canal 2: pedidos delivery (tabla delivery_orders) ──
+            channelDelivery = supabase.channel('realtime_delivery_orders')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'delivery_orders',
+                        filter: `store_id=eq.${userId}` // Legacy siempre usó userId
+                    },
+                    (payload) => {
+                        const pedido = payload.new
+
+                        // 1. Toast de alerta
+                        toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
+                            description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)} — ${pedido.direccion || ''}`,
+                            duration: 10000,
+                            icon: <ShoppingBag className="text-green-500" />
+                        })
+
+                        // 2. Guardar en bandeja de campana
+                        const nuevaNotif: Notificacion = {
+                            id: pedido.id,
+                            mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id.substring(0,6)}`,
+                            monto: parseFloat(pedido.total || 0),
+                            fecha: new Date(),
+                            leida: false
+                        }
+                        setNotificaciones(prev => [nuevaNotif, ...prev])
+
+                        // 3. Sonido de notificación (si el navegador lo permite)
+                        try {
+                            const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhxAYAAH1+/QADACMA2/+6/8//9//q/9P/yP/h/yYAZv+O/xcAuQASACsAqP/x/9H/wv/A/9v/wP+Z/0//NP8XAPMAuACyAMIAvQCT/3T/R/8u/xT//P4B/4v/b/+H/2f/UP+D/7v/4P8PABkAGQArACwAKQAuAC4A0P88/7z/z/8RAB4AKQAuAC0AKAAlACkALwAdABcAEADT/0H/sf+4/zAA1v8sABIAHQAqACkAJQAhACAALAAsAC4AHgAIAPL/G//h/6b/kf9x/2D/YP+I...) 
+                            audio.play().catch(() => {}) // silent fail si no hay permiso
+                        } catch (_) {}
+
+                        // 4. Notificación del navegador
+                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                            new Notification('🛵 Nuevo Pedido Delivery', {
+                                body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
+                                icon: '/favicon.ico',
+                            })
+                        }
+                    }
+                )
+                .subscribe()
+        }
+
+        setupRealtime();
 
         return () => {
-             supabase.removeChannel(channelOrders)
-             supabase.removeChannel(channelDelivery)
+             if (channelOrders) supabase.removeChannel(channelOrders)
+             if (channelDelivery) supabase.removeChannel(channelDelivery)
         }
     }, [userId])
 

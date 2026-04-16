@@ -62,8 +62,9 @@ export default function PedidosPage() {
             // ── Realtime: Sincronización instantánea de la central ──
             const { agregarOrderLocal, normalizarOrder, actualizarEstadoOrderLocal, storeInfo } = useDashboardStore.getState()
             
-            // IMPORTANTE: Filtrar por id de TIENDA (UUID) para el nuevo core, fallback a ID de usuario para legacy
-            const targetId = storeInfo?.id || user.id;
+            // Resolvemos el ID real de la tienda (Nuevo Core)
+            const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
+            const targetId = storeData?.id || user.id;
             console.log('📡 SUSCRIBIENDO A REALTIME. Filtro store_id:', targetId)
 
             const channel = supabase.channel('dashboard_pedidos_unified')

@@ -189,6 +189,12 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             const cartIdToClear = perfil?.id || storeId;
             console.log('🧹 Limpiando carrito para ID:', cartIdToClear)
             cartStore.clearCart(cartIdToClear)
+            if (storeId !== cartIdToClear) {
+                cartStore.clearCart(storeId) // En caso estuviera indexado por slug
+            }
+            if ((perfil as any)?.slug) {
+                cartStore.clearCart((perfil as any).slug)
+            }
             setOrderSuccessId(orderId)
 
         } catch (error: any) {

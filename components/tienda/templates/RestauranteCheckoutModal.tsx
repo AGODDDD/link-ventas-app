@@ -237,8 +237,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         
         window.open(`https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`, '_blank')
         
-        // Limpiar el carrito y cerrar el modal después de procesar el pedido
+        // Limpiar el carrito en todas sus indexaciones posibles (UUID y Slug) para evitar el problema de "carrito persistente"
         cartStore.clearCart(perfil.id)
+        if ((perfil as any).slug) {
+            cartStore.clearCart((perfil as any).slug)
+        }
         handleClose()
      } else {
         alert("Pasarela Online (Niubiz) programada para conectarse en la Fase 2.");
