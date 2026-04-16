@@ -186,7 +186,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             }
 
             // 4. Limpiar y Redirigir Pantalla
-            cartStore.clearCart(storeId)
+            const cartIdToClear = perfil?.id || storeId;
+            console.log('🧹 Limpiando carrito para ID:', cartIdToClear)
+            cartStore.clearCart(cartIdToClear)
             setOrderSuccessId(orderId)
 
         } catch (error: any) {

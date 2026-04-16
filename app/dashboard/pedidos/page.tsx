@@ -60,12 +60,16 @@ export default function PedidosPage() {
             }
 
             // ── Realtime: Sincronización instantánea de la central ──
-            const { agregarOrderLocal, normalizarOrder, actualizarEstadoOrderLocal } = useDashboardStore.getState()
+            const { agregarOrderLocal, normalizarOrder, actualizarEstadoOrderLocal, storeInfo } = useDashboardStore.getState()
             
+            // IMPORTANTE: Filtrar por id de TIENDA (UUID) para el nuevo core, fallback a ID de usuario para legacy
+            const targetId = storeInfo?.id || user.id;
+            console.log('📡 SUSCRIBIENDO A REALTIME. Filtro store_id:', targetId)
+
             const channel = supabase.channel('dashboard_pedidos_unified')
                 .on(
                     'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${user.id}` },
+                    { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
                     (payload) => { 
                         console.log('🔔 NUEVA ORDEN DETECTADA:', payload.new)
                         const norm = normalizarOrder(payload.new, 'core')
