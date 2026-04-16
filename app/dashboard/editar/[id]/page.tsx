@@ -181,7 +181,6 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
       if (dbError) throw dbError
 
       // Invalidar caché de productos
-      const { data: { user } } = await supabase.auth.getUser()
       if (user) await useDashboardStore.getState().cargarProductos(user.id, true)
 
       toast.success('Cambios guardados exitosamente')
