@@ -70,37 +70,41 @@ export default function PedidosPage() {
             const channel = supabase.channel('dashboard_pedidos_unified')
                 .on(
                     'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
+                    { event: 'INSERT', schema: 'public', table: 'orders' },
                     (payload) => { 
-                        console.log('🔔 NUEVA ORDEN DETECTADA:', payload.new)
+                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
+                        console.log('🔔 NUEVA ORDEN DETECTADA (orders):', payload.new)
                         const norm = normalizarOrder(payload.new, 'core')
                         agregarOrderLocal(norm)
-                        // Trigger de sonido o notificación si prefieres
                         toast.success(`¡Nuevo pedido de ${norm.customer_name}! 🚀`, { 
-                            description: `Por S/ ${parseFloat(norm.total_amount).toFixed(2)}`,
+                            description: `Por S/ ${parseFloat(norm.total_amount || norm.total || 0).toFixed(2)}`,
                             icon: '📦' 
                         })
                     }
                 )
                 .on(
                     'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${user.id}` },
+                    { event: 'INSERT', schema: 'public', table: 'delivery_orders' },
                     (payload) => { 
+                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
+                        console.log('🔔 NUEVA ORDEN DETECTADA (delivery):', payload.new)
                         const norm = normalizarOrder(payload.new, 'legacy_delivery')
                         agregarOrderLocal(norm)
                     }
                 )
                 .on(
                     'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${user.id}` },
+                    { event: 'UPDATE', schema: 'public', table: 'orders' },
                     (payload) => { 
+                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
                         actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
                     }
                 )
                 .on(
                     'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${user.id}` },
+                    { event: 'UPDATE', schema: 'public', table: 'delivery_orders' },
                     (payload) => { 
+                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
                         actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
                     }
                 )
