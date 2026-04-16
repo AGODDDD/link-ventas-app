@@ -39,6 +39,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
 
   useEffect(() => {
     async function loadProduct() {
+      let currentTemplateType = 'comercio'
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         // 1. Intentar cargar desde el Core (stores) prioritize identification
