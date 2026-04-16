@@ -158,6 +158,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }
 
         // 3. Agregar órdenes del NUEVO CORE (Unificadas)
+        if (unifiedRes.data) {
             const coreOrders = unifiedRes.data.map(o => ({
                 id: o.id,
                 created_at: o.created_at,
