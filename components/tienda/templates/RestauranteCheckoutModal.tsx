@@ -237,29 +237,22 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         text += `%0A*TOTAL FINAL: S/ ${total.toFixed(2)}*%0A%0A`
         
         // Industry Standard Hack para Safari/iOS + Deep Links (WhatsApp)
-        // 1. Abrimos una ventana en blanco sincronamente ANTES para que Safari no lo bloquee por "PopUp Blocker"
-        const newWindow = window.open('', '_blank')
-        
         // 2. Ejecutamos la limpieza intensiva del estado Zustand (y forzamos variables globales)
         useCartStore.getState().clearCart(perfil.id)
         if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug)
         const possibleUrlSlug = window.location.pathname.split('/').pop()
         if (possibleUrlSlug) useCartStore.getState().clearCart(possibleUrlSlug)
         
-        // 3. Cerramos el checkout en la ventana actual y disparamos onSuccess si existe
+        // 3. Cerramos el checkout y abrimos historial en la ventana base
         if (onSuccess) {
             onSuccess();
         } else {
             handleClose();
         }
 
-        // 4. Redirigimos la ventana en blanco a WhatsApp. Si falló (Ej. Android WebView WebView), redirigimos la ventana actual
+        // 4. Redirigimos clásicamente a WhatsApp en una NUEVA pestaña
         const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`
-        if (newWindow) {
-            newWindow.location.href = waUrl
-        } else {
-            window.location.href = waUrl
-        }
+        window.open(waUrl, '_blank')
      } else {
         alert("Pasarela Online (Niubiz) programada para conectarse en la Fase 2.");
      }
