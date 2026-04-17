@@ -102,20 +102,23 @@ export default function DashboardTopBar() {
             const handleUpdateOrders = (payload: any) => useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
 
             // Multi-Listen por canal para Bypass de Bloqueo de Servidor (RLS/Filtro Restrictivo)
-            channelOrders = supabase.channel('realtime_dashboard_topbar')
+            // IMPORTANTE: Se añade un timestamp para evitar colisiones de Strict Mode en React 18
+            const uniqueChannelName = `topbar_realtime_${userId}_${Date.now()}`
+            channelOrders = supabase.channel(uniqueChannelName)
                 // 1. Escuchar Core UUIDs
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` }, handleNuevaOrdenCore)
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${targetId}` }, handleNuevaOrdenDelivery)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` }, handleUpdateOrders)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${targetId}` }, handleUpdateOrders)
-                
-                // 2. Escuchar Legacy Owner IDs (En caso targetId != userId)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenCore)
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenDelivery)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
-                
-                .subscribe()
+
+            if (targetId !== userId) {
+                channelOrders
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenCore)
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenDelivery)
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
+            }
+            channelOrders.subscribe()
         }
 
         setupRealtime();
