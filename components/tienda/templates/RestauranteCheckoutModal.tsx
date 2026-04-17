@@ -235,14 +235,17 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         text += `%0A*- Delivery:* S/ ${deliveryFee.toFixed(2)}`
         text += `%0A*TOTAL FINAL: S/ ${total.toFixed(2)}*%0A%0A`
         
-        window.open(`https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`, '_blank')
-        
-        // Limpiar el carrito en todas sus indexaciones posibles (UUID y Slug) para evitar el problema de "carrito persistente"
+        // Limpiar el carrito ANTES de abrir WhatsApp
+        // Esto garantiza que Zustand persista en localStorage antes de que iOS/Android congele el tab
         cartStore.clearCart(perfil.id)
         if ((perfil as any).slug) {
             cartStore.clearCart((perfil as any).slug)
         }
+        
         handleClose()
+
+        // El redirect ocurre al final, así el tab ya quedó limpio
+        window.open(`https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`, '_blank')
      } else {
         alert("Pasarela Online (Niubiz) programada para conectarse en la Fase 2.");
      }
