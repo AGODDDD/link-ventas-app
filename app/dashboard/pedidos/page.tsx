@@ -393,10 +393,42 @@ export default function PedidosPage() {
                                                             <Ban size={18} />
                                                         </button>
                                                     </div>
-                                                ) : (
-                                                    <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
-                                                        ✅ Entregado
+                                                    
+                                                    {/* BOTON IMPRIMIR TICKET */}
+                                                    <button
+                                                        onClick={() => generarTicketTermico(order)}
+                                                        disabled={imprimiendoId === order.id}
+                                                        className={`w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                    >
+                                                        {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
+                                                    </button>
+                                                    <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
+                                                        <ThermalReceipt
+                                                            ref={el => { receiptRefs.current[order.id] = el }}
+                                                            order={order}
+                                                            storeName={perfil?.store_name || "TU TIENDA"}
+                                                        />
                                                     </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
+                                                            ✅ Entregado
+                                                        </div>
+                                                        <button
+                                                            onClick={() => generarTicketTermico(order)}
+                                                            disabled={imprimiendoId === order.id}
+                                                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                        >
+                                                            {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
+                                                        </button>
+                                                        <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
+                                                            <ThermalReceipt
+                                                                ref={el => { receiptRefs.current[order.id] = el }}
+                                                                order={order}
+                                                                storeName={perfil?.store_name || "TU TIENDA"}
+                                                            />
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
                                         </div>
