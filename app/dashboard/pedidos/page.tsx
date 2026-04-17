@@ -59,58 +59,8 @@ export default function PedidosPage() {
                 Notification.requestPermission()
             }
 
-            // ── Realtime: Sincronización instantánea de la central ──
-            const { agregarOrderLocal, normalizarOrder, actualizarEstadoOrderLocal, storeInfo } = useDashboardStore.getState()
-            
-            // Resolvemos el ID real de la tienda (Nuevo Core)
-            const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
-            const targetId = storeData?.id || user.id;
-            console.log('📡 SUSCRIBIENDO A REALTIME. Filtro store_id:', targetId)
-
-            const channel = supabase.channel('dashboard_pedidos_unified')
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
-                        console.log('🔔 NUEVA ORDEN DETECTADA (orders):', payload.new)
-                        const norm = normalizarOrder(payload.new, 'core')
-                        agregarOrderLocal(norm)
-                        toast.success(`¡Nuevo pedido de ${norm.customer_name}! 🚀`, { 
-                            description: `Por S/ ${parseFloat(norm.total_amount || norm.total || 0).toFixed(2)}`,
-                            icon: '📦' 
-                        })
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'delivery_orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
-                        console.log('🔔 NUEVA ORDEN DETECTADA (delivery):', payload.new)
-                        const norm = normalizarOrder(payload.new, 'legacy_delivery')
-                        agregarOrderLocal(norm)
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
-                        actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'delivery_orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== user.id && payload.new.merchant_id !== user.id) return;
-                        actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
-                    }
-                )
-                .subscribe()
-
-            return () => { supabase.removeChannel(channel) }
+            // El Realtime ahora está controlado de forma unificada 100% por DashboardTopBar.tsx 
+            // Esto elimina la condición de carrera y los "memory leaks" de componentes montados/desmontados.
         }
         init()
     }, [cargarOrders])

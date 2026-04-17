@@ -48,99 +48,73 @@ export default function DashboardTopBar() {
         let channelDelivery: any
 
         const setupRealtime = async () => {
-            // Obtener ID correcto de la tienda
             const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', userId).single()
             const targetId = storeData?.id || userId;
 
-            // Único canal universal para órdenes para evitar colisiones
+            const handleNuevaOrdenCore = (payload: any) => {
+                const nuevaOrden = payload.new
+                toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
+                    description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
+                    duration: 8000,
+                    icon: <ShoppingBag className="text-secondary" />
+                })
+                setNotificaciones(prev => [{
+                    id: nuevaOrden.id,
+                    mensaje: `Compra de ${nuevaOrden.customer_name}`,
+                    monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
+                    fecha: new Date(),
+                    leida: false
+                }, ...prev])
+                // Inyectar estado sin consulta a BD para evitar race conditions
+                const store = useDashboardStore.getState()
+                const norm = store.normalizarOrder(nuevaOrden, 'core')
+                store.agregarOrderLocal(norm)
+            }
+
+            const handleNuevaOrdenDelivery = (payload: any) => {
+                const pedido = payload.new
+                toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
+                    description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
+                    duration: 10000,
+                    icon: <ShoppingBag className="text-green-500" />
+                })
+                setNotificaciones(prev => [{
+                    id: pedido.id,
+                    mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id.substring(0,6)}`,
+                    monto: parseFloat(pedido.total || 0),
+                    fecha: new Date(),
+                    leida: false
+                }, ...prev])
+                // Inyectar estado local
+                const store = useDashboardStore.getState()
+                const norm = store.normalizarOrder(pedido, 'legacy_delivery')
+                store.agregarOrderLocal(norm)
+                // Audio y Push
+                try {
+                    const audio = new Audio('/notification.mp3') 
+                    audio.play().catch(() => {}) 
+                } catch (_) {}
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                    new Notification('🛵 Nuevo Pedido Delivery', { body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`, icon: '/favicon.ico' })
+                }
+            }
+
+            const handleUpdateOrders = (payload: any) => useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
+
+            // Multi-Listen por canal para Bypass de Bloqueo de Servidor (RLS/Filtro Restrictivo)
             channelOrders = supabase.channel('realtime_dashboard_topbar')
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'orders' },
-                    (payload) => {
-                        const nuevaOrden = payload.new
-                        if (nuevaOrden.store_id !== targetId && nuevaOrden.store_id !== userId && nuevaOrden.merchant_id !== userId) return;
-
-                        toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
-                            description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
-                            duration: 8000,
-                            icon: <ShoppingBag className="text-secondary" />
-                        })
-                        
-                        const nuevaNotif: Notificacion = {
-                            id: nuevaOrden.id,
-                            mensaje: `Compra de ${nuevaOrden.customer_name}`,
-                            monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
-                            fecha: new Date(),
-                            leida: false
-                        }
-                        setNotificaciones(prev => [nuevaNotif, ...prev])
-                        
-                        // Inyectar estado sin consulta a BD para evitar race conditions
-                        const store = useDashboardStore.getState()
-                        const norm = store.normalizarOrder(nuevaOrden, 'core')
-                        store.agregarOrderLocal(norm)
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'delivery_orders' },
-                    (payload) => {
-                        const pedido = payload.new
-                        if (pedido.store_id !== targetId && pedido.store_id !== userId && pedido.merchant_id !== userId) return;
-
-                        // 1. Toast de alerta
-                        toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
-                            description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)} — ${pedido.direccion || ''}`,
-                            duration: 10000,
-                            icon: <ShoppingBag className="text-green-500" />
-                        })
-
-                        // 2. Guardar en bandeja de campana
-                        const nuevaNotif: Notificacion = {
-                            id: pedido.id,
-                            mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id.substring(0,6)}`,
-                            monto: parseFloat(pedido.total || 0),
-                            fecha: new Date(),
-                            leida: false
-                        }
-                        setNotificaciones(prev => [nuevaNotif, ...prev])
-
-                        // 3. Inyectar estado a nivel global sin Race Condition
-                        const store = useDashboardStore.getState()
-                        const norm = store.normalizarOrder(pedido, 'legacy_delivery')
-                        store.agregarOrderLocal(norm)
-
-                        // 4. Sonido y Push
-                        try {
-                            const audio = new Audio('/notification.mp3') 
-                            audio.play().catch(() => {}) 
-                        } catch (_) {}
-
-                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                            new Notification('🛵 Nuevo Pedido Delivery', {
-                                body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
-                                icon: '/favicon.ico',
-                            })
-                        }
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== userId && payload.new.merchant_id !== userId) return;
-                        useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'delivery_orders' },
-                    (payload) => { 
-                        if (payload.new.store_id !== targetId && payload.new.store_id !== userId && payload.new.merchant_id !== userId) return;
-                        useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
-                    }
-                )
+                // 1. Escuchar Core UUIDs
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` }, handleNuevaOrdenCore)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${targetId}` }, handleNuevaOrdenDelivery)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` }, handleUpdateOrders)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${targetId}` }, handleUpdateOrders)
+                
+                // 2. Escuchar Legacy Owner IDs (En caso targetId != userId)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenCore)
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleNuevaOrdenDelivery)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, handleUpdateOrders)
+                
                 .subscribe()
         }
 
