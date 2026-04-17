@@ -475,6 +475,10 @@ export default function RestauranteTemplate({ perfil, productos, extensionData }
         <RestauranteCheckoutModal
            isOpen={isCheckoutOpen}
            onClose={() => setIsCheckoutOpen(false)}
+           onSuccess={() => {
+              setIsCheckoutOpen(false);
+              setIsOrderHistoryOpen(true);
+           }}
            perfil={perfil}
            savedAddress={savedAddress}
            profileData={{ nombre: profileName, telefono: profilePhone, correo: profileEmail }}

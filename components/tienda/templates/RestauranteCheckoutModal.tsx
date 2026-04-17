@@ -12,13 +12,14 @@ import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   perfil: Profile;
   savedAddress?: { direccion: string; referencia: string; lat: number; lng: number } | null;
   profileData?: { nombre: string; telefono: string; correo: string };
   onProfileUpdate?: (data: { nombre: string; telefono: string; correo: string }) => void;
 }
 
-export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, savedAddress, profileData, onProfileUpdate }: Props) {
+export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, perfil, savedAddress, profileData, onProfileUpdate }: Props) {
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
   
@@ -245,8 +246,12 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, perfil, save
         const possibleUrlSlug = window.location.pathname.split('/').pop()
         if (possibleUrlSlug) useCartStore.getState().clearCart(possibleUrlSlug)
         
-        // 3. Cerramos el checkout en la ventana actual
-        handleClose()
+        // 3. Cerramos el checkout en la ventana actual y disparamos onSuccess si existe
+        if (onSuccess) {
+            onSuccess();
+        } else {
+            handleClose();
+        }
 
         // 4. Redirigimos la ventana en blanco a WhatsApp. Si falló (Ej. Android WebView WebView), redirigimos la ventana actual
         const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`

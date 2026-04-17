@@ -159,10 +159,15 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                   >
                     {/* Top row */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] text-[#666]">
-                        {isCancelado ? '❌ Cancelado' : isPendPago ? '⏳ Pendiente de pago' : 'Pedido en curso'}
-                      </span>
-                      <span className="text-[13px] font-mono font-bold text-[#222]">{order.id}</span>
+                       <span className="text-[12px] text-[#666]">
+                         {isCancelado ? '❌ Cancelado' : isPendPago ? '⏳ Pendiente de pago' : 'Pedido en curso'}
+                       </span>
+                       <div className="flex gap-2 items-center">
+                           <span className="text-[11px] bg-neutral-100 px-2 py-0.5 rounded text-neutral-500 font-medium">
+                               {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           </span>
+                           <span className="text-[13px] font-mono font-bold text-[#222]">{order.id}</span>
+                       </div>
                     </div>
 
                     {/* Status + Pagar / Dismiss */}
