@@ -24,6 +24,11 @@ export default function ConfiguracionPage() {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [slug, setSlug] = useState('')
 
+  // Pasarela Culqi
+  const [culqiActive, setCulqiActive] = useState(false)
+  const [culqiPublicKey, setCulqiPublicKey] = useState('')
+  const [culqiSecretKey, setCulqiSecretKey] = useState('')
+
   // Nuevos campos para Personalización
   const [templateType, setTemplateType] = useState('comercio')
   const [bannerUrl, setBannerUrl] = useState('')
@@ -71,6 +76,12 @@ export default function ConfiguracionPage() {
         setAvatarUrl(data.avatar_url || '')
         setYapeUrl(data.yape_image_url || '')
         setPlinUrl(data.plin_image_url || '')
+        
+        // Culqi
+        setCulqiActive(data.culqi_active || false)
+        setCulqiPublicKey(data.culqi_public_key || '')
+        setCulqiSecretKey(data.culqi_secret_key || '')
+
         // Load Personalization
         setTemplateType(data.template_type || 'comercio')
         setBannerUrl(data.banner_url || '')
@@ -141,6 +152,10 @@ export default function ConfiguracionPage() {
           avatar_url: avatarUrl,
           yape_image_url: yapeUrl,
           plin_image_url: plinUrl,
+          // Culqi
+          culqi_active: culqiActive,
+          culqi_public_key: culqiPublicKey.trim() || null,
+          culqi_secret_key: culqiSecretKey.trim() || null,
           // Personalization
           template_type: templateType,
           banner_url: bannerUrl,
@@ -424,6 +439,58 @@ export default function ConfiguracionPage() {
 
             </div>
           </CardContent>
+        </Card>
+
+        {/* MÉTODOS DE PAGO AUTOMATIZADOS (CULQI) */}
+        <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="bg-primary text-primary-foreground text-[10px] uppercase font-black px-2 py-1 rounded">PRO</span>
+                  Pasarela Automatizada (Culqi)
+                </CardTitle>
+                <CardDescription className="mt-1">Recibe pagos con Tarjeta y Yape automáticos. Nada de validar pantallazos.</CardDescription>
+              </div>
+              <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-xl border border-outline-variant/10">
+                <Label className="font-bold cursor-pointer" htmlFor="culqi-switch">
+                  {culqiActive ? '🟢 Activo' : '⚪ Apagado'}
+                </Label>
+                <div 
+                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${culqiActive ? 'bg-primary' : 'bg-slate-300'}`}
+                  onClick={() => setCulqiActive(!culqiActive)}
+                  id="culqi-switch"
+                >
+                  <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${culqiActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          {culqiActive && (
+            <CardContent className="space-y-4 pt-4 border-t border-outline-variant/10 bg-primary/5">
+              <div className="space-y-2">
+                <Label className="font-bold text-on-surface">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
+                <Input 
+                  value={culqiPublicKey} 
+                  onChange={(e) => setCulqiPublicKey(e.target.value)} 
+                  placeholder="pk_test_xxxxxxxxxxxxxxxx" 
+                  className="font-mono bg-white"
+                />
+                <p className="text-xs text-on-surface-variant">Usada de cara al público para mostrar el modal en tu Tienda.</p>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold text-on-surface">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
+                <Input 
+                  type="password"
+                  value={culqiSecretKey} 
+                  onChange={(e) => setCulqiSecretKey(e.target.value)} 
+                  placeholder="sk_test_xxxxxxxxxxxxxxxx" 
+                  className="font-mono bg-white"
+                />
+                <p className="text-xs text-on-surface-variant">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* ── UBICACIÓN DEL LOCAL ── */}
