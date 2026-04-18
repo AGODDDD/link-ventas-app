@@ -114,19 +114,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 .from('orders')
                 .select(`*, order_items (*, products (name))`)
                 .eq('merchant_id', userId)
-                .order('created_at', { ascending: false }),
+                .order('created_at', { ascending: false })
+                .limit(300),
             // Viejo Legacy: delivery_orders
             supabase
                 .from('delivery_orders')
                 .select('*')
                 .eq('store_id', userId)
-                .order('created_at', { ascending: false }),
+                .order('created_at', { ascending: false })
+                .limit(300),
             // Nuevo Core: Unified Orders (Relacional)
             supabase
                 .from('orders')
                 .select('*, order_items(*)')
                 .eq('store_id', userId)
                 .order('created_at', { ascending: false })
+                .limit(300)
         ]);
 
         let unifiedOrders: any[] = [];

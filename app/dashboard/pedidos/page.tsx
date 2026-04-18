@@ -42,6 +42,10 @@ export default function PedidosPage() {
     const receiptRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
     const [perfil, setPerfil] = useState<any>(null)
 
+    // Paginación UI (Performance Tweak)
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
+
     useEffect(() => {
         const init = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -232,6 +236,53 @@ export default function PedidosPage() {
 
     if (loading) return <div className="p-8 text-center text-on-surface-variant font-bold animate-pulse">Cargando pedidos... 🛰️</div>
 
+    // UI Pagination Bounds computation
+    const filteredDelivery = orders.filter(o => o._source === 'legacy_delivery' || o._source === 'core');
+    const totalDeliveryPages = Math.ceil(filteredDelivery.length / ITEMS_PER_PAGE);
+    const paginatedDelivery = filteredDelivery.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const filteredStandard = orders.filter(o => o._source === 'legacy_standard');
+    const totalStandardPages = Math.ceil(filteredStandard.length / ITEMS_PER_PAGE);
+    const paginatedStandard = filteredStandard.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const filteredLeads = leads;
+    const totalLeadsPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
+    const paginatedLeads = filteredLeads.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    // Componente the Paginación Premium
+    const renderPagination = (totalPages: number) => {
+        if (totalPages <= 1) return null;
+        return (
+            <div className="flex justify-center items-center gap-2 mt-8 pb-4">
+                <button 
+                    disabled={currentPage === 1}
+                    onClick={() => { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                        key={page}
+                        onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all border ${currentPage === page ? 'bg-primary text-on-primary border-primary shadow-lg scale-105' : 'text-on-surface-variant border-transparent hover:bg-surface-container-high'}`}
+                    >
+                        {page}
+                    </button>
+                ))}
+                
+                <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => { setCurrentPage(prev => Math.min(totalPages, prev + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6 pb-12 relative w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
@@ -249,19 +300,19 @@ export default function PedidosPage() {
             {/* TAB NAVIGATOR */}
             <div className="flex gap-4 mb-6 border-b border-outline-variant/20 pb-2 overflow-x-auto custom-scrollbar">
                 <button 
-                    onClick={() => setActiveTab('delivery')}
+                    onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                 >
                     🛵 Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => (o._source === 'legacy_delivery' || o._source === 'core') && o.status !== 'completado').length}</span>
                 </button>
                 <button 
-                    onClick={() => setActiveTab('orders')}
+                    onClick={() => { setActiveTab('orders'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                 >
                     Standard / Legacy ({orders.filter(o => o._source === 'legacy_standard').length})
                 </button>
                 <button 
-                    onClick={() => setActiveTab('leads')}
+                    onClick={() => { setActiveTab('leads'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'leads' ? 'border-tertiary text-tertiary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
                 >
                     Rescates WhatsApp <span className="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px]">{leads.length}</span>
@@ -275,13 +326,14 @@ export default function PedidosPage() {
                     <>
                         {!ordersCargadas ? (
                             <p className="text-center font-bold text-on-surface-variant animate-pulse py-10">Cargando pedidos delivery... 🛵</p>
-                        ) : orders.filter(o => o._source === 'legacy_delivery' || o._source === 'core').length === 0 ? (
+                        ) : filteredDelivery.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
                                 <p className="text-on-surface-variant text-xl font-bold">Sin pedidos delivery aún</p>
                                 <p className="text-on-surface-variant/70 text-sm mt-2">Los pedidos del restaurante aparecerán aquí en tiempo real.</p>
                             </div>
                         ) : (
-                            orders.filter(o => o._source === 'legacy_delivery' || o._source === 'core').map(order => {
+                            <>
+                                {paginatedDelivery.map(order => {
                                 const statusIdx = DELIVERY_STATUSES.indexOf(order.status)
                                 const isCompleted = order.status === 'completado'
                                 const items = order.order_items || []
@@ -437,19 +489,24 @@ export default function PedidosPage() {
                                     </div>
                                 )
                             })
+                                    </div>
+                                ))}
+                                {renderPagination(totalDeliveryPages)}
+                            </>
                         )}
                     </>
                 )}
 
                 {activeTab === 'orders' && (
                     <>
-                        {orders.length === 0 ? (
+                        {filteredStandard.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
                                 <p className="text-on-surface-variant text-xl font-bold">Aún no tienes pedidos.</p>
                                 <p className="text-on-surface-variant/70 text-sm mt-2">Empieza a compartir tu catálogo para recibir órdenes aquí.</p>
                             </div>
                         ) : (
-                            orders.map((order) => (
+                            <>
+                                {paginatedStandard.map((order) => (
                                 <div key={order.id} className="bg-surface-container-high rounded-2xl border border-outline-variant/5 shadow-2xl overflow-hidden group">
 
                                     {/* Order Header */}
@@ -572,7 +629,9 @@ export default function PedidosPage() {
                                         </div>
                                     </div>
                                 </div>
-                            ))
+                            ))}
+                                {renderPagination(totalStandardPages)}
+                            </>
                         )}
                     </>)}
 
@@ -580,13 +639,14 @@ export default function PedidosPage() {
                     <>
                         {loadingLeads ? (
                             <p className="text-center font-bold text-on-surface-variant animate-pulse py-10">Buscando leads fantasmas...</p>
-                        ) : leads.length === 0 ? (
+                        ) : filteredLeads.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-outline-variant/20 rounded-2xl bg-surface-container-low">
                                 <p className="text-on-surface-variant text-xl font-bold">Sin actividad fantasma.</p>
                                 <p className="text-on-surface-variant/70 text-sm mt-2">Los clientes están cerrando todas sus cuentas correctamente.</p>
                             </div>
                         ) : (
-                            leads.map((lead) => (
+                            <>
+                                {paginatedLeads.map((lead) => (
                                 <div key={lead.id} className="bg-surface-container-high rounded-2xl border-l-[6px] border-l-tertiary border-y border-r border-outline-variant/5 shadow-2xl overflow-hidden flex flex-col md:flex-row">
                                     <div className="p-6 md:w-1/3 flex flex-col justify-center border-b md:border-b-0 md:border-r border-outline-variant/10">
                                         <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-2">Capturado el {new Date(lead.created_at).toLocaleString()}</p>
@@ -612,7 +672,9 @@ export default function PedidosPage() {
                                         </div>
                                     </div>
                                 </div>
-                            ))
+                            ))}
+                                {renderPagination(totalLeadsPages)}
+                            </>
                         )}
                     </>
                 )}
