@@ -143,6 +143,8 @@ export default function ConfiguracionPage() {
 
     try {
       setLoading(true)
+
+      // --- PASO A: Guardar todo EXCEPTO las llaves de Culqi (datos no sensibles) ---
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -152,10 +154,6 @@ export default function ConfiguracionPage() {
           avatar_url: avatarUrl,
           yape_image_url: yapeUrl,
           plin_image_url: plinUrl,
-          // Culqi
-          culqi_active: culqiActive,
-          culqi_public_key: culqiPublicKey.trim() || null,
-          culqi_secret_key: culqiSecretKey.trim() || null,
           // Personalization
           template_type: templateType,
           banner_url: bannerUrl,
@@ -174,6 +172,28 @@ export default function ConfiguracionPage() {
         .eq('id', userId)
 
       if (error) throw error
+
+      // --- PASO B: Enviar llaves Culqi al servidor cifrado (NUNCA en texto plano) ---
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        const paymentRes = await fetch('/api/settings/payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            culqi_active: culqiActive,
+            culqi_public_key: culqiPublicKey,
+            culqi_secret_key: culqiSecretKey,
+          })
+        })
+        const paymentData = await paymentRes.json()
+        if (!paymentRes.ok) {
+          throw new Error(paymentData.error || 'Error cifrando credenciales de pasarela.')
+        }
+      }
+
       alert('✅ ¡Datos actualizados correctamente!')
 
     } catch (error: any) {

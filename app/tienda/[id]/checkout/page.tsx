@@ -8,7 +8,6 @@ import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
 import { ArrowLeft, Upload, CheckCircle2, User, Phone, MapPin, QrCode, Wallet, ShoppingBag, ShieldCheck, Store } from 'lucide-react'
 import { toast } from 'sonner'
-import { toast } from 'sonner'
 import Script from 'next/script'
 
 type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_culqi'
@@ -653,5 +652,6 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 </div>
             </div>
         </div>
+        </>
     )
 }

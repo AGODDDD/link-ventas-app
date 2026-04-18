@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { decryptText } from '@/lib/encryption'
 
 export async function POST(req: Request) {
     try {
@@ -10,10 +11,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Faltan parámetros requeridos.' }, { status: 400 })
         }
 
-        // 1. Obtener la Secret Key de la tienda en Supabase
+        // 1. Obtener la Secret Key CIFRADA de la tienda en Supabase
         const supabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Or Service Role if available
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
 
         const { data: profile, error: profileError } = await supabase
@@ -26,7 +27,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Tienda no configurada para Culqi.' }, { status: 403 })
         }
 
-        // 2. Realizar el Cargo real a Culqi (Charges API)
+        // 2. DESENCRIPTAR la llave en memoria del servidor (nunca toca el navegador)
+        let realSecretKey: string;
+        try {
+            realSecretKey = decryptText(profile.culqi_secret_key);
+        } catch (decryptError) {
+            console.error('Fallo al desencriptar Secret Key:', decryptError);
+            return NextResponse.json({ error: 'Error de configuración de cifrado en la tienda.' }, { status: 500 })
+        }
+
+        // 3. Realizar el Cargo real a Culqi (Charges API)
         // Amount debe estar en céntimos (ej: 50 PEN = 5000)
         const amountInCents = Math.round(parseFloat(amount) * 100)
 
@@ -46,7 +56,7 @@ export async function POST(req: Request) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${profile.culqi_secret_key}`
+                'Authorization': `Bearer ${realSecretKey}`
             },
             body: JSON.stringify(culqiPayload)
         })
@@ -58,19 +68,18 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: data.merchant_message || 'Transacción denegada.' }, { status: 400 })
         }
 
-        // 3. (Opcional, dado que habrá webhooks) Actualizar la orden inmediatamente
+        // 4. Actualizar la orden inmediatamente con el charge ID para auditoría
         const { error: updateError } = await supabase
             .from('orders')
             .update({ 
                 status: 'paid',
-                payment_proof_url: 'CULQI_AUTOMATIC'
-                // culqi_charge_id: data.id // Idealmente si la db lo soporta (lo pasamos al webhook)
+                payment_proof_url: 'CULQI_AUTOMATIC',
             })
             .eq('id', order_id)
             .eq('store_id', store_id)
 
         if (updateError) {
-            console.error('Error actualizando Supabase, pero cargo existoso. El webhook debería parchar esto.', updateError)
+            console.error('Error actualizando Supabase, pero cargo exitoso. El webhook debería parchar esto.', updateError)
         }
 
         return NextResponse.json({ success: true, charge: data })
