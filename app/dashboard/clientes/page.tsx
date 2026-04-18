@@ -24,6 +24,10 @@ export default function ClientesPage() {
     const [sortKey, setSortKey] = useState<SortKey>('created_at')
     const [sortDir, setSortDir] = useState<SortDir>('desc')
 
+    // Paginación UI (Performance Tweak)
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
+
     useEffect(() => {
         const cargarLeads = async () => {
             const { data: { user } } = await supabase.auth.getUser()
@@ -84,6 +88,7 @@ export default function ClientesPage() {
     }, [leads, searchTerm, filterPref, sortKey, sortDir])
 
     const toggleSort = (key: SortKey) => {
+        setCurrentPage(1) // Reset página al ordenar
         if (sortKey === key) {
             setSortDir(prev => prev === 'desc' ? 'asc' : 'desc')
         } else {
@@ -106,6 +111,44 @@ export default function ClientesPage() {
     }).length
 
     if (loading) return <div className="p-8 text-center text-on-surface-variant font-bold animate-pulse">Cargando base de clientes... 📇</div>
+
+    // Paginación (Computed Bounds)
+    const totalPages = Math.ceil(leadsFiltrados.length / ITEMS_PER_PAGE);
+    const paginatedLeads = leadsFiltrados.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    // Componente de Paginación Premium
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+        return (
+            <div className="flex justify-center items-center gap-2 mt-6 pb-2">
+                <button 
+                    disabled={currentPage === 1}
+                    onClick={() => { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                        key={page}
+                        onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all border ${currentPage === page ? 'bg-primary text-on-primary border-primary shadow-lg scale-105' : 'text-on-surface-variant border-transparent hover:bg-surface-container-high'}`}
+                    >
+                        {page}
+                    </button>
+                ))}
+                
+                <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => { setCurrentPage(prev => Math.min(totalPages, prev + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        );
+    };
 
     return (
         <div className="space-y-6 pb-12 relative w-full">
@@ -152,12 +195,12 @@ export default function ClientesPage() {
                         placeholder="Buscar por nombre, email o teléfono..."
                         type="text"
                         value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
+                        onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
                 </div>
                 <select
                     value={filterPref}
-                    onChange={e => setFilterPref(e.target.value)}
+                    onChange={e => { setFilterPref(e.target.value); setCurrentPage(1); }}
                     className="bg-surface-container-high text-on-surface text-sm px-4 py-2 rounded-lg border border-outline-variant/10 outline-none cursor-pointer"
                 >
                     <option value="all">Todas las preferencias</option>
@@ -193,8 +236,8 @@ export default function ClientesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/5">
-                            {leadsFiltrados.length > 0 ? (
-                                leadsFiltrados.map((lead) => (
+                            {paginatedLeads.length > 0 ? (
+                                paginatedLeads.map((lead) => (
                                     <tr key={lead.id} className="hover:bg-surface-container-high/50 transition-colors group">
                                         {/* Avatar + Name */}
                                         <td className="px-6 py-4">
@@ -277,12 +320,13 @@ export default function ClientesPage() {
                         </tbody>
                     </table>
                 </div>
+                {renderPagination()}
             </div>
 
             {/* Footer count */}
             {leadsFiltrados.length > 0 && (
-                <p className="text-xs text-on-surface-variant/50 text-right">
-                    Mostrando {leadsFiltrados.length} de {leads.length} leads
+                <p className="text-xs text-on-surface-variant/50 text-right mt-2">
+                    Mostrando {paginatedLeads.length} leads de un total de {leadsFiltrados.length} encontrados (Base total: {leads.length})
                 </p>
             )}
         </div>

@@ -30,7 +30,51 @@ export default function DashboardPage() {
   }, [orders])
 
   const pedidosTotales = orders.length
-  const ordenesRecientes = orders.slice(0, 5)
+  
+  // Paginación UI (Performance Tweak)
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
+  const ordenesRecientes = orders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Componente de Paginación Premium
+  const renderPagination = () => {
+        if (totalPages <= 1) return null;
+        // Limitamos visualmente para no saturar si hay cientos de páginas
+        const pageList = Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + 1);
+        
+        return (
+            <div className="flex justify-center items-center gap-2 mt-4 pb-6 border-t border-outline-variant/5 pt-4 bg-surface-container">
+                <button 
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                
+                {pageList.map(page => (
+                    <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all border ${currentPage === page ? 'bg-primary text-on-primary border-primary shadow-lg scale-105' : 'text-on-surface-variant border-transparent hover:bg-surface-container-high'}`}
+                    >
+                        {page}
+                    </button>
+                ))}
+                
+                {totalPages > 10 && <span className="text-on-surface-variant font-bold">...</span>}
+
+                <button 
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    className="p-2 rounded-xl text-on-surface hover:bg-surface-container-high border border-outline-variant/10 transition-colors disabled:opacity-30 shadow-sm"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        );
+  };
 
   // KPIs dinámicos reales
   const pedidosHoy = useMemo(() => {
@@ -219,6 +263,7 @@ export default function DashboardPage() {
             </tbody>
           </table>
         </div>
+        {renderPagination()}
       </div>
 
       {/* Secondary Insights */}
