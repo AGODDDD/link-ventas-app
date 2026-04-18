@@ -488,9 +488,7 @@ export default function PedidosPage() {
                                         </div>
                                     </div>
                                 )
-                            })
-                                    </div>
-                                ))}
+                            })}
                                 {renderPagination(totalDeliveryPages)}
                             </>
                         )}
