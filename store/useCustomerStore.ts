@@ -30,7 +30,7 @@ export interface Order {
     telefono: string;
     correo: string;
   };
-  metodoPago: 'whatsapp' | 'niubiz';
+  metodoPago: 'whatsapp' | 'niubiz' | 'culqi';
   estimatedTime?: string; // e.g. "50 - 60 min"
 }
 

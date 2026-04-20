@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react'
 import { Profile } from '@/types/tienda'
-import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle } from 'lucide-react'
+import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore, generateOrderId, Order, OrderItem } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
+import Script from 'next/script'
+import { toast } from 'sonner'
 
 interface Props {
   isOpen: boolean;
@@ -28,8 +30,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   const [telefono, setTelefono] = useState(profileData?.telefono || '')
   const [correo, setCorreo] = useState(profileData?.correo || '')
   const [direccion, setDireccion] = useState(savedAddress?.direccion || '')
-  const [metodoPago, setMetodoPago] = useState<'niubiz' | 'whatsapp'>('whatsapp')
+  const [metodoPago, setMetodoPago] = useState<'culqi' | 'whatsapp'>(perfil.culqi_active && perfil.culqi_public_key ? 'culqi' : 'whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
 
   // Sync data back to parent when closing
   const handleClose = () => {
@@ -53,6 +56,48 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   // Estrategia Horaria: bloquear checkout si la tienda está cerrada
   const isStoreClosed = checkStoreClosed((perfil as any).store_schedule ?? null)
+
+  // ── CULQI CALLBACK (Global Listener) ──
+  useEffect(() => {
+    const win = window as any;
+    win.culqi = async () => {
+      if (win.Culqi?.token) {
+        const token = win.Culqi.token.id;
+        const email = win.Culqi.token.email;
+        toast.loading('Procesando pago seguro...', { id: 'culqi-charge' });
+        try {
+          const res = await fetch('/api/checkout/culqi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token_id: token,
+              amount: total,
+              email: email || correo || 'cliente@linkventas.com',
+              store_id: perfil.id,
+              order_id: pendingOrderId
+            })
+          });
+          const data = await res.json();
+          toast.dismiss('culqi-charge');
+          if (!res.ok) {
+            toast.error('Transacción denegada: ' + (data.error || 'Verifica tu tarjeta.'));
+            return;
+          }
+          toast.success('¡Pago procesado exitosamente!');
+          // Limpiar carrito y cerrar
+          useCartStore.getState().clearCart(perfil.id);
+          if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug);
+          if (onSuccess) onSuccess();
+          else handleClose();
+        } catch {
+          toast.dismiss('culqi-charge');
+          toast.error('Error de red al procesar el pago.');
+        }
+      } else {
+        toast.error(win.Culqi?.error?.user_message || 'El pago fue cancelado.');
+      }
+    };
+  }, [perfil.id, total, correo, pendingOrderId]);
 
   if (!isOpen) return null;
 
@@ -253,12 +298,57 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         // 4. Redirigimos clásicamente a WhatsApp en una NUEVA pestaña
         const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`
         window.open(waUrl, '_blank')
-     } else {
-        alert("Pasarela Online (Niubiz) programada para conectarse en la Fase 2.");
+     } else if (metodoPago === 'culqi') {
+        // ── Flujo Culqi: crear orden en DB primero, luego abrir modal de pago ──
+        const orderId = crypto.randomUUID();
+
+        // Guardar orden como 'pending' en Supabase
+        await supabase.from('orders').insert({
+          id: orderId,
+          merchant_id: perfil.id,
+          store_id: perfil.id,
+          customer_name: nombre,
+          customer_phone: telefono,
+          customer_address: direccion,
+          total_amount: total,
+          total: total,
+          status: 'pending',
+          payment_proof_url: 'CULQI_PENDING_WEBHOOK',
+        });
+        // Items
+        const culqiItems = cart.map(item => ({
+          order_id: orderId,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.product.price
+        }));
+        await supabase.from('order_items').insert(culqiItems);
+
+        setPendingOrderId(orderId);
+
+        const win = window as any;
+        if (!win.Culqi) {
+          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
+          return;
+        }
+        win.Culqi.publicKey = perfil.culqi_public_key;
+        win.Culqi.settings({
+          title: perfil.store_name?.substring(0, 50) || 'Tienda',
+          currency: 'PEN',
+          amount: Math.round(total * 100),
+        });
+        win.Culqi.options({
+          lang: 'es',
+          installments: false,
+          paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
+        });
+        win.Culqi.open();
      }
   }
 
   return (
+    <>
+    <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
     <div className="fixed inset-0 z-[120] bg-neutral-100/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 overflow-y-auto">
       <div className="bg-[#F8F9FA] w-full max-w-5xl rounded-xl shadow-2xl relative my-auto animate-in fade-in zoom-in-95 duration-200">
         
@@ -392,14 +482,16 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                     </div>
                  </label>
                  
-                 <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${metodoPago === 'niubiz' ? 'border-black bg-neutral-50' : 'border-neutral-200 hover:bg-neutral-50'}`}>
-                    <input type="radio" name="pago" checked={metodoPago === 'niubiz'} onChange={() => setMetodoPago('niubiz')} className="w-4 h-4 text-black accent-black" />
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex flex-col items-center justify-center text-blue-600 shrink-0"><CreditCard size={16} /></div>
+                 {perfil.culqi_active && perfil.culqi_public_key && (
+                 <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${metodoPago === 'culqi' ? 'border-black bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+                    <input type="radio" name="pago" checked={metodoPago === 'culqi'} onChange={() => setMetodoPago('culqi')} className="w-4 h-4 text-black accent-black" />
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex flex-col items-center justify-center text-emerald-600 shrink-0"><ShieldCheck size={16} /></div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-[#222]">Online - Niubiz</p>
-                      <p className="text-[10px] text-[#888]">Paga en línea con tarjeta crédito/débito</p>
+                      <p className="font-bold text-sm text-[#222]">Pago Seguro Online</p>
+                      <p className="text-[10px] text-[#888]">Tarjeta crédito/débito o Yape (automático)</p>
                     </div>
                  </label>
+                 )}
                </div>
             </div>
 
@@ -445,5 +537,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         </div>
       </div>
     </div>
+    </>
   )
 }
