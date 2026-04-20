@@ -89,6 +89,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     toast.dismiss('culqi-charge');
                     toast.success('¡Pago procesado exitosamente!');
                     
+                    // Cerrar modal de Culqi
+                    try { win.Culqi.close(); } catch {}
+                    
                     // Dispatch success para finalizar proceso
                     document.dispatchEvent(new CustomEvent('culqi_success', { detail: win.pendingCulqiOrderId }));
                 } catch (err) {

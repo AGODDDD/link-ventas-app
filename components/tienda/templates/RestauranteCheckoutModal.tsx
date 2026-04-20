@@ -84,6 +84,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             return;
           }
           toast.success('¡Pago procesado exitosamente!');
+          // Cerrar modal de Culqi primero
+          try { win.Culqi.close(); } catch {}
           // Limpiar carrito y cerrar
           useCartStore.getState().clearCart(perfil.id);
           if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug);
