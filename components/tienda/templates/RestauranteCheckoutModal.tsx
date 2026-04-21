@@ -186,6 +186,30 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        metodoPago,
        estimatedTime: '50 - 60 min',
      };
+
+      // ── Si es Culqi, SALTAR toda persistencia. Solo abrir modal. ──
+      if (metodoPago === 'culqi') {
+        const win = window as any;
+        if (!win.Culqi) {
+          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
+          return;
+        }
+        win.Culqi.publicKey = perfil.culqi_public_key;
+        win.Culqi.settings({
+          title: perfil.store_name?.substring(0, 50) || 'Tienda',
+          currency: 'PEN',
+          amount: Math.round(total * 100),
+        });
+        win.Culqi.options({
+          lang: 'es',
+          installments: false,
+          paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
+        });
+        win.Culqi.open();
+        return;
+      }
+
+      // ── Flujo NO-Culqi: persistir orden inmediatamente ──
      customerStore.addOrder(newOrder);
 
       // Save to Supabase for vendor dashboard + realtime tracking (Double Write Strategy)
@@ -324,25 +348,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         // 4. Redirigimos clásicamente a WhatsApp en una NUEVA pestaña
         const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`
         window.open(waUrl, '_blank')
-     } else if (metodoPago === 'culqi') {
-        // ── Flujo Culqi: SOLO abrir el modal. La orden se crea después del pago exitoso en el callback. ──
-        const win = window as any;
-        if (!win.Culqi) {
-          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
-          return;
-        }
-        win.Culqi.publicKey = perfil.culqi_public_key;
-        win.Culqi.settings({
-          title: perfil.store_name?.substring(0, 50) || 'Tienda',
-          currency: 'PEN',
-          amount: Math.round(total * 100),
-        });
-        win.Culqi.options({
-          lang: 'es',
-          installments: false,
-          paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
-        });
-        win.Culqi.open();
      }
   }
 
