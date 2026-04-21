@@ -87,27 +87,112 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             return;
           }
 
-          // 3. SOLO después del cobro exitoso, creamos la orden en DB
-          await supabase.from('orders').insert({
+          // 3. SOLO después del cobro exitoso, crear orden con DOBLE ESCRITURA
+          const currentCart = useCartStore.getState().carts[perfil.id] || [];
+          const orderItems = currentCart.map(item => {
+            let modPrice = 0;
+            let optSummary = '';
+            if (item.variantDetails?.options && item.product.variants) {
+              const groups = item.product.variants as any[];
+              Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
+                const g = groups.find(x => x.id === gId);
+                if (g) oIds.forEach(oId => {
+                  const o = g.options.find((x:any) => x.id === oId);
+                  if (o) { modPrice += o.price_modifier; optSummary += `${o.name}, `; }
+                });
+              });
+            }
+            return {
+              id: item.product.id,
+              name: item.product.name,
+              quantity: item.quantity,
+              unitPrice: item.product.price + modPrice,
+              totalPrice: (item.product.price + modPrice) * item.quantity,
+              options: optSummary ? optSummary.slice(0, -2) : undefined,
+            };
+          });
+
+          // 3a. Legacy table (delivery_orders) — dashboard + notificaciones
+          await supabase.from('delivery_orders').insert({
             id: orderId,
-            merchant_id: perfil.id,
             store_id: perfil.id,
+            status: 'pendiente',
             customer_name: nombre,
             customer_phone: telefono,
-            customer_address: direccion,
-            total_amount: total,
-            total: total,
-            status: 'paid',
-            payment_proof_url: 'CULQI_AUTOMATIC',
+            customer_email: correo,
+            direccion,
+            referencia: savedAddress?.referencia || null,
+            lat: savedAddress?.lat || null,
+            lng: savedAddress?.lng || null,
+            items: orderItems,
+            subtotal,
+            delivery_fee: deliveryFee,
+            total,
+            metodo_pago: 'culqi',
+            estimated_time: '50 - 60 min',
           });
-          const currentCart = useCartStore.getState().carts[perfil.id] || [];
-          const dbItems = currentCart.map(item => ({
+
+          // 3b. Core table (orders)
+          await supabase.from('orders').insert({
+            id: orderId,
+            store_id: perfil.id,
+            status: 'paid',
+            order_type: 'delivery',
+            customer_name: nombre,
+            customer_phone: telefono,
+            customer_email: correo,
+            direccion: direccion,
+            referencia: savedAddress?.referencia || null,
+            lat: savedAddress?.lat || null,
+            lng: savedAddress?.lng || null,
+            delivery_fee: deliveryFee,
+            subtotal: subtotal,
+            total: total,
+            metodo_pago: 'culqi',
+            estimated_time: '50 - 60 min',
+            legacy_id: orderId,
+          });
+
+          // 3c. Order items
+          const relationalItems = orderItems.map((item: any) => ({
             order_id: orderId,
-            product_id: item.product.id,
+            product_id: item.id && item.id.length > 20 ? item.id : null,
+            name: item.name,
+            price: item.unitPrice,
             quantity: item.quantity,
-            price: item.product.price
+            modifiers: item.options || {}
           }));
-          await supabase.from('order_items').insert(dbItems);
+          await supabase.from('order_items').insert(relationalItems);
+
+          // 3d. Lead capture
+          await supabase.from('store_leads').insert({
+            store_id: perfil.id,
+            name: nombre,
+            phone: telefono || null,
+            email: correo || null,
+            preference: 'Culqi Online',
+          });
+
+          // 3e. Zustand local history
+          const customerStore = useCustomerStore.getState();
+          customerStore.addOrder({
+            id: orderId,
+            storeId: perfil.id,
+            storeName: perfil.store_name || '',
+            date: new Date().toISOString(),
+            status: 'pendiente',
+            items: orderItems,
+            subtotal,
+            deliveryFee,
+            total,
+            direccion,
+            referencia: savedAddress?.referencia,
+            lat: savedAddress?.lat,
+            lng: savedAddress?.lng,
+            cliente: { nombre, telefono, correo },
+            metodoPago: 'culqi',
+            estimatedTime: '50 - 60 min',
+          });
 
           toast.success('¡Pago procesado exitosamente!');
           try { win.Culqi.close(); } catch {}
