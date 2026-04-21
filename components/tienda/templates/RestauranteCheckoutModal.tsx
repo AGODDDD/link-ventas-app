@@ -65,8 +65,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const email = win.Culqi.token.email;
         toast.loading('Procesando pago seguro...', { id: 'culqi-charge' });
         try {
-          // 1. Generar orden ID
-          const orderId = crypto.randomUUID();
+          // 1. Generar orden ID (legible igual que WhatsApp)
+          const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
+          const orderId = generateOrderId(prefix);
 
           // 2. Cobrar primero, confirmando que el dinero entró
           const res = await fetch('/api/checkout/culqi', {
