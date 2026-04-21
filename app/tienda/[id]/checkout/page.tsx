@@ -66,15 +66,22 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 toast.loading("Procesando pago seguro...", { id: 'culqi-charge' });
                 
                 try {
+                    // 1. Generar ID de orden
+                    const orderId = crypto.randomUUID();
+                    const orderData = win.pendingCulqiOrderData;
+                    const currentCart = useCartStore.getState().carts[storeId] || [];
+                    const orderTotal = currentCart.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0);
+
+                    // 2. Cobrar primero
                     const res = await fetch('/api/checkout/culqi', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             token_id: token,
-                            amount: useCartStore.getState().carts[storeId]?.reduce((acc, item) => acc + (item.product.price * item.quantity), 0) || 0,
+                            amount: orderTotal,
                             email: email || 'cliente@linkventas.com',
                             store_id: storeId,
-                            order_id: win.pendingCulqiOrderId
+                            order_id: orderId
                         })
                     });
                     
@@ -85,37 +92,61 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         setSubmitting(false);
                         return;
                     }
+
+                    // 3. SOLO después del cobro exitoso, crear orden en DB
+                    if (orderData?.perfil) {
+                        await supabase.from('orders').insert({
+                            id: orderId,
+                            merchant_id: orderData.perfil.id,
+                            store_id: orderData.perfil.id,
+                            customer_name: orderData.nombre,
+                            customer_phone: orderData.telefono,
+                            customer_address: orderData.direccion,
+                            total_amount: orderTotal,
+                            total: orderTotal,
+                            status: 'paid',
+                            payment_proof_url: 'CULQI_AUTOMATIC',
+                        });
+                        const dbItems = currentCart.map((item: any) => ({
+                            order_id: orderId,
+                            product_id: item.product.id,
+                            quantity: item.quantity,
+                            price: item.product.price
+                        }));
+                        await supabase.from('order_items').insert(dbItems);
+
+                        // Deducir stock
+                        for (const item of currentCart) {
+                            if (item.product.stock !== null && item.product.stock !== undefined) {
+                                const remaining = Math.max(0, item.product.stock - item.quantity);
+                                await supabase.from('products').update({ stock: remaining }).eq('id', item.product.id);
+                            }
+                        }
+                        // Eliminar lead fantasma
+                        if (orderData.leadId) {
+                            await supabase.from('abandoned_carts').delete().eq('id', orderData.leadId);
+                        }
+                    }
                     
                     toast.dismiss('culqi-charge');
                     toast.success('¡Pago procesado exitosamente!');
-                    
-                    // Cerrar modal de Culqi
                     try { win.Culqi.close(); } catch {}
                     
-                    // Dispatch success para finalizar proceso
-                    document.dispatchEvent(new CustomEvent('culqi_success', { detail: win.pendingCulqiOrderId }));
+                    // Limpiar carrito y mostrar éxito
+                    useCartStore.getState().clearCart(storeId);
+                    setOrderSuccessId(orderId);
                 } catch (err) {
                     toast.dismiss('culqi-charge');
                     toast.error('Ocurrió un error en la red al procesar el pago.');
                     setSubmitting(false);
                 }
             } else if (win.Culqi.order) {
-                 // Si se usa pagoEfectivo o similar (flujos offline), el webhook atrapará
                  toast.success('Orden de pago generada. En espera del depósito.');
-                 document.dispatchEvent(new CustomEvent('culqi_success', { detail: win.pendingCulqiOrderId }));
             } else {
                 toast.error(win.Culqi.error?.user_message || 'El pago fue cancelado o hubo un error.');
                 setSubmitting(false);
             }
         };
-
-        const handleSuccessState = (e: any) => {
-            // Limpia carrito al éxito del cobro verificado
-            useCartStore.getState().clearCart(storeId);
-            setOrderSuccessId(e.detail);
-        }
-        document.addEventListener('culqi_success', handleSuccessState);
-        return () => document.removeEventListener('culqi_success', handleSuccessState);
     }, [storeId]);
 
     // ==============================================================
@@ -180,7 +211,33 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         setSubmitting(true)
         try {
             if (!perfil) throw new Error('Cargando datos de tienda... por favor intente de nuevo en un segundo')
-            
+
+            // ── Si es Culqi, SOLO abrimos el modal. Nada de BD hasta confirmar pago. ──
+            if (metodoPago === 'tarjeta_culqi') {
+                const win = window as any;
+                if (!win.Culqi) {
+                    toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo.');
+                    setSubmitting(false);
+                    return;
+                }
+                win.pendingCulqiOrderData = {
+                    perfil, nombre, telefono, direccion, cart, total, leadId
+                };
+                win.Culqi.publicKey = perfil.culqi_public_key;
+                win.Culqi.settings({
+                    title: perfil.store_name?.substring(0, 50) || 'Tienda',
+                    currency: 'PEN',
+                    amount: Math.round(total * 100),
+                });
+                win.Culqi.options({ 
+                    lang: 'es', 
+                    installments: false, 
+                    paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
+                });
+                win.Culqi.open();
+                return; // Cortar hilo acá. El callback se encargará de todo.
+            }
+
             let fileName = ''
 
             // 1. Subir Comprobante solo si es transferencia
@@ -195,7 +252,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 if (uploadError) throw uploadError
             }
 
-            // 2. Crear Orden (Generamos ID manualmente para evitar error de `.select()` en RLS)
+            // 2. Crear Orden (solo para flujos NO-Culqi)
             const orderId = crypto.randomUUID()
 
             const orderPayload = {
@@ -255,26 +312,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                  await supabase.from('abandoned_carts').delete().eq('id', leadId);
             }
 
-            // 4. Si es Culqi, detenemos ejecución y abrimos Modal
-            if (metodoPago === 'tarjeta_culqi') {
-                const win = window as any;
-                win.pendingCulqiOrderId = orderId;
-                win.Culqi.publicKey = perfil.culqi_public_key;
-                win.Culqi.settings({
-                    title: perfil.store_name?.substring(0, 50) || 'Tienda',
-                    currency: 'PEN',
-                    amount: Math.round(total * 100),
-                });
-                win.Culqi.options({ 
-                    lang: 'es', 
-                    installments: false, 
-                    paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
-                });
-                win.Culqi.open();
-                return; // Cortar hilo acá. No reseteamos submitting hasta que devuelva callback.
-            }
-
-            // 5. Flujo normal Efectivo / Yape Manual: Limpiar y Redirigir Pantalla
+            // 4. Limpiar y Redirigir Pantalla
             const cartIdToClear = perfil?.id || storeId;
             console.log('🧹 Limpiando carrito para ID:', cartIdToClear)
             cartStore.clearCart(cartIdToClear)

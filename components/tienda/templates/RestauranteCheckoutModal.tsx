@@ -32,7 +32,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   const [direccion, setDireccion] = useState(savedAddress?.direccion || '')
   const [metodoPago, setMetodoPago] = useState<'culqi' | 'whatsapp'>(perfil.culqi_active && perfil.culqi_public_key ? 'culqi' : 'whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
 
   // Sync data back to parent when closing
   const handleClose = () => {
@@ -66,6 +65,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const email = win.Culqi.token.email;
         toast.loading('Procesando pago seguro...', { id: 'culqi-charge' });
         try {
+          // 1. Generar orden ID
+          const orderId = crypto.randomUUID();
+
+          // 2. Cobrar primero, confirmando que el dinero entró
           const res = await fetch('/api/checkout/culqi', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,7 +77,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
               amount: total,
               email: email || correo || 'cliente@linkventas.com',
               store_id: perfil.id,
-              order_id: pendingOrderId
+              order_id: orderId
             })
           });
           const data = await res.json();
@@ -83,10 +86,31 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             toast.error('Transacción denegada: ' + (data.error || 'Verifica tu tarjeta.'));
             return;
           }
+
+          // 3. SOLO después del cobro exitoso, creamos la orden en DB
+          await supabase.from('orders').insert({
+            id: orderId,
+            merchant_id: perfil.id,
+            store_id: perfil.id,
+            customer_name: nombre,
+            customer_phone: telefono,
+            customer_address: direccion,
+            total_amount: total,
+            total: total,
+            status: 'paid',
+            payment_proof_url: 'CULQI_AUTOMATIC',
+          });
+          const currentCart = useCartStore.getState().carts[perfil.id] || [];
+          const dbItems = currentCart.map(item => ({
+            order_id: orderId,
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price: item.product.price
+          }));
+          await supabase.from('order_items').insert(dbItems);
+
           toast.success('¡Pago procesado exitosamente!');
-          // Cerrar modal de Culqi primero
           try { win.Culqi.close(); } catch {}
-          // Limpiar carrito y cerrar
           useCartStore.getState().clearCart(perfil.id);
           if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug);
           if (onSuccess) onSuccess();
@@ -99,7 +123,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         toast.error(win.Culqi?.error?.user_message || 'El pago fue cancelado.');
       }
     };
-  }, [perfil.id, total, correo, pendingOrderId]);
+  }, [perfil.id, total, correo, nombre, telefono, direccion]);
 
   if (!isOpen) return null;
 
@@ -301,33 +325,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`
         window.open(waUrl, '_blank')
      } else if (metodoPago === 'culqi') {
-        // ── Flujo Culqi: crear orden en DB primero, luego abrir modal de pago ──
-        const orderId = crypto.randomUUID();
-
-        // Guardar orden como 'pending' en Supabase
-        await supabase.from('orders').insert({
-          id: orderId,
-          merchant_id: perfil.id,
-          store_id: perfil.id,
-          customer_name: nombre,
-          customer_phone: telefono,
-          customer_address: direccion,
-          total_amount: total,
-          total: total,
-          status: 'pending',
-          payment_proof_url: 'CULQI_PENDING_WEBHOOK',
-        });
-        // Items
-        const culqiItems = cart.map(item => ({
-          order_id: orderId,
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price: item.product.price
-        }));
-        await supabase.from('order_items').insert(culqiItems);
-
-        setPendingOrderId(orderId);
-
+        // ── Flujo Culqi: SOLO abrir el modal. La orden se crea después del pago exitoso en el callback. ──
         const win = window as any;
         if (!win.Culqi) {
           toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
