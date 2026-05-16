@@ -59,14 +59,24 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                     const priceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
                     const lineTotal = item.totalPrice ? parseFloat(item.totalPrice).toFixed(2) : (priceRaw * item.quantity).toFixed(2)
                     const itemName = item.name || item.product?.name || `PRODUCTO ${idx+1}`
+                    const modifiers = item.modifiers || item.options || ''
                     
                     return (
-                        <div key={idx} className="flex items-start">
-                            <span className="w-12 text-center shrink-0">{item.quantity}</span>
-                            <span className="flex-1 pr-2 break-words" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                                {itemName}
-                            </span>
-                            <span className="w-20 text-right shrink-0">{lineTotal}</span>
+                        <div key={idx} className="flex flex-col mb-1">
+                            <div className="flex items-start">
+                                <span className="w-12 text-center shrink-0">{item.quantity}</span>
+                                <span className="flex-1 pr-2 break-words" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                                    {itemName}
+                                </span>
+                                <span className="w-20 text-right shrink-0">{lineTotal}</span>
+                            </div>
+                            {modifiers && (
+                                <div className="flex items-start text-[10px] text-gray-700">
+                                    <span className="w-12 shrink-0"></span>
+                                    <span className="flex-1 pr-2">- {modifiers}</span>
+                                    <span className="w-20 shrink-0"></span>
+                                </div>
+                            )}
                         </div>
                     )
                 })}
