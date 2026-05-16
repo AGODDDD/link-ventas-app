@@ -387,15 +387,41 @@ export default function PedidosPage() {
                                             <div className="md:col-span-4 border-l-0 md:border-l border-t md:border-t-0 border-outline-variant/10 pt-4 md:pt-0 md:pl-6">
                                                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">Productos</p>
                                                 <div className="space-y-2 max-h-[140px] overflow-y-auto pr-2 custom-scrollbar">
-                                                    {items.map((item: any, idx: number) => (
-                                                        <div key={idx} className="flex justify-between text-sm bg-surface-container p-2 rounded-md">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="bg-surface-bright text-on-surface text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
-                                                                <span className="font-medium text-on-surface-variant text-xs line-clamp-1">{item.name}</span>
+                                                    {items.map((item: any, idx: number) => {
+                                                        const combinedPriceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
+                                                        const rawMods = item.modifiersList || item.modifiers || item.options || ''
+                                                        const isModsArray = Array.isArray(rawMods)
+                                                        const modsList = isModsArray ? rawMods : []
+                                                        const modsString = isModsArray ? '' : rawMods
+                                                        
+                                                        const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
+                                                        const basePrice = combinedPriceRaw - modsTotal
+
+                                                        return (
+                                                            <div key={idx} className="flex flex-col text-sm bg-surface-container p-2 rounded-md gap-1">
+                                                                <div className="flex justify-between items-start">
+                                                                    <div className="flex items-start gap-2">
+                                                                        <span className="bg-surface-bright text-on-surface text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
+                                                                        <span className="font-medium text-on-surface-variant text-xs mt-0.5">{item.name}</span>
+                                                                    </div>
+                                                                    <span className="text-xs font-bold text-on-surface whitespace-nowrap mt-0.5">S/ {(basePrice * item.quantity).toFixed(2)}</span>
+                                                                </div>
+                                                                {modsString && (
+                                                                    <div className="flex justify-between text-[11px] text-on-surface-variant pl-9">
+                                                                        <span className="truncate">- {modsString}</span>
+                                                                    </div>
+                                                                )}
+                                                                {modsList.map((m: any, mIdx: number) => (
+                                                                    <div key={mIdx} className="flex justify-between text-[11px] text-on-surface-variant pl-9">
+                                                                        <span className="truncate">- {m.name}</span>
+                                                                        <span className="whitespace-nowrap">
+                                                                            {parseFloat(m.price) > 0 ? `S/ ${(parseFloat(m.price) * item.quantity).toFixed(2)}` : ''}
+                                                                        </span>
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                            <span className="text-xs font-bold text-on-surface whitespace-nowrap">S/ {parseFloat(item.totalPrice || (item.price * item.quantity) || 0).toFixed(2)}</span>
-                                                        </div>
-                                                    ))}
+                                                        )
+                                                    })}
                                                 </div>
                                             </div>
 
