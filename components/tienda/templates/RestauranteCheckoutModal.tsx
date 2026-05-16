@@ -161,7 +161,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             name: item.name,
             price: item.unitPrice,
             quantity: item.quantity,
-            modifiers: item.options || {}
+            modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
           }));
           await supabase.from('order_items').insert(relationalItems);
 
@@ -222,17 +222,21 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
      // Sync profile data back
      if (onProfileUpdate) onProfileUpdate({ nombre, telefono, correo });
 
-     // Build order items for history
-     const orderItems: OrderItem[] = cart.map(item => {
+     const orderItems: any[] = cart.map(item => {
        let modPrice = 0;
        let optSummary = '';
+       let modsList: any[] = [];
        if (item.variantDetails?.options && item.product.variants) {
          const groups = item.product.variants as any[];
          Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
            const g = groups.find(x => x.id === gId);
            if (g) oIds.forEach(oId => {
              const o = g.options.find((x:any) => x.id === oId);
-             if (o) { modPrice += o.price_modifier; optSummary += `${o.name}, `; }
+             if (o) { 
+               modPrice += o.price_modifier; 
+               optSummary += `${o.name}, `; 
+               modsList.push({ name: o.name, price: o.price_modifier });
+             }
            });
          });
        }
@@ -241,6 +245,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
          name: item.product.name,
          quantity: item.quantity,
          unitPrice: item.product.price + modPrice,
+         basePrice: item.product.price,
+         modifiersList: modsList,
          totalPrice: (item.product.price + modPrice) * item.quantity,
          image_url: item.product.image_url || undefined,
          options: optSummary ? optSummary.slice(0, -2) : undefined,
@@ -351,7 +357,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             name: item.name,
             price: item.unitPrice, // Cambiado de .price (undefined) a .unitPrice
             quantity: item.quantity,
-            modifiers: item.options || {}
+            modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
           }));
           const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
           if (itemsError) console.error('⚠️ Error en order_items core:', itemsError.message);

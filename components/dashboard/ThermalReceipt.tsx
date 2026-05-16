@@ -56,11 +56,18 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
             {/* Items */}
             <div className="flex flex-col gap-2 text-xs uppercase mb-4" style={{ lineHeight: '1.2' }}>
                 {order.order_items?.map((item: any, idx: number) => {
-                    const priceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
-                    const lineTotal = item.totalPrice ? parseFloat(item.totalPrice).toFixed(2) : (priceRaw * item.quantity).toFixed(2)
+                    const combinedPriceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
+                    const lineTotal = item.totalPrice ? parseFloat(item.totalPrice).toFixed(2) : (combinedPriceRaw * item.quantity).toFixed(2)
                     const itemName = item.name || item.product?.name || `PRODUCTO ${idx+1}`
-                    const modifiers = item.modifiers || item.options || ''
                     
+                    const rawMods = item.modifiers || item.options || ''
+                    const isModsArray = Array.isArray(rawMods)
+                    const modsList = isModsArray ? rawMods : []
+                    const modsString = isModsArray ? '' : rawMods
+                    
+                    const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
+                    const basePrice = combinedPriceRaw - modsTotal
+
                     return (
                         <div key={idx} className="flex flex-col mb-1">
                             <div className="flex items-start">
@@ -68,15 +75,26 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                                 <span className="flex-1 pr-2 break-words" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
                                     {itemName}
                                 </span>
-                                <span className="w-20 text-right shrink-0">{lineTotal}</span>
+                                <span className="w-20 text-right shrink-0">{(basePrice * item.quantity).toFixed(2)}</span>
                             </div>
-                            {modifiers && (
+                            
+                            {modsString && (
                                 <div className="flex items-start text-[10px]" style={{ color: '#555555' }}>
                                     <span className="w-12 shrink-0"></span>
-                                    <span className="flex-1 pr-2">- {modifiers}</span>
+                                    <span className="flex-1 pr-2">- {modsString}</span>
                                     <span className="w-20 shrink-0"></span>
                                 </div>
                             )}
+
+                            {modsList.map((m: any, mIdx: number) => (
+                                <div key={mIdx} className="flex items-start text-[10px]" style={{ color: '#555555' }}>
+                                    <span className="w-12 shrink-0"></span>
+                                    <span className="flex-1 pr-2">- {m.name}</span>
+                                    <span className="w-20 text-right shrink-0">
+                                        {parseFloat(m.price) > 0 ? (parseFloat(m.price) * item.quantity).toFixed(2) : ''}
+                                    </span>
+                                </div>
+                            ))}
                         </div>
                     )
                 })}
