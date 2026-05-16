@@ -60,7 +60,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                     const lineTotal = item.totalPrice ? parseFloat(item.totalPrice).toFixed(2) : (combinedPriceRaw * item.quantity).toFixed(2)
                     const itemName = item.name || item.product?.name || `PRODUCTO ${idx+1}`
                     
-                    const rawMods = item.modifiers || item.options || ''
+                    const rawMods = item.modifiersList || item.modifiers || item.options || ''
                     const isModsArray = Array.isArray(rawMods)
                     const modsList = isModsArray ? rawMods : []
                     const modsString = isModsArray ? '' : rawMods
