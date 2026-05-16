@@ -101,3 +101,17 @@
 .kinetic-text {
     line-height: 0.85;
 }
+
+/* Fix text selection visibility on light-background inputs (checkout, modals) */
+input::selection,
+textarea::selection,
+select::selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
+input::-moz-selection,
+textarea::-moz-selection,
+select::-moz-selection {
+    background: #3b82f6;
+    color: #ffffff;
+}
