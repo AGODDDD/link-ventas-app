@@ -502,11 +502,26 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm space-y-4">
                <h3 className="font-bold text-[14px] text-[#333]">Productos</h3>
                <div className="space-y-3">
-                 {cart.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-4 py-3 border-b border-neutral-100 last:border-0 last:pb-0">
-                       <div className="w-12 h-12 rounded-md bg-neutral-100 shrink-0 border border-neutral-200 overflow-hidden relative">
+                 {cart.map((item, idx) => {
+                     const modPriceLine = (() => {
+                       let mp = 0;
+                       if (item.variantDetails?.options && item.product.variants) {
+                         const groups = item.product.variants as any[];
+                         Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
+                           const g = groups.find(x => x.id === gId);
+                           if (g) oIds.forEach(oId => {
+                             const o = g.options.find((x:any) => x.id === oId);
+                             if (o) mp += o.price_modifier;
+                           });
+                         });
+                       }
+                       return mp;
+                     })();
+                     return (
+                    <div key={idx} className="flex gap-4 p-3 bg-white border border-neutral-100 rounded-xl shadow-sm">
+                       <div className="w-12 h-12 rounded-lg bg-neutral-100 overflow-hidden flex-shrink-0 border border-neutral-100">
                          {item.product.image_url ? (
-                            <img src={item.product.image_url} className="w-full h-full object-cover" />
+                            <img src={item.product.image_url} alt={item.product.name} className="w-full h-full object-cover" />
                          ) : (
                             <Store className="w-full h-full p-3 text-neutral-300" />
                          )}
@@ -514,13 +529,25 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                        <div className="flex-1 min-w-0">
                          <div className="flex justify-between items-start gap-2">
                            <p className="font-bold text-sm text-[#222]">{item.quantity} - {item.product.name}</p>
-                           <p className="font-medium text-sm text-[#222] whitespace-nowrap">S/ {((item.product.price) * item.quantity).toFixed(2)}</p>
+                           <p className="font-medium text-sm text-[#222] whitespace-nowrap">S/ {((item.product.price + modPriceLine) * item.quantity).toFixed(2)}</p>
                          </div>
                          {/* Display modifiers summary */}
                          {(item.variantDetails?.options) && (
                             <div className="text-xs text-neutral-500 mt-1">
                               {Object.values(item.variantDetails.options).flat().length > 0 ? (
-                                <span className="bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-sm inline-block">Ref: Adicionales elegidos</span>
+                              <span className="bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-sm inline-block text-neutral-600 max-w-full truncate">
+                                + Extras: {
+                                  Object.entries(item.variantDetails.options as Record<string, string[]>).flatMap(([gId, oIds]) => {
+                                    const g = item.product.variants?.find((v:any) => v.id === gId);
+                                    if (!g) return [];
+                                    return oIds.map(oId => {
+                                      const o = g.options.find((opt:any) => opt.id === oId);
+                                      if (!o) return null;
+                                      return o.price_modifier > 0 ? `${o.name} (+S/ ${o.price_modifier.toFixed(2)})` : o.name;
+                                    }).filter(Boolean);
+                                  }).join(', ')
+                                }
+                              </span>
                               ) : null}
                             </div>
                          )}
