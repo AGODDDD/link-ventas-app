@@ -71,7 +71,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                                 <span className="w-20 text-right shrink-0">{lineTotal}</span>
                             </div>
                             {modifiers && (
-                                <div className="flex items-start text-[10px] text-gray-700">
+                                <div className="flex items-start text-[10px]" style={{ color: '#555555' }}>
                                     <span className="w-12 shrink-0"></span>
                                     <span className="flex-1 pr-2">- {modifiers}</span>
                                     <span className="w-20 shrink-0"></span>
