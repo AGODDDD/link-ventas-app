@@ -56,14 +56,15 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
             {/* Items */}
             <div className="flex flex-col gap-2 text-xs uppercase mb-4" style={{ lineHeight: '1.2' }}>
                 {order.order_items?.map((item: any, idx: number) => {
-                    const priceRaw = parseFloat(item.price || item.price_at_time || 0)
-                    const lineTotal = (priceRaw * item.quantity).toFixed(2)
+                    const priceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
+                    const lineTotal = item.totalPrice ? parseFloat(item.totalPrice).toFixed(2) : (priceRaw * item.quantity).toFixed(2)
+                    const itemName = item.name || item.product?.name || `PRODUCTO ${idx+1}`
                     
                     return (
                         <div key={idx} className="flex items-start">
                             <span className="w-12 text-center shrink-0">{item.quantity}</span>
                             <span className="flex-1 pr-2 break-words" style={{ overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                                {item.product?.name || `PRODUCTO ${idx+1}`}
+                                {itemName}
                             </span>
                             <span className="w-20 text-right shrink-0">{lineTotal}</span>
                         </div>
