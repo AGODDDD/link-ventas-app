@@ -90,24 +90,35 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
           // 3. SOLO después del cobro exitoso, crear orden con DOBLE ESCRITURA
           const currentCart = useCartStore.getState().carts[perfil.id] || [];
+          const productos = perfil.productos || [];
           const orderItems = currentCart.map(item => {
+            const product = productos.find(p => p.id === item.product.id);
             let modPrice = 0;
             let optSummary = '';
+            let modsList: any[] = [];
+            
             if (item.variantDetails?.options && item.product.variants) {
               const groups = item.product.variants as any[];
               Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
                 const g = groups.find(x => x.id === gId);
                 if (g) oIds.forEach(oId => {
                   const o = g.options.find((x:any) => x.id === oId);
-                  if (o) { modPrice += o.price_modifier; optSummary += `${o.name}, `; }
+                  if (o) { 
+                    modPrice += o.price_modifier; 
+                    optSummary += `${o.name}, `; 
+                    modsList.push({ name: o.name, price: o.price_modifier });
+                  }
                 });
               });
             }
+
             return {
               id: item.product.id,
               name: item.product.name,
               quantity: item.quantity,
               unitPrice: item.product.price + modPrice,
+              basePrice: item.product.price,
+              modifiersList: modsList,
               totalPrice: (item.product.price + modPrice) * item.quantity,
               options: optSummary ? optSummary.slice(0, -2) : undefined,
             };
