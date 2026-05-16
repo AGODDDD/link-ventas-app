@@ -102,10 +102,23 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
             
             {/* Subtotal y Total */}
             <div className="text-xs uppercase flex flex-col items-end pr-2 gap-1 mb-2">
-                 <div className="flex w-[160px] justify-between">
-                     <span>SUBTOTAL</span>
-                     <span>{total}</span>
-                 </div>
+                 {order.subtotal > 0 && order.delivery_fee > 0 ? (
+                     <>
+                         <div className="flex w-[160px] justify-between">
+                             <span>SUBTOTAL</span>
+                             <span>{parseFloat(order.subtotal).toFixed(2)}</span>
+                         </div>
+                         <div className="flex w-[160px] justify-between">
+                             <span>DELIVERY</span>
+                             <span>{parseFloat(order.delivery_fee).toFixed(2)}</span>
+                         </div>
+                     </>
+                 ) : (
+                     <div className="flex w-[160px] justify-between">
+                         <span>SUBTOTAL</span>
+                         <span>{total}</span>
+                     </div>
+                 )}
                  <div className="flex w-[160px] justify-between font-bold text-sm">
                      <span>TOTAL</span>
                      <span>{total}</span>
