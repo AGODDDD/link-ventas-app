@@ -390,9 +390,11 @@ export default function PedidosPage() {
                                                     {items.map((item: any, idx: number) => {
                                                         const combinedPriceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
                                                         const rawMods = item.modifiersList || item.modifiers || item.options || ''
+                                                        const isModsObject = rawMods && !Array.isArray(rawMods) && typeof rawMods === 'object' && rawMods.items
                                                         const isModsArray = Array.isArray(rawMods)
-                                                        const modsList = isModsArray ? rawMods : []
-                                                        const modsString = isModsArray ? '' : rawMods
+                                                        const modsList = isModsObject ? rawMods.items : (isModsArray ? rawMods : [])
+                                                        const modsString = (!isModsArray && !isModsObject && typeof rawMods === 'string') ? rawMods : ''
+                                                        const itemNotes = item.notes || (isModsObject ? rawMods.notes : '') || ''
                                                         
                                                         const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
                                                         const basePrice = combinedPriceRaw - modsTotal
@@ -419,6 +421,12 @@ export default function PedidosPage() {
                                                                         </span>
                                                                     </div>
                                                                 ))}
+                                                                {itemNotes && (
+                                                                    <div className="flex items-start gap-1 text-[11px] text-amber-500 pl-9 italic">
+                                                                        <span>📝</span>
+                                                                        <span>{itemNotes}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )
                                                     })}

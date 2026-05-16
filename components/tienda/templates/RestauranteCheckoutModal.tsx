@@ -121,6 +121,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
               modifiersList: modsList,
               totalPrice: (item.product.price + modPrice) * item.quantity,
               options: optSummary ? optSummary.slice(0, -2) : undefined,
+              notes: item.variantDetails?.notes || undefined,
             };
           });
 
@@ -166,14 +167,19 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           });
 
           // 3c. Order items
-          const relationalItems = orderItems.map((item: any) => ({
-            order_id: orderId,
-            product_id: item.id && item.id.length > 20 ? item.id : null,
-            name: item.name,
-            price: item.unitPrice,
-            quantity: item.quantity,
-            modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
-          }));
+          const relationalItems = orderItems.map((item: any) => {
+            const modsData: any = item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {});
+            return {
+              order_id: orderId,
+              product_id: item.id && item.id.length > 20 ? item.id : null,
+              name: item.name,
+              price: item.unitPrice,
+              quantity: item.quantity,
+              modifiers: item.notes 
+                ? { items: Array.isArray(modsData) ? modsData : [], notes: item.notes }
+                : modsData
+            };
+          });
           await supabase.from('order_items').insert(relationalItems);
 
           // 3d. Lead capture

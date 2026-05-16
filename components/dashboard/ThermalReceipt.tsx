@@ -61,9 +61,12 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                     const itemName = item.name || item.product?.name || `PRODUCTO ${idx+1}`
                     
                     const rawMods = item.modifiersList || item.modifiers || item.options || ''
+                    // Handle both array format and { items: [], notes: '' } object format
+                    const isModsObject = rawMods && !Array.isArray(rawMods) && typeof rawMods === 'object' && rawMods.items
                     const isModsArray = Array.isArray(rawMods)
-                    const modsList = isModsArray ? rawMods : []
-                    const modsString = isModsArray ? '' : rawMods
+                    const modsList = isModsObject ? rawMods.items : (isModsArray ? rawMods : [])
+                    const modsString = (!isModsArray && !isModsObject && typeof rawMods === 'string') ? rawMods : ''
+                    const itemNotes = item.notes || (isModsObject ? rawMods.notes : '') || ''
                     
                     const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
                     const basePrice = combinedPriceRaw - modsTotal
@@ -95,6 +98,14 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                                     </span>
                                 </div>
                             ))}
+
+                            {itemNotes && (
+                                <div className="flex items-start text-[10px]" style={{ color: '#333333', fontStyle: 'italic' }}>
+                                    <span className="w-12 shrink-0"></span>
+                                    <span className="flex-1 pr-2">** {itemNotes} **</span>
+                                    <span className="w-20 shrink-0"></span>
+                                </div>
+                            )}
                         </div>
                     )
                 })}
