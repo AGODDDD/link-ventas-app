@@ -552,8 +552,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                             </div>
                          )}
                        </div>
-                    </div>
-                 ))}
+                     </div>
+                 )})}
                </div>
             </div>
 
