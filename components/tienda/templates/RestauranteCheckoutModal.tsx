@@ -568,6 +568,13 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                               ) : null}
                             </div>
                          )}
+                         {/* Display customer notes */}
+                         {item.variantDetails?.notes && (
+                            <div className="text-xs text-amber-600 mt-1 italic flex items-center gap-1">
+                               <span>📝</span>
+                               <span>{item.variantDetails.notes}</span>
+                            </div>
+                         )}
                        </div>
                      </div>
                  )})}
