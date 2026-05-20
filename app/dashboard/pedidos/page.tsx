@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
@@ -286,6 +286,22 @@ export default function PedidosPage() {
         const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
         navigator.clipboard.writeText(pdfUrl)
         toast.success('¡Enlace del ticket PDF copiado al portapapeles! 🔗')
+    }
+
+    const descargarPdfDesdeModal = async (order: any) => {
+        toast.loading('Generando PDF oficial... 📄', { id: 'modal-pdf' })
+        try {
+            const response = await fetch(`/api/pedidos/ticket?id=${order.id}`)
+            if (!response.ok) throw new Error("No se pudo generar el PDF")
+            const blob = await response.blob()
+            const link = document.createElement('a')
+            link.href = URL.createObjectURL(blob)
+            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.pdf`
+            link.click()
+            toast.success('¡Ticket PDF descargado con éxito! 📄', { id: 'modal-pdf' })
+        } catch (err: any) {
+            toast.error('Falló la descarga del PDF: ' + err.message, { id: 'modal-pdf' })
+        }
     }
 
     const descargarPngDesdeModal = async (order: any) => {
@@ -907,12 +923,12 @@ export default function PedidosPage() {
                                     💬 Enviar por WhatsApp
                                 </button>
 
-                                {/* COPÌAR ENLACE PDF */}
+                                {/* DESCARGAR PDF OFICIAL */}
                                 <button
-                                    onClick={() => copiarEnlacePDF(shareOrder)}
-                                    className="w-full bg-surface-container-high hover:bg-surface-bright text-on-surface px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-outline-variant/20 transform transition-all hover:scale-[1.02] active:scale-95 shadow-inner"
+                                    onClick={() => descargarPdfDesdeModal(shareOrder)}
+                                    className="w-full bg-primary hover:brightness-110 text-on-primary px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/20"
                                 >
-                                    <Copy size={14} /> Copiar Enlace PDF
+                                    <FileText size={14} /> Descargar PDF Oficial
                                 </button>
 
                                 {/* SECCIÓN CORREO ELECTRÓNICO */}
