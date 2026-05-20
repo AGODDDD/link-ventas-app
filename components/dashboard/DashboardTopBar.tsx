@@ -76,6 +76,15 @@ export default function DashboardTopBar() {
                         const store = useDashboardStore.getState()
                         const norm = store.normalizarOrder(nuevaOrden, 'core')
                         store.agregarOrderLocal(norm)
+
+                        // Reproducir alerta sonora y notificación push nativa
+                        try { new Audio('/notification.mp3').play().catch(() => {}) } catch (_) {}
+                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                            new Notification('🛍️ Nueva Venta Recibida', { 
+                                body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
+                                icon: '/favicon.ico' 
+                            })
+                        }
                     }
                 )
                 .on(
