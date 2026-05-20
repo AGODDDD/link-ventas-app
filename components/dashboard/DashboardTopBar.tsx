@@ -14,6 +14,49 @@ interface Notificacion {
     leida: boolean;
 }
 
+// Función de síntesis de audio premium nativa (Web Audio API)
+// Esto genera una campanilla moderna y elegante de dos tonos sin depender de archivos de audio externos (que pueden dar 404).
+const playNotificationSound = () => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const now = ctx.currentTime;
+        
+        // Primer tono de campana (re natural / D5)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(587.33, now); // D5
+        osc1.frequency.exponentialRampToValueAtTime(880.00, now + 0.15); // A5
+        
+        gain1.gain.setValueAtTime(0.15, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.6);
+
+        // Segundo tono de campana (la natural / A5) con leve desfase
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880.00, now + 0.08); // A5
+        osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.25); // D6
+        
+        gain2.gain.setValueAtTime(0.1, now + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.08);
+        osc2.stop(now + 0.8);
+    } catch (e) {
+        console.error('Audio synthesis failed:', e);
+    }
+}
+
 export default function DashboardTopBar() {
     const [userId, setUserId] = useState<string | null>(null)
     const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
@@ -78,7 +121,7 @@ export default function DashboardTopBar() {
                         store.agregarOrderLocal(norm)
 
                         // Reproducir alerta sonora y notificación push nativa
-                        try { new Audio('/notification.mp3').play().catch(() => {}) } catch (_) {}
+                        playNotificationSound();
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                             new Notification('🛍️ Nueva Venta Recibida', { 
                                 body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
@@ -122,7 +165,7 @@ export default function DashboardTopBar() {
                         const norm = store.normalizarOrder(pedido, 'legacy_delivery')
                         store.agregarOrderLocal(norm)
 
-                        try { new Audio('/notification.mp3').play().catch(() => {}) } catch (_) {}
+                        playNotificationSound();
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                             new Notification('🛵 Nuevo Pedido Delivery', { body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`, icon: '/favicon.ico' })
                         }
