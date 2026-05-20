@@ -90,9 +90,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
           // 3. SOLO después del cobro exitoso, crear orden con DOBLE ESCRITURA
           const currentCart = useCartStore.getState().carts[perfil.id] || [];
-          const productos = perfil.productos || [];
+          const productos = (perfil as any).productos || [];
           const orderItems = currentCart.map(item => {
-            const product = productos.find(p => p.id === item.product.id);
+            const product = productos.find((p: any) => p.id === item.product.id);
             let modPrice = 0;
             let optSummary = '';
             let modsList: any[] = [];
