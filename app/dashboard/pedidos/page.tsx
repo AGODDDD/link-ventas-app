@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
 import { ThermalReceipt } from '@/components/dashboard/ThermalReceipt'
+import { printThermalTicket } from '@/lib/thermalUtils'
 import { useRef } from 'react'
 
 type Order = {
@@ -212,6 +213,17 @@ export default function PedidosPage() {
         } finally {
             setImprimiendoId(null)
         }
+    }
+
+    // Impresión Nativa usando el Iframe Oculto
+    const imprimirTicketNativo = (order: any) => {
+        const element = receiptRefs.current[order.id]
+        if (!element) {
+            toast.error("Motor térmico no inicializado", { id: 'thermal-toast' })
+            return
+        }
+        toast.success('Abriendo panel de impresión nativa... 🖨️', { id: 'thermal-toast' })
+        printThermalTicket(element)
     }
 
     const getStatusStyle = (status: string) => {
@@ -481,14 +493,22 @@ export default function PedidosPage() {
                                                             </button>
                                                         </div>
                                                         
-                                                        {/* BOTON IMPRIMIR TICKET */}
-                                                        <button
-                                                            onClick={() => generarTicketTermico(order)}
-                                                            disabled={imprimiendoId === order.id}
-                                                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
-                                                        >
-                                                            {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
-                                                        </button>
+                                                        {/* BOTONES IMPRIMIR TICKET */}
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            <button
+                                                                onClick={() => imprimirTicketNativo(order)}
+                                                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
+                                                            >
+                                                                <Printer size={14} /> Imprimir
+                                                            </button>
+                                                            <button
+                                                                onClick={() => generarTicketTermico(order)}
+                                                                disabled={imprimiendoId === order.id}
+                                                                className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                            >
+                                                                <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                            </button>
+                                                        </div>
                                                         <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
                                                             <ThermalReceipt
                                                                 ref={el => { receiptRefs.current[order.id] = el }}
@@ -502,13 +522,22 @@ export default function PedidosPage() {
                                                         <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
                                                             ✅ Entregado
                                                         </div>
-                                                        <button
-                                                            onClick={() => generarTicketTermico(order)}
-                                                            disabled={imprimiendoId === order.id}
-                                                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
-                                                        >
-                                                            {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
-                                                        </button>
+                                                        {/* BOTONES IMPRIMIR TICKET */}
+                                                        <div className="grid grid-cols-2 gap-2 mt-2 w-full">
+                                                            <button
+                                                                onClick={() => imprimirTicketNativo(order)}
+                                                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
+                                                            >
+                                                                <Printer size={14} /> Imprimir
+                                                            </button>
+                                                            <button
+                                                                onClick={() => generarTicketTermico(order)}
+                                                                disabled={imprimiendoId === order.id}
+                                                                className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                            >
+                                                                <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                            </button>
+                                                        </div>
                                                         <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
                                                             <ThermalReceipt
                                                                 ref={el => { receiptRefs.current[order.id] = el }}
@@ -639,14 +668,22 @@ export default function PedidosPage() {
                                                         <Truck size={18} /> Marcar Enviado
                                                     </button>
 
-                                                    {/* ACTION: TICKET VISUAL DIRECTO */}
-                                                    <button
-                                                        onClick={() => generarTicketTermico(order)}
-                                                        disabled={imprimiendoId === order.id}
-                                                        className={`w-full flex items-center justify-center gap-2 px-4 py-2 mt-2 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.2)] hover:scale-[1.02] active:scale-95 uppercase tracking-widest ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
-                                                    >
-                                                        {imprimiendoId === order.id ? '🖨️ IMPRIMIENDO...' : '🎟️ IMPRIMIR TICKET'}
-                                                    </button>
+                                                    {/* BOTONES IMPRIMIR TICKET */}
+                                                    <div className="grid grid-cols-2 gap-2 mt-2 w-full">
+                                                        <button
+                                                            onClick={() => imprimirTicketNativo(order)}
+                                                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-on-surface text-background hover:bg-primary text-xs font-bold rounded-xl transition-all shadow-[0_5px_15px_rgba(0,0,0,0.15)] hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
+                                                        >
+                                                            <Printer size={14} /> Imprimir
+                                                        </button>
+                                                        <button
+                                                            onClick={() => generarTicketTermico(order)}
+                                                            disabled={imprimiendoId === order.id}
+                                                            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                        >
+                                                            <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                        </button>
+                                                    </div>
 
                                                     {/* MOTOR TÉRMICO OCULTO (Renderizado the the invisible forzoso) */}
                                                     <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
