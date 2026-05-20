@@ -14,13 +14,43 @@ interface Notificacion {
     leida: boolean;
 }
 
+let sharedAudioCtx: any = null;
+
+const initAudioContext = () => {
+    if (typeof window === 'undefined') return;
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!sharedAudioCtx) {
+            sharedAudioCtx = new AudioContextClass();
+        }
+        if (sharedAudioCtx.state === 'suspended') {
+            sharedAudioCtx.resume();
+        }
+    } catch (e) {
+        console.error('Failed to initialize AudioContext:', e);
+    }
+};
+
 // Función de síntesis de audio premium nativa (Web Audio API)
 // Esto genera una campanilla moderna y elegante de dos tonos sin depender de archivos de audio externos (que pueden dar 404).
 const playNotificationSound = () => {
     try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioContextClass) return;
-        const ctx = new AudioContextClass();
+        if (typeof window === 'undefined') return;
+        
+        // Si no se ha inicializado en el click, lo intentamos ahora
+        if (!sharedAudioCtx) {
+            initAudioContext();
+        }
+        
+        if (!sharedAudioCtx) return;
+        
+        // Intentar hacer resume en caso de que esté en estado suspendido
+        if (sharedAudioCtx.state === 'suspended') {
+            sharedAudioCtx.resume();
+        }
+        
+        const ctx = sharedAudioCtx;
         const now = ctx.currentTime;
         
         // Primer tono de campana (re natural / D5)
@@ -71,6 +101,19 @@ export default function DashboardTopBar() {
         }
         obtenerUsuario()
     }, [])
+
+    // Habilitar Audio en interacción del usuario para burlar las restricciones de Autoplay
+    useEffect(() => {
+        const handleUserGesture = () => {
+            initAudioContext();
+        };
+        document.addEventListener('click', handleUserGesture, { capture: true });
+        document.addEventListener('touchstart', handleUserGesture, { capture: true });
+        return () => {
+            document.removeEventListener('click', handleUserGesture, { capture: true });
+            document.removeEventListener('touchstart', handleUserGesture, { capture: true });
+        };
+    }, []);
 
     // Click Outside para cerrar el menú
     useEffect(() => {
