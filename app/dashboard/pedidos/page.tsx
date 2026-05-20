@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
@@ -42,6 +42,11 @@ export default function PedidosPage() {
     const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
     const receiptRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
     const [perfil, setPerfil] = useState<any>(null)
+
+    // Estado para Compartir Ticket
+    const [shareOrder, setShareOrder] = useState<any | null>(null)
+    const [shareEmail, setShareEmail] = useState('')
+    const [sharePngPreview, setSharePngPreview] = useState<string | null>(null)
 
     // Paginación UI (Performance Tweak)
     const [currentPage, setCurrentPage] = useState(1);
@@ -224,6 +229,88 @@ export default function PedidosPage() {
         }
         toast.success('Abriendo panel de impresión nativa... 🖨️', { id: 'thermal-toast' })
         printThermalTicket(element)
+    }
+
+    // Compartir Ticket con Vista Previa Rápida en PNG y PDF Oficial
+    const abrirCompartir = async (order: any) => {
+        setShareOrder(order)
+        setShareEmail(order.customer_email || '')
+        setSharePngPreview(null)
+        
+        setTimeout(async () => {
+            try {
+                const element = receiptRefs.current[order.id]
+                if (element) {
+                    const canvas = await html2canvas(element, { scale: 1.5, backgroundColor: '#ffffff' })
+                    setSharePngPreview(canvas.toDataURL('image/png'))
+                }
+            } catch (err) {
+                console.error("Error al generar vista previa del ticket:", err)
+            }
+        }, 300)
+    }
+
+    const compartirWhatsApp = (order: any) => {
+        const phone = order.customer_phone ? order.customer_phone.replace(/\D/g, '') : ''
+        const store_name = perfil?.store_name || 'nuestra tienda'
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        const customerName = order.customer_name || 'Cliente'
+        
+        const message = `Hola ${customerName}, ¡gracias por tu compra! Aquí puedes visualizar y descargar el ticket digital oficial de tu pedido en ${store_name.toUpperCase()}: ${pdfUrl}`
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+        
+        window.open(whatsappUrl, '_blank')
+        toast.success('Abriendo WhatsApp... 💬')
+    }
+
+    const compartirEmail = (order: any, email: string) => {
+        if (!email || !email.includes('@')) {
+            toast.error('Por favor, ingresa un correo electrónico válido')
+            return
+        }
+        
+        const store_name = perfil?.store_name || 'nuestra tienda'
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        const customerName = order.customer_name || 'Cliente'
+        const shortId = order.id.split('-')[0].toUpperCase()
+        
+        const subject = `Ticket Digital - Pedido #${shortId} en ${store_name}`
+        const body = `Hola ${customerName},\n\n¡Gracias por tu compra! Adjuntamos el enlace para visualizar y descargar tu ticket digital optimizado:\n\n${pdfUrl}\n\nGracias por tu preferencia.\n\n${store_name.toUpperCase()}`
+        
+        const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        window.open(mailtoUrl, '_blank')
+        toast.success('Abriendo cliente de correo... ✉️')
+    }
+
+    const copiarEnlacePDF = (order: any) => {
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        navigator.clipboard.writeText(pdfUrl)
+        toast.success('¡Enlace del ticket PDF copiado al portapapeles! 🔗')
+    }
+
+    const descargarPngDesdeModal = async (order: any) => {
+        if (sharePngPreview) {
+            const link = document.createElement('a')
+            link.href = sharePngPreview
+            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+            link.click()
+            toast.success('Ticket descargado como PNG con éxito!')
+        } else {
+            toast.loading('Generando ticket clásico...', { id: 'modal-download' })
+            try {
+                const element = receiptRefs.current[order.id]
+                if (!element) throw new Error("Motor térmico no inicializado")
+                const canvas = await html2canvas(element, { scale: 2, backgroundColor: null })
+                const image = canvas.toDataURL('image/png')
+                const link = document.createElement('a')
+                link.href = image
+                link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+                link.click()
+                toast.success('Ticket descargado como PNG con éxito!', { id: 'modal-download' })
+            } catch (err: any) {
+                toast.error('Falló la descarga del PNG: ' + err.message, { id: 'modal-download' })
+            }
+        }
     }
 
     const getStatusStyle = (status: string) => {
@@ -493,7 +580,7 @@ export default function PedidosPage() {
                                                             </button>
                                                         </div>
                                                         
-                                                        {/* BOTONES IMPRIMIR TICKET */}
+                                                        {/* BOTONES IMPRIMIR Y COMPARTIR TICKET */}
                                                         <div className="grid grid-cols-2 gap-2 mt-2">
                                                             <button
                                                                 onClick={() => imprimirTicketNativo(order)}
@@ -502,11 +589,10 @@ export default function PedidosPage() {
                                                                 <Printer size={14} /> Imprimir
                                                             </button>
                                                             <button
-                                                                onClick={() => generarTicketTermico(order)}
-                                                                disabled={imprimiendoId === order.id}
-                                                                className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                                onClick={() => abrirCompartir(order)}
+                                                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
                                                             >
-                                                                <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                                <Share2 size={14} /> Compartir
                                                             </button>
                                                         </div>
                                                         <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
@@ -522,7 +608,7 @@ export default function PedidosPage() {
                                                         <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
                                                             ✅ Entregado
                                                         </div>
-                                                        {/* BOTONES IMPRIMIR TICKET */}
+                                                        {/* BOTONES IMPRIMIR Y COMPARTIR TICKET */}
                                                         <div className="grid grid-cols-2 gap-2 mt-2 w-full">
                                                             <button
                                                                 onClick={() => imprimirTicketNativo(order)}
@@ -531,11 +617,10 @@ export default function PedidosPage() {
                                                                 <Printer size={14} /> Imprimir
                                                             </button>
                                                             <button
-                                                                onClick={() => generarTicketTermico(order)}
-                                                                disabled={imprimiendoId === order.id}
-                                                                className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                                onClick={() => abrirCompartir(order)}
+                                                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
                                                             >
-                                                                <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                                <Share2 size={14} /> Compartir
                                                             </button>
                                                         </div>
                                                         <div className="fixed overflow-hidden opacity-0 pointer-events-none w-0 h-0 z-[-999]" style={{ left: '-9999px', top: '-9999px' }}>
@@ -668,7 +753,7 @@ export default function PedidosPage() {
                                                         <Truck size={18} /> Marcar Enviado
                                                     </button>
 
-                                                    {/* BOTONES IMPRIMIR TICKET */}
+                                                    {/* BOTONES IMPRIMIR Y COMPARTIR TICKET */}
                                                     <div className="grid grid-cols-2 gap-2 mt-2 w-full">
                                                         <button
                                                             onClick={() => imprimirTicketNativo(order)}
@@ -677,11 +762,10 @@ export default function PedidosPage() {
                                                             <Printer size={14} /> Imprimir
                                                         </button>
                                                         <button
-                                                            onClick={() => generarTicketTermico(order)}
-                                                            disabled={imprimiendoId === order.id}
-                                                            className={`w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider ${imprimiendoId === order.id ? 'opacity-50 pointer-events-none' : ''}`}
+                                                            onClick={() => abrirCompartir(order)}
+                                                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-container hover:bg-surface-bright text-on-surface-variant text-xs font-bold rounded-xl border border-outline-variant/10 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-wider"
                                                         >
-                                                            <Download size={14} /> {imprimiendoId === order.id ? 'Imagen...' : 'Imagen'}
+                                                            <Share2 size={14} /> Compartir
                                                         </button>
                                                     </div>
 
@@ -771,6 +855,98 @@ export default function PedidosPage() {
                             ) : (
                                 <img src={selectedProof!} className="w-full h-full object-contain" alt="Comprobante" />
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL DE COMPARTIR COMPROBANTE - ULTRA PREMIUM */}
+            {shareOrder && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="relative bg-surface rounded-2xl max-w-2xl w-full overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border border-outline-variant/20 flex flex-col md:flex-row animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => { setShareOrder(null); setSharePngPreview(null) }}
+                            className="absolute top-4 right-4 p-2 bg-surface-container-high hover:bg-surface-bright rounded-full text-on-surface z-10 transition-colors border border-white/10"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        {/* Columna Izquierda: Vista Previa Rápida (PNG renderizado) */}
+                        <div className="md:w-1/2 p-6 bg-surface-container-low flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-outline-variant/10">
+                            <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-4">Vista Previa Rápida</p>
+                            
+                            <div className="w-[190px] h-[320px] bg-white rounded-lg shadow-[0_15px_30px_rgba(0,0,0,0.25)] overflow-y-auto overflow-x-hidden border border-neutral-200 relative scrollbar-none">
+                                {sharePngPreview ? (
+                                    <img src={sharePngPreview} className="w-full h-auto" alt="Ticket Preview" />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-white p-4 text-center">
+                                        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin mb-3"></div>
+                                        <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest">Generando vista...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Columna Derecha: Canales de Envío y PDF Oficial */}
+                        <div className="md:w-1/2 p-6 flex flex-col justify-between space-y-6">
+                            <div>
+                                <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Compartir Comprobante</p>
+                                <h3 className="font-headline font-black text-xl text-on-surface uppercase italic tracking-tight mb-2">Pedido #{shareOrder.id.split('-')[0].toUpperCase()}</h3>
+                                <p className="text-xs text-on-surface-variant leading-relaxed">
+                                    Generamos un <strong className="text-primary font-bold">PDF oficial optimizado para ticketera</strong> directamente en el servidor. Puedes compartir el enlace oficial o enviarlo:
+                                </p>
+                            </div>
+
+                            {/* Acciones principales */}
+                            <div className="space-y-3 flex-1 flex flex-col justify-center">
+                                {/* CANAL WHATSAPP */}
+                                <button
+                                    onClick={() => compartirWhatsApp(shareOrder)}
+                                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
+                                >
+                                    💬 Enviar por WhatsApp
+                                </button>
+
+                                {/* COPÌAR ENLACE PDF */}
+                                <button
+                                    onClick={() => copiarEnlacePDF(shareOrder)}
+                                    className="w-full bg-surface-container-high hover:bg-surface-bright text-on-surface px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 border border-outline-variant/20 transform transition-all hover:scale-[1.02] active:scale-95 shadow-inner"
+                                >
+                                    <Copy size={14} /> Copiar Enlace PDF
+                                </button>
+
+                                {/* SECCIÓN CORREO ELECTRÓNICO */}
+                                <div className="border-t border-outline-variant/10 pt-4 mt-2">
+                                    <label className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest block mb-2">Enviar por Correo Electrónico</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="email"
+                                            placeholder="correo@ejemplo.com"
+                                            value={shareEmail}
+                                            onChange={(e) => setShareEmail(e.target.value)}
+                                            className="flex-1 bg-surface-container-low border border-outline-variant/10 focus:border-primary/50 outline-none text-xs text-on-surface px-3 py-2.5 rounded-lg font-medium"
+                                        />
+                                        <button
+                                            onClick={() => compartirEmail(shareOrder, shareEmail)}
+                                            className="bg-primary hover:brightness-110 text-on-primary p-2.5 rounded-lg flex items-center justify-center transition-all hover:scale-[1.02] active:scale-95"
+                                            title="Enviar Correo"
+                                        >
+                                            <Mail size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Descargar PNG de respaldo en el pie del modal */}
+                            <div className="border-t border-outline-variant/10 pt-4 flex justify-between items-center text-[10px] text-on-surface-variant font-mono">
+                                <span>TAMAÑO: TICKET 80MM</span>
+                                <button 
+                                    onClick={() => descargarPngDesdeModal(shareOrder)}
+                                    className="text-primary hover:underline font-bold uppercase tracking-widest flex items-center gap-1"
+                                >
+                                    <Download size={10} /> Descargar PNG
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
