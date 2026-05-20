@@ -4,23 +4,29 @@ import { supabase } from '@/lib/supabase'
 
 // Helper para buscar el pedido por ID en las distintas tablas (Shadow Migration)
 async function getOrderById(orderId: string) {
-    // 1. Intentar en orders (Core / Legacy Standard)
-    const { data: orderData } = await supabase
-        .from('orders')
-        .select(`*, order_items (*)`)
-        .eq('id', orderId)
-        .single()
-        
-    if (orderData) {
-        return {
-            ...orderData,
-            _source: orderData.store_id ? 'core' : 'legacy_standard'
+    // Verificar si es un UUID válido
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)
+
+    if (isUuid) {
+        // 1. Intentar en orders (Core / Legacy Standard)
+        const { data: orderData } = await supabase
+            .from('orders')
+            .select(`*, order_items (*)`)
+            .eq('id', orderId)
+            .single()
+            
+        if (orderData) {
+            return {
+                ...orderData,
+                _source: orderData.store_id ? 'core' : 'legacy_standard'
+            }
         }
     }
     
     // 2. Intentar en delivery_orders (Legacy Delivery)
     const { data: deliveryData } = await supabase
         .from('delivery_orders')
+        .select('*')
         .eq('id', orderId)
         .single()
         
