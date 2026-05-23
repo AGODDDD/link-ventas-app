@@ -126,23 +126,26 @@ export default function DashboardLayout({
   return (
     <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
 
-      {/* ─── PASO 3: STICKY TRIAL BANNER ────────────────────────────────── */}
-      {planStatus === 'trial' && diasRestantes !== null && bannerVisible && (
+      {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
+      {(planStatus === 'trial' || planStatus === 'free') && bannerVisible && (
         <div
           style={{
-            background: trialBannerColor,
-            borderBottom: `1px solid ${trialBorderColor}`,
+            background: planStatus === 'trial' ? trialBannerColor : 'rgba(59,130,246,0.12)',
+            borderBottom: `1px solid ${planStatus === 'trial' ? trialBorderColor : 'rgba(59,130,246,0.25)'}`,
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
           }}
           className="sticky top-0 z-50 w-full px-4 py-2.5 flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Zap size={14} style={{ color: trialTextColor, flexShrink: 0 }} />
-            <p className="text-xs font-semibold truncate" style={{ color: trialTextColor }}>
-              {diasRestantes === 0
-                ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
-                : `✨ Prueba Pro gratis — Te quedan ${diasRestantes} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`}
+            <Zap size={14} style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd', flexShrink: 0 }} />
+            <p className="text-xs font-semibold truncate" style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd' }}>
+              {planStatus === 'trial'
+                ? (diasRestantes === 0
+                  ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
+                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`)
+                : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro por S/ 29/mes para desbloquear Culqi, analíticas y más.'
+              }
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -164,7 +167,7 @@ export default function DashboardLayout({
               className="p-1 rounded-full hover:bg-white/10 transition-colors"
               aria-label="Cerrar banner"
             >
-              <X size={13} style={{ color: trialTextColor }} />
+              <X size={13} style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd' }} />
             </button>
           </div>
         </div>
