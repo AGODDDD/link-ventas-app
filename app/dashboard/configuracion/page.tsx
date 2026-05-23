@@ -18,6 +18,8 @@ export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState('')
   const [planStatus, setPlanStatus] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState('')
+  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null)
 
   // Datos del formulario
   const [storeName, setStoreName] = useState('')
@@ -63,6 +65,7 @@ export default function ConfiguracionPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
+      setUserEmail(user.email || '')
 
       const { data } = await supabase
         .from('profiles')
@@ -72,6 +75,7 @@ export default function ConfiguracionPage() {
 
       if (data) {
         setPlanStatus(data.plan ?? null)
+        setPlanExpiresAt(data.plan_expires_at ?? null)
         setStoreName(data.store_name || '')
         setSlug(data.slug || '')
         setDescription(data.description || '')
@@ -220,6 +224,122 @@ export default function ConfiguracionPage() {
 
         {/* VITRINA PÚBLICA (CATALOG BUILDER) */}
         {userId && <CatalogBuilder userId={userId} />}
+
+        {/* MI CUENTA Y SUSCRIPCIÓN */}
+        <Card className="border-2 border-primary/25 bg-slate-900/40 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Zap size={20} className="text-primary animate-pulse" /> Mi Cuenta y Suscripción
+            </CardTitle>
+            <CardDescription className="text-slate-400">Administra los detalles de tu cuenta y consulta el estado de tu suscripción SaaS.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 text-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Información del Perfil */}
+              <div className="space-y-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800">
+                <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Información de Cuenta</h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-slate-500 text-xs">Correo Electrónico</Label>
+                    <p className="text-sm font-semibold text-white truncate mt-1">{userEmail || 'Cargando...'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500 text-xs">ID de Usuario (UUID)</Label>
+                    <p className="text-xs font-mono font-bold text-slate-400 mt-1 select-all">{userId || 'Cargando...'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500 text-xs">Enlace del Comercio</Label>
+                    <p className="text-sm font-semibold text-primary mt-1">
+                      {slug ? (
+                        <a href={`/tienda/${slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          linkventas.com/tienda/{slug}
+                        </a>
+                      ) : 'Aún no configurado'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detalles de la Suscripción */}
+              <div className="space-y-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-3">Detalles de Suscripción</h3>
+                  <div className="flex items-center gap-3">
+                    {planStatus === 'pro' && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.45)]">
+                        ✨ PLAN PRO
+                      </span>
+                    )}
+                    {planStatus === 'trial' && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-violet-500 to-primary text-white shadow-[0_0_15px_rgba(124,58,237,0.45)]">
+                        ⚡ PRUEBA PRO
+                      </span>
+                    )}
+                    {planStatus === 'free' && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-800 border border-slate-700 text-slate-300">
+                        📦 PLAN EMPRENDEDOR (GRATIS)
+                      </span>
+                    )}
+                    {planStatus === 'inactivo' && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-950 border border-red-900 text-red-400">
+                        ⚠️ INACTIVO
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 space-y-2">
+                    {planStatus === 'pro' && (
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        Tienes acceso completo e ilimitado a todas las herramientas avanzadas. Tu suscripción está activa de forma vitalicia o renovada automáticamente.
+                      </p>
+                    )}
+                    {planStatus === 'trial' && planExpiresAt && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-slate-400">
+                          Tu prueba gratuita vence el: <strong className="text-white">{new Date(planExpiresAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
+                        </p>
+                        <p className="text-sm font-bold text-violet-400">
+                          ⏰ Te quedan {Math.max(0, Math.ceil((new Date(planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días de prueba.
+                        </p>
+                      </div>
+                    )}
+                    {planStatus === 'free' && (
+                      <p className="text-xs text-slate-400 leading-relaxed">
+                        Estás usando el plan gratuito con limitaciones de productos (máximo 10) y sin pasarela Culqi ni analíticas avanzadas.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Acciones de Suscripción */}
+                <div className="mt-4 pt-2">
+                  {(planStatus === 'free' || planStatus === 'trial') ? (
+                    <a
+                      href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero subir a Plan Pro por S/ 29/mes para desbloquear Culqi y analíticas.')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-primary to-violet-600 hover:from-primary hover:to-violet-700 text-white rounded-xl text-xs font-bold transition-all shadow-[0_4px_20px_rgba(124,58,237,0.3)] hover:scale-[1.02] active:scale-95 text-center decoration-none"
+                    >
+                      🚀 Subir a Plan Pro — S/ 29/mes
+                    </a>
+                  ) : (
+                    <a
+                      href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, tengo el Plan Pro y necesito asistencia con mi cuenta.')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-slate-700 text-center decoration-none"
+                    >
+                      💬 Solicitar Soporte Pro
+                    </a>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
 
         {/* PLANTILLA DE LA TIENDA */}
         <Card>
