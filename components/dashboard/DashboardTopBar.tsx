@@ -84,6 +84,7 @@ const playNotificationSound = () => {
         osc2.stop(now + 0.8);
     } catch (e) {
         console.error('Audio synthesis failed:', e);
+    }
 }
 
 interface TopBarProps {
