@@ -114,6 +114,8 @@ export default function DashboardLayout({
     initLayout()
   }, [router])
 
+  const mostrarBanner = (planStatus === 'free' || (planStatus === 'trial' && diasRestantes !== null)) && bannerVisible;
+
   const trialBannerColor = diasRestantes !== null && diasRestantes <= 3
     ? 'rgba(239,68,68,0.15)'
     : 'rgba(139,92,246,0.12)'
@@ -128,7 +130,7 @@ export default function DashboardLayout({
     <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
 
       {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
-      {(planStatus === 'free' || (planStatus === 'trial' && diasRestantes !== null)) && bannerVisible && (
+      {mostrarBanner && (
         <div
           id="global-plan-banner"
           style={{
@@ -190,14 +192,14 @@ export default function DashboardLayout({
       <DashboardSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        hasBanner={(planStatus === 'trial' || planStatus === 'free') && bannerVisible}
+        hasBanner={mostrarBanner}
       />
 
       {/* 3. TOP BAR + ANTENA WEBSOCKET */}
-      <DashboardTopBar hasBanner={(planStatus === 'trial' || planStatus === 'free') && bannerVisible} />
+      <DashboardTopBar hasBanner={mostrarBanner} />
 
       {/* 4. CONTENIDO PRINCIPAL */}
-      <main className="flex-1 md:ml-64 md:pt-24 pt-4 px-4 md:px-8 pb-12 overflow-x-hidden">
+      <main className={`flex-1 md:ml-64 ${mostrarBanner ? 'md:pt-32 pt-20' : 'md:pt-24 pt-4'} px-4 md:px-8 pb-12 overflow-x-hidden`}>
         {children}
       </main>
     </div>
