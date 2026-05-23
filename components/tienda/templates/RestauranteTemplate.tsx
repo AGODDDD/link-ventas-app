@@ -18,10 +18,11 @@ interface Props {
   extensionData?: {
     deliverySettings?: any;
     menuCategories?: any[];
-  }
+  };
+  isReadOnly?: boolean;
 }
 
-export default function RestauranteTemplate({ perfil, productos, extensionData }: Props) {
+export default function RestauranteTemplate({ perfil, productos, extensionData, isReadOnly }: Props) {
   const [activeCategory, setActiveCategory] = useState<string>('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -379,6 +380,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData }
       </main>
 
       {/* FLOATING CART BUBBLE BUTTON */}
+      {!isReadOnly && (
       <div 
         onClick={() => setIsCartOpen(true)}
         className="fixed bottom-0 right-0 z-50 cursor-pointer flex flex-col items-end"
@@ -392,6 +394,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData }
           )}
         </div>
       </div>
+      )}
 
       {/* PROFILE PANEL */}
       {isProfileOpen && (
@@ -467,6 +470,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData }
            storeId={perfil.id}
            isOpen={true}
            onClose={() => setSelectedProduct(null)}
+           isReadOnly={isReadOnly}
         />
       )}
 

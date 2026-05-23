@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText, Lock, Zap } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
@@ -42,6 +42,10 @@ export default function PedidosPage() {
     const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
     const receiptRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
     const [perfil, setPerfil] = useState<any>(null)
+    const [planStatus, setPlanStatus] = useState<string | null>(null)
+
+    // Paywall ticket térmico
+    const [showTicketPaywall, setShowTicketPaywall] = useState(false)
 
     // Estado para Compartir Ticket
     const [shareOrder, setShareOrder] = useState<any | null>(null)
@@ -58,7 +62,10 @@ export default function PedidosPage() {
             if (!user) return
             
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-            if (profile) setPerfil(profile)
+            if (profile) {
+                setPerfil(profile)
+                setPlanStatus(profile.plan ?? null)
+            }
 
             await cargarOrders(user.id)
             setLoading(false)
@@ -222,6 +229,11 @@ export default function PedidosPage() {
 
     // Impresión Nativa usando el Iframe Oculto
     const imprimirTicketNativo = (order: any) => {
+        // Si el plan es free, mostrar paywall en lugar de imprimir
+        if (planStatus === 'free') {
+            setShowTicketPaywall(true)
+            return
+        }
         const element = receiptRefs.current[order.id]
         if (!element) {
             toast.error("Motor térmico no inicializado", { id: 'thermal-toast' })
@@ -400,6 +412,104 @@ export default function PedidosPage() {
 
     return (
         <div className="space-y-6 pb-12 relative w-full">
+
+            {/* ── PAYWALL MODAL TICKET TÉRMICO (plan free) ─────────────────────────── */}
+            {showTicketPaywall && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 60,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.75)',
+                        backdropFilter: 'blur(14px)',
+                        WebkitBackdropFilter: 'blur(14px)',
+                        padding: '24px',
+                    }}
+                    onClick={() => setShowTicketPaywall(false)}
+                >
+                    <div
+                        style={{
+                            maxWidth: '380px', width: '100%',
+                            background: 'rgba(19,19,26,0.98)',
+                            border: '1px solid rgba(139,92,246,0.35)',
+                            borderRadius: '24px',
+                            padding: '36px 28px',
+                            textAlign: 'center',
+                            boxShadow: '0 40px 80px rgba(0,0,0,0.85)',
+                            position: 'relative',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowTicketPaywall(false)}
+                            style={{
+                                position: 'absolute', top: '14px', right: '14px',
+                                background: 'none', border: 'none',
+                                color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: '4px',
+                            }}
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <div style={{
+                            width: '60px', height: '60px',
+                            background: 'rgba(124,58,237,0.15)',
+                            border: '1px solid rgba(139,92,246,0.4)',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 20px',
+                        }}>
+                            <Printer size={26} style={{ color: '#a78bfa' }} />
+                        </div>
+
+                        <p style={{ fontSize: '19px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
+                            Tickets Térmicos Pro
+                        </p>
+                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px' }}>
+                            La impresión de tickets PDF de <strong style={{ color: '#fff' }}>80mm estilo térmico</strong> es exclusiva del Plan Pro.
+                            Profesionaliza tu operación por solo <strong style={{ color: '#a78bfa' }}>S/ 29/mes</strong>.
+                        </p>
+
+                        <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
+                            {[
+                                'Impresión nativa en impresoras 80mm',
+                                'Descarga de ticket en PNG y PDF oficial',
+                                'Compartir ticket por WhatsApp o Email',
+                                'Productos ilimitados y Culqi incluidos',
+                            ].map((f, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+                                    <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                </div>
+                            ))}
+                        </div>
+
+                        <a
+                            href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para imprimir tickets térmicos.')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                width: '100%', padding: '14px',
+                                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                borderRadius: '12px',
+                                fontSize: '14px', fontWeight: 700, color: '#fff',
+                                textDecoration: 'none',
+                                boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                            }}
+                            onClick={() => setShowTicketPaywall(false)}
+                        >
+                            <Zap size={15} />
+                            Activar Plan Pro — S/ 29/mes
+                        </a>
+                        <button
+                            onClick={() => setShowTicketPaywall(false)}
+                            style={{ marginTop: '12px', background: 'none', border: 'none', fontSize: '12px', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                        >
+                            Continuar con Plan Emprendedor
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Central Logística 📦</h1>

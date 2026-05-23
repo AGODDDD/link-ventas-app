@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import FomoBanner from './FomoBanner'
 
 
-export default function AdvancedProductCard({ prod, perfil }: { prod: Product; perfil: Profile | null; }) {
+export default function AdvancedProductCard({ prod, perfil, isReadOnly }: { prod: Product; perfil: Profile | null; isReadOnly?: boolean; }) {
   const storeId = perfil?.id || ''
   const storeName = perfil?.store_name || 'TU TIENDA'
   
@@ -94,7 +94,7 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
         )}
 
         {/* Quick Add Overlay (Desktop) */}
-        {!isOutOfStock && (
+        {!isOutOfStock && !isReadOnly && (
         <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:block backdrop-blur-md bg-black/60 border-t border-primary/20 z-30">
           {inCart ? (
             <div className="flex items-center justify-between bg-zinc-900 border border-primary text-primary rounded-none px-4 py-2 shadow-xl">
@@ -176,6 +176,8 @@ export default function AdvancedProductCard({ prod, perfil }: { prod: Product; p
                 <Button size="sm" disabled className="rounded-none bg-surface-bright text-on-surface-variant font-bold font-headline uppercase text-[10px] h-7 px-3">
                   AGOTADO
                 </Button>
+              ) : isReadOnly ? (
+                null
               ) : inCart ? (
                 <div className="flex items-center gap-2 bg-zinc-900 border border-primary text-primary rounded-none px-2 py-1">
                   <button onClick={() => handleUpdateQuantity(-1)}><Minus size={12} /></button>

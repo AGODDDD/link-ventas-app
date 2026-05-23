@@ -10,9 +10,10 @@ interface Props {
   initialProducts: Product[];
   perfil: Profile | null;
   isModa?: boolean;
+  isReadOnly?: boolean;
 }
 
-export default function ClientCatalog({ initialProducts, perfil, isModa }: Props) {
+export default function ClientCatalog({ initialProducts, perfil, isModa, isReadOnly }: Props) {
   // State for filters
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedBrand, setSelectedBrand] = useState('')
@@ -117,8 +118,8 @@ export default function ClientCatalog({ initialProducts, perfil, isModa }: Props
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredAndSortedProducts.map((prod) => (
             isModa 
-              ? <ModaProductCard key={prod.id} prod={prod} perfil={perfil} />
-              : <AdvancedProductCard key={prod.id} prod={prod} perfil={perfil} />
+              ? <ModaProductCard key={prod.id} prod={prod} perfil={perfil} isReadOnly={isReadOnly} />
+              : <AdvancedProductCard key={prod.id} prod={prod} perfil={perfil} isReadOnly={isReadOnly} />
           ))}
         </div>
       )}

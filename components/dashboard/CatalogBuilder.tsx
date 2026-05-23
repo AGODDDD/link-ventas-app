@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Search, Loader2, Store, Edit3, CheckCircle, PackageOpen } from 'lucide-react'
+import { Search, Loader2, Store, Edit3, CheckCircle, PackageOpen, Lock, Zap, X } from 'lucide-react'
 
 export default function CatalogBuilder({ userId }: { userId: string }) {
     const [productos, setProductos] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
+    const [planStatus, setPlanStatus] = useState<string | null>(null)
+    const [showPaywallModal, setShowPaywallModal] = useState(false)
 
     // Editor en sitio
     const [editingProduct, setEditingProduct] = useState<any>(null)
@@ -16,6 +18,9 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
     useEffect(() => {
         if (!userId) return
         cargarInventario()
+        // Leer plan del merchant
+        supabase.from('profiles').select('plan').eq('id', userId).single()
+            .then(({ data }) => { if (data) setPlanStatus(data.plan ?? null) })
     }, [userId])
 
     const cargarInventario = async () => {
@@ -31,6 +36,14 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
 
     const toggleStatus = async (id: string, currentStatus: boolean) => {
         const nuevo = !currentStatus
+        const activosActuales = productos.filter(p => p.is_active !== false).length
+
+        // Si está intentando ACTIVAR (pasar a true) y está en plan free con 10+ activos
+        if (nuevo === true && planStatus === 'free' && activosActuales >= 10) {
+            setShowPaywallModal(true)
+            return
+        }
+
         try {
              await supabase.from('products').update({ is_active: nuevo }).eq('id', id)
              setProductos(productos.map(p => p.id === id ? { ...p, is_active: nuevo } : p))
@@ -62,6 +75,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
     
     // Contadores
     const activos = productos.filter(p => p.is_active !== false).length
+    const LIMIT_FREE = 10
 
     return (
         <Card className="border-primary/20 bg-gradient-to-br from-surface-container to-surface shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
@@ -76,6 +90,9 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                    <div className="text-center px-4 py-2 bg-primary/10 rounded-lg border border-primary/20">
                         <p className="text-xs font-bold text-primary tracking-widest uppercase">En Vitrina</p>
                         <p className="text-2xl font-black text-on-surface">{activos}</p>
+                        {planStatus === 'free' && (
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">{activos}/{LIMIT_FREE} ítems</p>
+                        )}
                    </div>
                 </div>
             </CardHeader>
@@ -180,6 +197,103 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirmar'}
                                </button>
                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL PAYWALL — LÍMITE 10 PRODUCTOS (plan free) */}
+                {showPaywallModal && (
+                    <div
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 60,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'rgba(0,0,0,0.7)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            padding: '24px',
+                        }}
+                        onClick={() => setShowPaywallModal(false)}
+                    >
+                        <div
+                            style={{
+                                maxWidth: '380px', width: '100%',
+                                background: 'rgba(19,19,26,0.98)',
+                                border: '1px solid rgba(139,92,246,0.35)',
+                                borderRadius: '24px',
+                                padding: '36px 28px',
+                                textAlign: 'center',
+                                boxShadow: '0 40px 80px rgba(0,0,0,0.8)',
+                                animation: 'bounceIn 0.3s ease',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setShowPaywallModal(false)}
+                                style={{
+                                    position: 'absolute', top: '16px', right: '16px',
+                                    background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)',
+                                    cursor: 'pointer', padding: '4px',
+                                }}
+                            >
+                                <X size={18} />
+                            </button>
+
+                            <div style={{
+                                width: '60px', height: '60px',
+                                background: 'rgba(124,58,237,0.15)',
+                                border: '1px solid rgba(139,92,246,0.4)',
+                                borderRadius: '50%',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto 20px',
+                            }}>
+                                <Lock size={26} style={{ color: '#a78bfa' }} />
+                            </div>
+
+                            <p style={{ fontSize: '19px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
+                                Límite de 10 productos alcanzado
+                            </p>
+                            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px' }}>
+                                En el Plan Emprendedor puedes tener hasta <strong style={{ color: '#fff' }}>10 productos activos</strong> en vitrina.
+                                Actualiza a Pro para agregar <strong style={{ color: '#a78bfa' }}>productos ilimitados</strong>.
+                            </p>
+
+                            <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
+                                {[
+                                    'Productos ilimitados en vitrina',
+                                    'Pasarela de pago Culqi (tarjetas)',
+                                    'Tickets térmicos PDF 80mm',
+                                    'Analíticas avanzadas en tiempo real',
+                                ].map((f, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+                                        <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <a
+                                href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para tener productos ilimitados.')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    width: '100%', padding: '14px',
+                                    background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                    borderRadius: '12px',
+                                    fontSize: '14px', fontWeight: 700, color: '#fff',
+                                    textDecoration: 'none',
+                                    boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                                }}
+                                onClick={() => setShowPaywallModal(false)}
+                            >
+                                <Zap size={15} />
+                                Activar Plan Pro — S/ 29/mes
+                            </a>
+                            <button
+                                onClick={() => setShowPaywallModal(false)}
+                                style={{ marginTop: '12px', background: 'none', border: 'none', fontSize: '12px', color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                            >
+                                Continuar con Plan Emprendedor
+                            </button>
                         </div>
                     </div>
                 )}

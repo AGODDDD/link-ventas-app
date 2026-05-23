@@ -58,6 +58,10 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
     } : {})
   } as any;
 
+  // Lógica de Solo Lectura (Paywall / Inactivo)
+  const isExpired = perfil.plan_expires_at ? new Date(perfil.plan_expires_at) < new Date() : false;
+  const isReadOnly = perfil.plan === 'inactivo' || (perfil.plan !== 'free' && isExpired);
+
   // 2. CARGA DE EXTENSIONES (Solo si es restaurante)
   let extensionData: any = {};
   if (perfil.template_type === 'restaurante') {
@@ -93,13 +97,14 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
             perfil={perfil} 
             productos={productos} 
             extensionData={extensionData} 
+            isReadOnly={isReadOnly}
           />
         );
       case 'moda':
-        return <ModaTemplate perfil={perfil} productos={productos} extensionData={extensionData} />;
+        return <ModaTemplate perfil={perfil} productos={productos} extensionData={extensionData} isReadOnly={isReadOnly} />;
       case 'comercio':
       default:
-        return <ComercioTemplate perfil={perfil} extensionData={extensionData} />;
+        return <ComercioTemplate perfil={perfil} extensionData={extensionData} isReadOnly={isReadOnly} />;
     }
   }
 
@@ -113,6 +118,11 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
         '--secondary': secondaryColor
       } as React.CSSProperties}
     >
+      {isReadOnly && (
+        <div className="bg-red-500 text-white text-center py-2 text-xs font-bold uppercase tracking-widest fixed top-0 left-0 w-full z-[100] animate-pulse">
+          TIENDA EN MANTENIMIENTO — NO SE ACEPTAN PEDIDOS EN ESTE MOMENTO
+        </div>
+      )}
 
       {/* TopAppBar */}
       {perfil.template_type !== 'restaurante' && (
@@ -139,7 +149,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       )}
 
       {/* Floating WhatsApp Button */}
-      {perfil.template_type !== 'restaurante' && perfil.whatsapp_phone && (
+      {!isReadOnly && perfil.template_type !== 'restaurante' && perfil.whatsapp_phone && (
         <a
           href={`https://wa.me/${perfil.whatsapp_phone}?text=Hola%20${encodeURIComponent(storeName)},%20necesito%20ayuda%20con%20mi%20pedido`}
           target="_blank"

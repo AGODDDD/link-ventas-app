@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, BarChart3, Calendar, ArrowRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, BarChart3, Calendar, ArrowRight, Lock, Zap } from 'lucide-react'
 
 type Order = {
     id: string
@@ -17,13 +17,14 @@ export default function AnalyticsPage() {
     const [leads, setLeads] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [periodo, setPeriodo] = useState<'7d' | '30d' | 'all'>('30d')
+    const [planStatus, setPlanStatus] = useState<string | null>(null)
 
     useEffect(() => {
         const cargarDatos = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const [ordersRes, deliveryRes, coreRes, leadsRes] = await Promise.all([
+            const [ordersRes, deliveryRes, coreRes, leadsRes, profileRes] = await Promise.all([
                 // Legacy Standard
                 supabase.from('orders').select('*').eq('merchant_id', user.id).order('created_at', { ascending: true }),
                 // Legacy Delivery
@@ -31,8 +32,12 @@ export default function AnalyticsPage() {
                 // New Core (Unified)
                 supabase.from('orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
                 // Leads
-                supabase.from('store_leads').select('*').eq('store_id', user.id)
+                supabase.from('store_leads').select('*').eq('store_id', user.id),
+                // Plan
+                supabase.from('profiles').select('plan').eq('id', user.id).single(),
             ])
+
+            if (profileRes.data) setPlanStatus(profileRes.data.plan ?? null)
 
             let unified: Order[] = []
             const coreLegacyIds = new Set<string>()
@@ -163,6 +168,81 @@ export default function AnalyticsPage() {
 
     return (
         <div className="space-y-8 pb-12 relative w-full">
+
+            {/* ── PAYWALL OVERLAY para plan free ─────────────────────────────────── */}
+            {planStatus === 'free' && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backdropFilter: 'blur(18px)',
+                    WebkitBackdropFilter: 'blur(18px)',
+                    background: 'rgba(10, 10, 20, 0.55)',
+                    padding: '24px',
+                }}>
+                    <div style={{
+                        maxWidth: '400px',
+                        width: '100%',
+                        background: 'rgba(19,19,26,0.95)',
+                        border: '1px solid rgba(139,92,246,0.3)',
+                        borderRadius: '24px',
+                        padding: '40px 32px',
+                        textAlign: 'center',
+                        boxShadow: '0 40px 80px rgba(0,0,0,0.7)',
+                    }}>
+                        <div style={{
+                            width: '64px', height: '64px',
+                            background: 'rgba(124,58,237,0.15)',
+                            border: '1px solid rgba(139,92,246,0.4)',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 20px',
+                        }}>
+                            <BarChart3 size={28} style={{ color: '#a78bfa' }} />
+                        </div>
+                        <p style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
+                            Analíticas Avanzadas Pro
+                        </p>
+                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '28px' }}>
+                            Desbloquea métricas de ventas en tiempo real, gráficos históricos y exportación de datos CSV.
+                            Sube a Pro por <strong style={{ color: '#a78bfa' }}>S/ 29/mes</strong>.
+                        </p>
+                        <div style={{ display: 'grid', gap: '10px', marginBottom: '24px', textAlign: 'left' }}>
+                            {[
+                                'Ingresos totales y ticket promedio',
+                                'Gráfico de ventas últimos 7 días',
+                                'Top 5 clientes por facturación',
+                                'Tasa de conversión de leads',
+                                'Métodos de pago más usados',
+                            ].map((f, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
+                                    <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                </div>
+                            ))}
+                        </div>
+                        <a
+                            href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para acceder a las analíticas avanzadas.')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                width: '100%', padding: '14px',
+                                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                borderRadius: '12px',
+                                fontSize: '14px', fontWeight: 700, color: '#fff',
+                                textDecoration: 'none',
+                                boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                            }}
+                        >
+                            <Zap size={16} />
+                            Activar Plan Pro — S/ 29/mes
+                        </a>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>

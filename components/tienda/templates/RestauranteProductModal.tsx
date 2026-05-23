@@ -13,9 +13,10 @@ interface Props {
   storeId: string;
   isOpen: boolean;
   onClose: () => void;
+  isReadOnly?: boolean;
 }
 
-export default function RestauranteProductModal({ product, storeId, isOpen, onClose }: Props) {
+export default function RestauranteProductModal({ product, storeId, isOpen, onClose, isReadOnly }: Props) {
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({})
@@ -219,13 +220,15 @@ export default function RestauranteProductModal({ product, storeId, isOpen, onCl
                  >
                    Cancelar
                  </button>
-                 <Button 
-                  onClick={handleAddToCart}
-                  disabled={product.is_available === false}
-                  className="flex-1 rounded-full bg-black text-white h-12 font-bold text-sm hover:bg-neutral-800 transition-colors border-none"
-                 >
-                   Agregar
-                 </Button>
+                 {!isReadOnly && (
+                   <Button 
+                    onClick={handleAddToCart}
+                    disabled={product.is_available === false}
+                    className="flex-1 rounded-full bg-black text-white h-12 font-bold text-sm hover:bg-neutral-800 transition-colors border-none"
+                   >
+                     Agregar
+                   </Button>
+                 )}
               </div>
             </div>
             {product.is_available === false && (

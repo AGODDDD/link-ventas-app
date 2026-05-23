@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt } from 'lucide-react'
+import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 import dynamic from 'next/dynamic'
 const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
@@ -17,6 +17,7 @@ import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
 export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState('')
+  const [planStatus, setPlanStatus] = useState<string | null>(null)
 
   // Datos del formulario
   const [storeName, setStoreName] = useState('')
@@ -70,6 +71,7 @@ export default function ConfiguracionPage() {
         .single()
 
       if (data) {
+        setPlanStatus(data.plan ?? null)
         setStoreName(data.store_name || '')
         setSlug(data.slug || '')
         setDescription(data.description || '')
@@ -462,56 +464,120 @@ export default function ConfiguracionPage() {
         </Card>
 
         {/* MÉTODOS DE PAGO AUTOMATIZADOS (CULQI) */}
-        <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="bg-primary text-primary-foreground text-[10px] uppercase font-black px-2 py-1 rounded">PRO</span>
-                  Pasarela Automatizada (Culqi)
-                </CardTitle>
-                <CardDescription className="mt-1">Recibe pagos con Tarjeta y Yape automáticos. Nada de validar pantallazos.</CardDescription>
-              </div>
-              <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-xl border border-outline-variant/10">
-                <Label className="font-bold cursor-pointer" htmlFor="culqi-switch">
-                  {culqiActive ? '🟢 Activo' : '⚪ Apagado'}
-                </Label>
-                <div 
-                  className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${culqiActive ? 'bg-primary' : 'bg-slate-300'}`}
-                  onClick={() => setCulqiActive(!culqiActive)}
-                  id="culqi-switch"
-                >
-                  <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${culqiActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+        {/* ── PAYWALL GLASSMORPHISM para plan free ─────────────────────────────── */}
+        <div className="relative">
+          <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="bg-primary text-primary-foreground text-[10px] uppercase font-black px-2 py-1 rounded">PRO</span>
+                    Pasarela Automatizada (Culqi)
+                  </CardTitle>
+                  <CardDescription className="mt-1">Recibe pagos con Tarjeta y Yape automáticos. Nada de validar pantallazos.</CardDescription>
+                </div>
+                <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-xl border border-outline-variant/10">
+                  <Label className="font-bold cursor-pointer" htmlFor="culqi-switch">
+                    {culqiActive ? '🟢 Activo' : '⚪ Apagado'}
+                  </Label>
+                  <div 
+                    className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${culqiActive ? 'bg-primary' : 'bg-slate-300'}`}
+                    onClick={() => setCulqiActive(!culqiActive)}
+                    id="culqi-switch"
+                  >
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${culqiActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </div>
                 </div>
               </div>
+            </CardHeader>
+            {culqiActive && (
+              <CardContent className="space-y-4 pt-4 border-t border-outline-variant/10 bg-primary/5">
+                <div className="space-y-2">
+                  <Label className="font-bold text-on-surface">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
+                  <Input 
+                    value={culqiPublicKey} 
+                    onChange={(e) => setCulqiPublicKey(e.target.value)} 
+                    placeholder="pk_test_xxxxxxxxxxxxxxxx" 
+                    className="font-mono bg-white"
+                    disabled={planStatus === 'free'}
+                  />
+                  <p className="text-xs text-on-surface-variant">Usada de cara al público para mostrar el modal en tu Tienda.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-bold text-on-surface">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
+                  <Input 
+                    type="password"
+                    value={culqiSecretKey} 
+                    onChange={(e) => setCulqiSecretKey(e.target.value)} 
+                    placeholder="sk_test_xxxxxxxxxxxxxxxx" 
+                    className="font-mono bg-white"
+                    disabled={planStatus === 'free'}
+                  />
+                  <p className="text-xs text-on-surface-variant">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Overlay glassmorphism bloqueador — solo visible en plan free */}
+          {planStatus === 'free' && (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '12px',
+                background: 'rgba(10, 10, 20, 0.72)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: '1px solid rgba(124, 58, 237, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px',
+                padding: '32px',
+                textAlign: 'center',
+                zIndex: 10,
+              }}
+            >
+              <div style={{
+                width: '52px', height: '52px',
+                background: 'rgba(124,58,237,0.15)',
+                border: '1px solid rgba(139,92,246,0.4)',
+                borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Lock size={22} style={{ color: '#a78bfa' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff', marginBottom: '6px' }}>
+                  Disponible en Plan Pro
+                </p>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6' }}>
+                  Automatiza tus ventas aceptando tarjetas de crédito y débito directamente en tu tienda.
+                </p>
+              </div>
+              <a
+                href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para usar Culqi.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 24px',
+                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                  borderRadius: '99px',
+                  fontSize: '13px', fontWeight: 700, color: '#fff',
+                  textDecoration: 'none',
+                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Zap size={14} />
+                Activar Pro — S/ 29/mes
+              </a>
             </div>
-          </CardHeader>
-          {culqiActive && (
-            <CardContent className="space-y-4 pt-4 border-t border-outline-variant/10 bg-primary/5">
-              <div className="space-y-2">
-                <Label className="font-bold text-on-surface">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
-                <Input 
-                  value={culqiPublicKey} 
-                  onChange={(e) => setCulqiPublicKey(e.target.value)} 
-                  placeholder="pk_test_xxxxxxxxxxxxxxxx" 
-                  className="font-mono bg-white"
-                />
-                <p className="text-xs text-on-surface-variant">Usada de cara al público para mostrar el modal en tu Tienda.</p>
-              </div>
-              <div className="space-y-2">
-                <Label className="font-bold text-on-surface">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
-                <Input 
-                  type="password"
-                  value={culqiSecretKey} 
-                  onChange={(e) => setCulqiSecretKey(e.target.value)} 
-                  placeholder="sk_test_xxxxxxxxxxxxxxxx" 
-                  className="font-mono bg-white"
-                />
-                <p className="text-xs text-on-surface-variant">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
-              </div>
-            </CardContent>
           )}
-        </Card>
+        </div>
 
         {/* ── UBICACIÓN DEL LOCAL ── */}
         <Card>

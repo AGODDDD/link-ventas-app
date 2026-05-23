@@ -8,10 +8,11 @@ interface Props {
   extensionData?: {
     deliverySettings?: any;
     menuCategories?: any[];
-  }
+  };
+  isReadOnly?: boolean;
 }
 
-export default function ComercioTemplate({ perfil, extensionData }: Props) {
+export default function ComercioTemplate({ perfil, extensionData, isReadOnly }: Props) {
   return (
     <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
       {/* Hero Section Asymmetric Layout */}
@@ -52,7 +53,7 @@ export default function ComercioTemplate({ perfil, extensionData }: Props) {
 
         {/* Right Column: Lead Gen Form with Overlap */}
         <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-          <LeadCaptureForm storeId={perfil.id} />
+          {!isReadOnly && <LeadCaptureForm storeId={perfil.id} />}
         </div>
       </div>
 

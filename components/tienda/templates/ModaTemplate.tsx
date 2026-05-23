@@ -9,10 +9,11 @@ interface Props {
   extensionData?: {
     deliverySettings?: any;
     menuCategories?: any[];
-  }
+  };
+  isReadOnly?: boolean;
 }
 
-export default function ModaTemplate({ perfil, productos, extensionData }: Props) {
+export default function ModaTemplate({ perfil, productos, extensionData, isReadOnly }: Props) {
   return (
     <main className="min-h-screen bg-background text-on-background font-sans pt-20">
       {/* Editorial Hero */}
@@ -39,7 +40,7 @@ export default function ModaTemplate({ perfil, productos, extensionData }: Props
 
       <div id="catalogo" className="scroll-mt-20">
          {/* We reuse ClientCatalog but pass isModa to render ModaProductCard */}
-         <ClientCatalog initialProducts={productos} perfil={perfil} isModa={true} />
+         <ClientCatalog initialProducts={productos} perfil={perfil} isModa={true} isReadOnly={isReadOnly} />
       </div>
     </main>
   )

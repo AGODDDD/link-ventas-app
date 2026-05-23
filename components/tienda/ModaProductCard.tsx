@@ -8,7 +8,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { Product, Profile } from '@/types/tienda'
 import { toast } from 'sonner'
 
-export default function ModaProductCard({ prod, perfil }: { prod: Product; perfil: Profile | null; }) {
+export default function ModaProductCard({ prod, perfil, isReadOnly }: { prod: Product; perfil: Profile | null; isReadOnly?: boolean; }) {
   const storeId = perfil?.id || ''
   
   const cartStore = useCartStore()
@@ -100,7 +100,7 @@ export default function ModaProductCard({ prod, perfil }: { prod: Product; perfi
           </span>
         </div>
 
-        {!isOutOfStock && (
+        {!isOutOfStock && !isReadOnly && (
           <div className="space-y-4">
             {/* Variants Selectors */}
             {tallas.length > 0 && (
