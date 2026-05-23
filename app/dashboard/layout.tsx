@@ -129,13 +129,14 @@ export default function DashboardLayout({
       {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
       {(planStatus === 'trial' || planStatus === 'free') && bannerVisible && (
         <div
+          id="global-plan-banner"
           style={{
             background: planStatus === 'trial' ? trialBannerColor : 'rgba(59,130,246,0.12)',
             borderBottom: `1px solid ${planStatus === 'trial' ? trialBorderColor : 'rgba(59,130,246,0.25)'}`,
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
           }}
-          className="sticky top-0 z-50 w-full px-4 py-2.5 flex items-center justify-between gap-4"
+          className="sticky top-0 z-[60] w-full px-4 py-2.5 flex items-center justify-between gap-4"
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Zap size={14} style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd', flexShrink: 0 }} />
@@ -188,10 +189,11 @@ export default function DashboardLayout({
       <DashboardSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        hasBanner={(planStatus === 'trial' || planStatus === 'free') && bannerVisible}
       />
 
       {/* 3. TOP BAR + ANTENA WEBSOCKET */}
-      <DashboardTopBar />
+      <DashboardTopBar hasBanner={(planStatus === 'trial' || planStatus === 'free') && bannerVisible} />
 
       {/* 4. CONTENIDO PRINCIPAL */}
       <main className="flex-1 md:ml-64 md:pt-24 pt-4 px-4 md:px-8 pb-12 overflow-x-hidden">

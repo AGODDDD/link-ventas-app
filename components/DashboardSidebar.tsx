@@ -10,9 +10,10 @@ import { X } from 'lucide-react'
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  hasBanner?: boolean;
 }
 
-export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
+export default function DashboardSidebar({ isOpen, onClose, hasBanner }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
@@ -55,8 +56,10 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       {/* LA BARRA LATERAL */}
-      <aside className={`
-        fixed top-0 left-0 h-screen w-64 bg-surface-container-low font-body antialiased tracking-tight flex flex-col py-6 z-50
+      <aside 
+        style={{ top: hasBanner ? '45px' : '0', height: hasBanner ? 'calc(100vh - 45px)' : '100vh' }}
+        className={`
+        fixed left-0 w-64 bg-surface-container-low font-body antialiased tracking-tight flex flex-col py-6 z-50
         transition-transform duration-300 ease-in-out border-r border-outline-variant/10
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 

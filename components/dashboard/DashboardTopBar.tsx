@@ -84,10 +84,13 @@ const playNotificationSound = () => {
         osc2.stop(now + 0.8);
     } catch (e) {
         console.error('Audio synthesis failed:', e);
-    }
 }
 
-export default function DashboardTopBar() {
+interface TopBarProps {
+    hasBanner?: boolean;
+}
+
+export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     const [userId, setUserId] = useState<string | null>(null)
     const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -239,7 +242,10 @@ export default function DashboardTopBar() {
     }
 
     return (
-        <header className="hidden md:flex fixed top-0 right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-surface/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-surface-bright">
+        <header 
+            style={{ top: hasBanner ? '45px' : '0' }}
+            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-surface/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-surface-bright"
+        >
             
             {/* Buscador falso / Decorativo para rellenar */}
             <div className="flex items-center gap-4 bg-surface-container-high px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-outline-variant/10">
