@@ -18,14 +18,34 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [storeLink, setStoreLink] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [storeName, setStoreName] = useState<string>('Administrador')
+  const [initials, setInitials] = useState<string>('LV')
 
   useEffect(() => {
     const obtenerUsuario = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
-        const { data } = await supabase.from('profiles').select('slug').eq('id', user.id).single()
-        setStoreLink(data?.slug || user.id)
+        setUserEmail(user.email || '')
+        
+        const { data } = await supabase
+          .from('profiles')
+          .select('slug, store_name')
+          .eq('id', user.id)
+          .single()
+          
+        if (data) {
+          setStoreLink(data.slug || user.id)
+          if (data.store_name) {
+            setStoreName(data.store_name)
+            const parts = data.store_name.trim().split(/\s+/)
+            const initialsText = parts.length >= 2
+              ? (parts[0][0] + parts[1][0]).toUpperCase()
+              : data.store_name.substring(0, 2).toUpperCase()
+            setInitials(initialsText || 'LV')
+          }
+        }
       }
     }
     obtenerUsuario()
@@ -121,11 +141,11 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
 
           <div className="flex items-center gap-3 mt-6 pt-6 border-t border-outline-variant/10">
             <div className="w-8 h-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
-                LV
+                {initials}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-on-surface truncate">Administrador</p>
-              <p className="text-[10px] text-on-surface-variant truncate">premium@ventas.com</p>
+              <p className="text-xs font-semibold text-on-surface truncate">{storeName}</p>
+              <p className="text-[10px] text-on-surface-variant truncate">{userEmail}</p>
             </div>
           </div>
         </div>
