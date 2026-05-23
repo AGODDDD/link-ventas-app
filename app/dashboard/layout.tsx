@@ -106,7 +106,8 @@ export default function DashboardLayout({
 
       // ─── Paso 3: Calcular días para el Banner ────────────────────────
       if (planActual === 'trial' && expiresAt) {
-        setDiasRestantes(calcularDiasRestantes(expiresAt))
+        const dias = calcularDiasRestantes(expiresAt)
+        setDiasRestantes(dias)
       }
     }
 
@@ -127,7 +128,7 @@ export default function DashboardLayout({
     <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
 
       {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
-      {(planStatus === 'trial' || planStatus === 'free') && bannerVisible && (
+      {(planStatus === 'free' || (planStatus === 'trial' && diasRestantes !== null)) && bannerVisible && (
         <div
           id="global-plan-banner"
           style={{
@@ -144,7 +145,7 @@ export default function DashboardLayout({
               {planStatus === 'trial'
                 ? (diasRestantes === 0
                   ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
-                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`)
+                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`)
                 : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro por S/ 29/mes para desbloquear Culqi, analíticas y más.'
               }
             </p>
