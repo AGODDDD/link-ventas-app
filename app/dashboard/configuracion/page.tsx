@@ -31,6 +31,10 @@ export default function ConfiguracionPage() {
   const [culqiActive, setCulqiActive] = useState(false)
   const [culqiPublicKey, setCulqiPublicKey] = useState('')
   const [culqiSecretKey, setCulqiSecretKey] = useState('')
+  const [initialPaymentSettings, setInitialPaymentSettings] = useState({
+    culqiActive: false,
+    culqiPublicKey: '',
+  })
 
   // Nuevos campos para Personalización
   const [templateType, setTemplateType] = useState('comercio')
@@ -87,6 +91,10 @@ export default function ConfiguracionPage() {
         setCulqiActive(data.culqi_active || false)
         setCulqiPublicKey(data.culqi_public_key || '')
         setCulqiSecretKey('')
+        setInitialPaymentSettings({
+          culqiActive: data.culqi_active || false,
+          culqiPublicKey: data.culqi_public_key || '',
+        })
 
         // Load Personalization
         setTemplateType(data.template_type || 'comercio')
@@ -180,8 +188,13 @@ export default function ConfiguracionPage() {
       if (error) throw error
 
       // --- PASO B: Enviar llaves Culqi al servidor cifrado (NUNCA en texto plano) ---
+      const paymentSettingsChanged =
+        culqiActive !== initialPaymentSettings.culqiActive ||
+        culqiPublicKey.trim() !== initialPaymentSettings.culqiPublicKey ||
+        culqiSecretKey.trim() !== ''
+
       const { data: { session } } = await supabase.auth.getSession()
-      if (session?.access_token) {
+      if (paymentSettingsChanged && session?.access_token) {
         const paymentRes = await fetch('/api/settings/payment', {
           method: 'POST',
           headers: {
@@ -198,6 +211,10 @@ export default function ConfiguracionPage() {
         if (!paymentRes.ok) {
           throw new Error(paymentData.error || 'Error cifrando credenciales de pasarela.')
         }
+        setInitialPaymentSettings({
+          culqiActive,
+          culqiPublicKey: culqiPublicKey.trim(),
+        })
       }
 
       alert('✅ ¡Datos actualizados correctamente!')

@@ -1,18 +1,41 @@
 import { NextResponse } from 'next/server'
 import { encryptText } from '@/lib/encryption'
-import { getAuthenticatedUser, getSupabaseServiceClient, hasProFeatures } from '@/lib/supabaseServer'
+import {
+  getAuthenticatedUser,
+  getSupabaseServiceClient,
+  getSupabaseUserServerClient,
+  hasProFeatures,
+  hasSupabaseServiceRoleKey,
+} from '@/lib/supabaseServer'
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { culqi_secret_key, culqi_public_key, culqi_active } = body
 
-    const { user } = await getAuthenticatedUser(req)
-    if (!user) {
+    const { user, token } = await getAuthenticatedUser(req)
+    if (!user || !token) {
       return NextResponse.json({ error: 'Token invalido o expirado' }, { status: 401 })
     }
 
-    const supabase = getSupabaseServiceClient()
+    const hasSecretKeyChange = Boolean(culqi_secret_key && culqi_secret_key.trim() !== '' && !culqi_secret_key.includes('***'))
+    const hasPaymentConfigChange = culqi_active === true || Boolean(culqi_public_key?.trim()) || hasSecretKeyChange
+
+    if (!hasSupabaseServiceRoleKey() && !hasPaymentConfigChange) {
+      return NextResponse.json({ success: true, message: 'Sin cambios de pasarela' })
+    }
+
+    if (!hasSupabaseServiceRoleKey() && hasPaymentConfigChange) {
+      return NextResponse.json(
+        { error: 'La configuracion de Culqi requiere SUPABASE_SERVICE_ROLE_KEY en el servidor.' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = hasSupabaseServiceRoleKey()
+      ? getSupabaseServiceClient()
+      : getSupabaseUserServerClient(token)
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('plan, plan_expires_at')
@@ -31,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     let encryptedSecretKey = null
-    if (culqi_secret_key && culqi_secret_key.trim() !== '' && !culqi_secret_key.includes('***')) {
+    if (hasSecretKeyChange) {
       encryptedSecretKey = encryptText(culqi_secret_key.trim())
     }
 
