@@ -144,6 +144,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           price: currentPrice,
           description: descripcion,
           image_url: imageUrl,
+          media: productMedia,
           gallery: serializeProductMedia(productMedia),
           brand: brand.toUpperCase() || null,
           category: category || null,
