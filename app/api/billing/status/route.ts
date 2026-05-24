@@ -1,16 +1,25 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getSupabaseServiceClient, isPlanActive } from '@/lib/supabaseServer'
+import {
+  getAuthenticatedUser,
+  getSupabaseServiceClient,
+  getSupabaseUserServerClient,
+  hasSupabaseServiceRoleKey,
+  isPlanActive,
+} from '@/lib/supabaseServer'
 
 type Plan = 'trial' | 'free' | 'pro' | 'inactivo' | null
 
 export async function GET(req: Request) {
   try {
-    const { user } = await getAuthenticatedUser(req)
-    if (!user) {
+    const { user, token } = await getAuthenticatedUser(req)
+    if (!user || !token) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const supabase = getSupabaseServiceClient()
+    const supabase = hasSupabaseServiceRoleKey()
+      ? getSupabaseServiceClient()
+      : getSupabaseUserServerClient(token)
+
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('plan, plan_expires_at')
@@ -24,7 +33,7 @@ export async function GET(req: Request) {
     let plan = (profile?.plan ?? null) as Plan
     let planExpiresAt = profile?.plan_expires_at ?? null
 
-    if (plan === null) {
+    if (plan === null && hasSupabaseServiceRoleKey()) {
       const trialExpiry = new Date()
       trialExpiry.setDate(trialExpiry.getDate() + 14)
       planExpiresAt = trialExpiry.toISOString()
@@ -56,8 +65,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { user } = await getAuthenticatedUser(req)
-    if (!user) {
+    const { user, token } = await getAuthenticatedUser(req)
+    if (!user || !token) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
@@ -66,11 +75,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cambio de plan no permitido' }, { status: 400 })
     }
 
-    const supabase = getSupabaseServiceClient()
-    const { error } = await supabase
-      .from('profiles')
-      .update({ plan: 'free', plan_expires_at: null, culqi_active: false })
-      .eq('id', user.id)
+    const supabase = hasSupabaseServiceRoleKey()
+      ? getSupabaseServiceClient()
+      : getSupabaseUserServerClient(token)
+
+    const { error } = hasSupabaseServiceRoleKey()
+      ? await supabase
+          .from('profiles')
+          .update({ plan: 'free', plan_expires_at: null, culqi_active: false })
+          .eq('id', user.id)
+      : await supabase.rpc('set_own_plan_free')
 
     if (error) {
       console.error('Supabase update error:', error)

@@ -21,6 +21,25 @@ export function getSupabaseServiceClient() {
   })
 }
 
+export function hasSupabaseServiceRoleKey() {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
+export function getSupabaseUserServerClient(token: string) {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  )
+}
+
 export function getBearerToken(req: Request) {
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
@@ -35,35 +54,20 @@ export async function getAuthenticatedUser(req: Request) {
   }
 
   try {
-    // Decode JWT to get user ID (without verification - we trust Supabase signed it)
-    const parts = token.split('.')
-    if (parts.length !== 3) throw new Error('Invalid token format')
-
-    const payload = JSON.parse(
-      Buffer.from(parts[1], 'base64').toString('utf-8')
-    )
-    const userId = payload.sub
-    console.log('DEBUG: Extracted userId from token:', userId, 'email:', payload.email)
-
-    if (!userId) throw new Error('No user ID in token')
-
-    // Use service role to fetch user from auth.users
-    const supabase = getSupabaseServiceClient()
-    console.log('DEBUG: Calling admin.getUserById with userId:', userId)
-    const { data: user, error } = await supabase.auth.admin.getUserById(userId)
+    const supabase = getSupabaseAnonServerClient()
+    const { data, error } = await supabase.auth.getUser(token)
 
     if (error) {
-      console.error('DEBUG: admin.getUserById error:', error.message, error.status)
+      console.error('Token verification error:', error.message)
       return { user: null, token }
     }
 
-    if (!user) {
-      console.error('DEBUG: No user returned from admin.getUserById')
+    if (!data.user) {
+      console.error('Token verification error: no user returned')
       return { user: null, token }
     }
 
-    console.log('DEBUG: Successfully retrieved user:', user.user?.id, user.user?.email)
-    return { user: user.user, token }
+    return { user: data.user, token }
   } catch (error) {
     console.error('Token verification error:', error)
     return { user: null, token }
