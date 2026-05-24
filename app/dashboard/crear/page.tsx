@@ -1,10 +1,10 @@
 'use client'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { optimizeImage } from '@/lib/optimizeImage'
+import { getProductMediaThumbnail, serializeProductMedia, uploadProductMediaFiles } from '@/lib/productMedia'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2 } from 'lucide-react'
+import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { useEffect } from 'react'
 
@@ -32,7 +32,7 @@ export default function CrearProducto() {
   const [modifiers, setModifiers] = useState<any[]>([])
   
   // Media handling
-  const [archivo, setArchivo] = useState<File | null>(null)
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
 
   const [availableCategories, setAvailableCategories] = useState<any[]>([])
 
@@ -94,24 +94,8 @@ export default function CrearProducto() {
         }
       }
 
-      let imageUrl = null
-
-      if (archivo) {
-        // Optimize: convert to WebP + resize if needed
-        const { blob, fileName } = await optimizeImage(archivo, { maxDimension: 1400, quality: 0.90 })
-
-        const { data, error: uploadError } = await supabase.storage
-          .from('productos')
-          .upload(fileName, blob, { contentType: 'image/webp' })
-
-        if (uploadError) throw uploadError
-
-        const { data: publicData } = supabase.storage
-          .from('productos')
-          .getPublicUrl(fileName)
-
-        imageUrl = publicData.publicUrl
-      }
+      const productMedia = mediaFiles.length > 0 ? await uploadProductMediaFiles(mediaFiles) : []
+      const imageUrl = getProductMediaThumbnail(productMedia)
 
       const currentPrice = parseFloat(precio)
       const oldPrice = originalPrice ? parseFloat(originalPrice) : null
@@ -146,6 +130,7 @@ export default function CrearProducto() {
           price: currentPrice,
           description: descripcion,
           image_url: imageUrl,
+          gallery: serializeProductMedia(productMedia),
           brand: brand.toUpperCase() || null,
           category: category || null,
           original_price: oldPrice,
@@ -428,21 +413,42 @@ export default function CrearProducto() {
           )}
 
           <div className="border-t border-outline-variant/10 pt-8 mt-8">
-            <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Fotografía Módulo</h3>
+            <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Galería del Producto</h3>
             <div className="flex flex-col md:flex-row gap-6 items-center">
                <div className="w-32 h-32 rounded-xl border border-outline-variant/20 bg-surface-container flex items-center justify-center overflow-hidden shrink-0">
-                  <ImageIcon className="text-on-surface-variant/30" size={32} />
+                  {mediaFiles.length > 0 ? (
+                    <div className="text-center px-3">
+                      <div className="flex justify-center mb-2">
+                        {mediaFiles.some(file => file.type.startsWith('video/')) ? <Play className="text-primary" size={30} /> : <ImageIcon className="text-primary" size={30} />}
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface">{mediaFiles.length} archivo(s)</p>
+                    </div>
+                  ) : (
+                    <ImageIcon className="text-on-surface-variant/30" size={32} />
+                  )}
                </div>
                <div className="flex-1 w-full">
-                 <p className="text-xs text-on-surface-variant mb-2">Sube una imagen o foto para identificarlo en Bodega.</p>
+                 <p className="text-xs text-on-surface-variant mb-2">
+                   Sube fotos o clips. Fotos: WebP hasta 1400px. Videos: max 8s, sin audio, 720p y ~1.8 Mbps cuando el navegador permite comprimir.
+                 </p>
                  <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/webm,video/quicktime"
+                    multiple
                     onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) setArchivo(e.target.files[0])
+                      setMediaFiles(Array.from(e.target.files || []))
                     }}
                     className="w-full cursor-pointer h-12 py-3 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-on-primary hover:file:brightness-110 text-on-surface"
                   />
+                  {mediaFiles.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {mediaFiles.map((file, index) => (
+                        <span key={`${file.name}-${index}`} className="rounded-full bg-surface-container-highest border border-outline-variant/30 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                          {file.type.startsWith('video/') ? 'Clip' : 'Foto'} · {file.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                </div>
             </div>
           </div>

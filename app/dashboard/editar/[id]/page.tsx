@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { optimizeImage } from '@/lib/optimizeImage'
+import { getProductMediaThumbnail, normalizeProductMedia, serializeProductMedia, uploadProductMediaFiles } from '@/lib/productMedia'
+import { ProductMedia } from '@/types/tienda'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2 } from 'lucide-react'
+import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play } from 'lucide-react'
 import { use } from 'react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 
@@ -34,8 +35,8 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
   const [modifiers, setModifiers] = useState<any[]>([])
   
   // Media handling
-  const [oldImageUrl, setOldImageUrl] = useState('')
-  const [archivo, setArchivo] = useState<File | null>(null)
+  const [existingMedia, setExistingMedia] = useState<ProductMedia[]>([])
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
 
   useEffect(() => {
     async function loadProduct() {
@@ -78,7 +79,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
       setStock(data.stock !== null && data.stock !== undefined ? data.stock.toString() : '')
       setIsFreeShipping(!!data.is_free_shipping)
       setShippingToday(!!data.shipping_today)
-      setOldImageUrl(data.image_url || '')
+      setExistingMedia(normalizeProductMedia(data.media, data.image_url, data.gallery))
       setPreparationTime(data.preparation_time || '')
       setIsAvailable(data.is_available !== false) // defaults to true
       
@@ -105,31 +106,9 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
     setSaving(true)
 
     try {
-      let imageUrl = oldImageUrl
-
-      // Si subieron una foto nueva, la reemplazamos
-      if (archivo) {
-        // Borrar antigua si existe
-        if (oldImageUrl) {
-           const nombreArchivo = oldImageUrl.split('/').pop()
-           if (nombreArchivo) await supabase.storage.from('productos').remove([nombreArchivo])
-        }
-
-        // Optimize: convert to WebP + resize if needed
-        const { blob, fileName } = await optimizeImage(archivo, { maxDimension: 1400, quality: 0.90 })
-
-        const { error: uploadError } = await supabase.storage
-          .from('productos')
-          .upload(fileName, blob, { contentType: 'image/webp' })
-
-        if (uploadError) throw uploadError
-
-        const { data: publicData } = supabase.storage
-          .from('productos')
-          .getPublicUrl(fileName)
-
-        imageUrl = publicData.publicUrl
-      }
+      const uploadedMedia = mediaFiles.length > 0 ? await uploadProductMediaFiles(mediaFiles) : []
+      const productMedia = [...existingMedia, ...uploadedMedia]
+      const imageUrl = getProductMediaThumbnail(productMedia)
 
       const currentPrice = parseFloat(precio)
       const oldPrice = originalPrice ? parseFloat(originalPrice) : null
@@ -165,6 +144,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           price: currentPrice,
           description: descripcion,
           image_url: imageUrl,
+          gallery: serializeProductMedia(productMedia),
           brand: brand.toUpperCase() || null,
           category: category || null,
           original_price: oldPrice,
@@ -434,25 +414,71 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           )}
 
           <div className="border-t border-outline-variant/10 pt-8 mt-8">
-            <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Fotografía Módulo</h3>
-            <div className="flex flex-col md:flex-row gap-6 items-center">
+            <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Galería del Producto</h3>
+            <div className="flex flex-col md:flex-row gap-6 items-start">
                <div className="w-32 h-32 rounded-xl border border-outline-variant/20 bg-surface-container flex items-center justify-center overflow-hidden shrink-0">
-                  {oldImageUrl ? (
-                     <img src={oldImageUrl} alt="Actual" className="w-full h-full object-cover" />
+                  {existingMedia[0] ? (
+                     existingMedia[0].type === 'video' ? (
+                       <div className="relative w-full h-full">
+                         <video src={existingMedia[0].url} poster={existingMedia[0].poster_url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                         <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white"><Play size={28} fill="currentColor" /></span>
+                       </div>
+                     ) : (
+                       <img src={existingMedia[0].url} alt="Actual" className="w-full h-full object-cover" />
+                     )
                   ) : (
-                     <ImageIcon className="text-on-surface-variant/30" size={32} />
+                    <ImageIcon className="text-on-surface-variant/30" size={32} />
                   )}
                </div>
                <div className="flex-1 w-full">
-                 <p className="text-xs text-on-surface-variant mb-2">Sube una imagen para reemplazar la actual. Si no subes nada, se mantendrá la fotografía superior.</p>
+                 <p className="text-xs text-on-surface-variant mb-2">
+                   Puedes combinar fotos y clips. Fotos: WebP hasta 1400px. Videos: max 8s, sin audio, 720p y ~1.8 Mbps cuando el navegador permite comprimir.
+                 </p>
+                 {existingMedia.length > 0 && (
+                   <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                     {existingMedia.map((item, index) => (
+                       <div key={item.id || item.url} className="relative rounded-xl border border-outline-variant/20 bg-surface-container overflow-hidden aspect-[3/4]">
+                         {item.type === 'video' ? (
+                           <>
+                             <video src={item.url} poster={item.poster_url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                             <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white"><Play size={24} fill="currentColor" /></span>
+                           </>
+                         ) : (
+                           <img src={item.url} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                         )}
+                         <button
+                           type="button"
+                           onClick={() => setExistingMedia(media => media.filter((_, mediaIndex) => mediaIndex !== index))}
+                           className="absolute top-2 right-2 rounded-full bg-red-500 text-white p-1 shadow-lg hover:bg-red-600 transition-colors"
+                           aria-label="Quitar archivo"
+                         >
+                           <Trash2 size={14} />
+                         </button>
+                         <span className="absolute left-2 bottom-2 rounded-full bg-black/70 text-white px-2 py-1 text-[9px] font-bold uppercase tracking-widest">
+                           {item.type === 'video' ? 'Clip' : 'Foto'}
+                         </span>
+                       </div>
+                     ))}
+                   </div>
+                 )}
                  <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/webm,video/quicktime"
+                    multiple
                     onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) setArchivo(e.target.files[0])
+                      setMediaFiles(Array.from(e.target.files || []))
                     }}
                     className="w-full cursor-pointer h-12 py-3 file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-on-primary hover:file:brightness-110 text-on-surface"
                   />
+                 {mediaFiles.length > 0 && (
+                   <div className="mt-3 flex flex-wrap gap-2">
+                     {mediaFiles.map((file, index) => (
+                       <span key={`${file.name}-${index}`} className="rounded-full bg-surface-container-highest border border-outline-variant/30 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                         {file.type.startsWith('video/') ? 'Clip nuevo' : 'Foto nueva'} · {file.name}
+                       </span>
+                     ))}
+                   </div>
+                 )}
                </div>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Profile, Product } from '@/types/tienda'
+import { ProductMedia, Profile, Product } from '@/types/tienda'
 import { useCartStore } from '@/store/useCartStore'
 import SlideOverCart from '@/components/tienda/SlideOverCart'
 
@@ -78,8 +78,30 @@ function formatPrice(price?: number | null) {
   return `S/ ${(price || 0).toFixed(2)}`
 }
 
-function getProductImage(product?: Product | null) {
-  return product?.image_url || 'https://picsum.photos/seed/linkventas-moda/600/800'
+function getProductMedia(product?: Product | null): ProductMedia[] {
+  if (!product) return [{ type: 'image', url: 'https://picsum.photos/seed/linkventas-moda/600/800' }]
+
+  const media = Array.isArray(product.media)
+    ? product.media.filter(item => item?.url && (item.type === 'image' || item.type === 'video'))
+    : []
+
+  if (media.length > 0) return media
+
+  const galleryMedia = Array.isArray(product.gallery)
+    ? product.gallery
+        .map((item): ProductMedia | null => {
+          try {
+            const parsed = JSON.parse(item) as Partial<ProductMedia>
+            return parsed?.url && (parsed.type === 'image' || parsed.type === 'video') ? parsed as ProductMedia : null
+          } catch {
+            return item ? { type: 'image', url: item } : null
+          }
+        })
+        .filter((item): item is ProductMedia => Boolean(item))
+    : []
+
+  if (galleryMedia.length > 0) return galleryMedia
+  return [{ type: 'image', url: product.image_url || 'https://picsum.photos/seed/linkventas-moda/600/800' }]
 }
 
 function categoryLabel(category?: string) {
@@ -96,6 +118,49 @@ function averageRating(product: Product) {
 
 function reviewCount(product: Product) {
   return product.reviews_count || 0
+}
+
+function playHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
+  event.currentTarget.play().catch(() => {})
+}
+
+function pauseHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
+  event.currentTarget.pause()
+  event.currentTarget.currentTime = 0
+}
+
+function ProductMediaFrame({
+  media,
+  alt,
+  className,
+  hoverPlay = false,
+  autoplay = false,
+}: {
+  media: ProductMedia;
+  alt: string;
+  className?: string;
+  hoverPlay?: boolean;
+  autoplay?: boolean;
+}) {
+  if (media.type === 'video') {
+    return (
+      <video
+        className={className}
+        src={media.url}
+        poster={media.poster_url}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        autoPlay={autoplay}
+        onMouseEnter={hoverPlay ? playHoverVideo : undefined}
+        onMouseLeave={hoverPlay ? pauseHoverVideo : undefined}
+        aria-label={alt}
+      />
+    )
+  }
+
+  return <img className={className} src={media.url} alt={alt} loading="lazy" />
 }
 
 export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
@@ -117,6 +182,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
   const [selectedSize, setSelectedSize] = useState<Record<string, string>>({})
   const [modalQty, setModalQty] = useState(1)
   const [detailQty, setDetailQty] = useState(1)
+  const [detailMediaIndex, setDetailMediaIndex] = useState(0)
   const [selectedReviewStar, setSelectedReviewStar] = useState(5)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
@@ -160,6 +226,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
     setSelectedProduct(product)
     setCatalogVisible(false)
     setDetailQty(1)
+    setDetailMediaIndex(0)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -274,6 +341,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             storeName={storeName}
             whatsappPhone={perfil.whatsapp_phone}
             onBack={() => goToCatalog()}
+            selectedMediaIndex={detailMediaIndex}
+            onMediaChange={setDetailMediaIndex}
             onColorChange={(colorIndex) => setSelectedColorIndex(prev => ({ ...prev, [selectedProduct.id]: colorIndex }))}
             onSizeChange={(size) => setSelectedSize(prev => ({ ...prev, [selectedProduct.id]: size }))}
             onQuantityChange={(delta) => setDetailQty(value => Math.max(1, Math.min(10, value + delta)))}
@@ -334,6 +403,7 @@ function ProductCard({
   isReadOnly?: boolean;
 }) {
   const colors = getColors(product)
+  const primaryMedia = getProductMedia(product)[0]
   const displaySwatches = colors.slice(0, 5)
   const discount = product.original_price && product.original_price > product.price
     ? Math.round((1 - product.price / product.original_price) * 100)
@@ -345,7 +415,8 @@ function ProductCard({
       <div className="product-image-wrapper" onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
-        <img src={getProductImage(product)} alt={`${product.name}${colors[selectedColorIndex] ? ` - ${colors[selectedColorIndex]}` : ''}`} loading="lazy" />
+        <ProductMediaFrame media={primaryMedia} alt={`${product.name}${colors[selectedColorIndex] ? ` - ${colors[selectedColorIndex]}` : ''}`} hoverPlay className="product-media" />
+        {primaryMedia.type === 'video' && <span className="video-indicator">▶</span>}
         {isOutOfStock && <div className="soldout-layer">Agotado</div>}
         <div className="product-actions-overlay">
           <button className="action-btn" title="Vista rapida" onClick={(event) => { event.stopPropagation(); onOpenQuickView() }}>👁</button>
@@ -407,13 +478,15 @@ function QuickViewModal({
   const colors = getColors(product)
   const sizes = getSizes(product)
   const selectedColor = colors[selectedColorIndex]
+  const primaryMedia = getProductMedia(product)[0]
 
   return (
     <div className="modal-overlay active" onClick={onClose}>
       <div className="modal-quick-view" onClick={(event) => event.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>✕</button>
         <div className="modal-image-section">
-          <img src={getProductImage(product)} alt={product.name} />
+          <ProductMediaFrame media={primaryMedia} alt={product.name} autoplay className="product-media" />
+          {primaryMedia.type === 'video' && <span className="video-indicator modal-video-indicator">▶</span>}
         </div>
         <div className="modal-details-section">
           <h2>{product.name}</h2>
@@ -473,6 +546,8 @@ function DetailView({
   storeName,
   whatsappPhone,
   onBack,
+  selectedMediaIndex,
+  onMediaChange,
   onColorChange,
   onSizeChange,
   onQuantityChange,
@@ -490,6 +565,8 @@ function DetailView({
   storeName: string;
   whatsappPhone?: string;
   onBack: () => void;
+  selectedMediaIndex: number;
+  onMediaChange: (index: number) => void;
   onColorChange: (index: number) => void;
   onSizeChange: (size: string) => void;
   onQuantityChange: (delta: number) => void;
@@ -504,18 +581,32 @@ function DetailView({
   const selectedColor = colors[selectedColorIndex]
   const rating = averageRating(product)
   const reviews = reviewCount(product)
+  const media = getProductMedia(product)
+  const activeMedia = media[selectedMediaIndex] || media[0]
 
   return (
     <div className="detail-page active" id="detailPage">
       <button className="back-to-shop" onClick={onBack}>← Volver a la tienda</button>
       <div className="detail-layout">
         <div className="gallery-section">
-          <div className="gallery-main"><img src={getProductImage(product)} alt={product.name} /></div>
+          <div className="gallery-main">
+            <ProductMediaFrame media={activeMedia} alt={product.name} autoplay={activeMedia.type === 'video'} className="product-media" />
+            {activeMedia.type === 'video' && <span className="video-indicator gallery-video-indicator">▶</span>}
+          </div>
           <div className="gallery-thumbs">
-            <div className="gallery-thumb active"><img src={getProductImage(product)} alt={product.name} /></div>
-            {colors.map((color, colorIndex) => (
-              <button key={color} className={`gallery-thumb ${colorIndex === selectedColorIndex ? 'active' : ''}`} onClick={() => onColorChange(colorIndex)}>
-                <img src={getProductImage(product)} alt={color} />
+            {media.map((item, mediaIndex) => (
+              <button
+                key={`${item.url}-${mediaIndex}`}
+                className={`gallery-thumb ${mediaIndex === selectedMediaIndex ? 'active' : ''}`}
+                onClick={() => onMediaChange(mediaIndex)}
+                aria-label={`${item.type === 'video' ? 'Video' : 'Foto'} ${mediaIndex + 1}`}
+              >
+                {item.type === 'video' && item.poster_url ? (
+                  <img src={item.poster_url} alt={`${product.name} video ${mediaIndex + 1}`} className="product-media" loading="lazy" />
+                ) : (
+                  <ProductMediaFrame media={item} alt={`${product.name} ${mediaIndex + 1}`} className="product-media" />
+                )}
+                {item.type === 'video' && <span className="thumb-play">▶</span>}
               </button>
             ))}
           </div>
@@ -762,8 +853,15 @@ const modaUrbanStyles = `
 .moda-urban-template .product-image-wrapper {
   position: relative; overflow: hidden; aspect-ratio: 3/4; background: #f9f9f9; display: flex; align-items: center; justify-content: center;
 }
-.moda-urban-template .product-image-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); }
-.moda-urban-template .product-card:hover .product-image-wrapper img { transform: scale(1.08); }
+.moda-urban-template .product-media { width: 100%; height: 100%; object-fit: cover; display: block; }
+.moda-urban-template video.product-media { background: #f3f3f3; }
+.moda-urban-template .product-image-wrapper .product-media { transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); }
+.moda-urban-template .product-card:hover .product-image-wrapper .product-media { transform: scale(1.08); }
+.moda-urban-template .video-indicator {
+  position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.7);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; z-index: 3; box-shadow: var(--shadow-sm);
+}
+.moda-urban-template .modal-video-indicator, .moda-urban-template .gallery-video-indicator { right: 16px; top: 16px; width: 42px; height: 42px; font-size: 1rem; }
 .moda-urban-template .product-actions-overlay {
   position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; opacity: 0; transform: translateX(20px);
   transition: var(--transition); z-index: 2;
@@ -815,7 +913,7 @@ const modaUrbanStyles = `
   flex: 1; min-width: 300px; background: #f9f9f9; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
   border-radius: var(--radius) 0 0 var(--radius);
 }
-.moda-urban-template .modal-image-section img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.moda-urban-template .modal-image-section .product-media { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
 .moda-urban-template .modal-details-section { flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; min-width: 280px; }
 .moda-urban-template .modal-details-section h2 { font-size: 1.5rem; font-weight: 800; margin: 0; }
 .moda-urban-template .modal-price { font-size: 1.6rem; font-weight: 800; color: var(--text); }
@@ -857,15 +955,19 @@ const modaUrbanStyles = `
 .moda-urban-template .detail-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 3rem; }
 .moda-urban-template .gallery-section { position: sticky; top: 90px; align-self: start; }
 .moda-urban-template .gallery-main { border-radius: var(--radius); overflow: hidden; aspect-ratio: 3/4; background: #f9f9f9; margin-bottom: 1rem; position: relative; cursor: zoom-in; }
-.moda-urban-template .gallery-main img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-.moda-urban-template .gallery-main:hover img { transform: scale(1.5); }
+.moda-urban-template .gallery-main .product-media { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.moda-urban-template .gallery-main:hover .product-media { transform: scale(1.5); }
 .moda-urban-template .gallery-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
 .moda-urban-template .gallery-thumb {
   width: 64px; height: 80px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: var(--transition);
-  opacity: 0.7; flex-shrink: 0; padding: 0; background: #fff;
+  opacity: 0.7; flex-shrink: 0; padding: 0; background: #fff; position: relative;
 }
 .moda-urban-template .gallery-thumb:hover, .moda-urban-template .gallery-thumb.active { opacity: 1; border-color: var(--accent); }
-.moda-urban-template .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.moda-urban-template .gallery-thumb .product-media { width: 100%; height: 100%; object-fit: cover; }
+.moda-urban-template .thumb-play {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.8rem;
+  background: rgba(0,0,0,0.28); text-shadow: 0 1px 8px rgba(0,0,0,0.55); pointer-events: none;
+}
 .moda-urban-template .detail-info h1 { font-size: 2rem; font-weight: 900; letter-spacing: -1px; margin: 0 0 0.3rem; }
 .moda-urban-template .detail-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 1rem; font-size: 0.9rem; color: var(--text-light); }
 .moda-urban-template .stars { color: var(--star); letter-spacing: 2px; }

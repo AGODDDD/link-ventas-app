@@ -60,6 +60,18 @@ export interface ProductModifierGroup {
   options: ProductModifierOption[];
 }
 
+export interface ProductMedia {
+  id?: string;
+  type: 'image' | 'video';
+  url: string;
+  poster_url?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  mime_type?: string;
+  size?: number;
+}
+
 export interface Product {
   id: string;
   user_id: string;
@@ -67,6 +79,7 @@ export interface Product {
   description?: string;
   price: number;
   image_url?: string;
+  media?: ProductMedia[];
   created_at?: string;
   stock?: number;
   // Advanced Catalog Fields
