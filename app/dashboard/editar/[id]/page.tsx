@@ -155,7 +155,6 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           variants: templateType === 'moda' ? variants : (templateType === 'restaurante' ? variants : []),
           preparation_time: preparationTime || null,
           is_available: isAvailable,
-          store_id: user.id, // Self-healing: asegurar link al Core
           user_id: user.id   // Mantener compatibilidad Legacy
         })
         .eq('id', params.id)

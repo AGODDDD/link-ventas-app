@@ -14,6 +14,7 @@ const MAX_VIDEO_SECONDS = 8
 const VIDEO_MAX_DIMENSION = 1280
 const VIDEO_BITRATE = 1_800_000
 const VIDEO_FPS = 30
+const MP4_MIME_TYPES = ['video/mp4', 'video/x-m4v']
 
 export function normalizeProductMedia(media: unknown, fallbackImageUrl?: string | null, gallery?: unknown): ProductMedia[] {
   const parsed = Array.isArray(media)
@@ -122,6 +123,21 @@ async function optimizeVideo(file: File): Promise<OptimizedMedia> {
 
     const { width, height } = fitDimensions(video.videoWidth || 720, video.videoHeight || 720, VIDEO_MAX_DIMENSION)
     const posterBlob = await createPoster(video, width, height)
+
+    if (isMp4(file)) {
+      return {
+        type: 'video',
+        blob: file,
+        fileName: uniqueFileName(file.name, 'mp4'),
+        contentType: 'video/mp4',
+        width,
+        height,
+        duration: video.duration,
+        size: file.size,
+        posterBlob,
+        posterFileName: uniqueFileName(`${file.name}-poster.webp`, 'webp'),
+      }
+    }
 
     if (!('MediaRecorder' in window) || !HTMLCanvasElement.prototype.captureStream) {
       return {
@@ -279,6 +295,8 @@ function seekVideo(video: HTMLVideoElement, time: number) {
 
 function getSupportedVideoMimeType() {
   const options = [
+    'video/mp4;codecs=h264',
+    'video/mp4',
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm',
@@ -291,6 +309,11 @@ function uniqueFileName(originalName: string, forcedExtension?: string) {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 8)
   return `${timestamp}-${random}.${extension}`
+}
+
+function isMp4(file: File) {
+  const extension = file.name.split('.').pop()?.toLowerCase()
+  return MP4_MIME_TYPES.includes(file.type) || extension === 'mp4' || extension === 'm4v'
 }
 
 function parseGalleryMedia(gallery: unknown): ProductMedia[] {

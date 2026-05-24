@@ -124,6 +124,11 @@ function playHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
   event.currentTarget.play().catch(() => {})
 }
 
+function playReadyVideo(event: React.SyntheticEvent<HTMLVideoElement>) {
+  if (!event.currentTarget.autoplay) return
+  event.currentTarget.play().catch(() => {})
+}
+
 function pauseHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
   event.currentTarget.pause()
   event.currentTarget.currentTime = 0
@@ -151,8 +156,9 @@ function ProductMediaFrame({
         muted
         loop
         playsInline
-        preload="metadata"
+        preload={autoplay ? 'auto' : 'metadata'}
         autoPlay={autoplay}
+        onCanPlay={autoplay ? playReadyVideo : undefined}
         onMouseEnter={hoverPlay ? playHoverVideo : undefined}
         onMouseLeave={hoverPlay ? pauseHoverVideo : undefined}
         aria-label={alt}
