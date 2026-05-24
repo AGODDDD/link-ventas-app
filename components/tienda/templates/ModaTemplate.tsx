@@ -148,6 +148,26 @@ function ProductMediaFrame({
   autoplay?: boolean;
 }) {
   if (media.type === 'video') {
+    if (hoverPlay && media.poster_url) {
+      return (
+        <>
+          <img className={`${className || ''} video-poster`} src={media.poster_url} alt={alt} loading="eager" />
+          <video
+            className={`${className || ''} hover-video`}
+            src={media.url}
+            poster={media.poster_url}
+            muted
+            loop
+            playsInline
+            preload="none"
+            onMouseEnter={playHoverVideo}
+            onMouseLeave={pauseHoverVideo}
+            aria-label={alt}
+          />
+        </>
+      )
+    }
+
     return (
       <video
         className={className}
@@ -863,6 +883,10 @@ const modaUrbanStyles = `
 .moda-urban-template video.product-media { background: #f3f3f3; }
 .moda-urban-template .product-image-wrapper .product-media { transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); }
 .moda-urban-template .product-card:hover .product-image-wrapper .product-media { transform: scale(1.08); }
+.moda-urban-template .product-image-wrapper .video-poster { position: absolute; inset: 0; z-index: 1; opacity: 1; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
+.moda-urban-template .product-image-wrapper .hover-video { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
+.moda-urban-template .product-card:hover .product-image-wrapper .hover-video { opacity: 1; }
+.moda-urban-template .product-card:hover .product-image-wrapper .video-poster { opacity: 0; }
 .moda-urban-template .video-indicator {
   position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.7);
   color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; z-index: 3; box-shadow: var(--shadow-sm);
