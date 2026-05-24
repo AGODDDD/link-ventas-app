@@ -125,7 +125,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       )}
 
       {/* TopAppBar */}
-      {perfil.template_type !== 'restaurante' && (
+      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && (
         <StoreNavbarKinetic 
           storeName={storeName} 
           storeId={perfil.id} 
@@ -137,7 +137,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       {renderTemplate()}
 
       {/* Footer */}
-      {perfil.template_type !== 'restaurante' && (
+      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && (
         <StoreFooterKinetic 
           storeName={storeName} 
           socials={{
@@ -149,7 +149,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       )}
 
       {/* Floating WhatsApp Button */}
-      {!isReadOnly && perfil.template_type !== 'restaurante' && perfil.whatsapp_phone && (
+      {!isReadOnly && perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && perfil.whatsapp_phone && (
         <a
           href={`https://wa.me/${perfil.whatsapp_phone}?text=Hola%20${encodeURIComponent(storeName)},%20necesito%20ayuda%20con%20mi%20pedido`}
           target="_blank"
