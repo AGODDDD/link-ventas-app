@@ -36,9 +36,16 @@ export default function PendientePage() {
 
     const handleDowngradeToFree = async () => {
         setLoading(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-            await supabase.from('profiles').update({ plan: 'free' }).eq('id', user.id)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+            await fetch('/api/billing/status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ plan: 'free' }),
+            })
             document.cookie = 'sb-plan-status=free; path=/; SameSite=Lax'
             window.location.href = '/dashboard'
         }

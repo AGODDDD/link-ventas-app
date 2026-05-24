@@ -66,21 +66,18 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 toast.loading("Procesando pago seguro...", { id: 'culqi-charge' });
                 
                 try {
-                    // 1. Generar ID de orden
-                    const orderId = crypto.randomUUID();
                     const orderData = win.pendingCulqiOrderData;
+                    const orderId = orderData?.orderId;
+                    if (!orderData?.perfil || !orderId) throw new Error('Orden de pago no inicializada.');
                     const currentCart = useCartStore.getState().carts[storeId] || [];
-                    const orderTotal = currentCart.reduce((acc: number, item: any) => acc + (item.product.price * item.quantity), 0);
 
-                    // 2. Cobrar primero
                     const res = await fetch('/api/checkout/culqi', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             token_id: token,
-                            amount: orderTotal,
                             email: email || 'cliente@linkventas.com',
-                            store_id: storeId,
+                            store_id: orderData.perfil.id,
                             order_id: orderId
                         })
                     });
@@ -94,40 +91,15 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     }
 
                     // 3. SOLO después del cobro exitoso, crear orden en DB
-                    if (orderData?.perfil) {
-                        await supabase.from('orders').insert({
-                            id: orderId,
-                            merchant_id: orderData.perfil.id,
-                            store_id: orderData.perfil.id,
-                            customer_name: orderData.nombre,
-                            customer_phone: orderData.telefono,
-                            customer_address: orderData.direccion,
-                            total_amount: orderTotal,
-                            total: orderTotal,
-                            status: 'paid',
-                            payment_proof_url: 'CULQI_AUTOMATIC',
-                        });
-                        const dbItems = currentCart.map((item: any) => ({
-                            order_id: orderId,
-                            product_id: item.product.id,
-                            quantity: item.quantity,
-                            price: item.product.price
-                        }));
-                        await supabase.from('order_items').insert(dbItems);
-
-                        // Deducir stock
-                        for (const item of currentCart) {
-                            if (item.product.stock !== null && item.product.stock !== undefined) {
-                                const remaining = Math.max(0, item.product.stock - item.quantity);
-                                await supabase.from('products').update({ stock: remaining }).eq('id', item.product.id);
-                            }
-                        }
-                        // Eliminar lead fantasma
-                        if (orderData.leadId) {
-                            await supabase.from('abandoned_carts').delete().eq('id', orderData.leadId);
+                    for (const item of currentCart) {
+                        if (item.product.stock !== null && item.product.stock !== undefined) {
+                            const remaining = Math.max(0, item.product.stock - item.quantity);
+                            await supabase.from('products').update({ stock: remaining }).eq('id', item.product.id);
                         }
                     }
-                    
+                    if (orderData.leadId) {
+                        await supabase.from('abandoned_carts').delete().eq('id', orderData.leadId);
+                    }
                     toast.dismiss('culqi-charge');
                     toast.success('¡Pago procesado exitosamente!');
                     try { win.Culqi.close(); } catch {}
@@ -220,8 +192,32 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     setSubmitting(false);
                     return;
                 }
+                const orderId = crypto.randomUUID()
+                const { error: orderError } = await supabase.from('orders').insert({
+                    id: orderId,
+                    merchant_id: perfil.id,
+                    store_id: perfil.id,
+                    customer_name: nombre,
+                    customer_phone: telefono,
+                    customer_address: direccion,
+                    total_amount: total,
+                    total,
+                    status: 'pending',
+                    payment_proof_url: 'CULQI_PENDING',
+                })
+                if (orderError) throw orderError
+
+                const orderItems = cart.map(item => ({
+                    order_id: orderId,
+                    product_id: item.product.id,
+                    quantity: item.quantity,
+                    price: item.product.price
+                }))
+                const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+                if (itemsError) throw itemsError
+
                 win.pendingCulqiOrderData = {
-                    perfil, nombre, telefono, direccion, cart, total, leadId
+                    perfil, nombre, telefono, direccion, cart, total, leadId, orderId
                 };
                 win.Culqi.publicKey = perfil.culqi_public_key;
                 win.Culqi.settings({

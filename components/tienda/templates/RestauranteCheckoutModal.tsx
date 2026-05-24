@@ -65,9 +65,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const email = win.Culqi.token.email;
         toast.loading('Procesando pago seguro...', { id: 'culqi-charge' });
         try {
-          // 1. Generar orden ID (legible igual que WhatsApp)
-          const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
-          const orderId = generateOrderId(prefix);
+          const pendingOrder = (window as any).pendingCulqiRestaurantOrder;
+          const orderId = pendingOrder?.orderId;
+          if (!orderId) throw new Error('Orden de pago no inicializada.');
 
           // 2. Cobrar primero, confirmando que el dinero entró
           const res = await fetch('/api/checkout/culqi', {
@@ -75,7 +75,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               token_id: token,
-              amount: total,
               email: email || correo || 'cliente@linkventas.com',
               store_id: perfil.id,
               order_id: orderId
@@ -145,42 +144,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             estimated_time: '50 - 60 min',
           });
 
-          // 3b. Core table (orders)
-          await supabase.from('orders').insert({
-            id: orderId,
-            store_id: perfil.id,
-            status: 'paid',
-            order_type: 'delivery',
-            customer_name: nombre,
-            customer_phone: telefono,
-            customer_email: correo,
-            direccion: direccion,
-            referencia: savedAddress?.referencia || null,
-            lat: savedAddress?.lat || null,
-            lng: savedAddress?.lng || null,
-            delivery_fee: deliveryFee,
-            subtotal: subtotal,
-            total: total,
-            metodo_pago: 'culqi',
-            estimated_time: '50 - 60 min',
-            legacy_id: orderId,
-          });
-
-          // 3c. Order items
-          const relationalItems = orderItems.map((item: any) => {
-            const modsData: any = item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {});
-            return {
-              order_id: orderId,
-              product_id: item.id && item.id.length > 20 ? item.id : null,
-              name: item.name,
-              price: item.unitPrice,
-              quantity: item.quantity,
-              modifiers: item.notes 
-                ? { items: Array.isArray(modsData) ? modsData : [], notes: item.notes }
-                : modsData
-            };
-          });
-          await supabase.from('order_items').insert(relationalItems);
 
           // 3d. Lead capture
           await supabase.from('store_leads').insert({
@@ -303,6 +266,42 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
           return;
         }
+        const coreOrderId = crypto.randomUUID();
+        const { error: coreOrderError } = await supabase.from('orders').insert({
+          id: coreOrderId,
+          store_id: perfil.id,
+          status: 'pending',
+          order_type: 'delivery',
+          customer_name: nombre,
+          customer_phone: telefono,
+          customer_email: correo,
+          direccion,
+          referencia: savedAddress?.referencia || null,
+          lat: savedAddress?.lat || null,
+          lng: savedAddress?.lng || null,
+          delivery_fee: deliveryFee,
+          subtotal,
+          total,
+          total_amount: total,
+          metodo_pago: 'culqi',
+          payment_proof_url: 'CULQI_PENDING',
+          estimated_time: '50 - 60 min',
+          legacy_id: coreOrderId,
+        });
+        if (coreOrderError) throw coreOrderError;
+
+        const relationalItems = orderItems.map((item: any) => ({
+          order_id: coreOrderId,
+          product_id: item.id && item.id.length > 20 ? item.id : null,
+          name: item.name,
+          price: item.unitPrice,
+          quantity: item.quantity,
+          modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
+        }));
+        const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
+        if (itemsError) throw itemsError;
+
+        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId };
         win.Culqi.publicKey = perfil.culqi_public_key;
         win.Culqi.settings({
           title: perfil.store_name?.substring(0, 50) || 'Tienda',

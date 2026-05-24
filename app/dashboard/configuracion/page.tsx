@@ -86,7 +86,7 @@ export default function ConfiguracionPage() {
         // Culqi
         setCulqiActive(data.culqi_active || false)
         setCulqiPublicKey(data.culqi_public_key || '')
-        setCulqiSecretKey(data.culqi_secret_key || '')
+        setCulqiSecretKey('')
 
         // Load Personalization
         setTemplateType(data.template_type || 'comercio')

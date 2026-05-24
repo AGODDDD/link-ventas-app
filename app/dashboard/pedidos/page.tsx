@@ -303,7 +303,10 @@ export default function PedidosPage() {
     const descargarPdfDesdeModal = async (order: any) => {
         toast.loading('Generando PDF oficial... 📄', { id: 'modal-pdf' })
         try {
-            const response = await fetch(`/api/pedidos/ticket?id=${order.id}`)
+            const { data: { session } } = await supabase.auth.getSession()
+            const response = await fetch(`/api/pedidos/ticket?id=${order.id}`, {
+                headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+            })
             if (!response.ok) throw new Error("No se pudo generar el PDF")
             const blob = await response.blob()
             const link = document.createElement('a')

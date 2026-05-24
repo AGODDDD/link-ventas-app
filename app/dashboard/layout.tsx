@@ -45,49 +45,18 @@ export default function DashboardLayout({
         return
       }
 
-      const userId = sessionData.session.user.id
-
-      // Leer perfil actual
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan, plan_expires_at')
-        .eq('id', userId)
-        .single()
-
-      let planActual: string = profile?.plan ?? null
-      let expiresAt: string | null = profile?.plan_expires_at ?? null
-
-      // ─── PASO 2: Auto-asignación atómica del trial ───────────────────
-      // Solo si el plan es estrictamente NULL (nunca ha tenido plan).
-      // El .is('plan', null) es la guarda atómica que evita race conditions.
-      if (planActual === null || planActual === undefined) {
-        const trialExpiry = new Date()
-        trialExpiry.setDate(trialExpiry.getDate() + 14)
-        expiresAt = trialExpiry.toISOString()
-
-        const { data: updated } = await supabase
-          .from('profiles')
-          .update({ plan: 'trial', plan_expires_at: expiresAt })
-          .eq('id', userId)
-          .is('plan', null) // ← Guarda atómica: solo escribe si plan ES NULL
-          .select('plan, plan_expires_at')
-          .single()
-
-        // Si la actualización devolvió datos, la escritura fue exitosa.
-        // Si no (otro tab ganó la carrera), releemos el perfil actualizado.
-        if (updated) {
-          planActual = updated.plan
-          expiresAt = updated.plan_expires_at
-        } else {
-          const { data: reFetch } = await supabase
-            .from('profiles')
-            .select('plan, plan_expires_at')
-            .eq('id', userId)
-            .single()
-          planActual = reFetch?.plan ?? 'trial'
-          expiresAt = reFetch?.plan_expires_at ?? null
-        }
+      const statusRes = await fetch('/api/billing/status', {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+      })
+      if (!statusRes.ok) {
+        router.replace('/pendiente')
+        return
       }
+
+      const billing = await statusRes.json()
+      const planActual: string = billing.plan ?? null
+      const expiresAt: string | null = billing.plan_expires_at ?? null
+
 
       // ─── Setear cookie para el Edge Middleware ───────────────────────
       setPlanCookie(planActual, expiresAt)

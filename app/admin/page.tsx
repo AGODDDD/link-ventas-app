@@ -36,25 +36,37 @@ export default function AdminPage() {
     }, [])
 
     const activar = async (id: string, meses: number) => {
-        const expires = new Date()
-        expires.setMonth(expires.getMonth() + meses)
-        await supabase
-            .from('profiles')
-            .update({
-                plan: 'pro',
-                plan_expires_at: expires.toISOString(),
-            })
-            .eq('id', id)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+
+        const res = await fetch('/api/admin/plans', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ merchantId: id, action: 'activate', months: meses }),
+        })
+        if (!res.ok) return
+        const updated = await res.json()
         setMerchants(prev => prev.map(m =>
-            m.id === id ? { ...m, plan: 'pro', plan_expires_at: expires.toISOString() } : m
+            m.id === id ? { ...m, plan: updated.plan, plan_expires_at: updated.plan_expires_at } : m
         ))
     }
 
     const desactivar = async (id: string) => {
-        await supabase
-            .from('profiles')
-            .update({ plan: 'inactivo', plan_expires_at: null })
-            .eq('id', id)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+
+        const res = await fetch('/api/admin/plans', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ merchantId: id, action: 'deactivate' }),
+        })
+        if (!res.ok) return
         setMerchants(prev => prev.map(m =>
             m.id === id ? { ...m, plan: 'inactivo', plan_expires_at: null } : m
         ))

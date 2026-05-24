@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { decryptText } from '@/lib/encryption'
+import { getSupabaseServiceClient, hasProFeatures } from '@/lib/supabaseServer'
 
 export async function POST(req: Request) {
     try {
@@ -27,14 +27,11 @@ export async function POST(req: Request) {
         // ===================================================================
         // PASO 2: Idempotencia — ¿Ya está pagado?
         // ===================================================================
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
+        const supabase = getSupabaseServiceClient()
 
         const { data: existingOrder, error: orderFetchError } = await supabase
             .from('orders')
-            .select('id, status, total_amount, store_id')
+            .select('id, status, total_amount, total, store_id')
             .eq('id', order_id)
             .eq('store_id', store_id)
             .single()
@@ -55,13 +52,17 @@ export async function POST(req: Request) {
         // ===================================================================
         const { data: profile } = await supabase
             .from('profiles')
-            .select('culqi_secret_key, culqi_active')
+            .select('culqi_secret_key, culqi_active, plan, plan_expires_at')
             .eq('id', store_id)
             .single()
 
         if (!profile || !profile.culqi_active || !profile.culqi_secret_key) {
             console.warn('Webhook: Tienda no tiene Culqi activo.', store_id)
             return NextResponse.json({ success: false, message: 'Store Culqi not active' }, { status: 403 })
+        }
+        if (!hasProFeatures(profile.plan, profile.plan_expires_at)) {
+            console.warn('Webhook: Tienda sin plan activo para Culqi.', store_id)
+            return NextResponse.json({ success: false, message: 'Store plan not active' }, { status: 403 })
         }
 
         // Desencriptar la Secret Key del comerciante
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
         // ===================================================================
         // PASO 4: Validación de Monto (Anti-Tampering)
         // ===================================================================
-        const expectedAmountCents = Math.round(parseFloat(existingOrder.total_amount) * 100)
+        const expectedAmountCents = Math.round(parseFloat(existingOrder.total_amount ?? existingOrder.total ?? 0) * 100)
         const actualAmountCents = culqiCharge.amount
 
         if (actualAmountCents < expectedAmountCents) {

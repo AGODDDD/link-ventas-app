@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Link Ventas",
@@ -37,9 +26,7 @@ export default function RootLayout({
           </noscript>
         <style>` }} />
       </head>
-      <body
-        className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
-      >
+      <body className="antialiased">
         <Toaster richColors position="top-center" duration={4000} toastOptions={{ className: 'z-[99999]' }} />
         {children}
         <Analytics />

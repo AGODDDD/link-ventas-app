@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server'
 import PDFDocument from 'pdfkit'
-import { supabase } from '@/lib/supabase'
 import fs from 'fs'
 import path from 'path'
+import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
 
 // Helper para buscar el pedido por ID en las distintas tablas (Shadow Migration)
 async function getOrderById(orderId: string) {
+    const supabase = getSupabaseServiceClient()
     // Verificar si es un UUID válido
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)
 
@@ -55,6 +56,14 @@ async function getOrderById(orderId: string) {
 
 export async function GET(request: NextRequest) {
     try {
+        const { user } = await getAuthenticatedUser(request)
+        if (!user) {
+            return new Response(JSON.stringify({ error: 'No autorizado' }), {
+                status: 401,
+                headers: { 'content-type': 'application/json' }
+            })
+        }
+
         const { searchParams } = new URL(request.url)
         const orderId = searchParams.get('id')
         
@@ -72,11 +81,19 @@ export async function GET(request: NextRequest) {
                 headers: { 'content-type': 'application/json' }
             })
         }
+        const ownerId = order.store_id || order.merchant_id
+        if (ownerId !== user.id) {
+            return new Response(JSON.stringify({ error: 'No autorizado para este pedido' }), {
+                status: 403,
+                headers: { 'content-type': 'application/json' }
+            })
+        }
         
         // Obtener perfil del comercio
         const storeId = order.store_id || order.merchant_id
         let storeName = "TU TIENDA"
         if (storeId) {
+            const supabase = getSupabaseServiceClient()
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('store_name')
