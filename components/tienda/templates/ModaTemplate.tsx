@@ -148,10 +148,16 @@ function ProductMediaFrame({
   autoplay?: boolean;
 }) {
   if (media.type === 'video') {
-    if (hoverPlay && media.poster_url) {
+    if (hoverPlay) {
       return (
         <>
-          <img className={`${className || ''} video-poster`} src={media.poster_url} alt={alt} loading="eager" />
+          {media.poster_url ? (
+            <img className={`${className || ''} video-poster`} src={media.poster_url} alt={alt} loading="eager" />
+          ) : (
+            <div className={`${className || ''} video-poster video-placeholder`} aria-label={alt}>
+              <span>▶</span>
+            </div>
+          )}
           <video
             className={`${className || ''} hover-video`}
             src={media.url}
@@ -887,6 +893,13 @@ const modaUrbanStyles = `
 .moda-urban-template .product-image-wrapper .hover-video { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
 .moda-urban-template .product-card:hover .product-image-wrapper .hover-video { opacity: 1; }
 .moda-urban-template .product-card:hover .product-image-wrapper .video-poster { opacity: 0; }
+.moda-urban-template .video-placeholder {
+  background: linear-gradient(135deg, #111 0%, #2a2a2a 55%, #0f0f0f 100%); color: #fff; display: flex; align-items: center; justify-content: center;
+}
+.moda-urban-template .video-placeholder span {
+  width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+}
 .moda-urban-template .video-indicator {
   position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.7);
   color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; z-index: 3; box-shadow: var(--shadow-sm);
