@@ -38,7 +38,7 @@ export default function PendientePage() {
         setLoading(true)
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
-            await fetch('/api/billing/status', {
+            const res = await fetch('/api/billing/status', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -46,6 +46,11 @@ export default function PendientePage() {
                 },
                 body: JSON.stringify({ plan: 'free' }),
             })
+            if (!res.ok) {
+                setLoading(false)
+                alert('Error al cambiar de plan. Intenta de nuevo.')
+                return
+            }
             document.cookie = 'sb-plan-status=free; path=/; SameSite=Lax'
             window.location.href = '/dashboard'
         }
