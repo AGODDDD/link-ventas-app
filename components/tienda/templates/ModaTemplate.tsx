@@ -120,8 +120,12 @@ function reviewCount(product: Product) {
   return product.reviews_count || 0
 }
 
+function playVideo(video: HTMLVideoElement) {
+  video.play().catch(() => {})
+}
+
 function playHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
-  event.currentTarget.play().catch(() => {})
+  playVideo(event.currentTarget)
 }
 
 function playReadyVideo(event: React.SyntheticEvent<HTMLVideoElement>) {
@@ -147,8 +151,13 @@ function ProductMediaFrame({
   hoverPlay?: boolean;
   autoplay?: boolean;
 }) {
+  const [isHovering, setIsHovering] = useState(false)
+  const [isVideoReady, setIsVideoReady] = useState(false)
+
   if (media.type === 'video') {
     if (hoverPlay) {
+      const showHoverVideo = isHovering && isVideoReady
+
       return (
         <>
           {media.poster_url ? (
@@ -165,9 +174,20 @@ function ProductMediaFrame({
             muted
             loop
             playsInline
-            preload="none"
-            onMouseEnter={playHoverVideo}
-            onMouseLeave={pauseHoverVideo}
+            preload="metadata"
+            data-ready={showHoverVideo ? 'true' : 'false'}
+            onCanPlay={(event) => {
+              setIsVideoReady(true)
+              if (isHovering) playVideo(event.currentTarget)
+            }}
+            onMouseEnter={(event) => {
+              setIsHovering(true)
+              if (isVideoReady) playHoverVideo(event)
+            }}
+            onMouseLeave={(event) => {
+              setIsHovering(false)
+              pauseHoverVideo(event)
+            }}
             aria-label={alt}
           />
         </>
@@ -891,8 +911,7 @@ const modaUrbanStyles = `
 .moda-urban-template .product-card:hover .product-image-wrapper .product-media { transform: scale(1.08); }
 .moda-urban-template .product-image-wrapper .video-poster { position: absolute; inset: 0; z-index: 1; opacity: 1; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
 .moda-urban-template .product-image-wrapper .hover-video { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
-.moda-urban-template .product-card:hover .product-image-wrapper .hover-video { opacity: 1; }
-.moda-urban-template .product-card:hover .product-image-wrapper .video-poster { opacity: 0; }
+.moda-urban-template .product-card:hover .product-image-wrapper .hover-video[data-ready="true"] { opacity: 1; }
 .moda-urban-template .video-placeholder {
   background: linear-gradient(135deg, #111 0%, #2a2a2a 55%, #0f0f0f 100%); color: #fff; display: flex; align-items: center; justify-content: center;
 }
