@@ -207,9 +207,28 @@ function fitDimensions(width: number, height: number, maxDimension: number) {
 }
 
 async function createPoster(video: HTMLVideoElement, width: number, height: number) {
-  await seekVideo(video, Math.min(0.1, Math.max(video.duration - 0.1, 0)))
-  const canvas = drawVideoFrame(video, width, height)
-  return canvasToBlob(canvas, 'image/webp', 0.82)
+  const safeDuration = Number.isFinite(video.duration) ? video.duration : 0
+  const candidates = [
+    safeDuration * 0.25,
+    safeDuration * 0.5,
+    safeDuration * 0.75,
+    1,
+    0.1,
+  ]
+    .map(time => Math.min(Math.max(time, 0.1), Math.max(safeDuration - 0.1, 0.1)))
+    .filter((time, index, list) => list.indexOf(time) === index)
+
+  let fallbackCanvas: HTMLCanvasElement | null = null
+  for (const time of candidates) {
+    await seekVideo(video, time)
+    const canvas = drawVideoFrame(video, width, height)
+    fallbackCanvas = fallbackCanvas || canvas
+    if (!isCanvasMostlyBlank(canvas)) {
+      return canvasToBlob(canvas, 'image/webp', 0.82)
+    }
+  }
+
+  return canvasToBlob(fallbackCanvas || drawVideoFrame(video, width, height), 'image/webp', 0.82)
 }
 
 async function transcodeVideo(video: HTMLVideoElement, width: number, height: number, mimeType: string) {
@@ -267,6 +286,35 @@ function drawVideoFrame(video: HTMLVideoElement, width: number, height: number) 
   if (!ctx) throw new Error('No se pudo crear el poster del video.')
   ctx.drawImage(video, 0, 0, width, height)
   return canvas
+}
+
+function isCanvasMostlyBlank(canvas: HTMLCanvasElement) {
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return false
+
+  const sampleWidth = Math.min(24, canvas.width)
+  const sampleHeight = Math.min(24, canvas.height)
+  const data = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data
+  let luminanceTotal = 0
+  let alphaTotal = 0
+  const samples = data.length / 4
+
+  for (let index = 0; index < data.length; index += 4) {
+    luminanceTotal += (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722)
+    alphaTotal += data[index + 3]
+  }
+
+  const averageLuminance = luminanceTotal / samples
+  const averageAlpha = alphaTotal / samples
+  let variance = 0
+
+  for (let index = 0; index < data.length; index += 4) {
+    const luminance = (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722)
+    variance += Math.pow(luminance - averageLuminance, 2)
+  }
+
+  variance = variance / samples
+  return averageAlpha < 8 || averageLuminance < 8 || averageLuminance > 247 || variance < 12
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
