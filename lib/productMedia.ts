@@ -292,29 +292,42 @@ function isCanvasMostlyBlank(canvas: HTMLCanvasElement) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return false
 
-  const sampleWidth = Math.min(24, canvas.width)
-  const sampleHeight = Math.min(24, canvas.height)
-  const data = ctx.getImageData(0, 0, sampleWidth, sampleHeight).data
+  const sampleSize = 12
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+  const points: number[] = []
+
+  for (let y = 0; y < sampleSize; y += 1) {
+    for (let x = 0; x < sampleSize; x += 1) {
+      const px = Math.min(canvas.width - 1, Math.round((x + 0.5) * canvas.width / sampleSize))
+      const py = Math.min(canvas.height - 1, Math.round((y + 0.5) * canvas.height / sampleSize))
+      points.push((py * canvas.width + px) * 4)
+    }
+  }
+
   let luminanceTotal = 0
   let alphaTotal = 0
-  const samples = data.length / 4
+  const luminances: number[] = []
 
-  for (let index = 0; index < data.length; index += 4) {
-    luminanceTotal += (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722)
+  for (const index of points) {
+    const luminance = (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722)
+    luminances.push(luminance)
+    luminanceTotal += luminance
     alphaTotal += data[index + 3]
   }
 
+  const samples = points.length
   const averageLuminance = luminanceTotal / samples
   const averageAlpha = alphaTotal / samples
+  const darkSamples = luminances.filter(luminance => luminance < 16).length
+  const lightSamples = luminances.filter(luminance => luminance > 245).length
   let variance = 0
 
-  for (let index = 0; index < data.length; index += 4) {
-    const luminance = (data[index] * 0.2126) + (data[index + 1] * 0.7152) + (data[index + 2] * 0.0722)
+  for (const luminance of luminances) {
     variance += Math.pow(luminance - averageLuminance, 2)
   }
 
   variance = variance / samples
-  return averageAlpha < 8 || averageLuminance < 8 || averageLuminance > 247 || variance < 12
+  return averageAlpha < 8 || darkSamples / samples > 0.9 || lightSamples / samples > 0.96 || variance < 6
 }
 
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {

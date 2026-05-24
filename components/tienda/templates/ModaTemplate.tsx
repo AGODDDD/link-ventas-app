@@ -157,11 +157,12 @@ function ProductMediaFrame({
   if (media.type === 'video') {
     if (hoverPlay) {
       const showHoverVideo = isHovering && isVideoReady
+      const hasPoster = Boolean(media.poster_url)
 
       return (
         <>
-          <div className={`${className || ''} video-poster video-placeholder`} aria-label={alt}>
-            {media.poster_url && <img src={media.poster_url} alt={alt} loading="eager" />}
+          <div className={`${className || ''} video-poster video-placeholder ${hasPoster ? 'has-poster' : 'no-poster'}`} aria-label={alt}>
+            {hasPoster && <img src={media.poster_url} alt={alt} loading="eager" />}
             <span>▶</span>
           </div>
           <video
@@ -171,8 +172,8 @@ function ProductMediaFrame({
             muted
             loop
             playsInline
-            preload="metadata"
-            data-ready={showHoverVideo ? 'true' : 'false'}
+            preload={hasPoster ? 'metadata' : 'auto'}
+            data-ready={showHoverVideo || !hasPoster ? 'true' : 'false'}
             onCanPlay={(event) => {
               setIsVideoReady(true)
               if (isHovering) playVideo(event.currentTarget)
@@ -909,16 +910,17 @@ const modaUrbanStyles = `
 .moda-urban-template .product-image-wrapper .video-poster { position: absolute; inset: 0; z-index: 1; opacity: 1; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
 .moda-urban-template .product-image-wrapper .hover-video { position: absolute; inset: 0; z-index: 2; opacity: 0; transition: opacity 0.2s ease, transform 0.6s cubic-bezier(0.4,0,0.2,1); }
 .moda-urban-template .product-card:hover .product-image-wrapper .hover-video[data-ready="true"] { opacity: 1; }
+.moda-urban-template .product-image-wrapper .video-poster.no-poster + .hover-video[data-ready="true"] { opacity: 1; }
 .moda-urban-template .video-placeholder {
-  background: linear-gradient(135deg, #111 0%, #2a2a2a 55%, #0f0f0f 100%); color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: #f6f6f6; color: #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .moda-urban-template .video-placeholder img {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;
 }
 .moda-urban-template .video-placeholder span {
   position: relative; z-index: 2;
-  width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center;
-  font-size: 1.25rem; box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+  width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.88); display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; box-shadow: 0 12px 30px rgba(0,0,0,0.18);
 }
 .moda-urban-template .video-indicator {
   position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,0.7);
