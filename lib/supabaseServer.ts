@@ -31,11 +31,27 @@ export async function getAuthenticatedUser(req: Request) {
   const token = getBearerToken(req)
   if (!token) return { user: null, token: null }
 
-  const supabase = getSupabaseAnonServerClient()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data.user) return { user: null, token }
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    )
 
-  return { user: data.user, token }
+    if (!response.ok) {
+      console.error('Auth verification failed:', response.statusText)
+      return { user: null, token }
+    }
+
+    const user = await response.json()
+    return { user, token }
+  } catch (error) {
+    console.error('Token verification error:', error)
+    return { user: null, token }
+  }
 }
 
 export function isPlanActive(plan: Plan, expiresAt?: string | null) {
