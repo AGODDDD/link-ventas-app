@@ -47,8 +47,9 @@ export default function PendientePage() {
                 body: JSON.stringify({ plan: 'free' }),
             })
             if (!res.ok) {
+                const data = await res.json().catch(() => null)
                 setLoading(false)
-                alert('Error al cambiar de plan. Intenta de nuevo.')
+                alert(data?.error || 'Error al cambiar de plan. Intenta de nuevo.')
                 return
             }
             document.cookie = 'sb-plan-status=free; path=/; SameSite=Lax'
