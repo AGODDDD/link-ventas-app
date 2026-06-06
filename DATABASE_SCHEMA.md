@@ -75,9 +75,14 @@ Contactos capturados para remarketing (carritos abandonados).
 - `customer_phone` (text): Teléfono del cliente (Inferido de README).
 - `metadata` (JSONB): Datos adicionales del lead (Inferido).
 
+### `delivery_orders`
+Órdenes específicas del flujo legacy de delivery/restaurante.
+- `store_id` (UUID): Tienda dueña de la orden. FK corregida en producción para apuntar a `stores(id)` con `ON DELETE CASCADE`.
+- `status` (text): Estado de la orden.
+- `created_at` (timestamp): Fecha de creación.
+
 ### Tablas Adicionales (No documentadas inicialmente)
 - `abandoned_carts`: Almacena carritos de compras no completados (Inferido del nombre).
-- `delivery_orders`: Órdenes específicas de delivery (Inferido del nombre).
 - `delivery_settings`: Configuración de delivery por tienda (Inferido del nombre).
 - `menu_categories`: Categorías para organizar el catálogo de productos (Inferido del nombre).
 - `order_items`: Productos individuales dentro de una orden (Inferido del nombre).
@@ -92,13 +97,14 @@ Contactos capturados para remarketing (carritos abandonados).
 Todas las tablas satélite apuntan al mismo UUID de `auth.users`, pero utilizan nombres de columna inconsistentes que generan mezcla en el código:
 - `products` usa `user_id`
 - `orders` usa `store_id` en producción; `merchant_id` aparece en código/documentos legacy pero no existe en la tabla real verificada el 2026-06-05.
-- `store_leads` (y tablas nuevas como `delivery_orders`, `product_variants`) usan `store_id`.
+- `store_leads`, `delivery_orders` y `product_variants` usan `store_id`.
 
 ```text
 auth.users (1) --- (1) profiles / stores
 profiles/stores (1) --- (N) products (user_id)
 profiles/stores (1) --- (N) orders (store_id)
 profiles/stores (1) --- (N) store_leads (store_id)
+stores (1) --- (N) delivery_orders (store_id)
 ```
 
 ## Políticas RLS (Row Level Security)

@@ -15,7 +15,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 ## Funcionalidades Parcialmente Implementadas
 - **Onboarding de Pagos Culqi:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
 - **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
-- **Módulo de Delivery & Identidad (stores):** Las tablas `delivery_orders` operan actualmente en un modo híbrido "legacy", conviviendo con la nueva tabla core `orders`. La migración base `profiles → stores` fue completada en producción el 2026-06-05: 7 filas en `stores` y 7 filas en `store_config`.
+- **Módulo de Delivery & Identidad (stores):** Las tablas `delivery_orders` operan actualmente en un modo híbrido "legacy", conviviendo con la nueva tabla core `orders`. La migración base `profiles → stores` fue completada en producción el 2026-06-05: 7 filas en `stores` y 7 filas en `store_config`. El FK `delivery_orders.store_id` ya apunta a `stores(id)`.
 
 ## Funcionalidades Pendientes
 - Migración automatizada de Base de Datos.
@@ -23,7 +23,6 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Potenciales Detectados
-- **Severidad Alta:** FK incorrecta en `delivery_orders.store_id` — apunta a `profiles(id)` con `ON DELETE CASCADE` en lugar de `stores(id)`. Si se depreca `profiles`, se eliminarían en cascada todos los registros históricos de delivery. (Verificado en `migrations/delivery_orders.sql` línea 8).
 - **Severidad Alta:** El acoplamiento de la base de datos a `scripts/doctor.ts` puede causar fallos de runtime si se hace deploy de frontend sin antes ejecutar el script de BD.
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.

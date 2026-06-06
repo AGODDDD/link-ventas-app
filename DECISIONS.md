@@ -47,14 +47,14 @@
 - Riesgo: Alta fricción y fragilidad cognitiva para nuevos agentes/desarrolladores.
 - Decisión pendiente: Refactorizar y estandarizar la capa de acceso a datos para usar un solo identificador (`store_id`) apuntando a la tabla canónica `stores`.
 
-### [PENDIENTE APROBACIÓN] Migración Masiva profiles → stores
+### [RESUELTO] Migración Masiva profiles → stores
 
 - Script existente: `scripts/migrate_profiles_to_stores.ts` — ya estaba en el repositorio.
 - **Problema crítico del script existente:** Usa `NEXT_PUBLIC_SUPABASE_ANON_KEY` en lugar de `SUPABASE_SERVICE_ROLE_KEY`. Esto hace que el script falle en producción porque la ANON_KEY está bloqueada por RLS y no puede leer perfiles de otros merchants.
-- **Riesgo ROJO:** `delivery_orders.store_id` tiene FK apuntando a `profiles(id)` con `ON DELETE CASCADE`. Si se depreca `profiles` en el futuro, se eliminarán en cascada todos los registros históricos de delivery.
-- **Riesgo MEDIO:** El CHECK constraint de `stores.template_type` en `migrations/002_core_schema.sql` define `'restaurante'`, pero el código y el modelo de negocio confirmado usa `'food'`. Desalineación activa en producción.
-- Script SQL revisado y listo para ejecución: `migration_analysis.md` (en raíz del repo) — **pendiente aprobación del usuario**.
-- Próximo paso: Ejecutar el diagnóstico (PASO 0 del script) en un entorno con acceso directo a Supabase (usando SERVICE_ROLE_KEY) para conocer el número exacto de merchants afectados antes de proceder.
+- **Riesgo ROJO RESUELTO:** `delivery_orders.store_id` fue corregido para apuntar a `stores(id)` con `ON DELETE CASCADE`, evitando que la futura deprecación de `profiles` elimine registros históricos de delivery por cascada.
+- **Riesgo MEDIO RESUELTO:** El CHECK constraint de `stores.template_type` fue alineado con el modelo real `'food'`, `'comercio'`, `'moda'`.
+- Script SQL revisado y documentado: `migration_analysis.md` (en raíz del repo).
+- Estado: Migración ejecutada en producción el 2026-06-05. Verificación documentada: 7 filas en `stores`, 7 filas en `store_config`, 54 productos de BarRes accesibles, 76 órdenes de `delivery_orders` intactas y 0 merchants con `slug` o `store_name` nulos.
 
 ### [RESUELTO] Discrepancia de Nomenclatura Vercel: link-ventas vs enlace-ventas
 

@@ -215,15 +215,14 @@ COMMIT;
 
 ## 4. Riesgos de RLS y Foreign Keys
 
-### 🔴 Riesgo ALTO — `delivery_orders.store_id → profiles(id)`
-La tabla `delivery_orders` tiene su FK apuntando a **`profiles(id)`**, no a `stores(id)`.
+### ✅ Resuelto — `delivery_orders.store_id → stores(id)`
+El FK legacy de `delivery_orders.store_id` fue corregido en producción para apuntar a **`stores(id)`** en lugar de `profiles(id)`.
 
 ```sql
--- En delivery_orders.sql (línea 8):
-store_id UUID REFERENCES profiles(id) ON DELETE CASCADE
+FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
 ```
 
-Esto significa que si en el futuro se depreca `profiles`, se perderían todos los registros históricos de delivery con `ON DELETE CASCADE`. **No rompe la migración actual**, pero es el riesgo más crítico a futuro.
+Esto elimina el riesgo crítico de perder registros históricos de delivery si `profiles` se depreca en el futuro.
 
 ### 🟡 Riesgo MEDIO — Trigger `enforce_product_plan_limits` consulta `profiles`
 El trigger de limite de productos (`005_saas_security.sql`, línea 170) hace un `SELECT FROM public.profiles WHERE id = NEW.user_id`. Si se mueven los datos de plan a otra tabla sin actualizar este trigger, los límites de plan dejarán de funcionar y todos los usuarios podrán crear productos ilimitadamente.
@@ -252,4 +251,4 @@ La tabla `stores` no tiene políticas RLS definidas aún en ningún archivo de m
 | 2 | Ejecutar el script en Supabase SQL Editor | Completado |
 | 3 | Verificar post-migración que el `DO $$` final terminó con `OK` | Completado |
 | 4 | (Futuro) Agregar políticas RLS a la tabla `stores` | Recomendado |
-| 5 | (Futuro) Actualizar FK de `delivery_orders` de `profiles` a `stores` | Recomendado |
+| 5 | Actualizar FK de `delivery_orders` de `profiles` a `stores` | Completado |
