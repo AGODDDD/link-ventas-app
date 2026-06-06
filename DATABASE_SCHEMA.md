@@ -38,16 +38,35 @@ Catálogo de productos de cada tienda.
 - `image_url` (text): Imagen principal (Inferido).
 
 ### `orders`
-Ventas generadas.
-- `id` (UUID): Identificador del pedido (Inferido).
-- `merchant_id` o `store_id` (UUID): Tienda dueña de la orden (Inferido de RLS `auth.uid() = merchant_id` y webhook webhook).
-- `customer_name` (text): Nombre del cliente (Inferido).
-- `subtotal` (numeric): Monto subtotal de la orden (verificado).
-- `total_amount` / `total` (numeric): Monto total de la orden (verificado).
-- `status` (text): Estado de la orden ('pending', 'paid', etc) (Inferido).
-- `order_type` (text): 'delivery' u otros.
-- `delivery_address` (text): Dirección de entrega.
-- `payment_proof_url` (text): Comprobante o identificador de pago ('CONTRA_ENTREGA', 'WHATSAPP_LINK', 'CULQI_AUTOMATIC').
+Ventas generadas en la tabla core nueva. Producción fue verificada vía `select(col).limit(0)` el 2026-06-05.
+
+Columnas reales verificadas en producción:
+- `id` (UUID): Identificador del pedido.
+- `store_id` (UUID): Tienda dueña de la orden.
+- `order_type` (text): Tipo de pedido (`delivery`, `pickup`, `standard` según `migrations/002_core_schema.sql`).
+- `status` (text): Estado del pedido.
+- `customer_name` (text): Nombre del cliente.
+- `customer_phone` (text): Teléfono del cliente.
+- `customer_email` (text): Email del cliente.
+- `direccion` (text): Dirección de entrega.
+- `referencia` (text): Referencia de entrega.
+- `lat` (double precision): Latitud de entrega.
+- `lng` (double precision): Longitud de entrega.
+- `delivery_fee` (numeric): Costo de delivery.
+- `estimated_time` (text): Tiempo estimado.
+- `subtotal` (numeric): Monto subtotal de la orden.
+- `total` (numeric): Monto total de la orden.
+- `metodo_pago` (text): Método de pago.
+- `payment_proof_url` (text): Comprobante o identificador de pago.
+- `legacy_id` (text): ID histórico usado para trazabilidad con `delivery_orders`.
+- `created_at` (timestamp): Fecha de creación.
+- `updated_at` (timestamp): Fecha de actualización.
+
+Columnas confirmadas como NO existentes en producción:
+- `merchant_id`
+- `customer_address`
+- `total_amount`
+- `items`
 
 ### `store_leads`
 Contactos capturados para remarketing (carritos abandonados).
@@ -72,13 +91,13 @@ Contactos capturados para remarketing (carritos abandonados).
 **NOTA DE DEUDA TÉCNICA (Identidad del Merchant):**
 Todas las tablas satélite apuntan al mismo UUID de `auth.users`, pero utilizan nombres de columna inconsistentes que generan mezcla en el código:
 - `products` usa `user_id`
-- `orders` usa `merchant_id`
+- `orders` usa `store_id` en producción; `merchant_id` aparece en código/documentos legacy pero no existe en la tabla real verificada el 2026-06-05.
 - `store_leads` (y tablas nuevas como `delivery_orders`, `product_variants`) usan `store_id`.
 
 ```text
 auth.users (1) --- (1) profiles / stores
 profiles/stores (1) --- (N) products (user_id)
-profiles/stores (1) --- (N) orders (merchant_id)
+profiles/stores (1) --- (N) orders (store_id)
 profiles/stores (1) --- (N) store_leads (store_id)
 ```
 
@@ -92,7 +111,7 @@ profiles/stores (1) --- (N) store_leads (store_id)
   - ALL: Solo el merchant (`USING auth.uid() = user_id`).
 - **`orders`:**
   - INSERT: Público (`WITH CHECK true` - para que los clientes puedan comprar).
-  - SELECT: Solo el merchant (`USING auth.uid() = merchant_id`).
+  - SELECT: DESCONOCIDO en producción. La documentación legacy menciona `merchant_id`, pero esa columna no existe; código actual también consulta `store_id` para flujo core.
 - **`store_leads`:**
   - INSERT: Público (`WITH CHECK true`).
   - SELECT: Solo el merchant (`USING auth.uid() = store_id`).

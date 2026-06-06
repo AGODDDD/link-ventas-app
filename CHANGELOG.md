@@ -7,6 +7,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-05]
 ### Documentación
+- DATABASE_SCHEMA.md: Corregido esquema real de `orders` en producción; documentado que usa `store_id` y que `merchant_id`, `customer_address`, `total_amount` e `items` no existen.
 - Creada base de conocimiento v3 completa (8 archivos)
 - DATABASE_SCHEMA.md: tipos numeric verificados, 3 buckets confirmados,
   9 tablas no detectadas agregadas, índices de rendimiento documentados
