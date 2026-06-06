@@ -136,7 +136,10 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         storeId,
                         customerName: nombre,
                         customerPhone: telefono,
-                        cart,
+                        cart: cart.map(item => ({
+                            ...item,
+                            variantDetails: item.variantDetails || null
+                        })),
                         existingLeadId: leadId
                     })
                 });
@@ -178,6 +181,15 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         }
         if (metodoPago === 'transferencia' && !comprobante) {
             return toast.error('Por favor sube la captura del pago para verificar')
+        }
+
+        // Validación de Variantes (Moda)
+        for (const item of cart) {
+            if (item.product.variants && item.product.variants.length > 0) {
+                if (!item.variantDetails || (!item.variantDetails.talla && !item.variantDetails.color)) {
+                    return toast.error(`Selecciona talla/color para: ${item.product.name}`)
+                }
+            }
         }
 
         setSubmitting(true)
@@ -674,6 +686,14 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                 </div>
                                 <div className="flex-1 min-w-0 py-1">
                                     <p className="font-headline font-bold uppercase text-sm leading-tight text-on-background line-clamp-2">{item.product.name}</p>
+                                    {item.variantDetails && (item.variantDetails.talla || item.variantDetails.color) && (
+                                        <p className="font-label text-xs text-on-surface-variant mt-1">
+                                            {[
+                                                item.variantDetails.talla && `Talla: ${item.variantDetails.talla}`,
+                                                item.variantDetails.color && `Color: ${item.variantDetails.color}`
+                                            ].filter(Boolean).join(' · ')}
+                                        </p>
+                                    )}
                                     <p className="font-headline text-primary font-black mt-2 tracking-tighter italic text-lg">
                                         S/ {(item.product.price * item.quantity).toFixed(2)}
                                     </p>
