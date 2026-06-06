@@ -18,6 +18,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - AGENT_RULES.md: agregada regla estricta de actualización automática del CHANGELOG como requisito de cierre
 - DECISIONS.md: discrepancia de nomenclatura link-ventas vs link-ventas-app investigada y documentada
 - ARCHITECTURE.md y DECISIONS.md: actualizado el proyecto oficial en Vercel (link-ventas-app.vercel.app) y documentada la eliminación del proyecto duplicado "enlace-ventas".
+- Investigación de código: Análisis profundo de dependencias, relaciones on-the-fly y nomenclatura inconsistente (store_id, merchant_id, user_id).
 
 ---
 ## Campos que requieren verificación manual
