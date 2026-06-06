@@ -35,13 +35,13 @@
 - **Razón**: Prevenir manipulación de payloads webhooks por actores maliciosos que falsifiquen IPs.
 - **Consecuencias**: Requiere desencriptar en el servidor el `culqi_secret_key` del merchant en cada llamada de webhook entrante.
 
-### [En curso] Migración de profiles → stores como identidad del merchant
+### [DEUDA TÉCNICA ACTIVA] Migración y Nomenclatura de Identidad (stores vs profiles)
 
-- Contexto: el sistema usa profiles como tabla principal del merchant, pero existe una tabla stores separada con estructura similar
-- Estado: migración parcial, ambas tablas coexisten actualmente  
-- Riesgo: agentes futuros pueden confundirse sobre cuál tabla usar
-- Decisión pendiente: definir tabla canónica y deprecar la otra
-- Acción requerida por el usuario: confirmar cuál es la tabla oficial going forward
+- Contexto: El sistema utiliza `profiles` como tabla legacy del merchant, pero existe la nueva tabla `stores`.
+- Estado: Migración parcial "Lazy/On-the-fly". El usuario se registra, pero la tienda solo se crea forzosamente al intentar acceder a pantallas del dashboard (ej. `crear/page.tsx`), asumiendo en código una relación 1 a 1 (`id = user.id`).
+- Inconsistencia de Nomenclatura: El mismo UUID que representa la identidad es llamado indistintamente en el esquema y en el código como `user_id` (en `products`), `store_id` (en `product_variants`, `store_leads`) y `merchant_id` (en `orders`).
+- Riesgo: Alta fricción y fragilidad. El acoplamiento a mapeos de IDs mixtos previene crear un sistema real de múltiples tiendas por cuenta.
+- Decisión pendiente: Refactorizar y estandarizar la capa de acceso a datos para usar un solo identificador (`store_id`) y una sola tabla de origen (`stores`).
 
 ### [RESUELTO] Discrepancia de Nomenclatura Vercel: link-ventas vs enlace-ventas
 

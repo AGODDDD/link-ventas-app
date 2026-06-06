@@ -69,12 +69,17 @@ Contactos capturados para remarketing (carritos abandonados).
 - `stores`: Entidad de tiendas separada de perfiles, con slug propio (Inferido del nombre).
 
 ## Relaciones
+**NOTA DE DEUDA TÉCNICA (Identidad del Merchant):**
+Todas las tablas satélite apuntan al mismo UUID de `auth.users`, pero utilizan nombres de columna inconsistentes que generan mezcla en el código:
+- `products` usa `user_id`
+- `orders` usa `merchant_id`
+- `store_leads` (y tablas nuevas como `delivery_orders`, `product_variants`) usan `store_id`.
 
 ```text
-auth.users (1) --- (1) profiles
-profiles (1) --- (N) products
-profiles (1) --- (N) orders
-profiles (1) --- (N) store_leads
+auth.users (1) --- (1) profiles / stores
+profiles/stores (1) --- (N) products (user_id)
+profiles/stores (1) --- (N) orders (merchant_id)
+profiles/stores (1) --- (N) store_leads (store_id)
 ```
 
 ## Políticas RLS (Row Level Security)

@@ -23,6 +23,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Potenciales Detectados
+- **Severidad Alta:** Inconsistencia estructural en la nomenclatura de identidad del merchant. El código mezcla `user_id`, `store_id` y `merchant_id` para referirse al mismo UUID de cuenta, y crea registros "on-the-fly" en lugar de durante el registro, lo cual puede producir queries huérfanas o errores de RLS.
 - **Severidad Alta:** El acoplamiento de la base de datos a `scripts/doctor.ts` puede causar fallos de runtime si se hace deploy de frontend sin antes ejecutar el script de BD.
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.

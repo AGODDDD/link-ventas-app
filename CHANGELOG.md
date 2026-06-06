@@ -19,6 +19,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - DECISIONS.md: discrepancia de nomenclatura link-ventas vs link-ventas-app investigada y documentada
 - ARCHITECTURE.md y DECISIONS.md: actualizado el proyecto oficial en Vercel (link-ventas-app.vercel.app) y documentada la eliminación del proyecto duplicado "enlace-ventas".
 - Investigación de código: Análisis profundo de dependencias, relaciones on-the-fly y nomenclatura inconsistente (store_id, merchant_id, user_id).
+- DECISIONS.md, PROJECT_STATE.md, DATABASE_SCHEMA.md: Documentado el patrón de migración on-the-fly, listado como deuda técnica activa y clasificado como bug de Severidad Alta la mezcla de nombres de identidad.
 
 ---
 ## Campos que requieren verificación manual
