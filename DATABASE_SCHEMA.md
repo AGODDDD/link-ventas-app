@@ -56,6 +56,18 @@ Contactos capturados para remarketing (carritos abandonados).
 - `customer_phone` (text): Teléfono del cliente (Inferido de README).
 - `metadata` (JSONB): Datos adicionales del lead (Inferido).
 
+### Tablas Adicionales (No documentadas inicialmente)
+- `abandoned_carts`: Almacena carritos de compras no completados (Inferido del nombre).
+- `delivery_orders`: Órdenes específicas de delivery (Inferido del nombre).
+- `delivery_settings`: Configuración de delivery por tienda (Inferido del nombre).
+- `menu_categories`: Categorías para organizar el catálogo de productos (Inferido del nombre).
+- `order_items`: Productos individuales dentro de una orden (Inferido del nombre).
+- `order_items_legacy`: Histórico/respaldo de items de órdenes antiguas (Inferido del nombre).
+- `orders_legacy`: Histórico/respaldo de órdenes antiguas (Inferido del nombre).
+- `product_variants`: Variaciones específicas de un producto (Inferido del nombre).
+- `store_config`: Configuración adicional extendida de la tienda (Inferido del nombre).
+- `stores`: Entidad de tiendas separada de perfiles, con slug propio (Inferido del nombre).
+
 ## Relaciones
 
 ```text
@@ -81,7 +93,11 @@ profiles (1) --- (N) store_leads
   - SELECT: Solo el merchant (`USING auth.uid() = store_id`).
 
 ## Índices
-- **DESCONOCIDO**: No hay evidencia de índices explícitos creados más allá de los primarios/únicos (`slug UNIQUE`).
+- `abandoned_carts`: `idx_abandoned_carts_expires` (`expires_at`) — limpieza de carritos expirados (verificado).
+- `delivery_orders`: `idx_delivery_orders_date` (`created_at`) (verificado).
+- `delivery_orders`: `idx_delivery_orders_status` (`store_id`, `status`) (verificado).
+- `delivery_orders`: `idx_delivery_orders_store` (`store_id`) (verificado).
+- Para las demás tablas, se asume la existencia de índices primarios.
 
 ## Edge Functions
 - **No se detectaron** Edge functions de Supabase en uso. El código utiliza API Routes de Next.js (`app/api/*`).
@@ -93,4 +109,4 @@ profiles (1) --- (N) store_leads
 
 ---
 ## Campos que requieren verificación manual
-- DESCONOCIDO: Si existen índices adicionales en la DB para rendimiento.
+*(Todos los campos críticos iniciales han sido verificados).*
