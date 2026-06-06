@@ -24,7 +24,7 @@ Crea un archivo `.env.local` con tus credenciales de Supabase:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
-NEXT_PUBLIC_ADMIN_USER_ID=uuid_del_admin
+ADMIN_USER_ID=uuid_del_admin
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_solo_servidor
 PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_llaves_culqi
 ```

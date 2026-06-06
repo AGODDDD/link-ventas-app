@@ -20,8 +20,20 @@ export default function AdminPage() {
 
     useEffect(() => {
         const init = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user || user.id !== process.env.NEXT_PUBLIC_ADMIN_USER_ID) {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) {
+                window.location.href = '/dashboard'
+                return
+            }
+            const res = await fetch('/api/admin/check', {
+                headers: { Authorization: `Bearer ${session.access_token}` }
+            })
+            if (!res.ok) {
+                window.location.href = '/dashboard'
+                return
+            }
+            const { isAdmin } = await res.json()
+            if (!isAdmin) {
                 window.location.href = '/dashboard'
                 return
             }

@@ -4,7 +4,7 @@ import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseSe
 export async function POST(req: Request) {
   try {
     const { user } = await getAuthenticatedUser(req)
-    if (!user || user.id !== process.env.NEXT_PUBLIC_ADMIN_USER_ID) {
+    if (!user || user.id !== process.env.ADMIN_USER_ID) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
