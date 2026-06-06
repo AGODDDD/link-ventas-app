@@ -28,6 +28,9 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Interfaz nativa de Checkout automatizado de la propia plataforma SaaS (LinkVentas Pro Plan).
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
+## Bugs Resueltos Recientemente
+- **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
+
 ## Bugs Potenciales Detectados
 - **Severidad Alta:** Inconsistencia estructural en la nomenclatura de identidad del merchant. El código mezcla `user_id`, `store_id` y `merchant_id` para referirse al mismo UUID de cuenta, y crea registros "on-the-fly" en lugar de durante el registro, lo cual puede producir queries huérfanas o errores de RLS.
 - **Severidad Alta:** FK incorrecta en `delivery_orders.store_id` — apunta a `profiles(id)` con `ON DELETE CASCADE` en lugar de `stores(id)`. Si se depreca `profiles`, se eliminarían en cascada todos los registros históricos de delivery. (Verificado en `migrations/delivery_orders.sql` línea 8).

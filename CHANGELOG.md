@@ -6,6 +6,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-05]
+### Funcionalidad
+- Moda/Boutique: Persistidas las variantes `talla`/`color` seleccionadas por el cliente en `order_items.modifiers`, resincronizado `product_variants` al editar productos y mostrado talla/color en el detalle de pedido.
+
 ### Documentación
 - Creada base de conocimiento v3 completa (8 archivos)
 - DATABASE_SCHEMA.md: tipos numeric verificados, 3 buckets confirmados,
