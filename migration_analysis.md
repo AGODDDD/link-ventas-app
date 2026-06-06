@@ -1,6 +1,13 @@
 # Análisis de Migración: profiles → stores
 
-> **Estado:** Para revisión — NO ejecutar hasta aprobación del usuario.
+> **Estado:** COMPLETADA en producción el 2026-06-05.
+>
+> Verificación post-migración:
+> - `stores`: 7 filas.
+> - `store_config`: 7 filas.
+> - BarRes conserva 54 productos accesibles.
+> - BarRes conserva 76 órdenes en `delivery_orders`.
+> - 0 tiendas con `slug` o `name` nulos.
 
 ---
 
@@ -25,7 +32,7 @@ WHERE NOT EXISTS (
 ORDER BY p.created_at;
 ```
 
-Ejecutar estas dos queries te dará el **número exacto y la lista de merchants afectados** antes de proceder.
+Resultado previo a migración: 7 merchants sin entrada en `stores`. Resultado posterior: 0 pendientes verificados por conteo total `stores = 7`.
 
 ---
 
@@ -71,6 +78,14 @@ Estas columnas **no existen en `stores`** y deben permanecer en `profiles`:
 ---
 
 ## 3. Script SQL de Migración — PARA REVISIÓN
+
+**Resultado:** Ejecutado en producción. El script migró los 7 perfiles a `stores` y creó 7 filas en `store_config`.
+
+**Fix aplicado al constraint `template_type`:** el CHECK de `stores.template_type` fue corregido de `('restaurante', 'comercio', 'moda')` a `('food', 'comercio', 'moda')`, alineándolo con el modelo de negocio y el código actual. Verificado en producción:
+
+```sql
+CHECK ((template_type = ANY (ARRAY['food'::text, 'comercio'::text, 'moda'::text])))
+```
 
 ```sql
 -- ============================================================
@@ -215,10 +230,10 @@ El trigger de limite de productos (`005_saas_security.sql`, línea 170) hace un 
 
 **Acción:** Por ahora `profiles` se mantiene para datos de facturación, así que este trigger es seguro.
 
-### 🟡 Riesgo MEDIO — Constraint CHECK de `template_type` desalineado
-El SQL de `002_core_schema.sql` define el CHECK como `('restaurante', 'comercio', 'moda')`, pero el código usa `'food'`. El Paso 1 del script corrige esto, pero si hay registros existentes en `stores` con el valor `'restaurante'`, el ALTER fallará hasta que esos valores se normalicen primero.
+### ✅ Resuelto — Constraint CHECK de `template_type` desalineado
+El SQL de `002_core_schema.sql` definía el CHECK como `('restaurante', 'comercio', 'moda')`, pero el código usa `'food'`. La migración corrigió el constraint en producción a `('food', 'comercio', 'moda')`.
 
-**Solución incluida en el script:** Normalizar `'restaurante' → 'food'` antes de aplicar el CHECK.
+**Verificación:** `stores_template_type_check` ahora es `CHECK ((template_type = ANY (ARRAY['food'::text, 'comercio'::text, 'moda'::text])))`.
 
 ### 🟢 Riesgo BAJO — Slugs duplicados o nulos
 Algunos merchants muy antiguos podrían no tener slug. El script genera uno automático (`store-XXXXXXXX`) para esos casos, cumpliendo el `UNIQUE NOT NULL` de `stores`.
@@ -232,9 +247,9 @@ La tabla `stores` no tiene políticas RLS definidas aún en ningún archivo de m
 
 | # | Acción | Seguridad |
 |---|--------|-----------|
-| 0 | Ejecutar query de diagnóstico para conocer el número real de afectados | Obligatorio |
-| 1 | Revisar este script y aprobarlo | Obligatorio |
-| 2 | Ejecutar el script en Supabase SQL Editor | Requiere aprobación |
-| 3 | Verificar post-migración que el `DO $$` final terminó con `OK` | Obligatorio |
+| 0 | Ejecutar query de diagnóstico para conocer el número real de afectados | Completado |
+| 1 | Revisar este script y aprobarlo | Completado |
+| 2 | Ejecutar el script en Supabase SQL Editor | Completado |
+| 3 | Verificar post-migración que el `DO $$` final terminó con `OK` | Completado |
 | 4 | (Futuro) Agregar políticas RLS a la tabla `stores` | Recomendado |
 | 5 | (Futuro) Actualizar FK de `delivery_orders` de `profiles` a `stores` | Recomendado |

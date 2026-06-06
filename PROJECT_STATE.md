@@ -15,7 +15,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 ## Funcionalidades Parcialmente Implementadas
 - **Onboarding de Pagos Culqi:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
 - **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
-- **Módulo de Delivery & Identidad (stores):** Las tablas `delivery_orders` operan actualmente en un modo híbrido "legacy", conviviendo con la nueva tabla core `orders`. Similarmente, `stores` está reemplazando paulatinamente a `profiles` a través de migraciones dinámicas (on-the-fly).
+- **Módulo de Delivery & Identidad (stores):** Las tablas `delivery_orders` operan actualmente en un modo híbrido "legacy", conviviendo con la nueva tabla core `orders`. La migración base `profiles → stores` fue completada en producción el 2026-06-05: 7 filas en `stores` y 7 filas en `store_config`.
 
 ## Funcionalidades Pendientes
 - Migración automatizada de Base de Datos.
@@ -23,15 +23,14 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Potenciales Detectados
-- **Severidad Alta:** Inconsistencia estructural en la nomenclatura de identidad del merchant. El código mezcla `user_id`, `store_id` y `merchant_id` para referirse al mismo UUID de cuenta, y crea registros "on-the-fly" en lugar de durante el registro, lo cual puede producir queries huérfanas o errores de RLS.
 - **Severidad Alta:** FK incorrecta en `delivery_orders.store_id` — apunta a `profiles(id)` con `ON DELETE CASCADE` en lugar de `stores(id)`. Si se depreca `profiles`, se eliminarían en cascada todos los registros históricos de delivery. (Verificado en `migrations/delivery_orders.sql` línea 8).
 - **Severidad Alta:** El acoplamiento de la base de datos a `scripts/doctor.ts` puede causar fallos de runtime si se hace deploy de frontend sin antes ejecutar el script de BD.
-- **Severidad Media:** `template_type` inconsistente entre la BD y el código. La migración `002_core_schema.sql` define el CHECK como `('restaurante', 'comercio', 'moda')` pero el código y el modelo de negocio confirmado usan `'food'` en lugar de `'restaurante'`. Inserciones con `'food'` fallarán si ese CHECK está activo.
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.
 
 ## Deuda Técnica Detectada
 - **Manejo de Base de Datos (Impacto: ALTO):** El uso de sentencias sueltas `ALTER TABLE IF EXISTS` sin un ORM (como Prisma/Drizzle) limita la trazabilidad y la seguridad en despliegues.
+- **Nomenclatura de identidad (Impacto: MEDIO):** Aunque la migración `profiles → stores` ya está completada, el código todavía conserva referencias legacy mixtas (`user_id`, `store_id`, `merchant_id`) que conviene estandarizar gradualmente.
 - **Estilos CSS Inline (Impacto: MEDIO):** Componentes grandes (ej: `app/pendiente/page.tsx`, `app/page.tsx`) combinan Tailwind con objetos `style={{...}}` masivos.
 - **Manejo de Estado de Transacciones (Impacto: ALTO):** Hardcodeos en el flujo de caja del lado del cliente (`status: 'pending' // TODO ESTO NACE COMO PENDING`).
 
