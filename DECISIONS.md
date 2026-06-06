@@ -35,6 +35,14 @@
 - **Razón**: Prevenir manipulación de payloads webhooks por actores maliciosos que falsifiquen IPs.
 - **Consecuencias**: Requiere desencriptar en el servidor el `culqi_secret_key` del merchant en cada llamada de webhook entrante.
 
+### [En curso] Migración de profiles → stores como identidad del merchant
+
+- Contexto: el sistema usa profiles como tabla principal del merchant, pero existe una tabla stores separada con estructura similar
+- Estado: migración parcial, ambas tablas coexisten actualmente  
+- Riesgo: agentes futuros pueden confundirse sobre cuál tabla usar
+- Decisión pendiente: definir tabla canónica y deprecar la otra
+- Acción requerida por el usuario: confirmar cuál es la tabla oficial going forward
+
 ---
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Razones exactas originales por las que no se implementó un ORM o sistema de migraciones real.
