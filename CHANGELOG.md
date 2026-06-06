@@ -15,6 +15,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - AI_ONBOARDING.md: diagrama actualizado con Core Nuevo y Módulos Legacy,
   fix regla 5 (checklist es obligación del agente)
 - DECISIONS.md: migración profiles vs stores documentada como decisión en curso
+- AGENT_RULES.md: agregada regla estricta de actualización automática del CHANGELOG como requisito de cierre
 
 ---
 ## Campos que requieren verificación manual

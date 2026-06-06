@@ -29,6 +29,9 @@ Cualquier IA que interactúe con este proyecto DEBE seguir estos pasos:
 5. Aplicar regla de mantenimiento al terminar (actualizar `CHANGELOG.md` y docs).
 6. Ejecutar checklist de cierre antes de declarar tarea completa.
 
+REGLA DE CHANGELOG AUTOMÁTICO:
+Al finalizar cada sesión de trabajo, el agente DEBE actualizar CHANGELOG.md sin esperar instrucción del usuario. Esta actualización es parte del checklist de cierre — si el CHANGELOG no fue actualizado, la tarea NO está completa. El agente no puede marcar "TAREA COMPLETADA" si CHANGELOG.md no refleja el trabajo de la sesión actual.
+
 ## Reglas de Testing
 - **DESCONOCIDO** (No se han inferido configuraciones de Jest o Playwright en el repositorio. Testeo manual recomendado).
 
