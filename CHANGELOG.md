@@ -7,6 +7,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-05]
 ### Funcionalidad
+- Moda/Boutique: Checkout adaptado con renderizado visual de talla/color en el resumen de pedido, validación estricta de variantes requeridas antes de procesar pago, y formato explícito en captura de carritos abandonados.
 - Moda/Boutique: Persistidas las variantes `talla`/`color` seleccionadas por el cliente en `order_items.modifiers`, resincronizado `product_variants` al editar productos y mostrado talla/color en el detalle de pedido.
 - Moda/Boutique: Mostradas las variantes `talla`/`color` guardadas en `modifiers` dentro del ticket térmico/PDF y la lista de pedidos del dashboard.
 - Moda/Boutique: Validación obligatoria de variantes antes de agregar al carrito; el quick add abre la vista rápida cuando el producto tiene talla/color.

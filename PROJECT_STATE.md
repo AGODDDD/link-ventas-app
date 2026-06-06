@@ -29,6 +29,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Resueltos Recientemente
+- **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
 
 ## Bugs Potenciales Detectados
