@@ -28,7 +28,7 @@ Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente desp
 2. Proteger sistemas críticos (`seguridad_supabase.sql`, `lib/encryption.ts`).
 3. Usar Supabase Server Client solo donde es absolutamente necesario, respetando RLS en cliente.
 4. Aplicar regla anti-alucinación (Documentar origen, Inferido, o DESCONOCIDO).
-5. Exigir checklist de cierre documentado al usuario antes de terminar tareas.
+5. Ejecutar y mostrar checklist de cierre al terminar cada tarea (archivos modificados, docs actualizadas, docs omitidas con razón).
 → ver detalle en `AGENT_RULES.md`
 
 ## 7. Estado actual
