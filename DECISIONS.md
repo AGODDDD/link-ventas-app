@@ -43,6 +43,13 @@
 - Decisión pendiente: definir tabla canónica y deprecar la otra
 - Acción requerida por el usuario: confirmar cuál es la tabla oficial going forward
 
+### [Pendiente] Discrepancia de Nomenclatura: link-ventas vs link-ventas-app
+
+- Contexto: El repositorio remoto de GitHub está nombrado como `AGODDDD/link-ventas-app`, pero el `package.json`, `README.md` y las variables refieren al proyecto interno como `link-ventas`.
+- Estado: Ambos nombres hacen referencia a exactamente el mismo codebase. No existen dos repositorios separados activos para el frontend/backend en esta instancia.
+- Riesgo: Agentes y desarrolladores pueden confundirse al buscar el repositorio o al inicializar comandos desde la consola.
+- Decisión pendiente: Estandarizar si el nombre del repositorio remoto debe cambiarse a `link-ventas`, o si el `package.json` debe actualizarse a `link-ventas-app` para evitar confusión.
+
 ---
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Razones exactas originales por las que no se implementó un ORM o sistema de migraciones real.
