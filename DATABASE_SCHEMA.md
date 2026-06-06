@@ -28,7 +28,7 @@ Catálogo de productos de cada tienda.
 - `id` (UUID): Identificador único (Inferido).
 - `user_id` (UUID): Merchant dueño del producto (Inferido de RLS `auth.uid() = user_id`).
 - `name` (text): Nombre del producto (Inferido).
-- `price` (numeric/integer): Precio del producto (Inferido).
+- `price` (numeric): Precio del producto (verificado).
 - `brand` (text): Marca o categoría (Inferido).
 - `stock` (integer): Inventario disponible.
 - `variants` (JSONB): Variantes del producto (tallas, colores).
@@ -42,7 +42,8 @@ Ventas generadas.
 - `id` (UUID): Identificador del pedido (Inferido).
 - `merchant_id` o `store_id` (UUID): Tienda dueña de la orden (Inferido de RLS `auth.uid() = merchant_id` y webhook webhook).
 - `customer_name` (text): Nombre del cliente (Inferido).
-- `total_amount` / `total` (numeric/integer): Monto total de la orden (Inferido del webhook).
+- `subtotal` (numeric): Monto subtotal de la orden (verificado).
+- `total_amount` / `total` (numeric): Monto total de la orden (verificado).
 - `status` (text): Estado de la orden ('pending', 'paid', etc) (Inferido).
 - `order_type` (text): 'delivery' u otros.
 - `delivery_address` (text): Dirección de entrega.
@@ -86,11 +87,10 @@ profiles (1) --- (N) store_leads
 - **No se detectaron** Edge functions de Supabase en uso. El código utiliza API Routes de Next.js (`app/api/*`).
 
 ## Storage Buckets
-- `productos`: Almacena las imágenes subidas de los productos.
-- `comprobantes`: (Inferido, probable almacenamiento de capturas de Yape/Plin, aunque el código usa variables como `uploadError` en `checkout/page.tsx`).
+- `comprobantes`: Privado, 2 políticas, 50MB, any mime (verificado).
+- `avatars`: Público, 2 políticas, 50MB, any mime (verificado).
+- `productos`: Público, 5 políticas, 50MB, any mime (verificado).
 
 ---
 ## Campos que requieren verificación manual
-- DESCONOCIDO: Los tipos de dato exactos de `price`, `total`, `total_amount` (si son numéricos o enteros).
 - DESCONOCIDO: Si existen índices adicionales en la DB para rendimiento.
-- DESCONOCIDO: Nombre exacto del bucket de comprobantes de pago.
