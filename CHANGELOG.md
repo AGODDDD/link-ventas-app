@@ -6,6 +6,9 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-05]
+### Corrección de errores
+- Panel Admin: Añadido feedback visual (toast de error) en la interfaz para alertar cuando el endpoint `/api/admin/plans` falla, reemplazando la captura de error silenciosa.
+
 ### Funcionalidad
 - Moda/Boutique: Checkout adaptado con renderizado visual de talla/color en el resumen de pedido, validación estricta de variantes requeridas antes de procesar pago, y formato explícito en captura de carritos abandonados.
 - Moda/Boutique: Persistidas las variantes `talla`/`color` seleccionadas por el cliente en `order_items.modifiers`, resincronizado `product_variants` al editar productos y mostrado talla/color en el detalle de pedido.
