@@ -8,6 +8,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## [2026-06-05]
 ### Corrección de errores
 - Panel Admin: Añadido feedback visual (toast de error) en la interfaz para alertar cuando el endpoint `/api/admin/plans` falla, reemplazando la captura de error silenciosa.
+- Seguridad: Eliminado el prefijo `NEXT_PUBLIC_` de `ADMIN_USER_ID` en las variables de entorno y movida la validación de admin estrictamente al servidor mediante un nuevo endpoint (`/api/admin/check`) para prevenir la exposición del UUID en el código fuente del cliente.
 
 ### Funcionalidad
 - Moda/Boutique: Checkout adaptado con renderizado visual de talla/color en el resumen de pedido, validación estricta de variantes requeridas antes de procesar pago, y formato explícito en captura de carritos abandonados.

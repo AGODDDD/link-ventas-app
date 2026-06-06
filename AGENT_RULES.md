@@ -14,6 +14,7 @@
 - **Supabase Clientes**: 
   - Usar `@supabase/ssr` o `lib/supabase.ts` para frontend.
   - Usar `lib/supabaseServer.ts` (`getSupabaseServiceClient`) SÓLO para procesos de background/webhooks que requieran saltar RLS.
+- **Variables de Entorno**: `ADMIN_USER_ID` (y llaves maestras) son estrictamente variables privadas de servidor. NUNCA exponerlas usando el prefijo `NEXT_PUBLIC_`. Toda validación de administrador debe ocurrir del lado del backend.
 
 ## Sistemas Protegidos (NO TOCAR SIN AUTORIZACIÓN EXPLÍCITA)
 1. `seguridad_supabase.sql`: Reglas RLS y esquema maestro.
