@@ -161,6 +161,32 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
 
       if (dbError) throw dbError
 
+      if (templateType === 'moda') {
+        const { error: deleteVariantsError } = await supabase
+          .from('product_variants')
+          .delete()
+          .eq('store_id', user.id)
+          .eq('product_id', params.id)
+
+        if (deleteVariantsError) throw deleteVariantsError
+
+        if (variants.length > 0) {
+          const relVariants = variants.map((v: any) => ({
+            store_id: user.id,
+            product_id: params.id,
+            name: v.talla ? (v.color ? `${v.talla} / ${v.color}` : v.talla) : v.color,
+            value: v.talla || v.color,
+            price_delta: 0
+          }))
+
+          const { error: variantsError } = await supabase
+            .from('product_variants')
+            .insert(relVariants)
+
+          if (variantsError) throw variantsError
+        }
+      }
+
       // Invalidar caché de productos
       if (user) await useDashboardStore.getState().cargarProductos(user.id, true)
 

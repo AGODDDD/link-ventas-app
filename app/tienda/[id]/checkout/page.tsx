@@ -211,7 +211,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     order_id: orderId,
                     product_id: item.product.id,
                     quantity: item.quantity,
-                    price: item.product.price
+                    price: item.product.price,
+                    modifiers: item.variantDetails
+                        ? {
+                            talla: item.variantDetails.talla,
+                            color: item.variantDetails.color,
+                          }
+                        : null
                 }))
                 const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
                 if (itemsError) throw itemsError
@@ -283,7 +289,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 order_id: orderId,
                 product_id: item.product.id,
                 quantity: item.quantity,
-                price: item.product.price
+                price: item.product.price,
+                modifiers: item.variantDetails
+                    ? {
+                        talla: item.variantDetails.talla,
+                        color: item.variantDetails.color,
+                      }
+                    : null
             }))
 
             const { error: itemsError } = await supabase

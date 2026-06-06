@@ -27,6 +27,18 @@ const STATUS_STEPS = [
 const MAP_COLLAPSED = 38
 const MAP_EXPANDED  = 85
 
+function getVariantSummary(item: any) {
+  const modifiers = item.modifiers
+  if (!modifiers || typeof modifiers !== 'object' || Array.isArray(modifiers)) return ''
+
+  const parts = [
+    modifiers.talla ? `Talla: ${modifiers.talla}` : '',
+    modifiers.color ? `Color: ${modifiers.color}` : '',
+  ].filter(Boolean)
+
+  return parts.join(' · ')
+}
+
 // ── Dibuja una polilínea animada con rAF y devuelve el handle para cancelarla ──
 function animatePolyline(dash: any): number {
   let offset = 0
@@ -380,6 +392,9 @@ export default function OrderDetailModal({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <p className="text-[13px] text-[#222]">{item.quantity} - {item.name}</p>
+                    {getVariantSummary(item) && (
+                      <p className="text-[11px] text-[#777] mt-0.5">{getVariantSummary(item)}</p>
+                    )}
                     {item.options && <p className="text-[11px] text-[#999] mt-0.5">{item.quantity} - {item.options}</p>}
                   </div>
                   <p className="text-[13px] text-[#222] font-medium whitespace-nowrap">S/ {item.totalPrice.toFixed(2)}</p>
