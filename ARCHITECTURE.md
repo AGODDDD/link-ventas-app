@@ -43,9 +43,19 @@ Toda la lógica de backend se resuelve mediante API Routes (`app/api`) y la segu
 2. Sube imagen (va a Supabase Storage bucket `productos`).
 3. Crea registro en la tabla `products` enlazando el `user_id`. (Soporta `product_variants` para organizar tallas/colores).
 
-## Módulo de Delivery y Migración de Identidad
+## Modelo de Identidad y Multi-Plantilla (SaaS)
+LinkVentas es un SaaS multi-plantilla donde cada merchant crea **UNA sola tienda**. El diseño intencional de la base de datos sigue esta relación canónica:
+`auth.users (1) → (1) profiles → (1) stores`
+
+- **`stores`**: Es la tabla canónica going forward para la identidad y configuración del comercio.
+- **`profiles`**: Se mantiene únicamente para datos de configuración atados a la cuenta del merchant.
+
+Cada tienda pertenece a uno de estos 3 `template_type`:
+- **`food` (Restaurante/Food)**: Pedidos por WhatsApp, sin carrito de compras complejo.
+- **`comercio` (Comercio General)**: Flujo e-commerce clásico con carrito, checkout y pasarela de pagos.
+- **`moda` (Moda/Boutique)**: Incluye look premium y obliga al uso de variantes (talla/color) para los productos.
+
 - **Delivery**: Coexiste un modelo de `orders` general con un modelo heredado/específico en `delivery_orders` y configuraciones en `delivery_settings`. Los tickets y consultas se apoyan en ambos para retrocompatibilidad (evidenciado en `route.ts`).
-- **Stores vs Profiles**: El sistema se encuentra en un proceso de migración de identidad. `profiles` funge como tabla legacy atada a la cuenta, mientras que `stores` ha sido incorporada como el "Nuevo Core" con slug propio, permitiendo eventualmente tener múltiples tiendas por perfil de usuario.
 
 ## Integración con Supabase
 - **Auth**: Gestión de sesiones de los merchants.

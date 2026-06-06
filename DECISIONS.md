@@ -35,13 +35,17 @@
 - **Razón**: Prevenir manipulación de payloads webhooks por actores maliciosos que falsifiquen IPs.
 - **Consecuencias**: Requiere desencriptar en el servidor el `culqi_secret_key` del merchant en cada llamada de webhook entrante.
 
-### [DEUDA TÉCNICA ACTIVA] Migración y Nomenclatura de Identidad (stores vs profiles)
+### [RESUELTO] Modelo Canónico de Identidad y Plantillas (SaaS)
 
-- Contexto: El sistema utiliza `profiles` como tabla legacy del merchant, pero existe la nueva tabla `stores`.
-- Estado: Migración parcial "Lazy/On-the-fly". El usuario se registra, pero la tienda solo se crea forzosamente al intentar acceder a pantallas del dashboard (ej. `crear/page.tsx`), asumiendo en código una relación 1 a 1 (`id = user.id`).
-- Inconsistencia de Nomenclatura: El mismo UUID que representa la identidad es llamado indistintamente en el esquema y en el código como `user_id` (en `products`), `store_id` (en `product_variants`, `store_leads`) y `merchant_id` (en `orders`).
-- Riesgo: Alta fricción y fragilidad. El acoplamiento a mapeos de IDs mixtos previene crear un sistema real de múltiples tiendas por cuenta.
-- Decisión pendiente: Refactorizar y estandarizar la capa de acceso a datos para usar un solo identificador (`store_id`) y una sola tabla de origen (`stores`).
+- Contexto: El usuario confirmó el diseño real del sistema frente a las dudas levantadas en auditorías previas.
+- Decisión: La tabla canónica going forward es **`stores`**. La tabla `profiles` queda relegada exclusivamente para datos de configuración de la cuenta del merchant. La relación oficial es 1:1 (`auth.users → profiles → stores`). Cada tienda adopta un `template_type` ('food', 'comercio', 'moda') que cambia radicalmente el flujo de ventas (ej: sin carrito, con pagos, con variantes obligatorias).
+
+### [DEUDA TÉCNICA ACTIVA] Inconsistencia de Nomenclatura (user_id/store_id/merchant_id)
+
+- Contexto: El mismo UUID que representa la identidad es llamado indistintamente en el esquema y en el código como `user_id` (en `products`), `store_id` (en `product_variants`, `store_leads`) y `merchant_id` (en `orders`).
+- Estado: El usuario ha confirmado que esto **no es un diseño intencional**, sino deuda técnica originada durante la migración del modelo.
+- Riesgo: Alta fricción y fragilidad cognitiva para nuevos agentes/desarrolladores.
+- Decisión pendiente: Refactorizar y estandarizar la capa de acceso a datos para usar un solo identificador (`store_id`) apuntando a la tabla canónica `stores`.
 
 ### [RESUELTO] Discrepancia de Nomenclatura Vercel: link-ventas vs enlace-ventas
 
