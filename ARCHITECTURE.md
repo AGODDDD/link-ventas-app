@@ -55,6 +55,7 @@ Toda la lógica de backend se resuelve mediante API Routes (`app/api`) y la segu
 
 ## Integración con Vercel
 - El sistema está optimizado para Vercel (mencionado en `README.md`).
+- El proyecto oficial en producción es **link-ventas** (`link-ventas-app.vercel.app`).
 - Variables de entorno clave: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`.
 
 ## Integraciones Externas

@@ -43,12 +43,11 @@
 - Decisión pendiente: definir tabla canónica y deprecar la otra
 - Acción requerida por el usuario: confirmar cuál es la tabla oficial going forward
 
-### [Pendiente] Discrepancia de Nomenclatura: link-ventas vs link-ventas-app
+### [RESUELTO] Discrepancia de Nomenclatura Vercel: link-ventas vs enlace-ventas
 
-- Contexto: El repositorio remoto de GitHub está nombrado como `AGODDDD/link-ventas-app`, pero el `package.json`, `README.md` y las variables refieren al proyecto interno como `link-ventas`.
-- Estado: Ambos nombres hacen referencia a exactamente el mismo codebase. No existen dos repositorios separados activos para el frontend/backend en esta instancia.
-- Riesgo: Agentes y desarrolladores pueden confundirse al buscar el repositorio o al inicializar comandos desde la consola.
-- Decisión pendiente: Estandarizar si el nombre del repositorio remoto debe cambiarse a `link-ventas`, o si el `package.json` debe actualizarse a `link-ventas-app` para evitar confusión.
+- Contexto: Existía confusión debido al uso del repo `link-ventas-app` y la existencia de despliegues duplicados en Vercel.
+- Decisión: Se eliminó el proyecto duplicado "enlace-ventas" de Vercel (el cual apuntaba al mismo repositorio y causaba builds duplicados en cada push). 
+- Estado Oficial: El proyecto oficial y canónico en Vercel es **"link-ventas"** bajo el dominio `link-ventas-app.vercel.app`. El codebase `AGODDDD/link-ventas-app` abastece a esta única instancia en producción.
 
 ---
 ## Campos que requieren verificación manual
