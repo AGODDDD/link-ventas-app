@@ -259,6 +259,21 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       return
     }
 
+    const sizes = getSizes(product)
+    const colors = getColors(product)
+    const hasExplicitSize = Object.prototype.hasOwnProperty.call(selectedSize, product.id)
+    const hasExplicitColor = Object.prototype.hasOwnProperty.call(selectedColorIndex, product.id)
+
+    if (sizes.length > 0 && !hasExplicitSize) {
+      toast.error('Selecciona una talla')
+      return
+    }
+
+    if (colors.length > 0 && !hasExplicitColor) {
+      toast.error('Selecciona un color')
+      return
+    }
+
     const color = currentProductColor(product)
     const size = currentProductSize(product)
     const variantDetails = {
@@ -374,7 +389,15 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                     onColorChange={(colorIndex) => setSelectedColorIndex(prev => ({ ...prev, [product.id]: colorIndex }))}
                     onOpenDetail={() => openDetail(product)}
                     onOpenQuickView={() => { setQuickViewProduct(product); setModalQty(1) }}
-                    onQuickAdd={() => addToCart(product)}
+                    onQuickAdd={() => {
+                      if (getVariants(product).length > 0) {
+                        setQuickViewProduct(product)
+                        setModalQty(1)
+                        return
+                      }
+
+                      addToCart(product)
+                    }}
                     isReadOnly={isReadOnly}
                   />
                 ))
