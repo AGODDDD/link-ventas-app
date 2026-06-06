@@ -31,7 +31,7 @@ Toda la lógica de backend se resuelve mediante API Routes (`app/api`) y la segu
 ## Flujo de Órdenes (Checkout)
 1. El cliente entra a `/tienda/[id]` y añade productos al `SlideOverCart` (estado global en `localStorage` vía Zustand).
 2. Navega a `/tienda/[id]/checkout`.
-3. Completa datos personales (registra `store_leads`).
+3. Completa datos personales (registra `store_leads` y/o `abandoned_carts` de forma temporal si no completa el pago).
 4. Selecciona método de pago:
    - **Manual (Yape/Plin/Efectivo)**: Sube comprobante (opcional). Crea `order` como 'pending' o con proof URL manual.
    - **Culqi**: Inserta tarjeta. Genera token de Culqi. Crea orden como 'pending'.
@@ -41,7 +41,11 @@ Toda la lógica de backend se resuelve mediante API Routes (`app/api`) y la segu
 ## Flujo de Productos
 1. El merchant entra al Dashboard.
 2. Sube imagen (va a Supabase Storage bucket `productos`).
-3. Crea registro en la tabla `products` enlazando el `user_id`.
+3. Crea registro en la tabla `products` enlazando el `user_id`. (Soporta `product_variants` para organizar tallas/colores).
+
+## Módulo de Delivery y Migración de Identidad
+- **Delivery**: Coexiste un modelo de `orders` general con un modelo heredado/específico en `delivery_orders` y configuraciones en `delivery_settings`. Los tickets y consultas se apoyan en ambos para retrocompatibilidad (evidenciado en `route.ts`).
+- **Stores vs Profiles**: El sistema se encuentra en un proceso de migración de identidad. `profiles` funge como tabla legacy atada a la cuenta, mientras que `stores` ha sido incorporada como el "Nuevo Core" con slug propio, permitiendo eventualmente tener múltiples tiendas por perfil de usuario.
 
 ## Integración con Supabase
 - **Auth**: Gestión de sesiones de los merchants.

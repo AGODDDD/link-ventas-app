@@ -10,10 +10,12 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Webhook de Culqi para verificación de pagos automatizados.
 - RLS de Supabase implementado y funcional.
 - Persistencia del carrito offline/local vía Zustand.
+- Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
 
 ## Funcionalidades Parcialmente Implementadas
 - **Onboarding de Pagos Culqi:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
 - **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
+- **Módulo de Delivery & Identidad (stores):** Las tablas `delivery_orders` operan actualmente en un modo híbrido "legacy", conviviendo con la nueva tabla core `orders`. Similarmente, `stores` está reemplazando paulatinamente a `profiles` a través de migraciones dinámicas (on-the-fly).
 
 ## Funcionalidades Pendientes
 - Migración automatizada de Base de Datos.

@@ -17,10 +17,13 @@ Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente desp
 [Next.js App Router (SSR/API)] <--> [Webhooks (Culqi)]
       |
 [Supabase (Auth, RLS, Storage, DB)]
+  |-- Core Nuevo: stores, orders, products, product_variants
+  |-- Legacy/Módulos: profiles, delivery_orders, abandoned_carts
 ```
 → ver detalle en `ARCHITECTURE.md`
 
 ## 5. Tablas principales
+Las tablas operan en un modo híbrido de transición: `stores` asume progresivamente el rol principal de identidad reemplazando a `profiles`, y `orders` convive con el histórico `delivery_orders`.
 → ver `DATABASE_SCHEMA.md#tablas-principales`
 
 ## 6. Reglas críticas
