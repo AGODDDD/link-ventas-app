@@ -7,9 +7,6 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-05]
 ### Documentación
-- PROJECT_STATE.md, DECISIONS.md, DATABASE_SCHEMA.md y migration_analysis.md: Documentada como resuelta la corrección del FK `delivery_orders.store_id`, que ahora apunta a `stores(id)` en lugar de `profiles(id)`.
-- migration_analysis.md y PROJECT_STATE.md: Marcada como completada la migración `profiles → stores`, documentado el fix del constraint `stores.template_type` a `food/comercio/moda` y removidos bugs resueltos de identidad on-the-fly/template_type.
-- DATABASE_SCHEMA.md: Corregido esquema real de `orders` en producción; documentado que usa `store_id` y que `merchant_id`, `customer_address`, `total_amount` e `items` no existen.
 - Creada base de conocimiento v3 completa (8 archivos)
 - DATABASE_SCHEMA.md: tipos numeric verificados, 3 buckets confirmados,
   9 tablas no detectadas agregadas, índices de rendimiento documentados
@@ -27,6 +24,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - migration_analysis.md: Creado análisis completo de migración profiles→stores con script SQL revisado, mapeo de columnas y 4 riesgos identificados (pendiente aprobación del usuario para ejecución).
 - DECISIONS.md: Documentado el script existente migrate_profiles_to_stores.ts, su problema crítico con ANON_KEY y los riesgos ROJO/MEDIO de FK y template_type.
 - PROJECT_STATE.md: Agregados 2 bugs nuevos (Severidad Alta: FK delivery_orders incorrecta; Severidad Media: template_type inconsistente entre BD y código).
+- PROJECT_STATE.md: Corregida clasificación del Módulo Restaurante/Food — movido de "Parcialmente Implementado" a "Completado" con evidencia detallada de código (checkout, doble escritura, Realtime, timeline 6 estados, tracking con Leaflet, tickets térmicos). La clasificación anterior era un error del agente basado en inferencias, no en lectura del código real.
 
 ---
 ## Campos que requieren verificación manual
