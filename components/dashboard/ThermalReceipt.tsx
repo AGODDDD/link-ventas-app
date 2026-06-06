@@ -65,7 +65,13 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                     const isModsObject = rawMods && !Array.isArray(rawMods) && typeof rawMods === 'object' && rawMods.items
                     const isModsArray = Array.isArray(rawMods)
                     const modsList = isModsObject ? rawMods.items : (isModsArray ? rawMods : [])
-                    const modsString = (!isModsArray && !isModsObject && typeof rawMods === 'string') ? rawMods : ''
+                    let modsString = (!isModsArray && !isModsObject && typeof rawMods === 'string') ? rawMods : ''
+                    if (rawMods?.talla || rawMods?.color) {
+                        const parts = []
+                        if (rawMods.talla) parts.push(`Talla: ${rawMods.talla}`)
+                        if (rawMods.color) parts.push(`Color: ${rawMods.color}`)
+                        modsString = parts.join(' · ')
+                    }
                     const itemNotes = item.notes || (isModsObject ? rawMods.notes : '') || ''
                     
                     const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
