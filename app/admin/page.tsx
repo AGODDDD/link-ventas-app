@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { toast } from 'sonner'
 
 type Merchant = {
     id: string
@@ -47,7 +48,10 @@ export default function AdminPage() {
             },
             body: JSON.stringify({ merchantId: id, action: 'activate', months: meses }),
         })
-        if (!res.ok) return
+        if (!res.ok) {
+            toast.error('Error del servidor — revisa las variables de entorno')
+            return
+        }
         const updated = await res.json()
         setMerchants(prev => prev.map(m =>
             m.id === id ? { ...m, plan: updated.plan, plan_expires_at: updated.plan_expires_at } : m
@@ -66,7 +70,10 @@ export default function AdminPage() {
             },
             body: JSON.stringify({ merchantId: id, action: 'deactivate' }),
         })
-        if (!res.ok) return
+        if (!res.ok) {
+            toast.error('Error del servidor — revisa las variables de entorno')
+            return
+        }
         setMerchants(prev => prev.map(m =>
             m.id === id ? { ...m, plan: 'inactivo', plan_expires_at: null } : m
         ))
