@@ -143,10 +143,10 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                 href={item.href}
                 onClick={onClose}
                 className={`
-                  flex items-center gap-3 py-3 px-4 transition-colors group
+                  flex items-center gap-3 py-3 px-4 group
                   ${isActive 
                     ? 'active-nav text-[var(--dash-text-primary)] font-medium' 
-                    : 'font-medium text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)] hover:bg-[var(--dash-surface-2)]'}
+                    : 'nav-item font-medium text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)]'}
                 `}
               >
                 {/* SVG inline exacto del diseño Stitch */}

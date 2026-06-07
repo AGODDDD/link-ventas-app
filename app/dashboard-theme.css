@@ -196,6 +196,19 @@
 .dashboard-theme .delay-400 { animation-delay: 400ms; }
 .dashboard-theme .delay-500 { animation-delay: 500ms; }
 
+/* Nav Item animation (Stitch design) */
+.dashboard-theme .nav-item {
+  transition: all 0.2s ease;
+}
+.dark .dashboard-theme .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  padding-left: 1.25rem;
+}
+.light .dashboard-theme .nav-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  padding-left: 1.25rem;
+}
+
 /* Hover States & Transitions */
 .dashboard-theme .metric-card {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
