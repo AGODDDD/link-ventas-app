@@ -11,6 +11,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - RLS de Supabase implementado y funcional.
 - Persistencia del carrito offline/local vía Zustand.
 - Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
+- **Dashboard Redesign & Theming:** Sistema de temas claro/oscuro (Stitch "Light Mode Professional") acoplado al Dashboard mediante `next-themes` y mapeo nativo de Material Design en `dashboard-theme.css`. Se incluyeron micro-animaciones CSS (hovers magnéticos, fade-ins escalonados) y un layout premium en la vista principal.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
   - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): Garantiza compatibilidad hacia atrás y adopción del nuevo esquema simultáneamente.

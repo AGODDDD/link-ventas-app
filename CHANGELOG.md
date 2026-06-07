@@ -17,7 +17,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Integrado sistema de animaciones CSS nativas en `dashboard-theme.css` (animaciones en cascada `fadeInUp`, hovers magnéticos para tarjetas/botones y scrollbar personalizado), con soporte para `prefers-reduced-motion`.
   - Reubicado el botón de "Configurar Motor FOMO" (`FomoConfigModal`) desde el Dashboard principal hacia la página de Ajustes Tienda (`/dashboard/configuracion`) para preparar el rediseño minimalista de la vista principal.
   - Movido el gráfico complejo interactivo de ventas de "Últimos 7 Días" desde el Dashboard principal hacia la página de Analytics (`/dashboard/analytics`), optimizando la carga de la vista principal y concentrando la inteligencia comercial.
-
+  - Rediseño visual completo de la página principal del Dashboard (`app/dashboard/page.tsx`) replicando la estética premium de Stitch, adoptando la estructura de Bento Grid (Tarjetas de métricas animadas con minigráficos interactivos y tabla de pedidos con diseño refinado), manteniendo intacta toda la lógica de obtención de datos a través de Zustand y Supabase.
 ## [2026-06-05]
 ### Corrección de errores
 - Panel Admin: Añadido feedback visual (toast de error) en la interfaz para alertar cuando el endpoint `/api/admin/plans` falla, reemplazando la captura de error silenciosa.
