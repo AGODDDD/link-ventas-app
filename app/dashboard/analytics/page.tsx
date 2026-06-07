@@ -315,24 +315,44 @@ export default function AnalyticsPage() {
                             <BarChart3 className="w-4 h-4 text-primary" /> Ventas Últimos 7 Días
                         </h3>
                     </div>
-                    <div className="flex items-end justify-between gap-3 h-48">
-                        {ventasPorDia.map((dia, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                                <p className="text-[10px] font-bold text-primary">
-                                    {dia.monto > 0 ? `S/${dia.monto.toFixed(0)}` : ''}
-                                </p>
-                                <div className="w-full relative rounded-t-md overflow-hidden bg-surface-container" style={{ height: '100%' }}>
-                                    <div
-                                        className="absolute bottom-0 w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-md transition-all duration-700 hover:from-primary hover:to-primary/80"
-                                        style={{ height: `${Math.max((dia.monto / maxVentaDia) * 100, dia.monto > 0 ? 8 : 2)}%` }}
-                                    />
+                    <div className="flex items-end justify-between gap-2 md:gap-4 h-48 px-2">
+                        {Array.from({length: 7}).map((_, i) => {
+                            const d = new Date()
+                            d.setDate(d.getDate() - (6 - i))
+                            const dayString = d.toDateString()
+                            const dayOrders = orders.filter(o => new Date(o.created_at).toDateString() === dayString)
+                            const totalDay = dayOrders.reduce((acc, o) => acc + parseFloat(o.total_amount || '0'), 0)
+                            
+                            // Calculando alturas relativas
+                            const maxSales = Math.max(
+                                1, 
+                                ...Array.from({length: 7}).map((_, j) => {
+                                    const dTemp = new Date()
+                                    dTemp.setDate(dTemp.getDate() - (6 - j))
+                                    const dOrders = orders.filter(o => new Date(o.created_at).toDateString() === dTemp.toDateString())
+                                    return dOrders.reduce((acc, o) => acc + parseFloat(o.total_amount || '0'), 0)
+                                })
+                            )
+                            const heightPercentage = Math.max(5, (totalDay / maxSales) * 100)
+
+                            return (
+                                <div key={i} className="flex flex-col items-center gap-2 w-full group/bar relative">
+                                    {/* Tooltip on Hover */}
+                                    <div className="absolute -top-8 bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">
+                                        S/ {totalDay.toFixed(2)}
+                                    </div>
+                                    <div className="w-full bg-surface-container rounded-t-lg relative h-40 flex items-end justify-center transition-all bg-opacity-50 group-hover/bar:bg-opacity-100">
+                                        <div 
+                                            className="w-full bg-primary/40 rounded-t-lg hover:bg-primary transition-all flex border-t-2 border-primary" 
+                                            style={{ height: `${heightPercentage}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest text-center">
+                                        {d.toLocaleDateString('es-ES', { weekday: 'short' })}
+                                    </span>
                                 </div>
-                                <p className="text-[10px] font-bold text-on-surface-variant uppercase">{dia.label}</p>
-                                {dia.count > 0 && (
-                                    <p className="text-[9px] text-on-surface-variant/50">{dia.count} ord</p>
-                                )}
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
 
