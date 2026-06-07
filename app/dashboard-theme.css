@@ -116,3 +116,35 @@
     background: rgba(43, 43, 53, 0.6);
     backdrop-filter: blur(12px);
 }
+
+/* DASHBOARD — MODO OSCURO (Stitch design) */
+.dark .dashboard-theme {
+  --dash-bg: #0f0f11;
+  --dash-surface: #18181b;
+  --dash-surface-2: #1d1d21;
+  --dash-sidebar: #121216;
+  --dash-border: rgba(255,255,255,0.08);
+  --dash-text-primary: #ffffff;
+  --dash-text-muted: #71717a;
+  --dash-accent: #6366f1;
+  --dash-accent-hover: #4f46e5;
+  --dash-success: #10b981;
+  --dash-success-soft: rgba(16,185,129,0.1);
+  --dash-gradient: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+}
+
+/* DASHBOARD — MODO CLARO (LinkVentas oficial) */
+.light .dashboard-theme {
+  --dash-bg: #ffffff;
+  --dash-surface: #F8FAFF;
+  --dash-surface-2: #EFF6FF;
+  --dash-sidebar: #1E40AF;
+  --dash-border: #E5E7EB;
+  --dash-text-primary: #0f172a;
+  --dash-text-muted: #6B7280;
+  --dash-accent: #1E40AF;
+  --dash-accent-hover: #2563EB;
+  --dash-success: #00BB31;
+  --dash-success-soft: rgba(0,187,49,0.1);
+  --dash-gradient: linear-gradient(90deg, #1E40AF 0%, #00BB31 100%);
+}

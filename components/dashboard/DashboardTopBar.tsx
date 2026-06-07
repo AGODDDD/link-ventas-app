@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import ThemeToggle from '@/components/dashboard/ThemeToggle'
 
 interface Notificacion {
     id: string;
@@ -317,6 +318,8 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         </div>
                     )}
                 </div>
+
+                <ThemeToggle />
 
                 <Link href="/dashboard/crear" className="hidden sm:block">
                     <PlusCircle className="cursor-pointer text-on-surface-variant hover:text-primary transition-colors w-6 h-6" />

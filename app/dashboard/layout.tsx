@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { Menu, Zap, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { ThemeProvider } from '@/components/dashboard/ThemeProvider'
 
 // Tipos de plan válidos
 type PlanStatus = 'trial' | 'pro' | 'free' | 'inactivo' | null
@@ -96,9 +97,10 @@ export default function DashboardLayout({
     : 'rgba(139,92,246,0.25)'
 
   return (
-    <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
 
-      {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
+        {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
       {mostrarBanner && (
         <div
           id="global-plan-banner"
@@ -172,5 +174,6 @@ export default function DashboardLayout({
         {children}
       </main>
     </div>
+    </ThemeProvider>
   )
 }
