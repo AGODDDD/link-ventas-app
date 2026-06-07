@@ -16,6 +16,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Actualizados tokens del modo claro para coincidir con el diseño "Light Mode Professional" de Stitch (tonos más limpios, menos saturados, acento en gradiente índigo/azul).
   - Integrado sistema de animaciones CSS nativas en `dashboard-theme.css` (animaciones en cascada `fadeInUp`, hovers magnéticos para tarjetas/botones y scrollbar personalizado), con soporte para `prefers-reduced-motion`.
   - Reubicado el botón de "Configurar Motor FOMO" (`FomoConfigModal`) desde el Dashboard principal hacia la página de Ajustes Tienda (`/dashboard/configuracion`) para preparar el rediseño minimalista de la vista principal.
+  - Movido el gráfico complejo interactivo de ventas de "Últimos 7 Días" desde el Dashboard principal hacia la página de Analytics (`/dashboard/analytics`), optimizando la carga de la vista principal y concentrando la inteligencia comercial.
 
 ## [2026-06-05]
 ### Corrección de errores
