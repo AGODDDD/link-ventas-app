@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 7
+### Corrección Visual (comparación con referencia Stitch)
+- `components/DashboardSidebar.tsx`: Ajustes de precisión en el diseño del sidebar para alineación total con Stitch.
+  - Padding vertical de los nav items reducido: `py-3` → `py-2.5` para hacer los items más compactos.
+  - Alineación de íconos: cambiado `gap-3` del contenedor por `mr-3` directamente en los SVGs, mejorando el centrado del texto.
+  - Perfil de usuario (Footer): Avatar actualizado de circular con borde degradado (`rounded-full bg-[var(--dash-accent)]/10`) a diseño minimalista y sobrio del tema oscuro de Stitch (`rounded bg-zinc-700 text-white`).
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: (Se adjuntará en el push de docs)
+
+---
+
 ## [2026-06-07] — Sesión 6
 ### Corrección de Animaciones
 - `components/DashboardSidebar.tsx` + `app/dashboard-theme.css`: Restauradas las animaciones hover del nav lateral que faltaban del diseño Stitch.
