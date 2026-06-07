@@ -12,6 +12,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Definidos tokens de color con prefijo `--dash-*` en `dashboard-theme.css` para modo oscuro (Stitch) y modo claro (LinkVentas oficial).
   - Creado componente `ThemeToggle` (sol/luna) e inyectado en `DashboardTopBar`.
   - Migradas todas las clases de color Material Design en `layout.tsx`, `DashboardTopBar.tsx` y `DashboardSidebar.tsx` a tokens `--dash-*` (reemplazos masivos: bg, text, border).
+  - Implementado mapeo dinámico CSS en `dashboard-theme.css` para sobreescribir globalmente las clases de Material Design (`bg-surface-container-high`, `text-on-surface`, etc.) hacia las nuevas variables `--dash-*`, garantizando soporte de temas instantáneo en todas las subpáginas sin refactor masivo.
 
 ## [2026-06-05]
 ### Corrección de errores
