@@ -244,19 +244,19 @@ export default function DashboardPage() {
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead className="bg-zinc-50 dark:bg-zinc-900/50">
               <tr>
-                <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">ID del Pedido</th>
-                <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Cliente</th>
-                <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Fecha</th>
-                <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-right">Total</th>
-                <th className="px-6 md:px-8 py-5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Método</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">ID del Pedido</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Cliente</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Fecha</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-right">Total</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Método</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
               {ordenesRecientes.length > 0 ? (
                 ordenesRecientes.map((order) => (
-                    <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors group cursor-default">
-                        <td className="px-6 md:px-8 py-5 text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 truncate max-w-[150px]">#{order.id.split('-')[0].toUpperCase()}</td>
-                        <td className="px-6 md:px-8 py-5">
+                    <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors group cursor-default">
+                        <td className="px-6 py-5 text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 truncate max-w-[150px]">#{order.id.split('-')[0].toUpperCase()}</td>
+                        <td className="px-6 py-5">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500 dark:text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors uppercase">
                                     {order.customer_name ? order.customer_name.substring(0,2) : '--'}
@@ -264,11 +264,11 @@ export default function DashboardPage() {
                                 <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{order.customer_name}</span>
                             </div>
                         </td>
-                        <td className="px-6 md:px-8 py-5 text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 whitespace-nowrap">
+                        <td className="px-6 py-5 text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 whitespace-nowrap">
                             {new Date(order.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 md:px-8 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toFixed(2)}</td>
-                        <td className="px-6 md:px-8 py-5">
+                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toFixed(2)}</td>
+                        <td className="px-6 py-5">
                             <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight transition-all uppercase whitespace-nowrap">
                                 {order.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'Con QR'}
                             </span>
