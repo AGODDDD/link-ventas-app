@@ -148,3 +148,22 @@
   --dash-success-soft: rgba(0,187,49,0.1);
   --dash-gradient: linear-gradient(90deg, #1E40AF 0%, #00BB31 100%);
 }
+
+/* MAPEO DINÁMICO: Clases Material Design → Tokens Dash */
+/* Modo Oscuro */
+.dark .dashboard-theme .bg-surface-container-high { background-color: var(--dash-surface) !important; }
+.dark .dashboard-theme .bg-surface-container { background-color: var(--dash-surface-2) !important; }
+.dark .dashboard-theme .bg-surface { background-color: var(--dash-bg) !important; }
+.dark .dashboard-theme .text-on-surface { color: var(--dash-text-primary) !important; }
+.dark .dashboard-theme .text-on-surface-variant { color: var(--dash-text-muted) !important; }
+.dark .dashboard-theme .border-outline-variant { border-color: var(--dash-border) !important; }
+.dark .dashboard-theme .text-primary { color: var(--dash-accent) !important; }
+
+/* Modo Claro */
+.light .dashboard-theme .bg-surface-container-high { background-color: var(--dash-surface) !important; }
+.light .dashboard-theme .bg-surface-container { background-color: var(--dash-surface-2) !important; }
+.light .dashboard-theme .bg-surface { background-color: var(--dash-bg) !important; }
+.light .dashboard-theme .text-on-surface { color: var(--dash-text-primary) !important; }
+.light .dashboard-theme .text-on-surface-variant { color: var(--dash-text-muted) !important; }
+.light .dashboard-theme .border-outline-variant { border-color: var(--dash-border) !important; }
+.light .dashboard-theme .text-primary { color: var(--dash-accent) !important; }
