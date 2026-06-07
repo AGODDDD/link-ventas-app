@@ -246,14 +246,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     return (
         <header 
             style={{ top: hasBanner ? '45px' : '0' }}
-            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-surface/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-surface-bright"
+            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-[var(--dash-surface)]/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-[var(--dash-border)]"
         >
             
             {/* Buscador falso / Decorativo para rellenar */}
-            <div className="flex items-center gap-4 bg-surface-container-high px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-outline-variant/10">
-                <Search className="text-on-surface-variant w-4 h-4" />
+            <div className="flex items-center gap-4 bg-[var(--dash-surface-2)] px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-[var(--dash-border)]">
+                <Search className="text-[var(--dash-text-muted)] w-4 h-4" />
                 <input 
-                    className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-on-surface-variant/50 w-full text-on-surface outline-none" 
+                    className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-[var(--dash-text-muted)]/50 w-full text-[var(--dash-text-primary)] outline-none" 
                     placeholder="Comandos rápidos..." 
                     type="text"
                 />
@@ -265,25 +265,25 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 <div className="relative" ref={menuRef}>
                     <button 
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className={`relative p-2 rounded-full transition-colors ${unreadCount > 0 ? 'text-on-surface hover:bg-surface-bright' : 'text-on-surface-variant hover:text-on-surface'}`}
+                        className={`relative p-2 rounded-full transition-colors ${unreadCount > 0 ? 'text-[var(--dash-text-primary)] hover:bg-[var(--dash-surface-2)]' : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)]'}`}
                     >
                         <Bell className="w-6 h-6" />
                         
                         {/* El punto rojo si hay no leídas */}
                         {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full border-2 border-surface shadow-[0_0_10px_rgba(255,180,171,0.5)] animate-pulse"></span>
+                            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[var(--dash-surface)] shadow-[0_0_10px_rgba(255,180,171,0.5)] animate-pulse"></span>
                         )}
                     </button>
 
                     {/* MENÚ DESPLEGABLE DE NOTIFICACIONES */}
                     {isMenuOpen && (
-                        <div className="absolute top-12 right-0 w-80 bg-surface-container-high border border-outline-variant/20 shadow-2xl rounded-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 fade-in">
-                            <div className="flex items-center justify-between p-4 border-b border-outline-variant/10 bg-surface-container-highest">
-                                <h3 className="font-bold text-on-surface text-sm">Registro Radar</h3>
+                        <div className="absolute top-12 right-0 w-80 bg-[var(--dash-surface-2)] border border-[var(--dash-border)] shadow-2xl rounded-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 fade-in">
+                            <div className="flex items-center justify-between p-4 border-b border-[var(--dash-border)] bg-[var(--dash-surface)]">
+                                <h3 className="font-bold text-[var(--dash-text-primary)] text-sm">Registro Radar</h3>
                                 {unreadCount > 0 && (
                                     <button 
                                         onClick={marcarTodasLeidas} 
-                                        className="text-[10px] text-primary hover:text-primary-container font-bold uppercase tracking-widest flex items-center gap-1"
+                                        className="text-[10px] text-[var(--dash-accent)] hover:text-[var(--dash-accent-hover)] font-bold uppercase tracking-widest flex items-center gap-1"
                                     >
                                         <Check size={12}/> Visto
                                     </button>
@@ -292,27 +292,27 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             
                             <div className="max-h-80 overflow-y-auto">
                                 {notificaciones.length === 0 ? (
-                                    <div className="p-8 text-center text-on-surface-variant flex flex-col items-center">
+                                    <div className="p-8 text-center text-[var(--dash-text-muted)] flex flex-col items-center">
                                         <Bell size={24} className="mb-2 opacity-20" />
                                         <p className="text-xs">El radar está en silencio.</p>
                                     </div>
                                 ) : (
                                     notificaciones.map(n => (
-                                        <div key={n.id} className={`p-4 border-b border-outline-variant/5 flex items-start gap-3 transition-colors ${!n.leida ? 'bg-primary/5' : 'hover:bg-surface-bright'}`}>
-                                            <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
-                                                <ShoppingBag className="w-4 h-4 text-secondary" />
+                                        <div key={n.id} className={`p-4 border-b border-[var(--dash-border)] flex items-start gap-3 transition-colors ${!n.leida ? 'bg-[var(--dash-accent)]/5' : 'hover:bg-[var(--dash-surface-2)]'}`}>
+                                            <div className="w-8 h-8 rounded-full bg-[var(--dash-success-soft)] flex items-center justify-center shrink-0">
+                                                <ShoppingBag className="w-4 h-4 text-[var(--dash-success)]" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className={`text-sm truncate ${!n.leida ? 'font-bold text-on-surface' : 'text-on-surface-variant'}`}>{n.mensaje}</p>
-                                                <p className="text-xs font-mono font-bold text-primary mt-1">S/ {n.monto.toFixed(2)}</p>
-                                                <p className="text-[10px] text-on-surface-variant/50 mt-1">{n.fecha.toLocaleTimeString()}</p>
+                                                <p className={`text-sm truncate ${!n.leida ? 'font-bold text-[var(--dash-text-primary)]' : 'text-[var(--dash-text-muted)]'}`}>{n.mensaje}</p>
+                                                <p className="text-xs font-mono font-bold text-[var(--dash-accent)] mt-1">S/ {n.monto.toFixed(2)}</p>
+                                                <p className="text-[10px] text-[var(--dash-text-muted)]/50 mt-1">{n.fecha.toLocaleTimeString()}</p>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
                             
-                            <Link href="/dashboard/pedidos" onClick={() => setIsMenuOpen(false)} className="block w-full p-3 text-center text-xs font-bold text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors border-t border-outline-variant/10 uppercase tracking-widest">
+                            <Link href="/dashboard/pedidos" onClick={() => setIsMenuOpen(false)} className="block w-full p-3 text-center text-xs font-bold text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)] hover:bg-[var(--dash-surface-2)] transition-colors border-t border-[var(--dash-border)] uppercase tracking-widest">
                                 Ir a Gestión de Órdenes →
                             </Link>
                         </div>
@@ -322,10 +322,10 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 <ThemeToggle />
 
                 <Link href="/dashboard/crear" className="hidden sm:block">
-                    <PlusCircle className="cursor-pointer text-on-surface-variant hover:text-primary transition-colors w-6 h-6" />
+                    <PlusCircle className="cursor-pointer text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] transition-colors w-6 h-6" />
                 </Link>
                 <Link href="/dashboard/configuracion">
-                    <UserCircle className="cursor-pointer text-on-surface-variant hover:text-primary transition-colors w-7 h-7" />
+                    <UserCircle className="cursor-pointer text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] transition-colors w-7 h-7" />
                 </Link>
 
             </div>

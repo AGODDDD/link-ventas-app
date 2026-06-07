@@ -98,7 +98,7 @@ export default function DashboardLayout({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-surface flex flex-col text-on-surface">
+      <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-[var(--dash-bg)] flex flex-col text-[var(--dash-text-primary)]">
 
         {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
       {mostrarBanner && (
@@ -149,7 +149,7 @@ export default function DashboardLayout({
       )}
 
       {/* 1. BARRA SUPERIOR MÓVIL */}
-      <div className="md:hidden bg-surface-container-low text-on-surface p-4 flex items-center justify-between sticky top-0 z-30 shadow-md border-b border-outline-variant/10">
+      <div className="md:hidden bg-[var(--dash-surface)] text-[var(--dash-text-primary)] p-4 flex items-center justify-between sticky top-0 z-30 shadow-md border-b border-[var(--dash-border)]">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 bg-primary/20 rounded-lg flex items-center justify-center font-bold text-primary">LV</div>
           <span className="font-bold text-lg tracking-widest uppercase">LinkVentas</span>
