@@ -14,6 +14,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Reducido margen superior del perfil de usuario (`mt-6 pt-6` → `mt-4 pt-4`) para cohesión jerárquica con el menú.
 - `app/dashboard/layout.tsx`: Actualizado el margen izquierdo principal de `md:ml-64` a `md:ml-56`.
 - `app/tienda/[id]/checkout/page.tsx`: Corregido error 400 Bad Request en la inserción de nuevas órdenes y items. Se alinearon las columnas del payload con el nuevo esquema Core de Supabase (eliminando `merchant_id`, renombrando `customer_address`/`total_amount`, y asegurando el envío obligatorio de `order_type` y `name`).
+- `components/tienda/templates/RestauranteCheckoutModal.tsx`: Corregido error de tipo UUID en inserciones del nuevo Core (`orders`). Se implementó generación explícita de `crypto.randomUUID()` para el nuevo esquema, moviendo el string legacy (`BARR-XXX`) a la columna `legacy_id` para trazabilidad completa en la doble escritura.
 - Verificación: `npx tsc --noEmit` sin errores.
 - Commit: (Se adjuntará)
 
