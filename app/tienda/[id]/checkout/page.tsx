@@ -207,12 +207,11 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 const orderId = crypto.randomUUID()
                 const { error: orderError } = await supabase.from('orders').insert({
                     id: orderId,
-                    merchant_id: perfil.id,
                     store_id: perfil.id,
+                    order_type: perfil.template_type === 'restaurante' ? 'delivery' : 'standard',
                     customer_name: nombre,
                     customer_phone: telefono,
-                    customer_address: direccion,
-                    total_amount: total,
+                    direccion: direccion,
                     total,
                     status: 'pending',
                     payment_proof_url: 'CULQI_PENDING',
@@ -222,6 +221,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 const orderItems = cart.map(item => ({
                     order_id: orderId,
                     product_id: item.product.id,
+                    name: item.product.name,
                     quantity: item.quantity,
                     price: item.product.price,
                     modifiers: item.variantDetails
@@ -271,12 +271,11 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             const orderPayload = {
                 id: orderId,
-                merchant_id: perfil.id,
                 store_id: perfil.id,
+                order_type: perfil.template_type === 'restaurante' ? 'delivery' : 'standard',
                 customer_name: nombre,
                 customer_phone: telefono,
-                customer_address: direccion,
-                total_amount: total,
+                direccion: direccion,
                 total: total,
                 status: 'pending', // TODO ESTO NACE COMO PENDING HASTA VERIFICAR
             }
@@ -300,6 +299,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             const orderItems = cart.map(item => ({
                 order_id: orderId,
                 product_id: item.product.id,
+                name: item.product.name,
                 quantity: item.quantity,
                 price: item.product.price,
                 modifiers: item.variantDetails
