@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, status, total_amount, total, store_id')
+      .select('id, status, total, store_id')
       .eq('id', order_id)
       .eq('store_id', store_id)
       .single()
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La orden ya fue pagada.' }, { status: 409 })
     }
 
-    const orderTotal = Number(order.total_amount ?? order.total ?? 0)
+    const orderTotal = Number(order.total ?? 0)
     if (!Number.isFinite(orderTotal) || orderTotal <= 0) {
       return NextResponse.json({ error: 'Total de orden invalido.' }, { status: 400 })
     }

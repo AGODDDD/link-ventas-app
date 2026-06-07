@@ -461,7 +461,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   return (
     <>
-    <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
     <div className="fixed inset-0 z-[120] bg-neutral-100/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 overflow-y-auto">
       <div className="bg-[#F8F9FA] w-full max-w-5xl rounded-xl shadow-2xl relative my-auto animate-in fade-in zoom-in-95 duration-200">
         

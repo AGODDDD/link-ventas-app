@@ -405,7 +405,6 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
     return (
         <>
-        <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
         <div className="min-h-screen bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container font-body flex flex-col md:flex-row">
 
             {/* LEFT: FORMULARIO */}

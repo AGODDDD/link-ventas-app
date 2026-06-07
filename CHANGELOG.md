@@ -8,6 +8,8 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## [2026-06-07] — Sesión 8
 ### Pulido Final Pixel-Perfect (Flat Design)
 - `components/dashboard/DashboardTopBar.tsx`: Eliminada sombra excesiva (`shadow-[0_20px_40px_rgba(0,0,0,0.4)]`) del header superior. Reemplazada por un borde sutil (`border-zinc-800`), logrando el aspecto Flat Premium e integrado de Stitch. Ancho ajustado a `w-[calc(100%-14rem)]` (`w-56`).
+- `app/api/webhooks/culqi/route.ts` y `app/api/checkout/culqi/route.ts`: Eliminadas referencias residuales a la columna `total_amount` en operaciones SQL (`.select`) y validaciones matemáticas, lo que solucionaba el bug "Orden no encontrada en DB" y devolvía 400.
+- `app/tienda/[id]/layout.tsx` (NUEVO): Se movió la inyección de `checkout.culqi.com/js/v4` a este layout global asegurando la inicialización estable de `window.Culqi` a nivel de raíz y evitando que bloqueadores o problemas del ciclo de vida de React (ej. en modales) frustraran la apertura del pop-up. Eliminado de `page.tsx` y `RestauranteCheckoutModal.tsx`.
 - `components/DashboardSidebar.tsx`:
   - Ancho global del sidebar reducido de `w-64` a `w-56` para ajustar proporciones según el diseño.
   - Mejorado contraste de los textos de navegación reemplazando variables CSS por utilidades explícitas (`text-zinc-900` / `dark:text-white`) para soportar correctamente modo claro y oscuro simultáneamente.
