@@ -11,7 +11,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Instalado `next-themes` y creado `ThemeProvider` envolviendo solo `app/dashboard/layout.tsx`.
   - Definidos tokens de color con prefijo `--dash-*` en `dashboard-theme.css` para modo oscuro (Stitch) y modo claro (LinkVentas oficial).
   - Creado componente `ThemeToggle` (sol/luna) e inyectado en `DashboardTopBar`.
-  - Migradas todas las clases de color Material Design en `layout.tsx` y `DashboardTopBar.tsx` a tokens `--dash-*` (18 reemplazos: bg, text, border).
+  - Migradas todas las clases de color Material Design en `layout.tsx`, `DashboardTopBar.tsx` y `DashboardSidebar.tsx` a tokens `--dash-*` (reemplazos masivos: bg, text, border).
 
 ## [2026-06-05]
 ### Corrección de errores
