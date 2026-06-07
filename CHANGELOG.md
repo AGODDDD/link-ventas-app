@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 5
+### Corrección Visual (comparación con referencia Stitch)
+- `components/DashboardSidebar.tsx`: Ajustados nav items para coincidir pixel-perfect con el diseño Stitch tras comparación visual directa.
+  - `px-6` → `px-4` en todos los nav items — los íconos/texto se alinean más naturalmente al borde izquierdo.
+  - Items inactivos: añadido `font-medium` — mejora legibilidad (antes era `font-regular`).
+  - Item activo: `font-semibold` → `font-medium` — consistente con el resto del menú (Stitch usa `font-medium` en todos los estados).
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: `8f8e76e`
+
+---
+
 ## [2026-06-07] — Sesión 4
 ### Mejora Visual
 - `app/dashboard/page.tsx`: Espaciado de tabla de pedidos ajustado para coincidir exactamente con el diseño Stitch de referencia.
