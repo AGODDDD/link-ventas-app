@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap } from 'lucide-react'
+import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap, Flame } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 import dynamic from 'next/dynamic'
 const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
 import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
 import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
-
+import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
 export default function ConfiguracionPage() {
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState('')
@@ -62,6 +62,7 @@ export default function ConfiguracionPage() {
   const [plinUrl, setPlinUrl] = useState('')
 
   const [uploading, setUploading] = useState(false)
+  const [showFomoConfig, setShowFomoConfig] = useState(false)
 
   // 1. Cargar datos al entrar
   useEffect(() => {
@@ -762,6 +763,28 @@ export default function ConfiguracionPage() {
           </CardHeader>
           <CardContent>
             <ScheduleEditor value={storeSchedule} onChange={setStoreSchedule} />
+          </CardContent>
+        </Card>
+
+        {/* ── MOTOR DE STOCK SOCIAL (FOMO) ── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flame size={20} className="text-orange-500" /> Motor de Stock Social (FOMO)
+            </CardTitle>
+            <CardDescription>
+              Muestra alertas en tiempo real de otros usuarios simulando ver la misma oferta para generar urgencia de compra.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setShowFomoConfig(true)} variant="outline" className="w-full flex items-center justify-center gap-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 transition-colors">
+              <Flame size={18} /> Configurar Motor FOMO
+            </Button>
+            <FomoConfigModal 
+              isOpen={showFomoConfig}
+              onClose={() => setShowFomoConfig(false)}
+              userId={userId}
+            />
           </CardContent>
         </Card>
 
