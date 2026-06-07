@@ -145,8 +145,8 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                 className={`
                   flex items-center py-2.5 px-4 group
                   ${isActive 
-                    ? 'active-nav text-[var(--dash-text-primary)] font-medium' 
-                    : 'nav-item font-medium text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)]'}
+                    ? 'active-nav text-zinc-900 dark:text-white font-medium' 
+                    : 'nav-item font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'}
                 `}
               >
                 {/* SVG inline exacto del diseño Stitch */}

@@ -10,6 +10,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - `components/dashboard/DashboardTopBar.tsx`: Eliminada sombra excesiva (`shadow-[0_20px_40px_rgba(0,0,0,0.4)]`) del header superior. Reemplazada por un borde sutil (`border-zinc-800`), logrando el aspecto Flat Premium e integrado de Stitch. Ancho ajustado a `w-[calc(100%-14rem)]` (`w-56`).
 - `components/DashboardSidebar.tsx`:
   - Ancho global del sidebar reducido de `w-64` a `w-56` para ajustar proporciones según el diseño.
+  - Mejorado contraste de los textos de navegación reemplazando variables CSS por utilidades explícitas (`text-zinc-900` / `dark:text-white`) para soportar correctamente modo claro y oscuro simultáneamente.
   - Reducido margen superior del perfil de usuario (`mt-6 pt-6` → `mt-4 pt-4`) para cohesión jerárquica con el menú.
 - `app/dashboard/layout.tsx`: Actualizado el margen izquierdo principal de `md:ml-64` a `md:ml-56`.
 - Verificación: `npx tsc --noEmit` sin errores.
