@@ -5,6 +5,20 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 3
+### Mejora Visual
+- `components/DashboardSidebar.tsx`: Reemplazados todos los iconos de Material Symbols (fuente externa) por SVGs inline del diseño Stitch — elimina dependencia de red y asegura pixel-perfect con la referencia.
+  - Eliminado import `X` de lucide-react; botón de cierre móvil ahora usa SVG inline.
+  - `menuItems` migrado de `icon: string` (Material Icons ID) a `svgPaths: string[]` (array para soportar íconos de 1 o 2 paths — Ajustes tiene 2).
+  - Footer: íconos de "Ver Tienda Pública" (casa) y "Cerrar Sesión" (logout) migrados a SVG inline.
+  - Tipografía del logo corregida a spec Stitch: `tracking-tight` en "LINKVENTAS", `font-medium tracking-widest` en "Panel de Control".
+  - `active-nav` CSS sin tocar — ya tenía los valores exactos (`#1c1c24 / border #6366f1` dark, `#f0f7ff / border #2F7EDA` light).
+  - Eliminado `userId` state que nunca se usaba en el render.
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: `e34edfb`
+
+---
+
 ## [2026-06-07] — Sesión 2
 ### Corrección de errores
 - Dashboard: Corregido bug de temas dark/light en tres componentes del dashboard — las clases de Stitch usaban colores fijos (`zinc-800`, `text-white`, etc.) que no respondían al toggle de tema.
