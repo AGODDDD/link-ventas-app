@@ -5,7 +5,22 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
-## [2026-06-07]
+## [2026-06-07] — Sesión 2
+### Corrección de errores
+- Dashboard: Corregido bug de temas dark/light en tres componentes del dashboard — las clases de Stitch usaban colores fijos (`zinc-800`, `text-white`, etc.) que no respondían al toggle de tema.
+  - `app/dashboard/page.tsx`: Reescrito completo con `dark:` prefix de Tailwind. Reemplazadas clases semánticas Material Design (`text-on-surface`, `card-bg` inline, etc.) por pares `text-zinc-900 dark:text-white`, `border-zinc-200 dark:border-zinc-800/50`, y equivalentes para fondo de tabla, hover de filas, botón Exportar, paginación y estado vacío.
+  - `components/dashboard/DashboardTopBar.tsx`: Corregidos 3 problemas reales — (1) sombra oscura fija en modo claro (`shadow-[0_1px_3px...] dark:shadow-[0_20px_40px...]`), (2) border del header hardcoded (`border-zinc-200 dark:border-[var(--dash-border)]`), (3) buscador y dropdown de notificaciones sin fondo adaptativo (`bg-zinc-50 dark:bg-[var(--dash-surface-2)]`, `bg-white dark:bg-[var(--dash-surface-2)]`).
+  - `components/dashboard/ThemeToggle.tsx`: Corregido `hover:bg-neutral-800` fijo oscuro → `hover:bg-zinc-100 dark:hover:bg-zinc-800`.
+  - **No modificado:** `components/DashboardSidebar.tsx` — ya usaba exclusivamente variables CSS `var(--dash-*)` que responden correctamente al tema. Sin regresión.
+- Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
+
+### Commits de esta sesión
+- `fc800f2` — fix(dashboard): dark/light theme support in page.tsx via Tailwind dark: prefix
+- `6a3de83` — fix(dashboard): dark/light theme support in TopBar and ThemeToggle via Tailwind dark: prefix
+
+---
+
+## [2026-06-07] — Sesión 1
 ### Funcionalidad
 - Dashboard: Implementado sistema de temas (dark/light mode) aislado exclusivamente al dashboard, sin afectar las tiendas públicas `/tienda/*`.
   - Instalado `next-themes` y creado `ThemeProvider` envolviendo solo `app/dashboard/layout.tsx`.
