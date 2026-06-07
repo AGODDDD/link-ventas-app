@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 4
+### Mejora Visual
+- `app/dashboard/page.tsx`: Espaciado de tabla de pedidos ajustado para coincidir exactamente con el diseño Stitch de referencia.
+  - `<th>` headers: `py-5 px-6 md:px-8` → `py-4 px-6` (header más compacto, padding horizontal uniforme).
+  - `<td>` celdas: eliminado `md:px-8` responsive — padding `px-6` uniforme en todas las columnas.
+  - Row hover dark: `bg-zinc-800/50` → `bg-zinc-800/30` (separador más sutil, igual que Stitch).
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: `7f8d2fb`
+
+---
+
 ## [2026-06-07] — Sesión 3
 ### Mejora Visual
 - `components/DashboardSidebar.tsx`: Reemplazados todos los iconos de Material Symbols (fuente externa) por SVGs inline del diseño Stitch — elimina dependencia de red y asegura pixel-perfect con la referencia.
