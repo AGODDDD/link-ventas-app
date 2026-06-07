@@ -5,6 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 6
+### Corrección de Animaciones
+- `components/DashboardSidebar.tsx` + `app/dashboard-theme.css`: Restauradas las animaciones hover del nav lateral que faltaban del diseño Stitch.
+  - Clase `nav-item` agregada a los `<Link>` inactivos del sidebar (nunca había sido aplicada — los items tampoco estaban definidos en el CSS del dashboard).
+  - `transition-colors` y `hover:bg-[var(--dash-surface-2)]` de Tailwind eliminados de items inactivos para evitar conflicto con la animación CSS nativa.
+  - Definida `.dashboard-theme .nav-item` en `dashboard-theme.css`: `transition: all 0.2s ease` + `padding-left: 1.25rem` on hover (slide effect de Stitch).
+  - Dos variantes: dark (`rgba(255,255,255,0.05)`) y light (`rgba(0,0,0,0.03)`).
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: `605b648`
+
+---
+
 ## [2026-06-07] — Sesión 5
 ### Corrección Visual (comparación con referencia Stitch)
 - `components/DashboardSidebar.tsx`: Ajustados nav items para coincidir pixel-perfect con el diseño Stitch tras comparación visual directa.
