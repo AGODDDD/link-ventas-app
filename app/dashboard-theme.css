@@ -248,3 +248,51 @@
 .light .dashboard-theme .text-on-surface-variant { color: var(--dash-text-muted) !important; }
 .light .dashboard-theme .border-outline-variant { border-color: var(--dash-border) !important; }
 .light .dashboard-theme .text-primary { color: var(--dash-accent) !important; }
+
+/* ── CLASES STITCH — MODO OSCURO ── */
+.dark .dashboard-theme .card-bg {
+  background-color: #18181b;
+  box-shadow: none;
+}
+.dark .dashboard-theme .sidebar-bg {
+  background-color: #121216;
+}
+.dark .dashboard-theme .table-header-bg {
+  background-color: #1d1d21;
+}
+.dark .dashboard-theme .active-nav {
+  background-color: #1c1c24;
+  border-right: 4px solid #6366f1;
+}
+.dark .dashboard-theme .badge-green {
+  background-color: rgba(16,185,129,0.1);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.dark .dashboard-theme .gradient-accent {
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+}
+
+/* ── CLASES STITCH — MODO CLARO ── */
+.light .dashboard-theme .card-bg {
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+}
+.light .dashboard-theme .sidebar-bg {
+  background-color: #ffffff;
+}
+.light .dashboard-theme .table-header-bg {
+  background-color: #f9fafb;
+}
+.light .dashboard-theme .active-nav {
+  background-color: #f0f7ff;
+  border-right: 4px solid #2F7EDA;
+}
+.light .dashboard-theme .badge-green {
+  background-color: rgba(16,185,129,0.1);
+  color: #059669;
+  border: 1px solid rgba(16,185,129,0.2);
+}
+.light .dashboard-theme .gradient-accent {
+  background: linear-gradient(90deg, #2F7EDA 0%, #4648d4 100%);
+}
