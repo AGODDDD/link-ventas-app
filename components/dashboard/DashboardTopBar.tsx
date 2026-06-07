@@ -246,11 +246,11 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     return (
         <header 
             style={{ top: hasBanner ? '45px' : '0' }}
-            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-[var(--dash-surface)]/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-[var(--dash-border)]"
+            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-[#0f0f11]/80 backdrop-blur-xl justify-between items-center px-4 md:px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)] border-b border-[var(--dash-border)]"
         >
             
             {/* Buscador falso / Decorativo para rellenar */}
-            <div className="flex items-center gap-4 bg-[var(--dash-surface-2)] px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-[var(--dash-border)]">
+            <div className="flex items-center gap-4 card-bg px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-[var(--dash-border)]">
                 <Search className="text-[var(--dash-text-muted)] w-4 h-4" />
                 <input 
                     className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-[var(--dash-text-muted)]/50 w-full text-[var(--dash-text-primary)] outline-none" 

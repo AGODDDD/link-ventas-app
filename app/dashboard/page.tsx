@@ -210,10 +210,10 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-4 flex-1">
             <h3 className="text-xl font-bold text-on-surface whitespace-nowrap">Últimos Pedidos</h3>
             <div className="relative flex-1 max-w-md group">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-on-surface-variant group-focus-within:text-primary transition-colors">
+              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-on-surface-variant group-focus-within:text-[var(--dash-accent)] transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               </span>
-              <input className="bg-surface-container border-outline-variant/10 text-on-surface text-sm rounded-lg focus:ring-1 focus:ring-primary focus:border-primary block w-full pl-10 py-2 transition-all outline-none" placeholder="Buscar pedidos..." type="text"/>
+              <input className="bg-black/5 dark:bg-zinc-900/50 border-outline-variant/10 text-on-surface text-sm rounded-lg focus:ring-1 focus:ring-[var(--dash-accent)] focus:border-[var(--dash-accent)] block w-full pl-10 py-2 transition-all outline-none" placeholder="Buscar pedidos..." type="text"/>
             </div>
           </div>
           <div className="flex items-center space-x-3">

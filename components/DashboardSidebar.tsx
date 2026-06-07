@@ -109,7 +109,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                 className={`
                   flex items-center gap-3 py-3 px-6 transition-colors group
                   ${isActive 
-                    ? 'text-[var(--dash-accent)] font-semibold relative bg-[var(--dash-accent)]/10 before:absolute before:left-0 before:w-1 before:h-6 before:bg-[var(--dash-accent)] before:rounded-r-full' 
+                    ? 'active-nav text-[var(--dash-text-primary)] font-semibold' 
                     : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)] hover:bg-[var(--dash-surface-2)]'}
                 `}
               >
