@@ -13,6 +13,8 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Creado componente `ThemeToggle` (sol/luna) e inyectado en `DashboardTopBar`.
   - Migradas todas las clases de color Material Design en `layout.tsx`, `DashboardTopBar.tsx` y `DashboardSidebar.tsx` a tokens `--dash-*` (reemplazos masivos: bg, text, border).
   - Implementado mapeo dinámico CSS en `dashboard-theme.css` para sobreescribir globalmente las clases de Material Design (`bg-surface-container-high`, `text-on-surface`, etc.) hacia las nuevas variables `--dash-*`, garantizando soporte de temas instantáneo en todas las subpáginas sin refactor masivo.
+  - Actualizados tokens del modo claro para coincidir con el diseño "Light Mode Professional" de Stitch (tonos más limpios, menos saturados, acento en gradiente índigo/azul).
+  - Integrado sistema de animaciones CSS nativas en `dashboard-theme.css` (animaciones en cascada `fadeInUp`, hovers magnéticos para tarjetas/botones y scrollbar personalizado), con soporte para `prefers-reduced-motion`.
 
 ## [2026-06-05]
 ### Corrección de errores
