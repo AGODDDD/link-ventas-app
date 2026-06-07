@@ -5,6 +5,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-07] — Sesión 8
+### Pulido Final Pixel-Perfect (Flat Design)
+- `components/dashboard/DashboardTopBar.tsx`: Eliminada sombra excesiva (`shadow-[0_20px_40px_rgba(0,0,0,0.4)]`) del header superior. Reemplazada por un borde sutil (`border-zinc-800`), logrando el aspecto Flat Premium e integrado de Stitch.
+- `app/dashboard/page.tsx`:
+  - **Header de tabla:** Reemplazado `bg-zinc-900/50` por `.table-header-bg` (`#1d1d21`) para delimitar nítidamente las columnas de los datos con contraste opaco.
+  - **Botón Exportar:** Ajustado color a `dark:text-emerald-500` para mayor viveza (punch) en el modo oscuro.
+  - **Interacciones:** Añadido `group-hover:border-emerald-500/40` al badge verde de método de pago para emular la micro-interacción reactiva de Stitch.
+- `components/DashboardSidebar.tsx`: Reducido margen superior del perfil de usuario (`mt-6 pt-6` → `mt-4 pt-4`) para cohesión jerárquica con el menú.
+- Verificación: `npx tsc --noEmit` sin errores.
+- Commit: (Se adjuntará)
+
+---
+
 ## [2026-06-07] — Sesión 7
 ### Corrección Visual (comparación con referencia Stitch)
 - `components/DashboardSidebar.tsx`: Ajustes de precisión en el diseño del sidebar para alineación total con Stitch.

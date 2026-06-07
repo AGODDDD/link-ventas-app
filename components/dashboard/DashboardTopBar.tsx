@@ -249,8 +249,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
             className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40
                        bg-white/80 dark:bg-[#0f0f11]/80
                        backdrop-blur-xl justify-between items-center px-4 md:px-8
-                       shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_40px_rgba(0,0,0,0.4)]
-                       border-b border-zinc-200 dark:border-[var(--dash-border)]"
+                       border-b border-zinc-200 dark:border-zinc-800"
         >
             
             {/* Buscador falso / Decorativo para rellenar */}

@@ -187,7 +187,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
           </button>
 
           {/* User Profile Card */}
-          <div className="flex items-center gap-3 mt-6 pt-6 border-t border-[var(--dash-border)]">
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-[var(--dash-border)]">
             <div className="w-8 h-8 rounded bg-zinc-700 flex items-center justify-center text-xs font-bold text-white uppercase">
                 {initials}
             </div>

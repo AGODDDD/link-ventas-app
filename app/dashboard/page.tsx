@@ -42,7 +42,7 @@ export default function DashboardPage() {
         const pageList = Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + 1);
         
         return (
-            <div className="flex justify-center items-center gap-2 mt-4 pb-6 border-t border-zinc-200 dark:border-zinc-800 pt-4 bg-white dark:bg-zinc-900/30">
+            <div className="flex justify-center items-center gap-2 pb-6 border-t border-zinc-200 dark:border-zinc-800 pt-4 bg-white dark:bg-zinc-900/30">
                 <button 
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -134,7 +134,7 @@ export default function DashboardPage() {
   }, [cargarOrders])
 
   return (
-    <>
+    <div className="space-y-10">
       {/* BEGIN: Dashboard Header */}
       <div className="flex justify-between items-end animate-fade-in-up">
         <div>
@@ -145,7 +145,7 @@ export default function DashboardPage() {
       {/* END: Dashboard Header */}
 
       {/* BEGIN: Stats Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-10 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Card: Total Ingresos */}
         <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 animate-fade-in-up delay-100">
           <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Total de Ingresos</p>
@@ -208,7 +208,7 @@ export default function DashboardPage() {
       {/* END: Stats Overview Cards */}
 
       {/* BEGIN: Orders Table Section */}
-      <section className="card-bg rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-fade-in-up delay-500 mb-12">
+      <section className="card-bg rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-fade-in-up delay-500">
         {/* Header with Search and Filters */}
         <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-4 flex-1">
@@ -231,7 +231,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={handleExportOrders}
-              className="magnetic-btn flex items-center px-5 py-2 bg-emerald-600 dark:bg-emerald-500/10 text-white dark:text-emerald-400 rounded-md text-sm font-bold hover:bg-emerald-700 dark:hover:bg-emerald-500/20 transition border border-transparent dark:border-emerald-500/20 shadow-sm dark:shadow-none"
+              className="magnetic-btn flex items-center px-5 py-2 bg-emerald-600 dark:bg-emerald-500/10 text-white dark:text-emerald-500 rounded-md text-sm font-bold hover:bg-emerald-700 dark:hover:bg-emerald-500/20 transition border border-transparent dark:border-emerald-500/20 shadow-sm dark:shadow-none"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
               Exportar
@@ -242,7 +242,7 @@ export default function DashboardPage() {
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead className="bg-zinc-50 dark:bg-zinc-900/50">
+            <thead className="bg-zinc-50 table-header-bg">
               <tr>
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">ID del Pedido</th>
                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Cliente</th>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toFixed(2)}</td>
                         <td className="px-6 py-5">
-                            <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight transition-all uppercase whitespace-nowrap">
+                            <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight group-hover:border-emerald-500/40 transition-all uppercase whitespace-nowrap">
                                 {order.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'Con QR'}
                             </span>
                         </td>
@@ -287,6 +287,6 @@ export default function DashboardPage() {
         </div>
         {renderPagination()}
       </section>
-    </>
+    </div>
   )
 }
