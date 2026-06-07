@@ -345,8 +345,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (orderError) console.error('⚠️ Error en tabla legacy:', orderError.message);
 
         // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
+        const coreOrderId = crypto.randomUUID();
         const { error: coreError } = await supabase.from('orders').insert({
-          id: orderId, // Mismo ID para consistencia
+          id: coreOrderId, // UUID estricto
           store_id: perfil.id,
           status: newOrder.status,
           order_type: 'delivery',
@@ -368,7 +369,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (!coreError) {
           // 3. Guardar items en tabla relacional (NUEVO CORE)
           const relationalItems = orderItems.map((item: any) => ({
-            order_id: orderId,
+            order_id: coreOrderId,
             product_id: item.id && item.id.length > 20 ? item.id : null, // Ahora sí tiene ID
             name: item.name,
             price: item.unitPrice, // Cambiado de .price (undefined) a .unitPrice
