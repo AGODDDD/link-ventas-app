@@ -18,7 +18,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
     const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
     
     // Generar un número de secuencia aleatorio o basado en la orden
-    const shortId = order.id.split('-')[0].toUpperCase()
+    const shortId = (order.legacy_id || order.id).split('-')[0].toUpperCase()
     const secuencia = Math.floor(Math.random() * 9000) + 1000
 
     return (

@@ -216,7 +216,7 @@ export default function PedidosPage() {
 
             const link = document.createElement('a')
             link.href = image
-            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+            link.download = `Ticket_${(order.legacy_id || order.id).split('-')[0].toUpperCase()}.png`
             link.click()
 
             toast.success('Ticket the descargado con the éxito!', { id: 'thermal-toast' })
@@ -284,7 +284,7 @@ export default function PedidosPage() {
         const store_name = perfil?.store_name || 'nuestra tienda'
         const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
         const customerName = order.customer_name || 'Cliente'
-        const shortId = order.id.split('-')[0].toUpperCase()
+        const shortId = (order.legacy_id || order.id).split('-')[0].toUpperCase()
         
         const subject = `Ticket Digital - Pedido #${shortId} en ${store_name}`
         const body = `Hola ${customerName},\n\n¡Gracias por tu compra! Adjuntamos el enlace para visualizar y descargar tu ticket digital optimizado:\n\n${pdfUrl}\n\nGracias por tu preferencia.\n\n${store_name.toUpperCase()}`
@@ -311,7 +311,7 @@ export default function PedidosPage() {
             const blob = await response.blob()
             const link = document.createElement('a')
             link.href = URL.createObjectURL(blob)
-            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.pdf`
+            link.download = `Ticket_${(order.legacy_id || order.id).split('-')[0].toUpperCase()}.pdf`
             link.click()
             toast.success('¡Ticket PDF descargado con éxito! 📄', { id: 'modal-pdf' })
         } catch (err: any) {
@@ -323,7 +323,7 @@ export default function PedidosPage() {
         if (sharePngPreview) {
             const link = document.createElement('a')
             link.href = sharePngPreview
-            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+            link.download = `Ticket_${(order.legacy_id || order.id).split('-')[0].toUpperCase()}.png`
             link.click()
             toast.success('Ticket descargado como PNG con éxito!')
         } else {
@@ -335,7 +335,7 @@ export default function PedidosPage() {
                 const image = canvas.toDataURL('image/png')
                 const link = document.createElement('a')
                 link.href = image
-                link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+                link.download = `Ticket_${(order.legacy_id || order.id).split('-')[0].toUpperCase()}.png`
                 link.click()
                 toast.success('Ticket descargado como PNG con éxito!', { id: 'modal-download' })
             } catch (err: any) {
@@ -794,7 +794,7 @@ export default function PedidosPage() {
                                     <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant/5 gap-4">
                                         <div className="flex items-center gap-4 flex-wrap">
                                             <span className="font-mono text-xs font-bold text-primary tracking-widest px-3 py-1 bg-primary/10 rounded-md">
-                                                #{order.id.split('-')[0].toUpperCase()}
+                                                #{(order.legacy_id || order.id).split('-')[0].toUpperCase()}
                                             </span>
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${getStatusStyle(order.status)}`}>
                                                 {getStatusName(order.status)}
@@ -1026,7 +1026,7 @@ export default function PedidosPage() {
                         <div className="md:w-1/2 p-6 flex flex-col justify-between space-y-6">
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest mb-1">Compartir Comprobante</p>
-                                <h3 className="font-headline font-black text-xl text-on-surface uppercase italic tracking-tight mb-2">Pedido #{shareOrder.id.split('-')[0].toUpperCase()}</h3>
+                                <h3 className="font-headline font-black text-xl text-on-surface uppercase italic tracking-tight mb-2">Pedido #{(shareOrder.legacy_id || shareOrder.id).split('-')[0].toUpperCase()}</h3>
                                 <p className="text-xs text-on-surface-variant leading-relaxed">
                                     Generamos un <strong className="text-primary font-bold">PDF oficial optimizado para ticketera</strong> directamente en el servidor. Puedes compartir el enlace oficial o enviarlo:
                                 </p>

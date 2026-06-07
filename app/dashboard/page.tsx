@@ -99,7 +99,7 @@ export default function DashboardPage() {
     
     // Mapeo amigable para Excel
     const dataToExport = orders.map(o => ({
-      "ID Pedido": o.id.split('-')[0].toUpperCase(),
+      "ID Pedido": (o.legacy_id || o.id).split('-')[0].toUpperCase(),
       "Cliente": o.customer_name || "Anónimo",
       "Monto": `S/ ${parseFloat(o.total_amount).toFixed(2)}`,
       "Fecha": new Date(o.created_at).toLocaleDateString(),
@@ -255,7 +255,7 @@ export default function DashboardPage() {
               {ordenesRecientes.length > 0 ? (
                 ordenesRecientes.map((order) => (
                     <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors group cursor-default">
-                        <td className="px-6 py-5 text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 truncate max-w-[150px]">#{order.id.split('-')[0].toUpperCase()}</td>
+                        <td className="px-6 py-5 text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 truncate max-w-[150px]">#{(order.legacy_id || order.id).split('-')[0].toUpperCase()}</td>
                         <td className="px-6 py-5">
                             <div className="flex items-center space-x-3">
                                 <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500 dark:text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors uppercase">
