@@ -111,7 +111,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
       <aside 
         style={{ top: hasBanner ? '45px' : '0', height: hasBanner ? 'calc(100vh - 45px)' : '100vh' }}
         className={`
-        fixed left-0 w-64 bg-[var(--dash-sidebar)] font-body antialiased tracking-tight flex flex-col py-6 z-50
+        fixed left-0 w-56 bg-[var(--dash-sidebar)] font-body antialiased tracking-tight flex flex-col py-6 z-50
         transition-transform duration-300 ease-in-out border-r border-[var(--dash-border)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 

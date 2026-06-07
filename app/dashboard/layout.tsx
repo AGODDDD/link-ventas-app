@@ -170,7 +170,7 @@ export default function DashboardLayout({
       <DashboardTopBar hasBanner={mostrarBanner} />
 
       {/* 4. CONTENIDO PRINCIPAL */}
-      <main className={`flex-1 md:ml-64 bg-[var(--dash-bg)] ${mostrarBanner ? 'md:pt-32 pt-20' : 'md:pt-24 pt-4'} px-4 md:px-8 pb-12 overflow-x-hidden`}>
+      <main className={`flex-1 md:ml-56 bg-[var(--dash-bg)] ${mostrarBanner ? 'md:pt-32 pt-20' : 'md:pt-24 pt-4'} px-4 md:px-8 pb-12 overflow-x-hidden`}>
         {children}
       </main>
     </div>

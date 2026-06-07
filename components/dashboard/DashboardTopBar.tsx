@@ -246,7 +246,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     return (
         <header 
             style={{ top: hasBanner ? '45px' : '0' }}
-            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-16rem)] h-16 z-40
+            className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-14rem)] h-16 z-40
                        bg-white/80 dark:bg-[#0f0f11]/80
                        backdrop-blur-xl justify-between items-center px-4 md:px-8
                        border-b border-zinc-200 dark:border-zinc-800"
