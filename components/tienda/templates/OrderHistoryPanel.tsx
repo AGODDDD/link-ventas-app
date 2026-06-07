@@ -89,7 +89,7 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
     const ids = storeOrders.map(o => o.id)
     import('@/lib/supabase').then(({ supabase }) => {
       supabase
-        .from('delivery_orders')
+        .from('orders')
         .select('id, status')
         .in('id', ids)
         .then(({ data }) => {

@@ -83,7 +83,7 @@ export default function OrderDetailModal({
     const channel = supabase
       .channel(`order-detail-${order.id}`)
       .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `id=eq.${order.id}` },
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` },
         (payload: any) => {
           if (payload.new?.status) {
             setOrder(prev => ({ ...prev, status: payload.new.status }))
@@ -93,7 +93,7 @@ export default function OrderDetailModal({
       )
       .subscribe()
     const poll = setInterval(async () => {
-      const { data } = await supabase.from('delivery_orders').select('status').eq('id', order.id).single()
+      const { data } = await supabase.from('orders').select('status').eq('id', order.id).single()
       if (data?.status && data.status !== order.status) {
         setOrder(prev => ({ ...prev, status: data.status }))
         updateOrderStatus(order.id, data.status) // persistir en localStorage

@@ -237,11 +237,12 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
      // Generate store prefix from store name (first 4 chars uppercase)
      const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
      const orderId = generateOrderId(prefix);
+     const coreOrderId = crypto.randomUUID();
 
      // Save order to persistent store
      const customerStore = useCustomerStore.getState();
      const newOrder: Order = {
-       id: orderId,
+       id: coreOrderId,
        storeId: perfil.id,
        storeName: perfil.store_name || '',
        date: new Date().toISOString(),
@@ -266,7 +267,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
           return;
         }
-        const coreOrderId = crypto.randomUUID();
         const { error: coreOrderError } = await supabase.from('orders').insert({
           id: coreOrderId,
           store_id: perfil.id,
@@ -344,7 +344,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (orderError) console.error('⚠️ Error en tabla legacy:', orderError.message);
 
         // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
-        const coreOrderId = crypto.randomUUID();
         const { error: coreError } = await supabase.from('orders').insert({
           id: coreOrderId, // UUID estricto
           store_id: perfil.id,

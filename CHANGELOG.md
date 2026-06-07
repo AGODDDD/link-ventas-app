@@ -93,6 +93,11 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
 ### Commits de esta sesión
+- `fix(tracking): migrate customer-facing order tracking from delivery_orders to orders table` — Sincronizado el historial de clientes y mapa en tiempo real (`OrderHistoryPanel` y `OrderDetailModal`) para que apunten a la tabla unificada `orders`. Unificado el guardado de IDs a UUID (`coreOrderId`) en el checkout de restaurantes.
+- `fix(dashboard): use legacy_id for visual order shortcode to fix UUID overflow` — Resuelto el problema del dashboard mostrando UUIDs completos; ahora usa `legacy_id` con fallback al UUID recortado.
+- `fix(culqi): remove phantom total_amount from API routes and move Culqi script to tienda layout` — Purgado `total_amount` de llamadas a BD y centralizado SDK de Culqi para evitar condiciones de carrera.
+- `fix(checkout): remove phantom total_amount field from Culqi insert in RestauranteCheckoutModal` — Corregido insert doble por esquema obsoleto.
+- `fix(checkout): use crypto.randomUUID() for core orders in RestauranteCheckoutModal` — Corregido fallo de inserción de UUID en la pasarela Culqi para restaurantes.
 - `fc800f2` — fix(dashboard): dark/light theme support in page.tsx via Tailwind dark: prefix
 - `6a3de83` — fix(dashboard): dark/light theme support in TopBar and ThemeToggle via Tailwind dark: prefix
 
