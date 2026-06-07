@@ -13,6 +13,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - Mejorado contraste de los textos de navegación reemplazando variables CSS por utilidades explícitas (`text-zinc-900` / `dark:text-white`) para soportar correctamente modo claro y oscuro simultáneamente.
   - Reducido margen superior del perfil de usuario (`mt-6 pt-6` → `mt-4 pt-4`) para cohesión jerárquica con el menú.
 - `app/dashboard/layout.tsx`: Actualizado el margen izquierdo principal de `md:ml-64` a `md:ml-56`.
+- `app/tienda/[id]/checkout/page.tsx`: Corregido error 400 Bad Request en la inserción de nuevas órdenes y items. Se alinearon las columnas del payload con el nuevo esquema Core de Supabase (eliminando `merchant_id`, renombrando `customer_address`/`total_amount`, y asegurando el envío obligatorio de `order_type` y `name`).
 - Verificación: `npx tsc --noEmit` sin errores.
 - Commit: (Se adjuntará)
 
