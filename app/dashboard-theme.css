@@ -135,18 +135,99 @@
 
 /* DASHBOARD — MODO CLARO (LinkVentas oficial) */
 .light .dashboard-theme {
-  --dash-bg: #ffffff;
-  --dash-surface: #F8FAFF;
-  --dash-surface-2: #EFF6FF;
-  --dash-sidebar: #1E40AF;
-  --dash-border: #E5E7EB;
+  --dash-bg: #fcf9f8;
+  --dash-surface: #ffffff;
+  --dash-surface-2: #f5f5f5;
+  --dash-sidebar: #ffffff;
+  --dash-border: rgba(0,0,0,0.08);
   --dash-text-primary: #0f172a;
   --dash-text-muted: #6B7280;
-  --dash-accent: #1E40AF;
-  --dash-accent-hover: #2563EB;
-  --dash-success: #00BB31;
-  --dash-success-soft: rgba(0,187,49,0.1);
-  --dash-gradient: linear-gradient(90deg, #1E40AF 0%, #00BB31 100%);
+  --dash-accent: #2F7EDA;
+  --dash-accent-hover: #4648d4;
+  --dash-success: #10b981;
+  --dash-success-soft: rgba(16,185,129,0.1);
+  --dash-gradient: linear-gradient(90deg, #2F7EDA 0%, #4648d4 100%);
+}
+
+/* =========================================================
+   FASE 2: SISTEMA DE ANIMACIONES (Stitch Design)
+   ========================================================= */
+
+/* Custom Scrollbar */
+.dashboard-theme ::-webkit-scrollbar {
+  width: 6px;
+}
+.dark .dashboard-theme ::-webkit-scrollbar-track {
+  background: var(--dash-bg);
+}
+.dark .dashboard-theme ::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 10px;
+}
+.light .dashboard-theme ::-webkit-scrollbar-track {
+  background: var(--dash-bg);
+}
+.light .dashboard-theme ::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+
+/* Animation Keyframes: Fade In Up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-theme .animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered Delays */
+.dashboard-theme .delay-100 { animation-delay: 100ms; }
+.dashboard-theme .delay-200 { animation-delay: 200ms; }
+.dashboard-theme .delay-300 { animation-delay: 300ms; }
+.dashboard-theme .delay-400 { animation-delay: 400ms; }
+.dashboard-theme .delay-500 { animation-delay: 500ms; }
+
+/* Hover States & Transitions */
+.dashboard-theme .metric-card {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.dashboard-theme .metric-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 15px -5px rgba(99, 102, 241, 0.2);
+}
+
+.dashboard-theme .magnetic-btn {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dashboard-theme .magnetic-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.dashboard-theme .magnetic-btn:active {
+  transform: translateY(0);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-theme .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+  }
+  .dashboard-theme .metric-card, 
+  .dashboard-theme .magnetic-btn {
+    transition: none;
+    transform: none !important;
+  }
 }
 
 /* MAPEO DINÁMICO: Clases Material Design → Tokens Dash */
