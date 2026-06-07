@@ -11,12 +11,14 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - RLS de Supabase implementado y funcional.
 - Persistencia del carrito offline/local vía Zustand.
 - Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
-- **Dashboard Redesign & Theming (Completado — sesiones 2026-06-07):** Sistema de temas claro/oscuro (Stitch "Light Mode Professional") acoplado al Dashboard mediante `next-themes`. Incluye micro-animaciones CSS, layout premium y soporte completo dark/light en todos los componentes:
-  - `dashboard-theme.css`: tokens `--dash-*` para ambos modos + mapeo dinámico de clases Material Design.
-  - `app/dashboard/page.tsx`: reescrito con Tailwind `dark:` prefix. Tabla de pedidos ajustada al spec Stitch (header `py-4`, celdas `px-6` uniforme, hover sutil `bg-zinc-800/30`).
-  - `components/DashboardSidebar.tsx`: iconos Material Symbols reemplazados por SVGs inline del diseño Stitch; tipografía del logo corregida (`tracking-tight` / `tracking-widest`); botón X móvil migrado a SVG inline. `active-nav` CSS usa exactamente `#1c1c24/border #6366f1` (dark) y `#f0f7ff/border #2F7EDA` (light).
-  - `components/dashboard/DashboardTopBar.tsx`: sombra, border y fondos del header/buscador/dropdown adaptativos por tema.
-  - `components/dashboard/ThemeToggle.tsx`: hover corregido (`bg-zinc-100 dark:bg-zinc-800`).
+- **Dashboard Redesign & Theming (Fase 1 Completada):**
+  - Sistema dark/light implementado con `next-themes` ✓
+  - `app/dashboard/page.tsx` migrado con `dark:` prefix ✓
+  - `DashboardTopBar.tsx` migrado ✓
+  - `DashboardSidebar.tsx` migrado ✓
+  - Modo oscuro pixel-perfect con el diseño base de Stitch ✓
+  - Modo claro funcional adaptado con la paleta de la marca LinkVentas ✓
+  - **Pendiente:** Migrar las páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix para unificar visualmente toda la experiencia.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
   - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): Garantiza compatibilidad hacia atrás y adopción del nuevo esquema simultáneamente.
