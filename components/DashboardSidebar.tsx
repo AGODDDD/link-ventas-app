@@ -79,8 +79,8 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
       <aside 
         style={{ top: hasBanner ? '45px' : '0', height: hasBanner ? 'calc(100vh - 45px)' : '100vh' }}
         className={`
-        fixed left-0 w-64 bg-surface-container-low font-body antialiased tracking-tight flex flex-col py-6 z-50
-        transition-transform duration-300 ease-in-out border-r border-outline-variant/10
+        fixed left-0 w-64 bg-[var(--dash-sidebar)] font-body antialiased tracking-tight flex flex-col py-6 z-50
+        transition-transform duration-300 ease-in-out border-r border-[var(--dash-border)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
         md:translate-x-0 
       `}>
@@ -88,11 +88,11 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
         {/* CABECERA CON LOGO */}
         <div className="px-6 mb-10 flex justify-between items-center">
             <div>
-                <h1 className="text-xl font-bold text-on-surface tracking-wider uppercase">LinkVentas</h1>
-                <p className="text-[10px] text-on-surface-variant tracking-[0.2em] uppercase mt-1">Panel de Control</p>
+                <h1 className="text-xl font-bold text-[var(--dash-text-primary)] tracking-wider uppercase">LinkVentas</h1>
+                <p className="text-[10px] text-[var(--dash-text-muted)] tracking-[0.2em] uppercase mt-1">Panel de Control</p>
             </div>
             {/* Botón X solo visible en móvil */}
-            <button onClick={onClose} className="md:hidden text-on-surface-variant hover:text-on-surface">
+            <button onClick={onClose} className="md:hidden text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)]">
               <X size={24} />
             </button>
         </div>
@@ -109,8 +109,8 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                 className={`
                   flex items-center gap-3 py-3 px-6 transition-colors group
                   ${isActive 
-                    ? 'text-primary font-semibold relative bg-primary-container/10 before:absolute before:left-0 before:w-1 before:h-6 before:bg-primary before:rounded-r-full' 
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}
+                    ? 'text-[var(--dash-accent)] font-semibold relative bg-[var(--dash-accent)]/10 before:absolute before:left-0 before:w-1 before:h-6 before:bg-[var(--dash-accent)] before:rounded-r-full' 
+                    : 'text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)] hover:bg-[var(--dash-surface-2)]'}
                 `}
               >
                 <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
@@ -125,7 +125,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
           <Link
             href={storeLink ? `/tienda/${storeLink}` : '#'}
             target="_blank"
-            className={`text-on-surface-variant hover:text-primary flex items-center gap-3 py-3 transition-colors ${!storeLink && 'opacity-50 pointer-events-none'}`}
+            className={`text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] flex items-center gap-3 py-3 transition-colors ${!storeLink && 'opacity-50 pointer-events-none'}`}
           >
             <span className="material-symbols-outlined text-[20px]">storefront</span>
             <span className="text-sm font-medium">Ver Tienda Pública</span>
@@ -139,13 +139,13 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
             <span className="text-sm font-medium">Cerrar Sesión</span>
           </button>
 
-          <div className="flex items-center gap-3 mt-6 pt-6 border-t border-outline-variant/10">
-            <div className="w-8 h-8 rounded-full border border-primary/20 bg-primary/10 flex items-center justify-center text-primary font-bold text-xs uppercase">
+          <div className="flex items-center gap-3 mt-6 pt-6 border-t border-[var(--dash-border)]">
+            <div className="w-8 h-8 rounded-full border border-[var(--dash-accent)]/20 bg-[var(--dash-accent)]/10 flex items-center justify-center text-[var(--dash-accent)] font-bold text-xs uppercase">
                 {initials}
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-semibold text-on-surface truncate">{storeName}</p>
-              <p className="text-[10px] text-on-surface-variant truncate">{userEmail}</p>
+              <p className="text-xs font-semibold text-[var(--dash-text-primary)] truncate">{storeName}</p>
+              <p className="text-[10px] text-[var(--dash-text-muted)] truncate">{userEmail}</p>
             </div>
           </div>
         </div>
