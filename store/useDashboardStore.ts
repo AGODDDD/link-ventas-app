@@ -166,6 +166,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         if (unifiedRes.data) {
             const coreOrders = unifiedRes.data.map(o => ({
                 id: o.id,
+                legacy_id: o.legacy_id,
                 created_at: o.created_at,
                 customer_name: o.customer_name || 'Sin nombre',
                 customer_phone: o.customer_phone || '-',
@@ -225,6 +226,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         if (source === 'core') {
             return {
                 id: raw.id,
+                legacy_id: raw.legacy_id,
                 created_at: raw.created_at,
                 customer_name: raw.customer_name || 'Sin nombre',
                 customer_phone: raw.customer_phone || '-',

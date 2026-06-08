@@ -148,7 +148,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 .on(
                     'postgres_changes',
                     { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
-                    (payload) => {
+                    async (payload) => {
                         const nuevaOrden = payload.new
                         toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
                             description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
@@ -163,6 +163,10 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             leida: false
                         }, ...prev])
                         
+                        // Fetch order_items since realtime payload only has the orders row
+                        const { data: items } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
+                        nuevaOrden.order_items = items || [];
+
                         // Inyectar sin recargar base de datos (Adiós Race Condition)
                         const store = useDashboardStore.getState()
                         const norm = store.normalizarOrder(nuevaOrden, 'core')
