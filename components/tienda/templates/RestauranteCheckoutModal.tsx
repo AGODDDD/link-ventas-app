@@ -298,7 +298,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
         }));
         const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
-        if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('Error items:', itemsError);
+          // Fallback silencioso: continuar abriendo Culqi de todos modos
+        }
 
         win.pendingCulqiRestaurantOrder = { orderId: coreOrderId };
         win.Culqi.publicKey = perfil.culqi_public_key;
