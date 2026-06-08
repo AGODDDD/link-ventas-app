@@ -126,7 +126,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
           // 3a. Legacy table (delivery_orders) — dashboard + notificaciones
           await supabase.from('delivery_orders').insert({
-            id: orderId,
+            id: pendingOrder?.legacyId || orderId,
             store_id: perfil.id,
             status: 'pendiente',
             customer_name: nombre,
@@ -157,7 +157,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           // 3e. Zustand local history
           const customerStore = useCustomerStore.getState();
           customerStore.addOrder({
-            id: orderId,
+            id: pendingOrder?.legacyId || orderId,
             storeId: perfil.id,
             storeName: perfil.store_name || '',
             date: new Date().toISOString(),
