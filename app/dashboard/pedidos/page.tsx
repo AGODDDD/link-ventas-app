@@ -573,7 +573,7 @@ export default function PedidosPage() {
                                         <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant/5 gap-3">
                                             <div className="flex items-center gap-3 flex-wrap">
                                                 <span className="font-mono text-xs font-bold text-green-600 tracking-widest px-3 py-1 bg-green-50 rounded-md border border-green-200">
-                                                    {order.id}
+                                                    #{(order.legacy_id || order.id).split('-')[0].toUpperCase()}
                                                 </span>
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${DELIVERY_COLORS[order.status] || 'bg-neutral-100 text-neutral-500'}`}>
                                                     {DELIVERY_LABELS[order.status] || order.status}

@@ -285,7 +285,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           metodo_pago: 'culqi',
           payment_proof_url: 'CULQI_PENDING',
           estimated_time: '50 - 60 min',
-          legacy_id: coreOrderId,
+          legacy_id: orderId,
         });
         if (coreOrderError) throw coreOrderError;
 
