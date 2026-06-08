@@ -92,7 +92,24 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Dashboard/Pedidos: Agregado el estado `paid` al diccionario de traducciones (`DELIVERY_LABELS` y `DELIVERY_COLORS`) con texto "Pagado" y color de fondo verde, corrigiendo el renderizado en inglés causado por el webhook de Culqi.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
+## [2026-06-08] — Sesión 3 (Fix definitivo Culqi)
+### Diagnóstico profundo
+- Se realizó un análisis exhaustivo del flujo completo de Culqi contrastando el código fuente contra el esquema real de Supabase.
+- **Causa raíz identificada:** 3 bugs en `RestauranteCheckoutModal.tsx` (bloque Culqi, líneas 284-304):
+  1. **`total_amount: total`** (L285): Columna fantasma que no existe en la tabla `orders`. El INSERT a Supabase fallaba silenciosamente con error de columna inexistente, y como `handlePagar()` no tiene `try/catch`, el `throw coreOrderError` generaba una promesa rechazada sin manejador visible. Resultado: `win.Culqi.open()` nunca se ejecutaba y el botón "no hacía nada".
+  2. **`legacy_id: coreOrderId`** (L289): Asignaba el UUID como `legacy_id`, haciéndolo redundante. Corregido a `legacy_id: orderId` para que almacene el código corto BARR-XXXX generado en L239.
+  3. **`{ orderId: coreOrderId }`** (L304): El objeto `pendingCulqiRestaurantOrder` no incluía el `legacyId`, impidiendo que el callback de éxito tuviera acceso al código BARR-XXXX para el historial del cliente.
+
+### Cambios aplicados
+- Eliminada línea `total_amount: total` del INSERT a `orders`.
+- Cambiado `legacy_id: coreOrderId` → `legacy_id: orderId` (BARR-XXXX).
+- Cambiado `{ orderId: coreOrderId }` → `{ orderId: coreOrderId, legacyId: orderId }`.
+- Verificación: `npx tsc --noEmit` sin errores.
+
 ### Commits de esta sesión
+- `6af1b5b` — fix(culqi): remove phantom total_amount, fix legacy_id to BARR-XXX, pass legacyId to pending order
+
+### Commits de la sesión anterior
 - `90d6f11` — fix(culqi): remove total_amount and use orderId as legacy_id in Culqi order insert
 - `77cafd8` — fix(culqi): use legacyId for customer history and add paid/pending status labels
 - `bdeba34` — fix(culqi): handle order_items error gracefully and fix legacy_id display and pending status label
