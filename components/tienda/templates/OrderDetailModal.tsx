@@ -305,7 +305,7 @@ export default function OrderDetailModal({
         <div className="absolute top-0 left-0 right-0 flex justify-center pt-3 z-[500] pointer-events-none">
           <div className="bg-[#1a1a1a]/90 backdrop-blur-sm text-white px-6 py-2.5 rounded-lg shadow-lg pointer-events-auto text-center" style={{ minWidth: '260px' }}>
             <p className="text-[11px] font-medium tracking-wide opacity-80">Pedido en Curso</p>
-            <p className="font-mono font-bold text-[13px] tracking-wider mt-0.5">{order.id}</p>
+            <p className="font-mono font-bold text-[13px] tracking-wider mt-0.5">{(order.legacy_id || order.id).split('-')[0].toUpperCase()}</p>
           </div>
         </div>
 
