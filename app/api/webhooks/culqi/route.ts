@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
         const { data: existingOrder, error: orderFetchError } = await supabase
             .from('orders')
-            .select('id, status, total_amount, total, store_id')
+            .select('id, status, total, store_id')
             .eq('id', order_id)
             .eq('store_id', store_id)
             .single()
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         // ===================================================================
         // PASO 4: Validación de Monto (Anti-Tampering)
         // ===================================================================
-        const expectedAmountCents = Math.round(parseFloat(existingOrder.total_amount ?? existingOrder.total ?? 0) * 100)
+        const expectedAmountCents = Math.round(parseFloat(existingOrder.total ?? 0) * 100)
         const actualAmountCents = culqiCharge.amount
 
         if (actualAmountCents < expectedAmountCents) {
