@@ -90,14 +90,20 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
     import('@/lib/supabase').then(({ supabase }) => {
       supabase
         .from('orders')
-        .select('id, status')
+        .select('id, legacy_id, status')
         .in('id', ids)
         .then(({ data }) => {
           if (!data) return
           data.forEach(row => {
             const local = storeOrders.find(o => o.id === row.id)
-            if (local && local.status !== row.status) {
-              customerStore.updateOrderStatus(row.id, row.status as Order['status'])
+            if (local) {
+              const needsUpdate = local.status !== row.status || local.legacy_id !== row.legacy_id;
+              if (needsUpdate) {
+                customerStore.updateOrderMetadata(row.id, { 
+                  status: row.status as Order['status'],
+                  legacy_id: row.legacy_id || undefined
+                })
+              }
             }
           })
         })
@@ -166,7 +172,7 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                            <span className="text-[11px] bg-neutral-100 px-2 py-0.5 rounded text-neutral-500 font-medium">
                                {new Date(order.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                            </span>
-                           <span className="text-[13px] font-mono font-bold text-[#222]">{order.id}</span>
+                           <span className="text-[13px] font-mono font-bold text-[#222]">{(order.legacy_id || order.id).split('-')[0].toUpperCase()}</span>
                        </div>
                     </div>
 

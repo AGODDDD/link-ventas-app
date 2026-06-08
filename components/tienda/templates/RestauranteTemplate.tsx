@@ -45,13 +45,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
 
   useEffect(() => {
     setMounted(true)
-    // Saneamiento: Limpiar pedidos UUID (huérfanos de pruebas fallidas)
-    if (customerStore.orders.some(o => o.id.length > 20)) {
-        console.log('🧹 Limpiando historial de pruebas (UUIDs)...')
-        const cleanOrders = customerStore.orders.filter(o => o.id.length <= 20)
-        useCustomerStore.setState({ orders: cleanOrders })
-    }
-  }, [customerStore.orders])
+  }, [])
 
   // Agrupar platos por categoría (Priorizando Extensiones)
   const categorias = useMemo(() => {

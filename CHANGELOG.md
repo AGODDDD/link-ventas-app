@@ -93,6 +93,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
 ### Commits de esta sesión
+- `fix(tracking): persist new orders by removing eager local state cleanup and syncing legacy_id` — Resuelto el bug donde el historial de clientes no mostraba nuevos pedidos. Se eliminó el "Saneamiento" en `RestauranteTemplate` y `DashboardPage` que borraba pedidos con UUID al vuelo. `OrderHistoryPanel` ahora solicita el `legacy_id` al hacer polling a Supabase y lo inyecta en el store, renderizando visualmente la orden como `BARR-XXX` para el cliente final.
 - `fix(orders): correct legacy_id assignment and fix RLS for customer tracking` — Corregido un fallo de asignación donde la pasarela Culqi sobrescribía el `legacy_id` por un UUID en las compras de restaurantes. Desplegada política RLS en tabla `orders` para permitir lectura pública vía UUID (anónimo) garantizando que el dashboard de tracking del cliente pueda sincronizar estados en tiempo real sin ser bloqueado.
 - `fix(tracking): migrate customer-facing order tracking from delivery_orders to orders table` — Sincronizado el historial de clientes y mapa en tiempo real (`OrderHistoryPanel` y `OrderDetailModal`) para que apunten a la tabla unificada `orders`. Unificado el guardado de IDs a UUID (`coreOrderId`) en el checkout de restaurantes.
 - `fix(dashboard): use legacy_id for visual order shortcode to fix UUID overflow` — Resuelto el problema del dashboard mostrando UUIDs completos; ahora usa `legacy_id` con fallback al UUID recortado.
