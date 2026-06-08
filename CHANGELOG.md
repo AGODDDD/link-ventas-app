@@ -84,9 +84,13 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - `components/dashboard/DashboardTopBar.tsx`: Corregidos 3 problemas reales — (1) sombra oscura fija en modo claro (`shadow-[0_1px_3px...] dark:shadow-[0_20px_40px...]`), (2) border del header hardcoded (`border-zinc-200 dark:border-[var(--dash-border)]`), (3) buscador y dropdown de notificaciones sin fondo adaptativo (`bg-zinc-50 dark:bg-[var(--dash-surface-2)]`, `bg-white dark:bg-[var(--dash-surface-2)]`).
   - `components/dashboard/ThemeToggle.tsx`: Corregido `hover:bg-neutral-800` fijo oscuro → `hover:bg-zinc-100 dark:hover:bg-zinc-800`.
   - **No modificado:** `components/DashboardSidebar.tsx` — ya usaba exclusivamente variables CSS `var(--dash-*)` que responden correctamente al tema. Sin regresión.
+- Pago/Culqi: Eliminada la columna fantasma `total_amount` de las rutas de API de Culqi (`webhooks/culqi` y `checkout/culqi`). Esto resuelve un HTTP 500 fatal donde el backend intentaba hacer un `.select('total_amount')` sobre la tabla `orders` (que solo tiene la columna `total`), causando que los pagos confirmados no lograran actualizar el estado de la orden a 'paid'.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
 ### Commits de esta sesión
+- `4f92bc6` — fix(culqi): remove total_amount from API routes select and calculations
+- `ff7b0e4` — chore: trigger deployment after hard reset
+- `8f46738` — revert: restore original order flow before today's changes
 - `fc800f2` — fix(dashboard): dark/light theme support in page.tsx via Tailwind dark: prefix
 - `6a3de83` — fix(dashboard): dark/light theme support in TopBar and ThemeToggle via Tailwind dark: prefix
 
