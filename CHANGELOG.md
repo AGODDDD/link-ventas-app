@@ -100,13 +100,23 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   2. **`legacy_id: coreOrderId`** (L289): Asignaba el UUID como `legacy_id`, haciéndolo redundante. Corregido a `legacy_id: orderId` para que almacene el código corto BARR-XXXX generado en L239.
   3. **`{ orderId: coreOrderId }`** (L304): El objeto `pendingCulqiRestaurantOrder` no incluía el `legacyId`, impidiendo que el callback de éxito tuviera acceso al código BARR-XXXX para el historial del cliente.
 
-### Cambios aplicados
+### Cambios aplicados (Fase 1 — handlePagar)
 - Eliminada línea `total_amount: total` del INSERT a `orders`.
 - Cambiado `legacy_id: coreOrderId` → `legacy_id: orderId` (BARR-XXXX).
 - Cambiado `{ orderId: coreOrderId }` → `{ orderId: coreOrderId, legacyId: orderId }`.
+
+### Cambios aplicados (Fase 2 — callback Culqi)
+- `delivery_orders` insert: Cambiado `id: orderId` (que contenía el UUID) → `id: pendingOrder?.legacyId || orderId` para que la tabla legacy reciba el BARR-XXXX.
+- `customerStore.addOrder`: Mismo cambio para que el historial local del cliente use BARR-XXXX.
+
+### Cambios aplicados (Dashboard pedidos/page.tsx)
+- Agregado `pending: 'Pendiente'` y `paid: 'Pagado'` a `DELIVERY_LABELS`.
+- Agregado `pending` (amarillo) y `paid` (verde) a `DELIVERY_COLORS`.
+- Cambiado `{order.id}` → `{(order.legacy_id || order.id).split('-')[0].toUpperCase()}` para mostrar BARR-XXXX en vez del UUID completo.
 - Verificación: `npx tsc --noEmit` sin errores.
 
 ### Commits de esta sesión
+- `ccf1053` — fix(culqi): use legacyId in callback delivery_orders and customer history, add pending/paid labels, show BARR-XXX in dashboard
 - `6af1b5b` — fix(culqi): remove phantom total_amount, fix legacy_id to BARR-XXX, pass legacyId to pending order
 
 ### Commits de la sesión anterior
