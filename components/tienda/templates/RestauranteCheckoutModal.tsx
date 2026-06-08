@@ -157,7 +157,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           // 3e. Zustand local history
           const customerStore = useCustomerStore.getState();
           customerStore.addOrder({
-            id: orderId,
+            id: pendingOrder?.legacyId || orderId,
             storeId: perfil.id,
             storeName: perfil.store_name || '',
             date: new Date().toISOString(),
@@ -303,7 +303,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           // Fallback silencioso: continuar abriendo Culqi de todos modos
         }
 
-        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId };
+        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId, legacyId: orderId };
         win.Culqi.publicKey = perfil.culqi_public_key;
         win.Culqi.settings({
           title: perfil.store_name?.substring(0, 50) || 'Tienda',
