@@ -86,9 +86,12 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - **No modificado:** `components/DashboardSidebar.tsx` — ya usaba exclusivamente variables CSS `var(--dash-*)` que responden correctamente al tema. Sin regresión.
 - Pago/Culqi: Eliminada la columna fantasma `total_amount` de las rutas de API de Culqi (`webhooks/culqi` y `checkout/culqi`). Esto resuelve un HTTP 500 fatal donde el backend intentaba hacer un `.select('total_amount')` sobre la tabla `orders` (que solo tiene la columna `total`), causando que los pagos confirmados no lograran actualizar el estado de la orden a 'paid'.
 - Checkout/Culqi: Eliminada la propiedad fantasma `total_amount` del payload inicial de Supabase en el bloque de Culqi del `RestauranteCheckoutModal.tsx`. Esto arregla la excepción silenciosa no controlada que crasheaba el cliente antes de llamar a `window.Culqi.open()`, provocando que el botón de pago pareciera "no hacer nada".
+- Dashboard/Pedidos: Ajustado el renderizado en la tabla para mostrar el `legacy_id` (BARR-XXX) en lugar del UUID completo en el historial de Delivery. Adicionalmente se agregó `"pending"` a los diccionarios `DELIVERY_LABELS` y `DELIVERY_COLORS` para que el estado se traduzca como "Pendiente" y adquiera el color de badge amarillo correspondiente, en lugar del texto crudo sin estilo.
+- Resiliencia (Checkout): Agregado un manejo seguro (grácil) en el registro de la sub-tabla `order_items` de Culqi. En caso de fallo (ej. formato en modifiers o IDs no-UUID), el error es interceptado en consola sin interrumpir el bloque principal, asegurando que `Culqi.open()` sí logre ejecutarse.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
 ### Commits de esta sesión
+- `bdeba34` — fix(culqi): handle order_items error gracefully and fix legacy_id display and pending status label
 - `7184490` — fix(culqi): remove total_amount from Culqi order insert in RestauranteCheckoutModal
 - `4f92bc6` — fix(culqi): remove total_amount from API routes select and calculations
 - `ff7b0e4` — chore: trigger deployment after hard reset
