@@ -107,7 +107,6 @@ export default function PedidosPage() {
     const DELIVERY_STATUSES = ['pendiente_pago', 'pendiente', 'en_preparacion', 'alistando', 'en_camino', 'completado']
     const DELIVERY_LABELS: Record<string, string> = {
         pendiente_pago: 'Pagar pedido',
-        pending: 'Pendiente',
         pendiente: 'Pendiente',
         en_preparacion: 'En preparación',
         alistando: 'Alistando',
@@ -116,7 +115,6 @@ export default function PedidosPage() {
     }
     const DELIVERY_COLORS: Record<string, string> = {
         pendiente_pago: 'bg-red-100 text-red-700 border-red-200',
-        pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
         pendiente: 'bg-yellow-100 text-yellow-700 border-yellow-200',
         en_preparacion: 'bg-blue-100 text-blue-700 border-blue-200',
         alistando: 'bg-indigo-100 text-indigo-700 border-indigo-200',
@@ -575,7 +573,7 @@ export default function PedidosPage() {
                                         <div className="bg-surface-container-low px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-outline-variant/5 gap-3">
                                             <div className="flex items-center gap-3 flex-wrap">
                                                 <span className="font-mono text-xs font-bold text-green-600 tracking-widest px-3 py-1 bg-green-50 rounded-md border border-green-200">
-                                                    {(order.legacy_id || order.id).split('-')[0].toUpperCase()}
+                                                    {order.id}
                                                 </span>
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${DELIVERY_COLORS[order.status] || 'bg-neutral-100 text-neutral-500'}`}>
                                                     {DELIVERY_LABELS[order.status] || order.status}

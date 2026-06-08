@@ -282,6 +282,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           delivery_fee: deliveryFee,
           subtotal,
           total,
+          total_amount: total,
           metodo_pago: 'culqi',
           payment_proof_url: 'CULQI_PENDING',
           estimated_time: '50 - 60 min',
@@ -298,10 +299,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
         }));
         const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
-        if (itemsError) {
-          console.error('Error items:', itemsError);
-          // Fallback silencioso: continuar abriendo Culqi de todos modos
-        }
+        if (itemsError) throw itemsError;
 
         win.pendingCulqiRestaurantOrder = { orderId: coreOrderId };
         win.Culqi.publicKey = perfil.culqi_public_key;
