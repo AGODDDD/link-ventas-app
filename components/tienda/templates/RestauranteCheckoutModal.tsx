@@ -282,11 +282,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           delivery_fee: deliveryFee,
           subtotal,
           total,
-          total_amount: total,
           metodo_pago: 'culqi',
           payment_proof_url: 'CULQI_PENDING',
           estimated_time: '50 - 60 min',
-          legacy_id: coreOrderId,
+          legacy_id: orderId,
         });
         if (coreOrderError) throw coreOrderError;
 
@@ -301,7 +300,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
         if (itemsError) throw itemsError;
 
-        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId };
+        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId, legacyId: orderId };
         win.Culqi.publicKey = perfil.culqi_public_key;
         win.Culqi.settings({
           title: perfil.store_name?.substring(0, 50) || 'Tienda',
