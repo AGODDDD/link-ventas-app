@@ -237,12 +237,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
      // Generate store prefix from store name (first 4 chars uppercase)
      const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
      const orderId = generateOrderId(prefix);
-     const coreOrderId = crypto.randomUUID();
 
      // Save order to persistent store
      const customerStore = useCustomerStore.getState();
      const newOrder: Order = {
-       id: coreOrderId,
+       id: orderId,
        storeId: perfil.id,
        storeName: perfil.store_name || '',
        date: new Date().toISOString(),
@@ -267,6 +266,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
           return;
         }
+        const coreOrderId = crypto.randomUUID();
         const { error: coreOrderError } = await supabase.from('orders').insert({
           id: coreOrderId,
           store_id: perfil.id,
@@ -282,10 +282,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           delivery_fee: deliveryFee,
           subtotal,
           total,
+          total_amount: total,
           metodo_pago: 'culqi',
           payment_proof_url: 'CULQI_PENDING',
           estimated_time: '50 - 60 min',
-          legacy_id: orderId,
+          legacy_id: coreOrderId,
         });
         if (coreOrderError) throw coreOrderError;
 
@@ -345,7 +346,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
         // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
         const { error: coreError } = await supabase.from('orders').insert({
-          id: coreOrderId, // UUID estricto
+          id: orderId, // Mismo ID para consistencia
           store_id: perfil.id,
           status: newOrder.status,
           order_type: 'delivery',
@@ -367,7 +368,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (!coreError) {
           // 3. Guardar items en tabla relacional (NUEVO CORE)
           const relationalItems = orderItems.map((item: any) => ({
-            order_id: coreOrderId,
+            order_id: orderId,
             product_id: item.id && item.id.length > 20 ? item.id : null, // Ahora sí tiene ID
             name: item.name,
             price: item.unitPrice, // Cambiado de .price (undefined) a .unitPrice
@@ -460,6 +461,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   return (
     <>
+    <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
     <div className="fixed inset-0 z-[120] bg-neutral-100/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 overflow-y-auto">
       <div className="bg-[#F8F9FA] w-full max-w-5xl rounded-xl shadow-2xl relative my-auto animate-in fade-in zoom-in-95 duration-200">
         

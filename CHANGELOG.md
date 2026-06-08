@@ -8,17 +8,11 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## [2026-06-07] — Sesión 8
 ### Pulido Final Pixel-Perfect (Flat Design)
 - `components/dashboard/DashboardTopBar.tsx`: Eliminada sombra excesiva (`shadow-[0_20px_40px_rgba(0,0,0,0.4)]`) del header superior. Reemplazada por un borde sutil (`border-zinc-800`), logrando el aspecto Flat Premium e integrado de Stitch. Ancho ajustado a `w-[calc(100%-14rem)]` (`w-56`).
-- `app/api/webhooks/culqi/route.ts` y `app/api/checkout/culqi/route.ts`: Eliminadas referencias residuales a la columna `total_amount` en operaciones SQL (`.select`) y validaciones matemáticas, lo que solucionaba el bug "Orden no encontrada en DB" y devolvía 400.
-- `app/tienda/[id]/layout.tsx` (NUEVO): Se movió la inyección de `checkout.culqi.com/js/v4` a este layout global asegurando la inicialización estable de `window.Culqi` a nivel de raíz y evitando que bloqueadores o problemas del ciclo de vida de React (ej. en modales) frustraran la apertura del pop-up. Eliminado de `page.tsx` y `RestauranteCheckoutModal.tsx`.
 - `components/DashboardSidebar.tsx`:
   - Ancho global del sidebar reducido de `w-64` a `w-56` para ajustar proporciones según el diseño.
   - Mejorado contraste de los textos de navegación reemplazando variables CSS por utilidades explícitas (`text-zinc-900` / `dark:text-white`) para soportar correctamente modo claro y oscuro simultáneamente.
   - Reducido margen superior del perfil de usuario (`mt-6 pt-6` → `mt-4 pt-4`) para cohesión jerárquica con el menú.
 - `app/dashboard/layout.tsx`: Actualizado el margen izquierdo principal de `md:ml-64` a `md:ml-56`.
-- `app/tienda/[id]/checkout/page.tsx`: Corregido error 400 Bad Request en la inserción de nuevas órdenes y items. Se alinearon las columnas del payload con el nuevo esquema Core de Supabase (eliminando `merchant_id`, renombrando `customer_address`/`total_amount`, y asegurando el envío obligatorio de `order_type` y `name`).
-- `components/tienda/templates/RestauranteCheckoutModal.tsx`:
-  - Corregido error de tipo UUID en inserciones del nuevo Core (`orders`). Se implementó generación explícita de `crypto.randomUUID()` para el nuevo esquema, moviendo el string legacy (`BARR-XXX`) a la columna `legacy_id` para trazabilidad completa en la doble escritura.
-  - Eliminado el campo fantasma `total_amount` del flujo de Culqi, el cual causaba el error HTTP 400 (que se mostraba engañosamente como "No API key found in request" en los logs de error de Supabase debido al fallo de schema en PostgREST).
 - Verificación: `npx tsc --noEmit` sin errores.
 - Commit: (Se adjuntará)
 
@@ -93,14 +87,6 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
 ### Commits de esta sesión
-- `fix(tracking): show legacy_id in order modal and enable Realtime for orders table` — Modificado el modal del pedido para pintar el `legacy_id` (código corto) en lugar del UUID completo en el título. Activada la tabla `orders` en la publicación `supabase_realtime` para que los clientes puedan recibir los estados de preparación o "en camino" de su pedido de manera instantánea.
-- `fix(tracking): persist new orders by removing eager local state cleanup and syncing legacy_id` — Resuelto el bug donde el historial de clientes no mostraba nuevos pedidos. Se eliminó el "Saneamiento" en `RestauranteTemplate` y `DashboardPage` que borraba pedidos con UUID al vuelo. `OrderHistoryPanel` ahora solicita el `legacy_id` al hacer polling a Supabase y lo inyecta en el store, renderizando visualmente la orden como `BARR-XXX` para el cliente final.
-- `fix(orders): correct legacy_id assignment and fix RLS for customer tracking` — Corregido un fallo de asignación donde la pasarela Culqi sobrescribía el `legacy_id` por un UUID en las compras de restaurantes. Desplegada política RLS en tabla `orders` para permitir lectura pública vía UUID (anónimo) garantizando que el dashboard de tracking del cliente pueda sincronizar estados en tiempo real sin ser bloqueado.
-- `fix(tracking): migrate customer-facing order tracking from delivery_orders to orders table` — Sincronizado el historial de clientes y mapa en tiempo real (`OrderHistoryPanel` y `OrderDetailModal`) para que apunten a la tabla unificada `orders`. Unificado el guardado de IDs a UUID (`coreOrderId`) en el checkout de restaurantes.
-- `fix(dashboard): use legacy_id for visual order shortcode to fix UUID overflow` — Resuelto el problema del dashboard mostrando UUIDs completos; ahora usa `legacy_id` con fallback al UUID recortado.
-- `fix(culqi): remove phantom total_amount from API routes and move Culqi script to tienda layout` — Purgado `total_amount` de llamadas a BD y centralizado SDK de Culqi para evitar condiciones de carrera.
-- `fix(checkout): remove phantom total_amount field from Culqi insert in RestauranteCheckoutModal` — Corregido insert doble por esquema obsoleto.
-- `fix(checkout): use crypto.randomUUID() for core orders in RestauranteCheckoutModal` — Corregido fallo de inserción de UUID en la pasarela Culqi para restaurantes.
 - `fc800f2` — fix(dashboard): dark/light theme support in page.tsx via Tailwind dark: prefix
 - `6a3de83` — fix(dashboard): dark/light theme support in TopBar and ThemeToggle via Tailwind dark: prefix
 

@@ -13,7 +13,6 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  legacy_id?: string;
   storeId: string;
   storeName: string;
   date: string; // ISO string
@@ -54,7 +53,6 @@ interface CustomerStore {
   orders: Order[];
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
-  updateOrderMetadata: (orderId: string, metadata: Partial<Order>) => void;
   removeOrder: (orderId: string) => void;
   getOrdersByStore: (storeId: string) => Order[];
 }
@@ -79,9 +77,6 @@ export const useCustomerStore = create<CustomerStore>()(
       })),
       updateOrderStatus: (orderId, status) => set((state) => ({
         orders: state.orders.map(o => o.id === orderId ? { ...o, status } : o)
-      })),
-      updateOrderMetadata: (orderId, metadata) => set((state) => ({
-        orders: state.orders.map(o => o.id === orderId ? { ...o, ...metadata } : o)
       })),
       removeOrder: (orderId) => set((state) => ({
         orders: state.orders.filter(o => o.id !== orderId)

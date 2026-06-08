@@ -21,7 +21,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - **Pendiente:** Migrar las páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix para unificar visualmente toda la experiencia.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
-  - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): **[Completada y Estable]** Funciona sin errores. Se inyecta correctamente el payload en ambas tablas: la base antigua recibe su texto (`BARR-XXX`) mientras que el Core unificado usa llaves `UUID` y guarda el rastro cruzado en la columna `legacy_id`.
+  - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): Garantiza compatibilidad hacia atrás y adopción del nuevo esquema simultáneamente.
   - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras en INSERT/UPDATE de pedidos. Canal `delivery_orders` activo en producción.
   - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard.
   - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime + polling cada 8s, con integración opcional a OpenRouteService para rutas reales.
@@ -37,7 +37,6 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Resueltos Recientemente
-- **Checkout Payload Alignment & UUIDs:** Resuelto. Corregido un error HTTP 400 durante la creación de órdenes. El payload del frontend (`app/tienda/[id]/checkout/page.tsx`) fue ajustado al esquema de base de datos Core. Adicionalmente, en `RestauranteCheckoutModal.tsx`, se corrigió la inyección de llaves, implementando un generador `UUID` estricto para la tabla Core y delegando el viejo formato `BARR-XXX` a `legacy_id`.
 - **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
 
