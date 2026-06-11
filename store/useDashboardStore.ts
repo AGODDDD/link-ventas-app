@@ -144,7 +144,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         // 2. Agregar órdenes de delivery normalizadas (LEGACY)
         if (deliveryRes.data) {
-            const normalizedDelivery = deliveryRes.data.map(d => ({
+            const normalizedDelivery = deliveryRes.data
+                .filter(d => !(d.status === 'pendiente_pago' && d.metodo_pago === 'culqi'))
+                .map(d => ({
                 id: d.id,
                 created_at: d.created_at,
                 customer_name: d.customer_name || 'Sin nombre',
@@ -164,7 +166,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         // 3. Agregar órdenes del NUEVO CORE (Unificadas)
         if (unifiedRes.data) {
-            const coreOrders = unifiedRes.data.map(o => ({
+            const coreOrders = unifiedRes.data
+                .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'culqi' || o.metodo_pago === 'tarjeta_culqi')))
+                .map(o => ({
                 id: o.id,
                 legacy_id: o.legacy_id,
                 created_at: o.created_at,
