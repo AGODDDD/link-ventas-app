@@ -270,7 +270,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         const { error: coreOrderError } = await supabase.from('orders').insert({
           id: coreOrderId,
           store_id: perfil.id,
-          status: 'pending',
+          status: 'pendiente_pago',
           order_type: 'delivery',
           customer_name: nombre,
           customer_phone: telefono,

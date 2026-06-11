@@ -104,9 +104,10 @@ export default function PedidosPage() {
         setLoading(false)
     }
 
-    const DELIVERY_STATUSES = ['pendiente_pago', 'pendiente', 'en_preparacion', 'alistando', 'en_camino', 'completado']
+    const DELIVERY_STATUSES = ['pendiente_pago', 'pendiente_verificacion', 'pendiente', 'en_preparacion', 'alistando', 'en_camino', 'completado']
     const DELIVERY_LABELS: Record<string, string> = {
-        pendiente_pago: 'Pagar pedido',
+        pendiente_pago: 'Pendiente de Pago',
+        pendiente_verificacion: 'Verificando Pago',
         pending: 'Pendiente',
         paid: 'Pagado',
         pendiente: 'Pendiente',
@@ -117,6 +118,7 @@ export default function PedidosPage() {
     }
     const DELIVERY_COLORS: Record<string, string> = {
         pendiente_pago: 'bg-red-100 text-red-700 border-red-200',
+        pendiente_verificacion: 'bg-orange-100 text-orange-700 border-orange-200',
         pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
         paid: 'bg-green-100 text-green-700 border-green-200',
         pendiente: 'bg-yellow-100 text-yellow-700 border-yellow-200',

@@ -40,6 +40,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Identidad del Merchant (Alta Severidad):** Se unificó la nomenclatura en el frontend para referirse consistentemente a `store_id` al hacer consultas a la tabla `orders` (eliminando `merchant_id` de stores, rutas y analíticas).
 - **FK de delivery_orders (Alta Severidad):** Se corrigió la migración local `migrations/delivery_orders.sql` para apuntar a `stores(id)` en vez de `profiles(id)`.
 - **Desacoplamiento de doctor.ts (Alta Severidad):** Se eliminó el script manual `doctor.ts` y `seguridad_supabase.sql`. Se configuró el Supabase CLI y se consolidó el esquema en la carpeta estandarizada `supabase/migrations/*`.
+- **Refactor de Estados de Pago:** Se eliminó el hardcodeo de `status: 'pending'`. Ahora los pagos manuales por transferencia nacen en estado `pendiente_verificacion` y los pagos por Culqi nacen en `pendiente_pago` respetando la Idempotencia Zero-Trust de Webhooks. Se actualizó el Dashboard para soportarlo con etiquetas y colores amigables.
 - **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
 
@@ -50,11 +51,9 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 ## Deuda Técnica Detectada
 - **Manejo de Base de Datos (Impacto: ALTO):** El uso de sentencias sueltas `ALTER TABLE IF EXISTS` sin un ORM (como Prisma/Drizzle) limita la trazabilidad y la seguridad en despliegues.
 - **Estilos CSS Inline (Impacto: MEDIO):** Componentes grandes (ej: `app/pendiente/page.tsx`, `app/page.tsx`) combinan Tailwind con objetos `style={{...}}` masivos.
-- **Manejo de Estado de Transacciones (Impacto: ALTO):** Hardcodeos en el flujo de caja del lado del cliente (`status: 'pending' // TODO ESTO NACE COMO PENDING`).
 
 ## Prioridades Sugeridas
-1. **Refactor del Checkout:** Limpiar los TODOs y asegurar que los estados de pago se manejan con firmeza de origen a fin.
-2. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
+1. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
 
 ---
 ## Campos que requieren verificación manual
