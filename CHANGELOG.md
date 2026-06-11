@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-11] — Sesión 10
+### Resolución de Bugs Críticos (Alta Severidad)
+- **Checkout Estándar:** Corregido un fallo crítico de columnas fantasma. Se extirpó la inyección de `merchant_id` y `total_amount` en el payload de Supabase dentro de `app/tienda/[id]/checkout/page.tsx`, los cuales provocaban un error Postgres silencioso (PGRST204) impidiendo la generación de órdenes.
+- **Identidad del Merchant:** Unificada toda la nomenclatura de estado en el frontend. Se reemplazó el uso obsoleto de `.eq('merchant_id', userId)` por `.eq('store_id', userId)` en `store/useDashboardStore.ts`, `app/dashboard/analytics/page.tsx`, y `app/api/pedidos/ticket/route.ts` para garantizar coherencia con el esquema verificado en producción y proteger el RLS.
+- **Base de Datos (Delivery FK):** Modificada la migración legacy `migrations/delivery_orders.sql` para referenciar formalmente a `stores(id)` con `ON DELETE CASCADE`, corrigiendo el riesgo de borrado en cascada desde `profiles`.
+- **Desacoplamiento y Migraciones Seguras:** Eliminado para siempre el script acoplado `scripts/doctor.ts` y `seguridad_supabase.sql`. Se ha inaugurado formalmente el **Supabase CLI** (`npx supabase init`) consolidando todos los schemas bajo el directorio estándar `supabase/migrations/*` con timestamps ordenados.
+- Verificación: `npx tsc --noEmit` y `npm run build` finalizaron sin errores post-desacoplamiento.
+- Commit: (Se adjuntará)
+
+---
+
 ## [2026-06-11] — Sesión 9
 ### Unificación Visual (Modo Oscuro Dashboard Fase 2)
 - Dashboard: Migradas las 5 páginas internas (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix de Tailwind.

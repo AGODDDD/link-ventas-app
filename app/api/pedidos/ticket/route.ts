@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
                 headers: { 'content-type': 'application/json' }
             })
         }
-        const ownerId = order.store_id || order.merchant_id
+        const ownerId = order.store_id
         if (ownerId !== user.id) {
             return new Response(JSON.stringify({ error: 'No autorizado para este pedido' }), {
                 status: 403,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
         }
         
         // Obtener perfil del comercio
-        const storeId = order.store_id || order.merchant_id
+        const storeId = order.store_id
         let storeName = "TU TIENDA"
         if (storeId) {
             const supabase = getSupabaseServiceClient()

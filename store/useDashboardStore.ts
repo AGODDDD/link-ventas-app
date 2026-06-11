@@ -113,7 +113,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             supabase
                 .from('orders')
                 .select(`*, order_items (*, products (name))`)
-                .eq('merchant_id', userId)
+                .eq('store_id', userId)
                 .order('created_at', { ascending: false })
                 .limit(300),
             // Viejo Legacy: delivery_orders

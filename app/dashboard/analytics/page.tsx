@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
 
             const [ordersRes, deliveryRes, coreRes, leadsRes, profileRes] = await Promise.all([
                 // Legacy Standard
-                supabase.from('orders').select('*').eq('merchant_id', user.id).order('created_at', { ascending: true }),
+                supabase.from('orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
                 // Legacy Delivery
                 supabase.from('delivery_orders').select('*').eq('store_id', user.id).order('created_at', { ascending: true }),
                 // New Core (Unified)

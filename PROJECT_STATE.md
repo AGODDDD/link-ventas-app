@@ -37,13 +37,15 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Resueltos Recientemente
+- **Checkout roto por columnas fantasma (Alta Severidad):** Se eliminó el uso de `merchant_id` y `total_amount` en el checkout estándar (`app/tienda/[id]/checkout/page.tsx`), lo cual causaba errores silenciosos y rompía el flujo de pago.
+- **Identidad del Merchant (Alta Severidad):** Se unificó la nomenclatura en el frontend para referirse consistentemente a `store_id` al hacer consultas a la tabla `orders` (eliminando `merchant_id` de stores, rutas y analíticas).
+- **FK de delivery_orders (Alta Severidad):** Se corrigió la migración local `migrations/delivery_orders.sql` para apuntar a `stores(id)` en vez de `profiles(id)`.
+- **Desacoplamiento de doctor.ts (Alta Severidad):** Se eliminó el script manual `doctor.ts` y `seguridad_supabase.sql`. Se configuró el Supabase CLI y se consolidó el esquema en la carpeta estandarizada `supabase/migrations/*`.
 - **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
 
 ## Bugs Potenciales Detectados
-- **Severidad Alta:** Inconsistencia estructural en la nomenclatura de identidad del merchant. El código mezcla `user_id`, `store_id` y `merchant_id` para referirse al mismo UUID de cuenta, y crea registros "on-the-fly" en lugar de durante el registro, lo cual puede producir queries huérfanas o errores de RLS.
-- **Severidad Alta:** FK incorrecta en `delivery_orders.store_id` — apunta a `profiles(id)` con `ON DELETE CASCADE` en lugar de `stores(id)`. Si se depreca `profiles`, se eliminarían en cascada todos los registros históricos de delivery. (Verificado en `migrations/delivery_orders.sql` línea 8).
-- **Severidad Alta:** El acoplamiento de la base de datos a `scripts/doctor.ts` puede causar fallos de runtime si se hace deploy de frontend sin antes ejecutar el script de BD.
+
 - **Severidad Media:** `template_type` inconsistente entre la BD y el código. La migración `002_core_schema.sql` define el CHECK como `('restaurante', 'comercio', 'moda')` pero el código y el modelo de negocio confirmado usan `'food'` en lugar de `'restaurante'`. Inserciones con `'food'` fallarán si ese CHECK está activo.
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.

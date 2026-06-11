@@ -207,12 +207,10 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 const orderId = crypto.randomUUID()
                 const { error: orderError } = await supabase.from('orders').insert({
                     id: orderId,
-                    merchant_id: perfil.id,
                     store_id: perfil.id,
                     customer_name: nombre,
                     customer_phone: telefono,
                     customer_address: direccion,
-                    total_amount: total,
                     total,
                     status: 'pending',
                     payment_proof_url: 'CULQI_PENDING',
@@ -271,12 +269,10 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             const orderPayload = {
                 id: orderId,
-                merchant_id: perfil.id,
                 store_id: perfil.id,
                 customer_name: nombre,
                 customer_phone: telefono,
                 customer_address: direccion,
-                total_amount: total,
                 total: total,
                 status: 'pending', // TODO ESTO NACE COMO PENDING HASTA VERIFICAR
             }

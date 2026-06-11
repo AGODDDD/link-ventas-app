@@ -5,7 +5,7 @@
 
 CREATE TABLE IF NOT EXISTS delivery_orders (
   id TEXT PRIMARY KEY,                          -- e.g. "BARR-100426-3847"
-  store_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
   
   -- Status timeline (6 pasos)
   status TEXT NOT NULL DEFAULT 'pendiente_pago'
