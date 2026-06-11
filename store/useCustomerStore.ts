@@ -89,10 +89,10 @@ export const useCustomerStore = create<CustomerStore>()(
   )
 )
 
-// Helper to generate order IDs like PRIM-SB-100426-0008
-export function generateOrderId(storePrefix: string): string {
+// Helper to format order IDs like PRIM-110626-0008
+export function formatOrderId(storePrefix: string, seq: number): string {
   const now = new Date()
   const dateStr = `${(now.getDate()).toString().padStart(2, '0')}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getFullYear().toString().slice(-2)}`
-  const seq = Math.floor(Math.random() * 9999).toString().padStart(4, '0')
-  return `${storePrefix}-${dateStr}-${seq}`
+  const seqStr = seq.toString().padStart(4, '0')
+  return `${storePrefix}-${dateStr}-${seqStr}`
 }

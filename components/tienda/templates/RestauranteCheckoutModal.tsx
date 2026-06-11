@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Profile } from '@/types/tienda'
 import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
-import { useCustomerStore, generateOrderId, Order, OrderItem } from '@/store/useCustomerStore'
+import { useCustomerStore, formatOrderId, Order, OrderItem } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
@@ -234,9 +234,14 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        };
      });
 
-     // Generate store prefix from store name (first 4 chars uppercase)
-     const prefix = (perfil.store_name || 'LINK').replace(/\s+/g, '').slice(0, 4).toUpperCase();
-     const orderId = generateOrderId(prefix);
+     // ── Generar ID Secuencial ──
+     const prefix = (perfil.store_name || '').substring(0, 4).toUpperCase();
+     const seqRes = await supabase.rpc('get_next_order_sequence', { p_store_id: perfil.id });
+     if (seqRes.error) {
+         console.error("Error generating sequence:", seqRes.error);
+         throw new Error("No se pudo generar el correlativo del pedido.");
+     }
+     const orderId = formatOrderId(prefix, seqRes.data || 1);
 
      // Save order to persistent store
      const customerStore = useCustomerStore.getState();

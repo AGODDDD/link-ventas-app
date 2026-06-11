@@ -6,11 +6,13 @@ import { supabase } from '@/lib/supabase'
 import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
-import { ArrowLeft, Upload, CheckCircle2, User, Phone, MapPin, QrCode, Wallet, ShoppingBag, ShieldCheck, Store } from 'lucide-react'
+import { ShoppingBag, ArrowLeft, Upload, MapPin, Store, CreditCard, Wallet, QrCode, CheckCircle2, User, Phone, ShieldCheck } from 'lucide-react'
+import { formatOrderId } from '@/store/useCustomerStore'
 import { toast } from 'sonner'
 import Script from 'next/script'
 
 type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_culqi'
+type OrderStatus = 'pendiente' | 'pendiente_verificacion' | 'pagado' | 'cancelado'
 
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise)
@@ -67,7 +69,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 
                 try {
                     const orderData = win.pendingCulqiOrderData;
-                    const orderId = orderData?.orderId;
+                    const orderId = orderData?.coreOrderId;
                     if (!orderData?.perfil || !orderId) throw new Error('Orden de pago no inicializada.');
                     const currentCart = useCartStore.getState().carts[storeId] || [];
 
@@ -106,7 +108,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     
                     // Limpiar carrito y mostrar éxito
                     useCartStore.getState().clearCart(storeId);
-                    setOrderSuccessId(orderId);
+                    setOrderSuccessId(orderData.orderId);
                 } catch (err) {
                     toast.dismiss('culqi-charge');
                     toast.error('Ocurrió un error en la red al procesar el pago.');
@@ -196,6 +198,15 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         try {
             if (!perfil) throw new Error('Cargando datos de tienda... por favor intente de nuevo en un segundo')
 
+            // ── Generate Sequence ID ──
+            const prefix = (perfil.store_name || '').substring(0, 4).toUpperCase();
+            const seqRes = await supabase.rpc('get_next_order_sequence', { p_store_id: perfil.id });
+            if (seqRes.error) {
+                console.error("Error generating sequence:", seqRes.error);
+                throw new Error("No se pudo generar el correlativo del pedido.");
+            }
+            const legacyId = formatOrderId(prefix, seqRes.data || 1);
+
             // ── Si es Culqi, SOLO abrimos el modal. Nada de BD hasta confirmar pago. ──
             if (metodoPago === 'tarjeta_culqi') {
                 const win = window as any;
@@ -207,6 +218,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 const orderId = crypto.randomUUID()
                 const { error: orderError } = await supabase.from('orders').insert({
                     id: orderId,
+                    legacy_id: legacyId,
                     store_id: perfil.id,
                     customer_name: nombre,
                     customer_phone: telefono,
@@ -214,7 +226,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     total,
                     status: 'pendiente_pago',
                     order_type: 'standard',
-                    metodo_pago: 'culqi',
+                    metodo_pago: 'tarjeta_culqi',
                     payment_proof_url: 'CULQI_PENDING',
                 })
                 if (orderError) throw orderError
@@ -235,7 +247,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 if (itemsError) throw itemsError
 
                 win.pendingCulqiOrderData = {
-                    perfil, nombre, telefono, direccion, cart, total, leadId, orderId
+                    perfil, nombre, telefono, direccion, cart, total, leadId, orderId: legacyId, coreOrderId: orderId
                 };
                 win.Culqi.publicKey = perfil.culqi_public_key;
                 win.Culqi.settings({
@@ -268,9 +280,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             // 2. Crear Orden (solo para flujos NO-Culqi)
             const orderId = crypto.randomUUID()
-
             const orderPayload = {
                 id: orderId,
+                legacy_id: legacyId,
                 store_id: perfil.id,
                 customer_name: nombre,
                 customer_phone: telefono,
@@ -278,7 +290,8 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 total: total,
                 order_type: 'standard',
                 metodo_pago: metodoPago,
-                status: metodoPago === 'transferencia' ? 'pendiente_verificacion' : 'pendiente',
+                payment_proof_url: fileName || null,
+                status: (metodoPago === 'transferencia' ? 'pendiente_verificacion' : 'pendiente') as OrderStatus,
             }
             
             const proofMap: Record<string, string> = {

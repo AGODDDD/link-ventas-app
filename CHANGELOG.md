@@ -19,6 +19,13 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## [2026-06-11] — Sesión 9
 ### Unificación Visual (Modo Oscuro Dashboard Fase 2)
 - Dashboard: Migradas las 5 páginas internas (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix de Tailwind.
+### Modificado
+- [Frontend] Se unificó la lógica del Checkout Estándar y Checkout Rápido para soportar la generación atómica de IDs secuenciales de manera distribuida.
+- [Frontend] El Dashboard y el Historial de Clientes se alimentan ahora estrictamente de los IDs formateados en base a secuencias seguras.
+
+### Agregado
+- [Backend] Se implementó el sistema de correlativos (Order IDs secuenciales) seguros usando la migración `20260000000003_store_order_sequences.sql` con funciones de incremento atómico y reinicio diario por tienda.
+
 - Refactorización Masiva: Reemplazadas cientos de clases fijas o antiguas (`bg-surface-container`, `text-on-surface`, `bg-slate-900`, etc.) por sus equivalentes nativos de Tailwind (`bg-white dark:bg-zinc-900`, `text-zinc-900 dark:text-zinc-100`, etc.) asegurando que el modo oscuro aplique limpiamente en todo el ecosistema y unificándolo al estándar de diseño establecido en el layout (Stitch Design).
 - Verificación: `npx tsc --noEmit` y `npm run build` finalizaron sin errores.
 - Commit: (Se adjuntará)
