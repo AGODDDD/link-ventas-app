@@ -67,12 +67,12 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
 
   React.useEffect(() => setMounted(true), [])
 
-  // ── 1. Auto-expirar pendiente_pago > 24h al abrir ──
+  // ── 1. Auto-expirar pendiente_pago o pendiente (whatsapp) > 24h al abrir ──
   React.useEffect(() => {
     if (!isOpen || !mounted) return
     const now = Date.now()
     customerStore.orders
-      .filter(o => o.storeId === storeId && o.status === 'pendiente_pago')
+      .filter(o => o.storeId === storeId && (o.status === 'pendiente_pago' || (o.status === 'pendiente' && o.metodoPago === 'whatsapp')))
       .forEach(o => {
         const age = now - new Date(o.date).getTime()
         if (age > EXPIRE_MS) {
@@ -106,10 +106,11 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
 
   const orders = mounted ? customerStore.orders.filter(o => o.storeId === storeId) : []
 
-  // ── Descartar manualmente (solo pendiente_pago y cancelado) ──
+  // ── Descartar manualmente ──
   const handleDismiss = (order: Order) => {
-    const msg = order.status === 'pendiente_pago'
-      ? '¿Eliminar este pedido de tu historial? (Si ya pagaste por WhatsApp, el vendedor lo procesará igualmente)'
+    const isWspPendiente = order.status === 'pendiente' && order.metodoPago === 'whatsapp'
+    const msg = (order.status === 'pendiente_pago' || isWspPendiente)
+      ? '¿Eliminar este pedido de tu historial? (Si ya coordinaste por WhatsApp, el vendedor lo procesará igualmente)'
       : '¿Eliminar este pedido cancelado de tu historial?'
     if (window.confirm(msg)) removeOrder(order.id)
   }
@@ -146,7 +147,8 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
               orders.map(order => {
                 const isCancelado  = order.status === 'cancelado'
                 const isPendPago   = order.status === 'pendiente_pago'
-                const isDismissible = isPendPago || isCancelado
+                const isWspPendiente = order.status === 'pendiente' && order.metodoPago === 'whatsapp'
+                const isDismissible = isPendPago || isCancelado || isWspPendiente
                 const orderAge     = Date.now() - new Date(order.date).getTime()
                 const horasRestantes = Math.max(0, Math.ceil((EXPIRE_MS - orderAge) / 3600000))
 
@@ -177,8 +179,8 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                       </span>
 
                       <div className="flex items-center gap-2">
-                        {/* Botón Pagar → WhatsApp */}
-                        {isPendPago && whatsappPhone && (
+                        {/* Botón Pagar/Coordinar → WhatsApp */}
+                        {(isPendPago || isWspPendiente) && whatsappPhone && (
                           <a
                             href={buildWhatsappUrl(order, whatsappPhone)}
                             target="_blank"
@@ -186,7 +188,7 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                             className="flex items-center gap-1.5 bg-[#25D366] text-white text-xs font-bold px-3 py-1.5 rounded-full hover:bg-[#1ebe5d] active:scale-[0.97] transition-all shadow-sm"
                           >
                             <MessageCircle size={13} />
-                            Pagar
+                            {isPendPago ? 'Pagar' : 'Coordinar'}
                           </a>
                         )}
 
@@ -204,14 +206,14 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                     </div>
 
                     {/* Aviso de expiración automática */}
-                    {isPendPago && horasRestantes <= 24 && (
+                    {(isPendPago || isWspPendiente) && horasRestantes <= 24 && (
                       <p className="text-[10px] text-neutral-400 leading-tight">
-                        ⏱ Se eliminará automáticamente en {horasRestantes}h si no se procesa el pago
+                        ⏱ Se eliminará automáticamente en {horasRestantes}h si no se procesa
                       </p>
                     )}
 
                     {/* Ver detalles */}
-                    {!isCancelado && !isPendPago && (
+                    {!isCancelado && !isPendPago && !isWspPendiente && (
                       <button
                         onClick={() => setSelectedOrder(order)}
                         className="flex items-center justify-center gap-1 text-sm text-[#555] hover:text-[#111] font-medium transition-colors w-full py-1"
@@ -220,7 +222,7 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
                         <ChevronRight size={14} />
                       </button>
                     )}
-                    {isPendPago && (
+                    {(isPendPago || isWspPendiente) && (
                       <button
                         onClick={() => setSelectedOrder(order)}
                         className="flex items-center justify-center gap-1 text-xs text-neutral-400 hover:text-[#111] transition-colors w-full py-0.5"
