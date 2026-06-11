@@ -133,38 +133,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         ]);
 
         let unifiedOrders: any[] = [];
+        const seenLegacyIds = new Set<string>();
 
-        // 1. Agregar órdenes estándar (LEGACY)
-        if (ordersRes.data) {
-            const legacyStandard = ordersRes.data
-                .filter(o => !o.store_id) // Solo las que no tienen store_id (viejas)
-                .map(o => ({ ...o, _source: 'legacy_standard' }));
-            unifiedOrders = [...unifiedOrders, ...legacyStandard];
-        }
-
-        // 2. Agregar órdenes de delivery normalizadas (LEGACY)
-        if (deliveryRes.data) {
-            const normalizedDelivery = deliveryRes.data
-                .filter(d => !(d.status === 'pendiente_pago' && d.metodo_pago === 'culqi'))
-                .map(d => ({
-                id: d.id,
-                created_at: d.created_at,
-                customer_name: d.customer_name || 'Sin nombre',
-                customer_phone: d.customer_phone || '-',
-                direccion: d.direccion || d.address || 'Sin dirección',
-                referencia: d.referencia || '',
-                total_amount: d.total ? d.total.toString() : '0',
-                subtotal: d.subtotal || 0,
-                delivery_fee: d.delivery_fee || 0,
-                status: d.status,
-                payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
-                order_items: d.items || [],
-                _source: 'legacy_delivery'
-            }));
-            unifiedOrders = [...unifiedOrders, ...normalizedDelivery];
-        }
-
-        // 3. Agregar órdenes del NUEVO CORE (Unificadas)
+        // 1. Agregar órdenes del NUEVO CORE (Unificadas) - Prioridad 1
         if (unifiedRes.data) {
             const coreOrders = unifiedRes.data
                 .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'culqi' || o.metodo_pago === 'tarjeta_culqi')))
@@ -184,7 +155,41 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 order_items: o.order_items || [],
                 _source: 'core'
             }));
-            unifiedOrders = [...unifiedOrders, ...coreOrders];
+            coreOrders.forEach(o => {
+                if (o.legacy_id) seenLegacyIds.add(o.legacy_id);
+                unifiedOrders.push(o);
+            });
+        }
+
+        // 2. Agregar órdenes de delivery normalizadas (LEGACY)
+        if (deliveryRes.data) {
+            const normalizedDelivery = deliveryRes.data
+                .filter(d => !(d.status === 'pendiente_pago' && d.metodo_pago === 'culqi'))
+                .filter(d => !seenLegacyIds.has(d.id)) // Deduplicar!
+                .map(d => ({
+                id: d.id,
+                created_at: d.created_at,
+                customer_name: d.customer_name || 'Sin nombre',
+                customer_phone: d.customer_phone || '-',
+                direccion: d.direccion || d.address || 'Sin dirección',
+                referencia: d.referencia || '',
+                total_amount: d.total ? d.total.toString() : '0',
+                subtotal: d.subtotal || 0,
+                delivery_fee: d.delivery_fee || 0,
+                status: d.status,
+                payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
+                order_items: d.items || [],
+                _source: 'legacy_delivery'
+            }));
+            unifiedOrders = [...unifiedOrders, ...normalizedDelivery];
+        }
+
+        // 3. Agregar órdenes estándar (LEGACY_STANDARD)
+        if (ordersRes.data) {
+            const legacyStandard = ordersRes.data
+                .filter(o => !o.store_id) // Solo las que no tienen store_id (viejas)
+                .map(o => ({ ...o, _source: 'legacy_standard' }));
+            unifiedOrders = [...unifiedOrders, ...legacyStandard];
         }
 
         // 3. Re-ordenar por fecha de creación descendente

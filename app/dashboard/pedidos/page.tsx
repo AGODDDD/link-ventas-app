@@ -132,7 +132,9 @@ export default function PedidosPage() {
     const avanzarEstadoDelivery = async (order: any) => {
         const orderId = order.id
         const currentStatus = order.status
-        const currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
+        let currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
+        if (currentStatus === 'paid') currentIdx = 2; // Paid is visually equal to pendiente
+
         if (currentIdx < 0 || currentIdx >= DELIVERY_STATUSES.length - 1) return
         const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
         
@@ -568,7 +570,7 @@ export default function PedidosPage() {
                         ) : (
                             <>
                                 {paginatedDelivery.map(order => {
-                                const statusIdx = DELIVERY_STATUSES.indexOf(order.status)
+                                const statusIdx = order.status === 'paid' ? 2 : DELIVERY_STATUSES.indexOf(order.status)
                                 const isCompleted = order.status === 'completado'
                                 const items = order.order_items || []
 
