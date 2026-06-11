@@ -150,6 +150,12 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
                     async (payload) => {
                         const nuevaOrden = payload.new
+                        
+                        // Ignorar notificaciones de Culqi cuando nacen en pendiente_pago
+                        if (nuevaOrden.status === 'pendiente_pago' && (nuevaOrden.metodo_pago === 'culqi' || nuevaOrden.metodo_pago === 'tarjeta_culqi' || nuevaOrden.payment_proof_url === 'CULQI_PENDING')) {
+                            return;
+                        }
+
                         toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
                             description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
                             duration: 8000,
@@ -185,8 +191,41 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 .on(
                     'postgres_changes',
                     { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
-                    (payload) => {
-                        useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
+                    async (payload) => {
+                        const store = useDashboardStore.getState();
+                        const exists = store.orders.some(o => o.id === payload.new.id);
+                        
+                        // Si no existía (era un Culqi pendiente) y ahora es 'paid', ingresarlo como orden nueva
+                        if (!exists && payload.new.status === 'paid') {
+                            const nuevaOrden = payload.new;
+                            const { data: items } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
+                            nuevaOrden.order_items = items || [];
+                            
+                            const norm = store.normalizarOrder(nuevaOrden, 'core');
+                            store.agregarOrderLocal(norm);
+                            
+                            toast.success(`NUEVA VENTA PAGADA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
+                                description: `El cliente ${nuevaOrden.customer_name} pagó con Culqi exitosamente.`,
+                                duration: 8000,
+                                icon: <ShoppingBag className="text-secondary" />
+                            })
+                            setNotificaciones(prev => [{
+                                id: nuevaOrden.id,
+                                mensaje: `Pago Culqi de ${nuevaOrden.customer_name}`,
+                                monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
+                                fecha: new Date(),
+                                leida: false
+                            }, ...prev])
+                            playNotificationSound();
+                            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                                new Notification('🛍️ Nueva Venta Pagada (Culqi)', { 
+                                    body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
+                                    icon: '/favicon.ico' 
+                                })
+                            }
+                        } else if (exists) {
+                            store.actualizarEstadoOrderLocal(payload.new.id, payload.new.status);
+                        }
                     }
                 )
                 .subscribe()

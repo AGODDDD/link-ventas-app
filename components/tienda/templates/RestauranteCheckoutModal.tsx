@@ -245,7 +245,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        storeId: perfil.id,
        storeName: perfil.store_name || '',
        date: new Date().toISOString(),
-       status: metodoPago === 'whatsapp' ? 'pendiente_pago' : 'pendiente',
+       status: 'pendiente',
        items: orderItems,
        subtotal,
        deliveryFee,
