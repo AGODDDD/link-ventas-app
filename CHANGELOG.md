@@ -22,9 +22,15 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ### Modificado
 - [Frontend] Se unificó la lógica del Checkout Estándar y Checkout Rápido para soportar la generación atómica de IDs secuenciales de manera distribuida.
 - [Frontend] El Dashboard y el Historial de Clientes se alimentan ahora estrictamente de los IDs formateados en base a secuencias seguras.
+- [Tickets] Se refactorizó el generador PDF (`PDFKit`) y la UI de vista previa (`React`) para eliminar todas las fintas visuales (datos falsos aleatorios), inyectando los Códigos de Despacho e IDs reales en la cabecera.
 
 ### Agregado
 - [Backend] Se implementó el sistema de correlativos (Order IDs secuenciales) seguros usando la migración `20260000000003_store_order_sequences.sql` con funciones de incremento atómico y reinicio diario por tienda.
+- [Tickets] Se instalaron e integraron las librerías `bwip-js` y `react-barcode` para renderizar Códigos de Barras (CODE128) reales y legibles, garantizando un ticket verdaderamente trazable tanto en Backend (Buffer PNG inyectado al PDF) como Frontend (Componente SVG).
+
+### Corregido
+- [Frontend] Bug de Race Condition en pagos Culqi: Se implementó deduplicación de eventos en `useDashboardStore.ts` para que no se muestre la misma orden duplicada (una desde el Webhook y otra desde el Modal Callback).
+- [Frontend] Timeline UI en blanco: Se agregó la compatibilidad del estado `paid` en la barra de progreso (Timeline) del Dashboard de pedidos, rellenando los checkboxes de éxito automáticamente en órdenes pagadas con tarjeta.
 
 - Refactorización Masiva: Reemplazadas cientos de clases fijas o antiguas (`bg-surface-container`, `text-on-surface`, `bg-slate-900`, etc.) por sus equivalentes nativos de Tailwind (`bg-white dark:bg-zinc-900`, `text-zinc-900 dark:text-zinc-100`, etc.) asegurando que el modo oscuro aplique limpiamente en todo el ecosistema y unificándolo al estándar de diseño establecido en el layout (Stitch Design).
 - Verificación: `npx tsc --noEmit` y `npm run build` finalizaron sin errores.

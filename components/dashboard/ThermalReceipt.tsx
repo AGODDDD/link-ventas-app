@@ -1,6 +1,7 @@
 'use client'
 
 import React, { forwardRef } from 'react'
+import Barcode from 'react-barcode'
 
 type ThermalReceiptProps = {
     order: any;
@@ -18,8 +19,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
     const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
     
     // Generar un número de secuencia aleatorio o basado en la orden
-    const shortId = order.id.split('-')[0].toUpperCase()
-    const secuencia = Math.floor(Math.random() * 9000) + 1000
+    const ticketNumber = order.legacy_id || order.id.split('-')[0].toUpperCase()
 
     return (
         <div 
@@ -29,14 +29,14 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
         >
             {/* Título Principal */}
             <div className="text-center mb-4">
-                <h1 className="text-xl font-bold tracking-widest uppercase">TICKET DE VENTA N° {shortId}{secuencia}</h1>
+                <h1 className="text-xl font-bold tracking-widest uppercase">TICKET DE VENTA N° {ticketNumber}</h1>
             </div>
 
             {/* Metadatos */}
             <div className="text-xs uppercase mb-4 leading-tight">
                 <div className="flex"><span className="w-24">LOCAL</span><span>: VENTA ONLINE</span></div>
                 <div className="flex"><span className="w-24">DIRECCION</span><span>: INTERNET</span></div>
-                <div className="flex"><span className="w-24">Terminal</span><span>: WEB &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Secuencia: {secuencia}</span></div>
+                <div className="flex"><span className="w-24">Terminal</span><span>: WEB</span></div>
                 <div className="flex"><span className="w-24">Fecha</span><span>: {formattedDate} &nbsp;Hora: {formattedTime}</span></div>
                 <div className="flex"><span className="w-24">Vendedor</span><span>: {store_name}</span></div>
                 {order.customer_name && (
@@ -158,24 +158,20 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
 
             {/* Orden Despacho */}
             <div className="text-xs uppercase mb-4 text-center">
-                ORDEN DE DESPACHO : {order.id.replace(/-/g, '').substring(0, 15)}
+                ORDEN DE DESPACHO : {ticketNumber}
             </div>
 
-            {/* Falso Código de Barras Denso (Estilo 2D) */}
-            <div className="flex justify-center mb-6 h-28 overflow-hidden mx-4 opacity-90">
-                {/* Generador de ruido/barras verticales falsas the alta densidad */}
-                <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 300 100">
-                    {Array.from({ length: 150 }).map((_, i) => (
-                        <rect 
-                            key={i} 
-                            x={i * 2} 
-                            y={Math.random() > 0.8 ? 10 : 0} 
-                            width={Math.random() > 0.5 ? 1.5 : 0.5} 
-                            height={Math.random() > 0.8 ? 80 : 100} 
-                            fill="#000" 
-                        />
-                    ))}
-                </svg>
+            {/* Código de Barras Real (Estilo 1D) */}
+            <div className="flex justify-center mb-6 overflow-hidden mx-4 opacity-90 scale-x-[1.1] origin-center">
+                <Barcode 
+                    value={ticketNumber} 
+                    width={1.8} 
+                    height={60} 
+                    displayValue={false} 
+                    background="transparent" 
+                    lineColor="#000000" 
+                    margin={0}
+                />
             </div>
 
             <div className="text-center text-xs mb-6 uppercase leading-tight">
@@ -188,28 +184,12 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
                 su WhatsApp
             </div>
 
-            <div className="text-center text-[10px] uppercase mb-1">
+            <div className="text-center text-[10px] uppercase mb-4">
                 GRACIAS POR SU PREFERENCIA
-            </div>
-
-            {/* Falso Código de Barras Inferior (Simple) */}
-            <div className="flex justify-center mb-2 h-12 overflow-hidden mx-8">
-                <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 200 40">
-                    {Array.from({ length: 60 }).map((_, i) => (
-                        <rect 
-                            key={i} 
-                            x={i * 3.3} 
-                            y="0" 
-                            width={Math.random() > 0.5 ? 2 : 1} 
-                            height="40" 
-                            fill="#000" 
-                        />
-                    ))}
-                </svg>
             </div>
             
             <p className="text-center text-[8px] uppercase tracking-widest font-mono">
-                {order.id.replace(/-/g, '')}
+                {ticketNumber}
             </p>
 
             {/* Borde the Papel Rasgado the de Sierra en la Base */}

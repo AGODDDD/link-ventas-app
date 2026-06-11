@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import path from 'path'
 import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
+import bwipjs from 'bwip-js'
 
 // Helper para buscar el pedido por ID en las distintas tablas (Shadow Migration)
 async function getOrderById(orderId: string) {
@@ -109,8 +110,7 @@ export async function GET(request: NextRequest) {
         const orderDate = new Date(order.created_at)
         const formattedDate = orderDate.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
         const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
-        const shortId = order.id.split('-')[0].toUpperCase()
-        const secuencia = Math.floor(Math.random() * 9000) + 1000
+        const ticketNumber = order.legacy_id || order.id.split('-')[0].toUpperCase()
         
         // 80mm de ancho -> ~226.77 pt. Ajustamos el alto según la cantidad de items de forma dinámica.
         const itemsCount = order.order_items?.length || 0
@@ -137,14 +137,14 @@ export async function GET(request: NextRequest) {
         doc.moveDown(0.4)
         
         // Título Principal
-        doc.fontSize(8).font('Courier-Bold').text(`TICKET DE VENTA N° ${shortId}${secuencia}`, { align: 'center' })
+        doc.fontSize(8).font('Courier-Bold').text(`TICKET DE VENTA N° ${ticketNumber}`, { align: 'center' })
         doc.moveDown(0.6)
         
         // Metadatos Clásicos de POS
         doc.fontSize(7).font('Courier')
         doc.text(`LOCAL     : VENTA ONLINE`)
         doc.text(`DIRECCION : INTERNET`)
-        doc.text(`Terminal  : WEB       Secuencia: ${secuencia}`)
+        doc.text(`Terminal  : WEB`)
         doc.text(`Fecha     : ${formattedDate}  Hora: ${formattedTime}`)
         doc.text(`Vendedor  : ${storeName.toUpperCase()}`)
         if (order.customer_name) {
@@ -232,25 +232,29 @@ export async function GET(request: NextRequest) {
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
         
         // Código de Despacho
-        const cleanId = order.id.replace(/-/g, '').substring(0, 15).toUpperCase()
-        doc.fontSize(7).font('Courier').text(`ORDEN DE DESPACHO: ${cleanId}`, { align: 'center' })
+        const barcodeText = order.legacy_id || order.id.split('-')[0].toUpperCase();
+        doc.fontSize(7).font('Courier').text(`ORDEN DE DESPACHO: ${barcodeText}`, { align: 'center' })
         doc.moveDown(0.6)
         
-        // Simulación de Código de Barras POS de Alta Densidad (Vectores directos)
-        const startX = 18
-        let currentX = startX
-        const barcodeY = doc.y
-        const barcodeHeight = 35
-        
-        for (let i = 0; i < 70; i++) {
-            const thickness = Math.random() > 0.6 ? 2.2 : 1
-            const spacing = Math.random() > 0.4 ? 1.4 : 0.8
-            doc.rect(currentX, barcodeY, thickness, barcodeHeight).fill('#000000')
-            currentX += thickness + spacing
-            if (currentX > 208) break
+        // Código de Barras Real con bwip-js
+        try {
+            const barcodeBuffer = await bwipjs.toBuffer({
+                bcid: 'code128',
+                text: barcodeText,
+                scale: 3,
+                height: 10,
+                includetext: false,
+            });
+            
+            // doc.x is around 10 due to margins, width is 226.77
+            // Center the image: (226.77 - 190) / 2 = 18.38
+            doc.image(barcodeBuffer, 18, doc.y, { fit: [190, 40] });
+            doc.moveDown(4.0);
+        } catch (bErr) {
+            console.error("Error generating barcode:", bErr);
+            doc.text(`[ERROR GENERANDO CODIGO]`, { align: 'center' });
+            doc.moveDown(1.0);
         }
-        
-        doc.moveDown(5.0) // Desplazar cursor abajo tras el código de barras
         
         // Cláusula de Validez de SUNAT
         doc.fontSize(7).font('Courier-Bold').text(`TICKET NO VALIDO COMO`, { align: 'center' })
@@ -264,20 +268,9 @@ export async function GET(request: NextRequest) {
         
         // Agradecimiento
         doc.fontSize(7).font('Courier-Bold').text(`GRACIAS POR SU PREFERENCIA`, { align: 'center' })
-        doc.moveDown(0.4)
+        doc.moveDown(1.5)
         
-        // Simulación de Código de Barras de Pie de Página (Simple)
-        let bX = 40
-        const bY = doc.y
-        for (let i = 0; i < 45; i++) {
-            const thickness = Math.random() > 0.5 ? 1.6 : 0.8
-            const spacing = 1.1
-            doc.rect(bX, bY, thickness, 15).fill('#000000')
-            bX += thickness + spacing
-        }
-        
-        doc.moveDown(2.2)
-        doc.fontSize(6).font('Courier').text(order.id.replace(/-/g, '').toUpperCase(), { align: 'center' })
+        doc.fontSize(6).font('Courier').text(barcodeText, { align: 'center' })
         
         // Finalizar el documento
         doc.end()
@@ -288,7 +281,7 @@ export async function GET(request: NextRequest) {
         return new Response(new Uint8Array(pdfBuffer), {
             headers: {
                 'content-type': 'application/pdf',
-                'content-disposition': `inline; filename="Ticket_${shortId}.pdf"`,
+                'content-disposition': `inline; filename="Ticket_${ticketNumber}.pdf"`,
                 'cache-control': 'public, max-age=3600'
             }
         })
