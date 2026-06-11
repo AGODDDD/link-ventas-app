@@ -44,8 +44,6 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
 
 ## Bugs Potenciales Detectados
-
-- **Severidad Media:** `template_type` inconsistente entre la BD y el código. La migración `002_core_schema.sql` define el CHECK como `('restaurante', 'comercio', 'moda')` pero el código y el modelo de negocio confirmado usan `'food'` en lugar de `'restaurante'`. Inserciones con `'food'` fallarán si ese CHECK está activo.
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.
 
@@ -56,8 +54,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 
 ## Prioridades Sugeridas
 1. **Refactor del Checkout:** Limpiar los TODOs y asegurar que los estados de pago se manejan con firmeza de origen a fin.
-2. **Corregir inconsistencia de `template_type`:** Alinear el código (`food`) con la base de datos (`restaurante`) para evitar fallos en la creación de tiendas.
-3. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
+2. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
 
 ---
 ## Campos que requieren verificación manual
