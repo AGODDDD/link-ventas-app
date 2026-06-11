@@ -32,7 +32,6 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
 
 ## Funcionalidades Pendientes
-- Migración automatizada de Base de Datos.
 - Interfaz nativa de Checkout automatizado de la propia plataforma SaaS (LinkVentas Pro Plan).
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
@@ -57,7 +56,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 
 ## Prioridades Sugeridas
 1. **Refactor del Checkout:** Limpiar los TODOs y asegurar que los estados de pago se manejan con firmeza de origen a fin.
-2. **Implementar ORM / Migraciones:** Reemplazar `seguridad_supabase.sql` por un sistema seguro (Supabase Migrations CLI o Prisma).
+2. **Corregir inconsistencia de `template_type`:** Alinear el código (`food`) con la base de datos (`restaurante`) para evitar fallos en la creación de tiendas.
 3. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
 
 ---
