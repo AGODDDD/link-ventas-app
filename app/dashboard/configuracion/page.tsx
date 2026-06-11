@@ -234,8 +234,8 @@ export default function ConfiguracionPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Configurar Tienda 🏪</h1>
-        <p className="text-slate-500">Personaliza tu perfil, métodos de pago y apariencia.</p>
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Configurar Tienda 🏪</h1>
+        <p className="text-zinc-500 dark:text-zinc-400">Personaliza tu perfil, métodos de pago y apariencia.</p>
       </div>
 
       <div className="grid gap-8">
@@ -244,31 +244,31 @@ export default function ConfiguracionPage() {
         {userId && <CatalogBuilder userId={userId} />}
 
         {/* MI CUENTA Y SUSCRIPCIÓN */}
-        <Card className="border-2 border-primary/25 bg-slate-900/40 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
+        <Card className="border-2 border-primary/25 bg-white dark:bg-zinc-900/40 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Zap size={20} className="text-primary animate-pulse" /> Mi Cuenta y Suscripción
             </CardTitle>
-            <CardDescription className="text-slate-400">Administra los detalles de tu cuenta y consulta el estado de tu suscripción SaaS.</CardDescription>
+            <CardDescription className="text-zinc-400 dark:text-zinc-500">Administra los detalles de tu cuenta y consulta el estado de tu suscripción SaaS.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 text-slate-200">
+          <CardContent className="space-y-6 text-zinc-800 dark:text-zinc-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Información del Perfil */}
-              <div className="space-y-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800">
-                <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Información de Cuenta</h3>
+              <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">Información de Cuenta</h3>
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-slate-500 text-xs">Correo Electrónico</Label>
+                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">Correo Electrónico</Label>
                     <p className="text-sm font-semibold text-white truncate mt-1">{userEmail || 'Cargando...'}</p>
                   </div>
                   <div>
-                    <Label className="text-slate-500 text-xs">ID de Usuario (UUID)</Label>
-                    <p className="text-xs font-mono font-bold text-slate-400 mt-1 select-all">{userId || 'Cargando...'}</p>
+                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">ID de Usuario (UUID)</Label>
+                    <p className="text-xs font-mono font-bold text-zinc-400 dark:text-zinc-500 mt-1 select-all">{userId || 'Cargando...'}</p>
                   </div>
                   <div>
-                    <Label className="text-slate-500 text-xs">Enlace del Comercio</Label>
+                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">Enlace del Comercio</Label>
                     <p className="text-sm font-semibold text-primary mt-1">
                       {slug ? (
                         <a href={`/tienda/${slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
@@ -281,9 +281,9 @@ export default function ConfiguracionPage() {
               </div>
 
               {/* Detalles de la Suscripción */}
-              <div className="space-y-4 bg-slate-950/40 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+              <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-3">Detalles de Suscripción</h3>
+                  <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest mb-3">Detalles de Suscripción</h3>
                   <div className="flex items-center gap-3">
                     {planStatus === 'pro' && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.45)]">
@@ -296,7 +296,7 @@ export default function ConfiguracionPage() {
                       </span>
                     )}
                     {planStatus === 'free' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-slate-800 border border-slate-700 text-slate-300">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-zinc-200 dark:bg-zinc-800 border border-slate-700 text-zinc-700 dark:text-zinc-300">
                         📦 PLAN EMPRENDEDOR (GRATIS)
                       </span>
                     )}
@@ -309,13 +309,13 @@ export default function ConfiguracionPage() {
                   
                   <div className="mt-4 space-y-2">
                     {planStatus === 'pro' && (
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
                         Tienes acceso completo e ilimitado a todas las herramientas avanzadas. Tu suscripción está activa de forma vitalicia o renovada automáticamente.
                       </p>
                     )}
                     {planStatus === 'trial' && planExpiresAt && (
                       <div className="space-y-1">
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-zinc-400 dark:text-zinc-500">
                           Tu prueba gratuita vence el: <strong className="text-white">{new Date(planExpiresAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
                         </p>
                         <p className="text-sm font-bold text-violet-400">
@@ -324,7 +324,7 @@ export default function ConfiguracionPage() {
                       </div>
                     )}
                     {planStatus === 'free' && (
-                      <p className="text-xs text-slate-400 leading-relaxed">
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
                         Estás usando el plan gratuito con limitaciones de productos (máximo 10) y sin pasarela Culqi ni analíticas avanzadas.
                       </p>
                     )}
@@ -347,7 +347,7 @@ export default function ConfiguracionPage() {
                       href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, tengo el Plan Pro y necesito asistencia con mi cuenta.')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-slate-700 text-center decoration-none"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-slate-700 text-center decoration-none"
                     >
                       💬 Solicitar Soporte Pro
                     </a>
@@ -368,38 +368,38 @@ export default function ConfiguracionPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Restaurante */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'restaurante' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'restaurante' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
                 <input type="radio" className="hidden" name="template" value="restaurante" checked={templateType === 'restaurante'} onChange={() => setTemplateType('restaurante')} />
-                <div className={`p-4 rounded-full ${templateType === 'restaurante' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`p-4 rounded-full ${templateType === 'restaurante' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
                   <Store size={28} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Restaurante / Food</h3>
-                  <p className="text-xs text-slate-500 mt-1">El pedido se envía directamente al WhatsApp. Destaca platos y menú. Sin carrito.</p>
+                  <h3 className="font-bold text-zinc-900 dark:text-white">Restaurante / Food</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">El pedido se envía directamente al WhatsApp. Destaca platos y menú. Sin carrito.</p>
                 </div>
               </label>
 
               {/* Comercio */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'comercio' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'comercio' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
                 <input type="radio" className="hidden" name="template" value="comercio" checked={templateType === 'comercio'} onChange={() => setTemplateType('comercio')} />
-                <div className={`p-4 rounded-full ${templateType === 'comercio' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`p-4 rounded-full ${templateType === 'comercio' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
                   <ShoppingBag size={28} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Comercio General</h3>
-                  <p className="text-xs text-slate-500 mt-1">Flujo de compra estándar. Carrito de compras, checkout y métodos de pago.</p>
+                  <h3 className="font-bold text-zinc-900 dark:text-white">Comercio General</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Flujo de compra estándar. Carrito de compras, checkout y métodos de pago.</p>
                 </div>
               </label>
 
               {/* Moda */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'moda' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-primary/50 shadow-sm hover:shadow'}`}>
+              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'moda' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
                 <input type="radio" className="hidden" name="template" value="moda" checked={templateType === 'moda'} onChange={() => setTemplateType('moda')} />
-                <div className={`p-4 rounded-full ${templateType === 'moda' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-500'}`}>
+                <div className={`p-4 rounded-full ${templateType === 'moda' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
                   <Shirt size={28} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900">Moda / Boutique</h3>
-                  <p className="text-xs text-slate-500 mt-1">Look premium aspiracional. Soporta variantes obligatorias por producto (talla/color).</p>
+                  <h3 className="font-bold text-zinc-900 dark:text-white">Moda / Boutique</h3>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Look premium aspiracional. Soporta variantes obligatorias por producto (talla/color).</p>
                 </div>
               </label>
             </div>
@@ -415,7 +415,7 @@ export default function ConfiguracionPage() {
           <CardContent className="space-y-6">
             {/* LOGO UPLOAD */}
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="h-24 w-24 shrink-0 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative">
+              <div className="h-24 w-24 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center overflow-hidden relative">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="Logo" className="h-full w-full object-cover" />
                 ) : (
@@ -424,13 +424,13 @@ export default function ConfiguracionPage() {
               </div>
               <div className="space-y-2 text-center sm:text-left">
                 <Label htmlFor="logo" className="cursor-pointer inline-block">
-                  <div className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-md hover:bg-slate-800 transition-colors">
+                  <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 text-white px-4 py-2 rounded-md hover:bg-zinc-200 dark:bg-zinc-800 transition-colors">
                     <Upload size={16} />
                     {uploading ? 'Subiendo...' : 'Subir Logo'}
                   </div>
                 </Label>
                 <Input id="logo" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setAvatarUrl)} disabled={uploading} />
-                <p className="text-xs text-slate-400">Recomendado: 400x400px (Cuadrado)</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recomendado: 400x400px (Cuadrado)</p>
               </div>
             </div>
 
@@ -442,10 +442,10 @@ export default function ConfiguracionPage() {
             <div className="space-y-2">
               <Label>Enlace de tu Tienda (Slug)</Label>
               <div className="flex items-center">
-                <span className="bg-slate-100 text-slate-500 px-3 py-2 border border-r-0 rounded-l-md text-sm whitespace-nowrap">linkventas.com/tienda/</span>
+                <span className="bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 px-3 py-2 border border-r-0 rounded-l-md text-sm whitespace-nowrap">linkventas.com/tienda/</span>
                 <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="mi-nombre" className="rounded-l-none" />
               </div>
-              <p className="text-xs text-slate-400">Solo minúsculas, números y guiones. Ejemplo: ropa-lima</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">Solo minúsculas, números y guiones. Ejemplo: ropa-lima</p>
             </div>
 
             <div className="space-y-2">
@@ -466,11 +466,11 @@ export default function ConfiguracionPage() {
             {/* Banner Upload */}
             <div className="space-y-3">
               <Label>Imagen de Portada (Banner)</Label>
-              <div className="relative w-full h-32 bg-slate-100 border-2 border-dashed border-slate-300 rounded-lg overflow-hidden flex items-center justify-center group">
+              <div className="relative w-full h-32 bg-zinc-100 dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
                 {bannerUrl ? (
                   <img src={bannerUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
                 ) : (
-                  <div className="text-slate-400 flex flex-col items-center">
+                  <div className="text-zinc-400 dark:text-zinc-500 flex flex-col items-center">
                     <ImageIcon size={24} />
                     <span className="text-xs mt-1">Subir Banner (1200x400px)</span>
                   </div>
@@ -492,7 +492,7 @@ export default function ConfiguracionPage() {
                   <Input type="color" className="w-12 h-10 p-1 cursor-pointer" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
                   <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="font-mono uppercase" maxLength={7} />
                 </div>
-                <p className="text-xs text-slate-400">Usado en textos oscuros y el tono base del gradiente.</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Usado en textos oscuros y el tono base del gradiente.</p>
               </div>
               <div className="space-y-2">
                 <Label>Color Secundario (Botones/Gradiente)</Label>
@@ -500,7 +500,7 @@ export default function ConfiguracionPage() {
                   <Input type="color" className="w-12 h-10 p-1 cursor-pointer" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
                   <Input value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="font-mono uppercase" maxLength={7} />
                 </div>
-                <p className="text-xs text-slate-400">Usado en botones, acentos y el final del gradiente.</p>
+                <p className="text-xs text-zinc-400 dark:text-zinc-500">Usado en botones, acentos y el final del gradiente.</p>
               </div>
             </div>
 
@@ -522,7 +522,7 @@ export default function ConfiguracionPage() {
             <div className="space-y-2">
               <Label>Instagram (Usuario)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-slate-400">@</span>
+                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">@</span>
                 <Input className="pl-8" placeholder="usuario_insta" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} />
               </div>
             </div>
@@ -533,17 +533,17 @@ export default function ConfiguracionPage() {
             <div className="space-y-2">
               <Label>TikTok (Usuario)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-slate-400">@</span>
+                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">@</span>
                 <Input className="pl-8" placeholder="usuario_tiktok" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
               <Label>WhatsApp de Ventas (Número)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-2.5 text-slate-400">+</span>
+                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">+</span>
                 <Input className="pl-8" placeholder="51999123456" value={whatsappPhone} onChange={(e) => setWhatsappPhone(e.target.value)} />
               </div>
-              <p className="text-xs text-slate-400">Código de país + número. Ej: 51999123456 (Perú)</p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-500">Código de país + número. Ej: 51999123456 (Perú)</p>
             </div>
           </CardContent>
         </Card>
@@ -563,10 +563,10 @@ export default function ConfiguracionPage() {
                   <Label className="font-bold text-purple-600">Yape</Label>
                   <QrCode size={18} className="text-purple-600" />
                 </div>
-                <div className="aspect-square bg-slate-50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
+                <div className="aspect-square bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
                   {yapeUrl ? (
                     <img src={yapeUrl} alt="Yape QR" className="w-full h-full object-contain" />
-                  ) : <span className="text-slate-300 text-sm">Sin QR</span>}
+                  ) : <span className="text-zinc-700 dark:text-zinc-300 text-sm">Sin QR</span>}
                   {uploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="animate-spin text-purple-600" /></div>}
                 </div>
                 <Label htmlFor="yape-upload" className="block cursor-pointer">
@@ -583,10 +583,10 @@ export default function ConfiguracionPage() {
                   <Label className="font-bold text-cyan-600">Plin</Label>
                   <QrCode size={18} className="text-cyan-600" />
                 </div>
-                <div className="aspect-square bg-slate-50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
+                <div className="aspect-square bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
                   {plinUrl ? (
                     <img src={plinUrl} alt="Plin QR" className="w-full h-full object-contain" />
-                  ) : <span className="text-slate-300 text-sm">Sin QR</span>}
+                  ) : <span className="text-zinc-700 dark:text-zinc-300 text-sm">Sin QR</span>}
                   {uploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="animate-spin text-cyan-600" /></div>}
                 </div>
                 <Label htmlFor="plin-upload" className="block cursor-pointer">
@@ -614,7 +614,7 @@ export default function ConfiguracionPage() {
                   </CardTitle>
                   <CardDescription className="mt-1">Recibe pagos con Tarjeta y Yape automáticos. Nada de validar pantallazos.</CardDescription>
                 </div>
-                <div className="flex items-center gap-3 bg-surface-container-high px-4 py-2 rounded-xl border border-outline-variant/10">
+                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/50">
                   <Label className="font-bold cursor-pointer" htmlFor="culqi-switch">
                     {culqiActive ? '🟢 Activo' : '⚪ Apagado'}
                   </Label>
@@ -629,9 +629,9 @@ export default function ConfiguracionPage() {
               </div>
             </CardHeader>
             {culqiActive && (
-              <CardContent className="space-y-4 pt-4 border-t border-outline-variant/10 bg-primary/5">
+              <CardContent className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/50 bg-primary/5">
                 <div className="space-y-2">
-                  <Label className="font-bold text-on-surface">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
+                  <Label className="font-bold text-zinc-900 dark:text-zinc-100">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
                   <Input 
                     value={culqiPublicKey} 
                     onChange={(e) => setCulqiPublicKey(e.target.value)} 
@@ -639,10 +639,10 @@ export default function ConfiguracionPage() {
                     className="font-mono bg-white"
                     disabled={planStatus === 'free'}
                   />
-                  <p className="text-xs text-on-surface-variant">Usada de cara al público para mostrar el modal en tu Tienda.</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Usada de cara al público para mostrar el modal en tu Tienda.</p>
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold text-on-surface">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
+                  <Label className="font-bold text-zinc-900 dark:text-zinc-100">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
                   <Input 
                     type="password"
                     value={culqiSecretKey} 
@@ -651,7 +651,7 @@ export default function ConfiguracionPage() {
                     className="font-mono bg-white"
                     disabled={planStatus === 'free'}
                   />
-                  <p className="text-xs text-on-surface-variant">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
                 </div>
               </CardContent>
             )}
@@ -741,7 +741,7 @@ export default function ConfiguracionPage() {
 
             <div className="space-y-2">
               <Label>Marca tu local en el mapa</Label>
-              <p className="text-xs text-slate-500">Haz clic en el mapa para marcar la ubicación exacta de tu local.</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Haz clic en el mapa para marcar la ubicación exacta de tu local.</p>
               <StoreMapPicker
                 initialLat={storeLat}
                 initialLng={storeLng}

@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-11] — Sesión 9
+### Unificación Visual (Modo Oscuro Dashboard Fase 2)
+- Dashboard: Migradas las 5 páginas internas (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix de Tailwind.
+- Refactorización Masiva: Reemplazadas cientos de clases fijas o antiguas (`bg-surface-container`, `text-on-surface`, `bg-slate-900`, etc.) por sus equivalentes nativos de Tailwind (`bg-white dark:bg-zinc-900`, `text-zinc-900 dark:text-zinc-100`, etc.) asegurando que el modo oscuro aplique limpiamente en todo el ecosistema y unificándolo al estándar de diseño establecido en el layout (Stitch Design).
+- Verificación: `npx tsc --noEmit` y `npm run build` finalizaron sin errores.
+- Commit: (Se adjuntará)
+
+---
+
 ## [2026-06-07] — Sesión 8
 ### Pulido Final Pixel-Perfect (Flat Design)
 - `components/dashboard/DashboardTopBar.tsx`: Eliminada sombra excesiva (`shadow-[0_20px_40px_rgba(0,0,0,0.4)]`) del header superior. Reemplazada por un borde sutil (`border-zinc-800`), logrando el aspecto Flat Premium e integrado de Stitch. Ancho ajustado a `w-[calc(100%-14rem)]` (`w-56`).

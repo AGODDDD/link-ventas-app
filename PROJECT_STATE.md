@@ -18,7 +18,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - `DashboardSidebar.tsx` migrado ✓
   - Modo oscuro pixel-perfect con el diseño base de Stitch ✓
   - Modo claro funcional adaptado con la paleta de la marca LinkVentas ✓
-  - **Pendiente:** Migrar las páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) al sistema `dark:` prefix para unificar visualmente toda la experiencia.
+  - Páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) migradas al sistema `dark:` prefix para unificar visualmente toda la experiencia ✓
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
   - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): Garantiza compatibilidad hacia atrás y adopción del nuevo esquema simultáneamente.

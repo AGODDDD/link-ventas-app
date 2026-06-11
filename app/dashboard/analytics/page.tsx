@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
             .slice(0, 5)
     }, [ordersFiltradas])
 
-    if (loading) return <div className="p-8 text-center text-on-surface-variant font-bold animate-pulse">Analizando métricas... 📊</div>
+    if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Analizando métricas... 📊</div>
 
     return (
         <div className="space-y-8 pb-12 relative w-full">
@@ -246,11 +246,11 @@ export default function AnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Analytics 📊</h1>
-                    <p className="text-on-surface-variant">Inteligencia comercial de tu operación.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Analytics 📊</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400">Inteligencia comercial de tu operación.</p>
                 </div>
                 {/* Period Selector */}
-                <div className="flex items-center bg-surface-container-high rounded-lg border border-outline-variant/10 p-1 gap-1">
+                <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800/50 p-1 gap-1">
                     {(['7d', '30d', 'all'] as const).map(p => (
                         <button
                             key={p}
@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
                             className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                                 periodo === p
                                     ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
-                                    : 'text-on-surface-variant hover:text-on-surface'
+                                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'
                             }`}
                         >
                             {p === '7d' ? '7 Días' : p === '30d' ? '30 Días' : 'Todo'}
@@ -269,39 +269,39 @@ export default function AnalyticsPage() {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-colors">
+                <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 group hover:border-primary/20 transition-colors">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Ingresos</p>
+                        <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Ingresos</p>
                         <DollarSign className="w-4 h-4 text-primary" />
                     </div>
-                    <p className="text-3xl font-bold tracking-tighter text-on-surface">S/ {ingresoTotal.toFixed(2)}</p>
-                    <p className="text-xs text-on-surface-variant mt-1">{ordersFiltradas.length} transacciones</p>
+                    <p className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {ingresoTotal.toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{ordersFiltradas.length} transacciones</p>
                 </div>
 
-                <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-colors">
+                <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 group hover:border-primary/20 transition-colors">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Ticket Promedio</p>
+                        <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Ticket Promedio</p>
                         <ShoppingBag className="w-4 h-4 text-secondary" />
                     </div>
-                    <p className="text-3xl font-bold tracking-tighter text-on-surface">S/ {ticketPromedio.toFixed(2)}</p>
-                    <p className="text-xs text-on-surface-variant mt-1">Por orden</p>
+                    <p className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {ticketPromedio.toFixed(2)}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Por orden</p>
                 </div>
 
-                <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-colors">
+                <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 group hover:border-primary/20 transition-colors">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Conversión</p>
+                        <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Conversión</p>
                         <TrendingUp className="w-4 h-4 text-secondary" />
                     </div>
-                    <p className="text-3xl font-bold tracking-tighter text-on-surface">{tasaConversion}%</p>
-                    <p className="text-xs text-on-surface-variant mt-1">{leads.length} leads → {ordersFiltradas.length} ventas</p>
+                    <p className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">{tasaConversion}%</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{leads.length} leads → {ordersFiltradas.length} ventas</p>
                 </div>
 
-                <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-colors">
+                <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 group hover:border-primary/20 transition-colors">
                     <div className="flex items-center justify-between mb-3">
-                        <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Pendientes</p>
+                        <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Pendientes</p>
                         <Calendar className="w-4 h-4 text-tertiary-fixed" />
                     </div>
-                    <p className="text-3xl font-bold tracking-tighter text-on-surface">{pedidosPendientes}</p>
+                    <p className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">{pedidosPendientes}</p>
                     <p className="text-xs text-secondary mt-1">{pedidosCompletados} completados</p>
                 </div>
             </div>
@@ -309,9 +309,9 @@ export default function AnalyticsPage() {
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Weekly Bar Chart */}
-                <div className="lg:col-span-2 bg-surface-container-high p-6 rounded-xl border border-outline-variant/5">
+                <div className="lg:col-span-2 bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-bold text-on-surface flex items-center gap-2">
+                        <h3 className="font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                             <BarChart3 className="w-4 h-4 text-primary" /> Ventas Últimos 7 Días
                         </h3>
                     </div>
@@ -338,16 +338,16 @@ export default function AnalyticsPage() {
                             return (
                                 <div key={i} className="flex flex-col items-center gap-2 w-full group/bar relative">
                                     {/* Tooltip on Hover */}
-                                    <div className="absolute -top-8 bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">
+                                    <div className="absolute -top-8 bg-white dark:bg-zinc-900-highest text-zinc-900 dark:text-zinc-100 text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity z-10 pointer-events-none whitespace-nowrap">
                                         S/ {totalDay.toFixed(2)}
                                     </div>
-                                    <div className="w-full bg-surface-container rounded-t-lg relative h-40 flex items-end justify-center transition-all bg-opacity-50 group-hover/bar:bg-opacity-100">
+                                    <div className="w-full bg-white dark:bg-zinc-900 rounded-t-lg relative h-40 flex items-end justify-center transition-all bg-opacity-50 group-hover/bar:bg-opacity-100">
                                         <div 
                                             className="w-full bg-primary/40 rounded-t-lg hover:bg-primary transition-all flex border-t-2 border-primary" 
                                             style={{ height: `${heightPercentage}%` }}
                                         ></div>
                                     </div>
-                                    <span className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest text-center">
+                                    <span className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest text-center">
                                         {d.toLocaleDateString('es-ES', { weekday: 'short' })}
                                     </span>
                                 </div>
@@ -357,15 +357,15 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Payment Methods */}
-                <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5">
-                    <h3 className="font-bold text-on-surface mb-6">Métodos de Pago</h3>
+                <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Métodos de Pago</h3>
                     <div className="space-y-6">
                         <div>
                             <div className="flex justify-between text-sm mb-2">
-                                <span className="text-on-surface-variant">Transferencia/QR</span>
-                                <span className="font-bold text-on-surface">{metodosPago.transferencia}</span>
+                                <span className="text-zinc-500 dark:text-zinc-400">Transferencia/QR</span>
+                                <span className="font-bold text-zinc-900 dark:text-zinc-100">{metodosPago.transferencia}</span>
                             </div>
-                            <div className="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div className="h-3 w-full bg-white dark:bg-zinc-900 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary rounded-full transition-all duration-500"
                                     style={{ width: `${ordersFiltradas.length > 0 ? (metodosPago.transferencia / ordersFiltradas.length) * 100 : 0}%` }}
@@ -374,10 +374,10 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                             <div className="flex justify-between text-sm mb-2">
-                                <span className="text-on-surface-variant">Contra Entrega</span>
-                                <span className="font-bold text-on-surface">{metodosPago.efectivo}</span>
+                                <span className="text-zinc-500 dark:text-zinc-400">Contra Entrega</span>
+                                <span className="font-bold text-zinc-900 dark:text-zinc-100">{metodosPago.efectivo}</span>
                             </div>
-                            <div className="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+                            <div className="h-3 w-full bg-white dark:bg-zinc-900 rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-tertiary-fixed rounded-full transition-all duration-500"
                                     style={{ width: `${ordersFiltradas.length > 0 ? (metodosPago.efectivo / ordersFiltradas.length) * 100 : 0}%` }}
@@ -399,7 +399,7 @@ export default function AnalyticsPage() {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-bold text-on-surface">{ordersFiltradas.length}</span>
+                                <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">{ordersFiltradas.length}</span>
                             </div>
                         </div>
                     </div>
@@ -407,31 +407,31 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Top Customers */}
-            <div className="bg-surface-container-high p-6 rounded-xl border border-outline-variant/5">
-                <h3 className="font-bold text-on-surface mb-6 flex items-center gap-2">
+            <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+                <h3 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6 flex items-center gap-2">
                     <Users className="w-4 h-4 text-primary" /> Top 5 Clientes
                 </h3>
                 {topClientes.length > 0 ? (
                     <div className="space-y-3">
                         {topClientes.map((cliente, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-surface-container transition-colors">
+                            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-white dark:bg-zinc-900 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
-                                        i === 0 ? 'bg-primary/20 text-primary' : 'bg-surface-container text-on-surface-variant'
+                                        i === 0 ? 'bg-primary/20 text-primary' : 'bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'
                                     }`}>
                                         #{i + 1}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-on-surface">{cliente.name}</p>
-                                        <p className="text-[10px] text-on-surface-variant">{cliente.count} {cliente.count === 1 ? 'compra' : 'compras'}</p>
+                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{cliente.name}</p>
+                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{cliente.count} {cliente.count === 1 ? 'compra' : 'compras'}</p>
                                     </div>
                                 </div>
-                                <p className="font-bold text-on-surface">S/ {cliente.total.toFixed(2)}</p>
+                                <p className="font-bold text-zinc-900 dark:text-zinc-100">S/ {cliente.total.toFixed(2)}</p>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-center text-on-surface-variant py-8">Aún no hay datos suficientes para el ranking.</p>
+                    <p className="text-center text-zinc-500 dark:text-zinc-400 py-8">Aún no hay datos suficientes para el ranking.</p>
                 )}
             </div>
         </div>
