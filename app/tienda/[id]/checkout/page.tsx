@@ -213,6 +213,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     customer_address: direccion,
                     total,
                     status: 'pendiente_pago',
+                    order_type: 'standard',
                     payment_proof_url: 'CULQI_PENDING',
                 })
                 if (orderError) throw orderError
@@ -274,6 +275,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 customer_phone: telefono,
                 customer_address: direccion,
                 total: total,
+                order_type: 'standard',
                 status: metodoPago === 'transferencia' ? 'pendiente_verificacion' : 'pendiente',
             }
             
