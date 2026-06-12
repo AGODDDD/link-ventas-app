@@ -169,14 +169,32 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             leida: false
                         }, ...prev])
                         
-                        // Fetch order_items since realtime payload only has the orders row
-                        const { data: items } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
-                        nuevaOrden.order_items = items || [];
-
-                        // Inyectar sin recargar base de datos (Adiós Race Condition)
+                        // Fetch order_items con retry para evitar race condition:
+                        // El INSERT de 'orders' dispara Realtime ANTES de que se inserten los order_items.
+                        // Esperamos 800ms y si no hay items, reintentamos a los 2s.
+                        const fetchItems = async () => {
+                            const { data } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
+                            return data || [];
+                        };
+                        
+                        await new Promise(r => setTimeout(r, 800));
+                        let items = await fetchItems();
+                        
+                        // Inyectar al store inmediatamente con lo que hay
+                        nuevaOrden.order_items = items;
                         const store = useDashboardStore.getState()
                         const norm = store.normalizarOrder(nuevaOrden, 'core')
                         store.agregarOrderLocal(norm)
+
+                        // Si no había items aún, reintentar a los 2s y actualizar el store
+                        if (items.length === 0) {
+                            setTimeout(async () => {
+                                const retryItems = await fetchItems();
+                                if (retryItems.length > 0) {
+                                    useDashboardStore.getState().actualizarItemsOrderLocal?.(nuevaOrden.id, retryItems);
+                                }
+                            }, 2000);
+                        }
 
                         // Reproducir alerta sonora y notificación push nativa
                         playNotificationSound();

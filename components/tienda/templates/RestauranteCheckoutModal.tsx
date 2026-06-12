@@ -375,10 +375,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (!coreError) {
           // 3. Guardar items en tabla relacional (NUEVO CORE)
           const relationalItems = orderItems.map((item: any) => ({
-            order_id: orderId,
-            product_id: item.id && item.id.length > 20 ? item.id : null, // Ahora sí tiene ID
+            order_id: coreOrderId, // ← UUID del orders.id (clave primaria correcta, no el legacy BARR-...)
+            product_id: item.id && item.id.length > 20 ? item.id : null,
             name: item.name,
-            price: item.unitPrice, // Cambiado de .price (undefined) a .unitPrice
+            price: item.unitPrice,
             quantity: item.quantity,
             modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
           }));

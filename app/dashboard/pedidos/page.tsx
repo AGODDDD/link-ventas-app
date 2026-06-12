@@ -873,14 +873,22 @@ export default function PedidosPage() {
                                         <div className="md:col-span-4 border-l-0 md:border-l border-t md:border-t-0 border-zinc-200 dark:border-zinc-800/50 pt-6 md:pt-0 md:pl-6 flex flex-col">
                                             <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-4">Contenido del Pedido</p>
                                             <div className="space-y-3 flex-1 overflow-y-auto max-h-[150px] pr-2 custom-scrollbar">
-                                                {order.order_items.map((item: any, idx: number) => (
+                                                {order.order_items && order.order_items.length > 0 ? order.order_items.map((item: any, idx: number) => (
                                                     <div key={idx} className="flex justify-between items-center text-sm bg-white dark:bg-zinc-900 p-2 rounded-md">
                                                         <div className="flex items-center gap-2">
                                                             <span className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
-                                                            <span className="font-medium text-zinc-500 dark:text-zinc-400 line-clamp-1">{item.products?.name}</span>
+                                                            <span className="font-medium text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                                                                {/* Manejar todas las fuentes: JOIN relacional, order_items tabla, y JSONB de delivery_orders */}
+                                                                {item.products?.name || item.name || 'Producto'}
+                                                            </span>
                                                         </div>
+                                                        <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                                                            S/ {parseFloat(item.price || item.unitPrice || item.subtotal || 0).toFixed(2)}
+                                                        </span>
                                                     </div>
-                                                ))}
+                                                )) : (
+                                                    <p className="text-xs text-zinc-400 dark:text-zinc-500 italic">Sin detalle de productos</p>
+                                                )}
                                             </div>
                                         </div>
 

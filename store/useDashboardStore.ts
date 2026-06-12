@@ -20,6 +20,7 @@ interface DashboardState {
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => void
+    actualizarItemsOrderLocal: (orderId: string, items: any[]) => void
     normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
 }
 
@@ -227,6 +228,14 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => {
         set((state) => ({
             orders: state.orders.map(o => o.id === orderId ? { ...o, status: nuevoEstado } : o)
+        }))
+    },
+
+    actualizarItemsOrderLocal: (orderId: string, items: any[]) => {
+        // Actualiza los order_items de una orden ya inyectada en el store
+        // Usado por el retry del TopBar cuando los items no estaban disponibles al momento del INSERT
+        set((state) => ({
+            orders: state.orders.map(o => o.id === orderId ? { ...o, order_items: items } : o)
         }))
     },
 
