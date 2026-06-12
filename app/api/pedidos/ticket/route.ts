@@ -207,24 +207,25 @@ export async function GET(request: NextRequest) {
         doc.moveDown(0.4)
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
         
-        // Subtotal y Delivery Fee
+        // Subtotales — columna label: 20 chars, columna monto: 16 chars → total 36
+        // Todos los decimales caen en la misma posición (col 34)
         const subtotal = order.subtotal > 0 ? parseFloat(order.subtotal).toFixed(2) : total
         const delivery = parseFloat(order.delivery_fee || 0).toFixed(2)
         
         doc.fontSize(7)
         if (order.subtotal > 0 && order.delivery_fee > 0) {
-            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(subtotal).padStart(8, ' '))
-            doc.text(`DELIVERY:`.padEnd(28, ' ') + String(delivery).padStart(8, ' '))
+            doc.text(`SUBTOTAL:`.padEnd(20, ' ') + String(subtotal).padStart(16, ' '))
+            doc.text(`DELIVERY:`.padEnd(20, ' ') + String(delivery).padStart(16, ' '))
         } else {
-            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(total).padStart(8, ' '))
+            doc.text(`SUBTOTAL:`.padEnd(20, ' ') + String(total).padStart(16, ' '))
         }
         
-        // Total a pagar
-        doc.fontSize(8).font('Courier-Bold').text(`TOTAL:`.padEnd(24, ' ') + `S/ ${total}`.padStart(12, ' '))
+        // Total a pagar — mismo ancho total (36), S/ incluido dentro de los 16 del monto
+        doc.fontSize(8).font('Courier-Bold').text(`TOTAL:`.padEnd(20, ' ') + `S/ ${total}`.padStart(16, ' '))
         
-        // Método de pago
+        // Método de pago — misma alineación
         const paymentMethod = order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO' : 'DIGITAL'
-        doc.fontSize(7).font('Courier').text(paymentMethod.padEnd(28, ' ') + String(total).padStart(8, ' '))
+        doc.fontSize(7).font('Courier').text(paymentMethod.padEnd(20, ' ') + String(total).padStart(16, ' '))
         
         // Cantidad total de productos vendidos
         const totalQty = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 0
