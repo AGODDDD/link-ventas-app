@@ -108,138 +108,54 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     cargarOrders: async (userId: string, force: boolean = false) => {
         if (get().ordersCargadas && !force) return;
 
-        // Fetch de TRIPLE vía (Shadow Migration)
-        const [ordersRes, deliveryRes, unifiedRes] = await Promise.all([
-            // Viejo Legacy: orders (standard)
-            supabase
-                .from('orders')
-                .select(`*, order_items (*, products (name))`)
-                .eq('store_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(300),
-            // Viejo Legacy: delivery_orders
-            supabase
-                .from('delivery_orders')
-                .select('*')
-                .eq('store_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(300),
-            // Nuevo Core: Unified Orders (Relacional)
-            supabase
-                .from('orders')
-                .select('*, order_items(*)')
-                .eq('store_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(300)
-        ]);
+        const { data, error } = await supabase
+            .from('orders')
+            .select(`*, order_items (*, products (name))`)
+            .eq('store_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(300);
+
+        if (error) {
+            console.error('Error fetching orders:', error);
+            return;
+        }
 
         let unifiedOrders: any[] = [];
-        const seenLegacyIds = new Set<string>();
-
-        // Mapa de delivery_orders items (JSONB) indexado por su id (BARR-...)
-        // Usado como fallback cuando un core order no tiene order_items relacionales aún
-        const deliveryItemsMap = new Map<string, any[]>();
-        if (deliveryRes.data) {
-            deliveryRes.data.forEach((d: any) => {
-                if (d.items && d.items.length > 0) {
-                    deliveryItemsMap.set(d.id, d.items);
-                }
-            });
-        }
-
-        // 1. Agregar órdenes del NUEVO CORE (Unificadas) - Prioridad 1
-        if (unifiedRes.data) {
-            const coreOrders = unifiedRes.data
+        
+        if (data) {
+            unifiedOrders = data
                 .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'culqi' || o.metodo_pago === 'tarjeta_culqi')))
-                .map(o => {
-                    // Si el core order no tiene items relacionales, usar el JSONB de delivery_orders como fallback
-                    const relationalItems = o.order_items || [];
-                    const fallbackItems = (relationalItems.length === 0 && o.legacy_id)
-                        ? (deliveryItemsMap.get(o.legacy_id) || [])
-                        : relationalItems;
-                    return {
-                        id: o.id,
-                        legacy_id: o.legacy_id,
-                        created_at: o.created_at,
-                        customer_name: o.customer_name || 'Sin nombre',
-                        customer_phone: o.customer_phone || '-',
-                        direccion: o.direccion || 'Sin dirección',
-                        referencia: o.referencia || '',
-                        total_amount: (o.total || o.total_amount || 0).toString(),
-                        total: o.total || o.total_amount || 0,
-                        subtotal: o.subtotal || 0,
-                        delivery_fee: o.delivery_fee || 0,
-                        status: o.status,
-                        metodo_pago: o.metodo_pago,
-                        payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
-                        order_items: fallbackItems,
-                        _source: 'core'
-                    };
-                });
-            coreOrders.forEach(o => {
-                if (o.legacy_id) seenLegacyIds.add(o.legacy_id);
-                unifiedOrders.push(o);
-            });
+                .map(o => ({
+                    id: o.id,
+                    legacy_id: o.legacy_id,
+                    created_at: o.created_at,
+                    customer_name: o.customer_name || 'Sin nombre',
+                    customer_phone: o.customer_phone || '-',
+                    direccion: o.direccion || 'Sin dirección',
+                    referencia: o.referencia || '',
+                    total_amount: (o.total || o.total_amount || 0).toString(),
+                    total: o.total || o.total_amount || 0,
+                    subtotal: o.subtotal || 0,
+                    delivery_fee: o.delivery_fee || 0,
+                    status: o.status,
+                    metodo_pago: o.metodo_pago,
+                    payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
+                    order_items: o.order_items || [],
+                    _source: 'core'
+                }));
         }
-
-        // 2. Agregar órdenes de delivery normalizadas (LEGACY)
-        if (deliveryRes.data) {
-            const normalizedDelivery = deliveryRes.data
-                .filter(d => !(d.status === 'pendiente_pago' && d.metodo_pago === 'culqi'))
-                .filter(d => !seenLegacyIds.has(d.id)) // Deduplicar!
-                .map(d => ({
-                id: d.id,
-                created_at: d.created_at,
-                customer_name: d.customer_name || 'Sin nombre',
-                customer_phone: d.customer_phone || '-',
-                direccion: d.direccion || d.address || 'Sin dirección',
-                referencia: d.referencia || '',
-                total_amount: d.total ? d.total.toString() : '0',
-                subtotal: d.subtotal || 0,
-                delivery_fee: d.delivery_fee || 0,
-                status: d.status,
-                payment_proof_url: d.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
-                order_items: d.items || [],
-                _source: 'legacy_delivery'
-            }));
-            unifiedOrders = [...unifiedOrders, ...normalizedDelivery];
-        }
-
-        // 3. Agregar órdenes estándar (LEGACY_STANDARD)
-        if (ordersRes.data) {
-            const legacyStandard = ordersRes.data
-                .filter(o => !o.store_id) // Solo las que no tienen store_id (viejas)
-                .map(o => ({ ...o, _source: 'legacy_standard' }));
-            unifiedOrders = [...unifiedOrders, ...legacyStandard];
-        }
-
-        // 3. Re-ordenar por fecha de creación descendente
-        unifiedOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         set({ orders: unifiedOrders, ordersCargadas: true });
     },
 
     agregarOrderLocal: (order: any) => {
-        // Inyecta el pedido nuevo al principio de la matriz (evitando duplicados)
-        // Deduplicamos por 'id' Y por 'legacy_id' porque el mismo pedido puede llegar
-        // desde el canal de 'orders' (con UUID como id) y desde 'delivery_orders' (con legacy_id como id)
         set((state) => {
             const existsById = state.orders.some(o => o.id === order.id);
             if (existsById) return state;
-            // Si el pedido trae legacy_id, verificar que no haya uno con ese legacy_id ya
+            
             if (order.legacy_id) {
-                const existsByLegacy = state.orders.some(
-                    o => o.legacy_id === order.legacy_id || o.id === order.legacy_id
-                );
+                const existsByLegacy = state.orders.some(o => o.legacy_id === order.legacy_id);
                 if (existsByLegacy) return state;
-            }
-            // Si el pedido es de delivery_orders (su id es el legacy BARR-...), verificar también
-            // contra los ids que podrían ser legacy_ids de órdenes core ya cargadas
-            if (order._source === 'legacy_delivery') {
-                const existsAsCoreOrder = state.orders.some(
-                    o => o.legacy_id === order.id
-                );
-                if (existsAsCoreOrder) return state;
             }
             return { orders: [order, ...state.orders] };
         });

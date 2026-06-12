@@ -15,6 +15,21 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - **Historial del cliente mostraba "Completado" al instante:** Colisión de `legacy_id` entre pruebas antiguas y nuevas. El `OrderHistoryPanel.tsx` consultaba `delivery_orders` (tabla legacy con datos viejos marcados como completados).
   - **Fix:** Migrada la consulta a tabla `orders` (core), con deduplicación por `legacy_id` tomando siempre el registro más reciente. Status `paid` se mapea a `pendiente` en la vista del comprador.
 - **DB: REPLICA IDENTITY FULL:** Ejecutado `ALTER TABLE orders REPLICA IDENTITY FULL` para que Supabase Realtime transmita todos los campos en cada UPDATE por WebSocket.
+- **Sincronización `legacy_id` en Realtime:** El trigger de BD generaba el `legacy_id` después del INSERT inicial. El frontend recibía `null` y mostraba códigos incompletos al compartir.
+  - **Fix:** `DashboardTopBar.tsx` parchea el store en cuanto llega el webhook `UPDATE` con el `legacy_id` generado.
+- **Deduplicación de Pedidos en Modal Compartir:** Los pedidos de WhatsApp entraban por canales `orders` y `delivery_orders`. El segundo ganaba, insertándose sin `legacy_id`. El modal intentaba hacer `split('-')` sobre `"BARR"`, cortando el ID.
+  - **Fix:** Modal y funciones de descarga detectan `_source === 'legacy_delivery'` para usar el campo `id` completo (que ya contiene el código BARR).
+- **Alineación de montos en PDF Ticket:** Los montos (Monto, Subtotal, Delivery, Total) se desalineaban en el PDF porque se usaba padding por caracteres `padStart`/`padEnd`, lo cual falla con fuentes monoespaciadas cuando se mezcla `fontSize`.
+  - **Fix:** Motor de dibujado reescrito a coordenadas absolutas `doc.text(..., x, y, { width, align: 'right' })`. Precisión perfecta a nivel de píxel.
+- **Error 403 al Descargar PDF (Legacy):** El PDF fallaba en pedidos "legacy_delivery" porque la API verificaba `if (order.store_id !== user.id)` pero el mapeador interno `getOrderById` omitía transferir el `store_id` a la respuesta, evaluándose `undefined !== user.id` y retornando 403.
+  - **Fix:** Añadido explícitamente `store_id: deliveryData.store_id` en el mapeador.
+
+### Deprecado / Removido
+- **Tabla `delivery_orders` deprecada y erradicada:** Se eliminó por completo la estrategia de "doble escritura" implementada para compras por WhatsApp y flujos legacy. 
+  - **Checkout:** `RestauranteCheckoutModal.tsx` ahora solo inserta en la tabla unificada relacional `orders` y `order_items`.
+  - **Store:** Removidos los "fallbacks" y la búsqueda en jsonb en `useDashboardStore.ts` y las reduplicaciones innecesarias de `legacy_id`.
+  - **WebSockets:** Se cerró permanentemente el segundo canal de Realtime `delivery_rx` en el `DashboardTopBar.tsx`, evitando las colisiones de recepción y race conditions del frontend.
+  - **Analíticas:** Refactorizada `analytics/page.tsx` para consultar una única vez de la tabla `orders` y reducir consultas innecesarias a la BD.
 
 ### Restaurado
 - **Auto-expiración 24h en Dashboard:** Se restauró la lógica eliminada accidentalmente que cancela pedidos `pendiente_pago` o `pendiente` (WhatsApp) con más de 24 horas en el panel del vendedor (`app/dashboard/pedidos/page.tsx`).
@@ -24,7 +39,9 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - `components/tienda/templates/RestauranteCheckoutModal.tsx`: UUID compartido para Culqi y WhatsApp. `coreId` se persiste en localStorage del comprador.
 - `components/tienda/templates/OrderDetailModal.tsx`: Realtime apunta a `orders` con filtro por UUID. Polling a 2s.
 - `components/tienda/templates/OrderHistoryPanel.tsx`: Sincronización por `coreId` (UUID) cuando disponible. Polling continuo a 2s mientras el panel está abierto.
-- `app/dashboard/pedidos/page.tsx`: Restaurada lógica de auto-cancelación 24h.
+- `app/dashboard/pedidos/page.tsx`: Restaurada lógica de auto-cancelación 24h. Modal de compartir detecta `legacy_delivery`.
+- `app/api/pedidos/ticket/route.ts`: PDFKit usa coordenadas absolutas para columnas. Mapeador de legacy transfiere `store_id`.
+- `components/dashboard/DashboardTopBar.tsx`: Handler de `UPDATE` transfiere `legacy_id` si existe.
 
 ---
 

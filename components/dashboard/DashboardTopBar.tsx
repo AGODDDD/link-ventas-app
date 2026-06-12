@@ -136,8 +136,6 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
         if (!userId) return
 
         let channelOrders: any
-        let channelDelivery: any
-
         const setupRealtime = async () => {
             const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', userId).single()
             const targetId = storeData?.id || userId;
@@ -262,63 +260,12 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 )
                 .subscribe()
 
-            // ── CANAL 2: LEGACY & STANDARD DELIVERY ──
-            const channelNameDel = `delivery_rx_${userId}_${Math.random().toString(36).substring(7)}`
-            channelDelivery = supabase.channel(channelNameDel)
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, // Usar userId Legacy Original!
-                    (payload) => {
-                        const pedido = payload.new
-                        
-                        // Esperamos 500ms antes de inyectar al store local.
-                        // La orden TAMBIÉN se inserta en 'orders' (tabla core) con ~300ms de diferencia.
-                        // Si dejamos que el canal de 'orders' llegue primero, su deduplicación 
-                        // por legacy_id rechazará este duplicado automáticamente.
-                        setTimeout(() => {
-                            const store = useDashboardStore.getState()
-                            const norm = store.normalizarOrder(pedido, 'legacy_delivery')
-                            store.agregarOrderLocal(norm) // agregarOrderLocal filtrará si ya existe
-                        }, 500)
-
-                        toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
-                            description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
-                            duration: 8000,
-                            icon: <ShoppingBag className="text-green-500" />,
-                            action: {
-                                label: 'Ver pedido',
-                                onClick: () => window.location.href = '/dashboard/pedidos',
-                            },
-                        })
-                        setNotificaciones(prev => [{
-                            id: pedido.id,
-                            mensaje: `🛵 Delivery de ${pedido.customer_name || 'Cliente'} — ${pedido.id.substring(0,6)}`,
-                            monto: parseFloat(pedido.total || 0),
-                            fecha: new Date(),
-                            leida: false
-                        }, ...prev])
-
-                        playNotificationSound();
-                        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                            new Notification('🛵 Nuevo Pedido Delivery', { body: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`, icon: '/favicon.ico' })
-                        }
-                    }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` },
-                    (payload) => {
-                        useDashboardStore.getState().actualizarEstadoOrderLocal(payload.new.id, payload.new.status)
-                    }
-                )
-                .subscribe()
         }
 
         setupRealtime();
 
         return () => {
              if (channelOrders) supabase.removeChannel(channelOrders)
-             if (channelDelivery) supabase.removeChannel(channelDelivery)
         }
     }, [userId])
 

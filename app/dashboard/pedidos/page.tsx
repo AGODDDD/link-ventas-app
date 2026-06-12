@@ -81,8 +81,7 @@ export default function PedidosPage() {
 
             if (expiredOrders.length > 0) {
                 for (const order of expiredOrders) {
-                    const table = order._source === 'core' ? 'orders' : 'delivery_orders'
-                    const { error } = await supabase.from(table).update({ status: 'cancelado' }).eq('id', order.id)
+                    const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
                     if (!error) {
                         actualizarEstadoOrderLocal(order.id, 'cancelado')
                     }
@@ -155,10 +154,8 @@ export default function PedidosPage() {
         const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
         
         // Actualizar en AMBAS tablas para mantener sincronía
-        // Tabla principal según origen
-        const primaryTable = order._source === 'core' ? 'orders' : 'delivery_orders'
         const { error: primaryError } = await supabase
-            .from(primaryTable)
+            .from('orders')
             .update({ status: nextStatus })
             .eq('id', orderId)
         
@@ -169,15 +166,6 @@ export default function PedidosPage() {
 
         actualizarEstadoOrderLocal(orderId, nextStatus)
         toast.success(`Estado actualizado a: ${DELIVERY_LABELS[nextStatus] || nextStatus}`)
-
-        // Sincronizar tabla espejo si aplica
-        if (order._source === 'core' && order.legacy_id) {
-            // Si la orden tiene legacy_id, actualizar también delivery_orders
-            await supabase.from('delivery_orders').update({ status: nextStatus }).eq('id', order.legacy_id)
-        } else if (order._source === 'legacy_delivery') {
-            // Si el origen es legacy, buscar el core equivalente por legacy_id y actualizar
-            await supabase.from('orders').update({ status: nextStatus }).eq('legacy_id', orderId)
-        }
     }
 
     const cancelarPedido = async (order: any) => {
@@ -185,18 +173,11 @@ export default function PedidosPage() {
         const confirmed = window.confirm('¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.')
         if (!confirmed) return
 
-        const primaryTable = order._source === 'core' ? 'orders' : 'delivery_orders'
-        const { error } = await supabase.from(primaryTable).update({ status: 'cancelado' }).eq('id', orderId)
+        const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', orderId)
 
         if (!error) {
             actualizarEstadoOrderLocal(orderId, 'cancelado')
             toast.error('Pedido cancelado')
-            // Sincronizar tabla espejo
-            if (order._source === 'core' && order.legacy_id) {
-                await supabase.from('delivery_orders').update({ status: 'cancelado' }).eq('id', order.legacy_id)
-            } else if (order._source === 'legacy_delivery') {
-                await supabase.from('orders').update({ status: 'cancelado' }).eq('legacy_id', orderId)
-            }
         } else {
             toast.error('Error al cancelar: ' + error.message)
         }
@@ -846,7 +827,7 @@ export default function PedidosPage() {
                                                         <div className="flex items-center gap-2">
                                                             <span className="bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-bold px-2 py-0.5 rounded">{item.quantity}x</span>
                                                             <span className="font-medium text-zinc-500 dark:text-zinc-400 line-clamp-1">
-                                                                {/* Manejar todas las fuentes: JOIN relacional, order_items tabla, y JSONB de delivery_orders */}
+                                                                {/* Manejar fuentes: JOIN relacional o fallback local */}
                                                                 {item.products?.name || item.name || 'Producto'}
                                                             </span>
                                                         </div>

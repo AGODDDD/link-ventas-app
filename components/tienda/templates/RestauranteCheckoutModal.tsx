@@ -124,26 +124,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             };
           });
 
-          // 3a. Legacy table (delivery_orders) — dashboard + notificaciones
-          await supabase.from('delivery_orders').insert({
-            id: pendingOrder?.legacyId || orderId,
-            store_id: perfil.id,
-            status: 'pendiente',
-            customer_name: nombre,
-            customer_phone: telefono,
-            customer_email: correo,
-            direccion,
-            referencia: savedAddress?.referencia || null,
-            lat: savedAddress?.lat || null,
-            lng: savedAddress?.lng || null,
-            items: orderItems,
-            subtotal,
-            delivery_fee: deliveryFee,
-            total,
-            metodo_pago: 'culqi',
-            estimated_time: '50 - 60 min',
-          });
-
 
           // 3d. Lead capture
           await supabase.from('store_leads').insert({
@@ -328,27 +308,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
       // Save to Supabase for vendor dashboard + realtime tracking (Double Write Strategy)
       try {
-        // 1. Guardar el pedido en Legacy (Restaurante) - MODO SOMBRA
-        const { error: orderError } = await supabase.from('delivery_orders').insert({
-          id: orderId,
-          store_id: perfil.id,
-          status: newOrder.status,
-          customer_name: nombre,
-          customer_phone: telefono,
-          customer_email: correo,
-          direccion,
-          referencia: savedAddress?.referencia || null,
-          lat: savedAddress?.lat || null,
-          lng: savedAddress?.lng || null,
-          items: orderItems,
-          subtotal,
-          delivery_fee: deliveryFee,
-          total,
-          metodo_pago: metodoPago,
-          estimated_time: '50 - 60 min',
-        });
-        
-        if (orderError) console.error('⚠️ Error en tabla legacy:', orderError.message);
+
 
         // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
         // coreOrderId already generated above

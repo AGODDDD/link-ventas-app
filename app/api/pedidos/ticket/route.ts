@@ -4,53 +4,25 @@ import fs from 'fs'
 import path from 'path'
 import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
 
-// Helper para buscar el pedido por ID en las distintas tablas (Shadow Migration)
+// Helper para buscar el pedido por ID en la tabla unificada
 async function getOrderById(orderId: string) {
     const supabase = getSupabaseServiceClient()
-    // Verificar si es un UUID válido
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)
 
+    let query = supabase.from('orders').select('*, order_items (*)')
     if (isUuid) {
-        // 1. Intentar en orders (Core / Legacy Standard)
-        const { data: orderData } = await supabase
-            .from('orders')
-            .select(`*, order_items (*)`)
-            .eq('id', orderId)
-            .single()
-            
-        if (orderData) {
-            return {
-                ...orderData,
-                // Normalizar: core orders usan 'total', legacy usan 'total_amount'
-                total_amount: (orderData.total_amount || orderData.total || 0).toString(),
-                _source: orderData.store_id ? 'core' : 'legacy_standard'
-            }
-        }
+        query = query.eq('id', orderId)
+    } else {
+        query = query.eq('legacy_id', orderId)
     }
-    
-    // 2. Intentar en delivery_orders (Legacy Delivery)
-    const { data: deliveryData } = await supabase
-        .from('delivery_orders')
-        .select('*')
-        .eq('id', orderId)
-        .single()
-        
-    if (deliveryData) {
+
+    const { data: orderData } = await query.single()
+            
+    if (orderData) {
         return {
-            id: deliveryData.id,
-            created_at: deliveryData.created_at,
-            customer_name: deliveryData.customer_name || 'Sin nombre',
-            customer_phone: deliveryData.customer_phone || '-',
-            direccion: deliveryData.direccion || deliveryData.address || 'Sin dirección',
-            referencia: deliveryData.referencia || '',
-            total_amount: deliveryData.total ? deliveryData.total.toString() : '0',
-            subtotal: deliveryData.subtotal || 0,
-            delivery_fee: deliveryData.delivery_fee || 0,
-            status: deliveryData.status,
-            payment_proof_url: deliveryData.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
-            order_items: deliveryData.items || [],
-            store_id: deliveryData.store_id,
-            _source: 'legacy_delivery'
+            ...orderData,
+            total_amount: (orderData.total_amount || orderData.total || 0).toString(),
+            _source: orderData.store_id ? 'core' : 'legacy_standard'
         }
     }
     
