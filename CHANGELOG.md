@@ -27,6 +27,8 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - **Fix:** Función actualizada a usar `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::DATE`.
 - **Carga de Dashboad rota y WebSockets ignorados por orden_type:** Al erradicar la doble escritura, la petición a BD fallaba silenciosamente por un join huérfano (`order_items (*, products (name))`) sin Foreign Key. Además, los WebSockets en tiempo real inyectaban la orden sin `order_type`, por lo que las pestañas del Dashboard las filtraban y hacían invisibles.
   - **Fix:** Eliminado join de `products` en `useDashboardStore.ts`. Inyectado `order_type` explícitamente en `normalizarOrder()`.
+- **Notificaciones del Radar no clicables:** Las notificaciones push del Dashboard (`DashboardTopBar.tsx`) eran simples `<div>` de texto. Al hacer clic no marcaban como leídas ni redirigían.
+  - **Fix:** Convertidas a componentes `<Link href="/dashboard/pedidos">` con un `onClick` que cierra el menú y marca la notificación local como `leida = true`.
 
 ### Deprecado / Removido
 - **Tabla `delivery_orders` deprecada y erradicada:** Se eliminó por completo la estrategia de "doble escritura" implementada para compras por WhatsApp y flujos legacy. 
