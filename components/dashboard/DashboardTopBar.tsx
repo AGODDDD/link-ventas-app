@@ -156,10 +156,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             return;
                         }
 
-                        toast.success(`NUEVA VENTA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
-                            description: `El cliente ${nuevaOrden.customer_name} acaba de pagar.`,
-                            duration: 8000,
-                            icon: <ShoppingBag className="text-secondary" />
+                        toast.success(`🛍️ NUEVA VENTA — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
+                            description: `${nuevaOrden.customer_name} acaba de pagar`,
+                            duration: 6000,
+                            icon: <ShoppingBag className="text-secondary" />,
+                            action: {
+                                label: 'Ver pedido',
+                                onClick: () => window.location.href = '/dashboard/pedidos',
+                            },
                         })
                         setNotificaciones(prev => [{
                             id: nuevaOrden.id,
@@ -222,10 +226,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             const norm = store.normalizarOrder(nuevaOrden, 'core');
                             store.agregarOrderLocal(norm);
                             
-                            toast.success(`NUEVA VENTA PAGADA de S/ ${nuevaOrden.total_amount || nuevaOrden.total || 0}`, {
-                                description: `El cliente ${nuevaOrden.customer_name} pagó con Culqi exitosamente.`,
-                                duration: 8000,
-                                icon: <ShoppingBag className="text-secondary" />
+                            toast.success(`💳 PAGO CULQI — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
+                                description: `${nuevaOrden.customer_name} pagó con tarjeta exitosamente`,
+                                duration: 6000,
+                                icon: <ShoppingBag className="text-secondary" />,
+                                action: {
+                                    label: 'Ver pedido',
+                                    onClick: () => window.location.href = '/dashboard/pedidos',
+                                },
                             })
                             setNotificaciones(prev => [{
                                 id: nuevaOrden.id,
@@ -269,8 +277,12 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
 
                         toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
                             description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
-                            duration: 10000,
-                            icon: <ShoppingBag className="text-green-500" />
+                            duration: 8000,
+                            icon: <ShoppingBag className="text-green-500" />,
+                            action: {
+                                label: 'Ver pedido',
+                                onClick: () => window.location.href = '/dashboard/pedidos',
+                            },
                         })
                         setNotificaciones(prev => [{
                             id: pedido.id,
