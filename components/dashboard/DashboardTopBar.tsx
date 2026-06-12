@@ -333,16 +333,24 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                                     </div>
                                 ) : (
                                     notificaciones.map(n => (
-                                        <div key={n.id} className={`p-4 border-b border-zinc-100 dark:border-[var(--dash-border)] flex items-start gap-3 transition-colors ${!n.leida ? 'bg-[var(--dash-accent)]/5' : 'hover:bg-zinc-50 dark:hover:bg-[var(--dash-surface-2)]'}`}>
+                                        <Link 
+                                            href="/dashboard/pedidos"
+                                            key={n.id} 
+                                            onClick={() => {
+                                                setNotificaciones(prev => prev.map(notif => notif.id === n.id ? { ...notif, leida: true } : notif));
+                                                setIsMenuOpen(false);
+                                            }}
+                                            className={`block p-4 border-b border-zinc-100 dark:border-[var(--dash-border)] flex items-start gap-3 transition-colors ${!n.leida ? 'bg-[var(--dash-accent)]/5' : 'hover:bg-zinc-50 dark:hover:bg-[var(--dash-surface-2)]'}`}
+                                        >
                                             <div className="w-8 h-8 rounded-full bg-[var(--dash-success-soft)] flex items-center justify-center shrink-0">
                                                 <ShoppingBag className="w-4 h-4 text-[var(--dash-success)]" />
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 text-left">
                                                 <p className={`text-sm truncate ${!n.leida ? 'font-bold text-zinc-900 dark:text-[var(--dash-text-primary)]' : 'text-zinc-500 dark:text-[var(--dash-text-muted)]'}`}>{n.mensaje}</p>
                                                 <p className="text-xs font-mono font-bold text-[var(--dash-accent)] mt-1">S/ {n.monto.toFixed(2)}</p>
                                                 <p className="text-[10px] text-zinc-400/70 dark:text-[var(--dash-text-muted)]/50 mt-1">{n.fecha.toLocaleTimeString()}</p>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))
                                 )}
                             </div>
