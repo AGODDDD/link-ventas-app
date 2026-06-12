@@ -11,7 +11,8 @@ type ThermalReceiptProps = {
 export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({ order, storeName }, ref) => {
     if (!order) return null
 
-    const total = parseFloat(order.total_amount).toFixed(2)
+    const totalRaw = parseFloat(order.total_amount || order.total || order.total_price || 0)
+    const total = isNaN(totalRaw) ? '0.00' : totalRaw.toFixed(2)
     const store_name = storeName || "TU TIENDA"
     const orderDate = new Date(order.created_at)
 
@@ -28,9 +29,14 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
             // Ancho clásico de ticket, fondo blanco químico, texto negro profundo
             style={{ width: '400px', backgroundColor: '#ffffff', color: '#000000', fontFamily: '"Courier New", Courier, monospace', position: 'relative', padding: '30px 20px 60px 20px', letterSpacing: '-0.5px' }}
         >
-            {/* Título Principal */}
+            {/* Nombre de la Tienda */}
+            <div className="text-center mb-2">
+                <h1 className="text-2xl font-bold tracking-widest uppercase">{store_name}</h1>
+            </div>
+
+            {/* Título del Ticket */}
             <div className="text-center mb-4">
-                <h1 className="text-xl font-bold tracking-widest uppercase">TICKET DE VENTA N° {ticketNumber}</h1>
+                <h2 className="text-sm font-bold tracking-widest uppercase">TICKET DE VENTA N° {ticketNumber}</h2>
             </div>
 
             {/* Metadatos */}

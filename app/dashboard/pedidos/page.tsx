@@ -303,7 +303,9 @@ export default function PedidosPage() {
     const compartirWhatsApp = (order: any) => {
         const phone = order.customer_phone ? order.customer_phone.replace(/\D/g, '') : ''
         const store_name = perfil?.store_name || 'nuestra tienda'
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        // Usar legacy_id (BARR-...) si existe, sino el UUID
+        const ticketId = order.legacy_id || order.id
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
         const customerName = order.customer_name || 'Cliente'
         
         const message = `Hola ${customerName}, ¡gracias por tu compra! Aquí puedes visualizar y descargar el ticket digital oficial de tu pedido en ${store_name.toUpperCase()}: ${pdfUrl}`
@@ -320,13 +322,16 @@ export default function PedidosPage() {
         }
         
         const store_name = perfil?.store_name || 'nuestra tienda'
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        // Usar legacy_id (BARR-...) si existe, sino el UUID
+        const ticketId = order.legacy_id || order.id
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
         const customerName = order.customer_name || 'Cliente'
-        const shortId = order.id.split('-')[0].toUpperCase()
+        const displayId = order.legacy_id || order.id.split('-')[0].toUpperCase()
         
-        const subject = `Ticket Digital - Pedido #${shortId} en ${store_name}`
+        const subject = `Ticket Digital - Pedido #${displayId} en ${store_name}`
         const body = `Hola ${customerName},\n\n¡Gracias por tu compra! Adjuntamos el enlace para visualizar y descargar tu ticket digital optimizado:\n\n${pdfUrl}\n\nGracias por tu preferencia.\n\n${store_name.toUpperCase()}`
         
+        // Nota: mailto abre el cliente de correo local del sistema (Outlook, Apple Mail, Gmail app)
         const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
         window.open(mailtoUrl, '_blank')
         toast.success('Abriendo cliente de correo... ✉️')
@@ -1072,7 +1077,7 @@ export default function PedidosPage() {
                         <div className="md:w-1/2 p-6 flex flex-col justify-between space-y-6">
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-1">Compartir Comprobante</p>
-                                <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-2">Pedido #{shareOrder.id.split('-')[0].toUpperCase()}</h3>
+                                <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-2">Pedido #{shareOrder.legacy_id || shareOrder.id.split('-')[0].toUpperCase()}</h3>
                                 <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
                                     Generamos un <strong className="text-primary font-bold">PDF oficial optimizado para ticketera</strong> directamente en el servidor. Puedes compartir el enlace oficial o enviarlo:
                                 </p>
