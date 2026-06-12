@@ -154,24 +154,24 @@ export async function GET(request: NextRequest) {
             doc.text(`Cliente   : ${order.customer_name.toUpperCase()}`)
         }
         doc.moveDown(0.4)
-        
-        // Línea Separadora superior
-        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
 
-        // Layout de columnas basado en coordenadas absolutas (no character-padding)
-        // Columna izquierda: x=10  |  Columna monto: x=152, w=54.77, align='right'
-        // Esto garantiza alineación perfecta sin importar el fontSize de cada fila
-        const LX = 10          // left column x
-        const LW = 140         // left column width
-        const RX = 152         // right (amount) column x
-        const RW = doc.page.width - RX - 10  // right column width hasta el margen derecho
+        // Layout de columnas basado en coordenadas absolutas
+        // Después de cada par se resetea doc.x = LX para no heredar x=RX en el footer
+        const LX = 10
+        const LW = 140
+        const RX = 152
+        const RW = doc.page.width - RX - 10
+
+        // Línea Separadora superior
+        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`, LX)
 
         // Encabezado de la Tabla de Items
         let ry = doc.y
         doc.fontSize(7).font('Courier-Bold')
         doc.text('CANT  DESCRIPCION', LX, ry, { width: LW, lineBreak: false })
         doc.text('MONTO', RX, ry, { width: RW, align: 'right' })
-        doc.font('Courier').text(`---------------------------------------`)
+        doc.x = LX  // ← reset cursor
+        doc.font('Courier').text(`---------------------------------------`, LX)
 
         // Render de los Items
         order.order_items?.forEach((item: any, idx: number) => {
@@ -190,24 +190,30 @@ export async function GET(request: NextRequest) {
             const basePrice = combinedPriceRaw - modsTotal
             const lineTotal = (basePrice * qty).toFixed(2)
 
-            // Fila del item: cantidad + nombre (izquierda) | precio (derecha, alineado)
+            // Fila del item: izquierda | precio derecha
             ry = doc.y
             doc.fontSize(7).font('Courier')
             doc.text(`${qty}  ${name}`, LX, ry, { width: LW, lineBreak: false })
             doc.text(lineTotal, RX, ry, { width: RW, align: 'right' })
+            doc.x = LX  // ← reset
 
-            // Modificadores — nombre en gris, precio alineado a la misma columna derecha
+            // Modificadores
             modsList.forEach((m: any) => {
                 const mName = `  - ${m.name}`.substring(0, 26).toUpperCase()
                 const mPrice = m.price && parseFloat(m.price) > 0 ? (parseFloat(m.price) * qty).toFixed(2) : ''
                 ry = doc.y
                 doc.fontSize(6).fillColor('#444444')
-                doc.text(mName, LX, ry, { width: LW, lineBreak: !!mPrice === false })
-                if (mPrice) doc.text(mPrice, RX, ry, { width: RW, align: 'right' })
+                if (mPrice) {
+                    doc.text(mName, LX, ry, { width: LW, lineBreak: false })
+                    doc.text(mPrice, RX, ry, { width: RW, align: 'right' })
+                    doc.x = LX  // ← reset
+                } else {
+                    doc.text(mName, LX, ry)
+                }
                 doc.fillColor('#000000').fontSize(7)
             })
 
-            // Notas opcionales de cocina/pedido
+            // Notas opcionales
             const notes = item.notes || (isModsObject ? rawMods.notes : '') || ''
             if (notes) {
                 doc.fontSize(6).text(`  ** ${notes.toUpperCase()} **`, LX, doc.y).fontSize(7)
@@ -217,10 +223,9 @@ export async function GET(request: NextRequest) {
         })
 
         doc.moveDown(0.4)
-        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
+        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`, LX)
 
         // Totales — misma columna derecha (RX, RW, align:'right')
-        // Al usar coordenadas, el fontSize de TOTAL (8) no afecta la alineación del monto
         const subtotal = order.subtotal > 0 ? parseFloat(order.subtotal).toFixed(2) : total
         const delivery = parseFloat(order.delivery_fee || 0).toFixed(2)
 
@@ -229,20 +234,24 @@ export async function GET(request: NextRequest) {
             ry = doc.y
             doc.text('SUBTOTAL:', LX, ry, { width: LW, lineBreak: false })
             doc.text(subtotal, RX, ry, { width: RW, align: 'right' })
+            doc.x = LX
             ry = doc.y
             doc.text('DELIVERY:', LX, ry, { width: LW, lineBreak: false })
             doc.text(delivery, RX, ry, { width: RW, align: 'right' })
+            doc.x = LX
         } else {
             ry = doc.y
             doc.text('SUBTOTAL:', LX, ry, { width: LW, lineBreak: false })
             doc.text(total, RX, ry, { width: RW, align: 'right' })
+            doc.x = LX
         }
 
-        // TOTAL — bold + fontSize 8, pero el monto queda en la misma columna derecha exacta
+        // TOTAL — bold fontSize 8, monto en misma columna derecha exacta
         ry = doc.y
         doc.fontSize(8).font('Courier-Bold')
         doc.text('TOTAL:', LX, ry, { width: LW, lineBreak: false })
         doc.text(total, RX, ry, { width: RW, align: 'right' })
+        doc.x = LX  // ← reset crítico: sin esto todo el footer va al x=RX
 
         // Método de pago
         const paymentMethod = order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO' : 'DIGITAL'
@@ -250,20 +259,21 @@ export async function GET(request: NextRequest) {
         doc.fontSize(7).font('Courier')
         doc.text(paymentMethod, LX, ry, { width: LW, lineBreak: false })
         doc.text(total, RX, ry, { width: RW, align: 'right' })
+        doc.x = LX  // ← reset
 
         // Cantidad total de productos vendidos
         const totalQty = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 0
         doc.moveDown(0.4)
-        doc.text(`${totalQty} VENTA(S)`)
-        
+        doc.text(`${totalQty} VENTA(S)`, LX)
+
         doc.moveDown(0.4)
-        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
-        
+        doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`, LX)
+
         // Código de Despacho
         const barcodeText = ticketNumber;
-        doc.fontSize(7).font('Courier').text(`ORDEN DE DESPACHO: ${barcodeText}`, { align: 'center' })
+        doc.fontSize(7).font('Courier').text(`ORDEN DE DESPACHO: ${barcodeText}`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
         doc.moveDown(0.6)
-        
+
         // Código de Barras Real con bwip-js API
         try {
             const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeText)}&scale=3&height=10&includetext=false`;
@@ -271,33 +281,30 @@ export async function GET(request: NextRequest) {
             if (!imgRes.ok) throw new Error('Failed to fetch barcode');
             const arrayBuffer = await imgRes.arrayBuffer();
             const barcodeBuffer = Buffer.from(arrayBuffer);
-            
-            // doc.x is around 10 due to margins, width is 226.77
-            // Center the image: (226.77 - 190) / 2 = 18.38
             doc.image(barcodeBuffer, 18, doc.y, { fit: [190, 40] });
             doc.moveDown(4.0);
         } catch (bErr) {
             console.error("Error generating barcode:", bErr);
-            doc.text(`[ERROR GENERANDO CODIGO]`, { align: 'center' });
+            doc.text(`[ERROR GENERANDO CODIGO]`, LX, doc.y, { width: doc.page.width - 20, align: 'center' });
             doc.moveDown(1.0);
         }
-        
+
         // Cláusula de Validez de SUNAT
-        doc.fontSize(7).font('Courier-Bold').text(`TICKET NO VALIDO COMO`, { align: 'center' })
-        doc.text(`COMPROBANTE DE PAGO SUNAT`, { align: 'center' })
+        doc.fontSize(7).font('Courier-Bold').text(`TICKET NO VALIDO COMO`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
+        doc.text(`COMPROBANTE DE PAGO SUNAT`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
         doc.moveDown(0.4)
-        
+
         // Enlace de WhatsApp
-        doc.fontSize(6).font('Courier').text(`Visualice el estado de su pedido en`, { align: 'center' })
-        doc.text(`su WhatsApp`, { align: 'center' })
+        doc.fontSize(6).font('Courier').text(`Visualice el estado de su pedido en`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
+        doc.text(`su WhatsApp`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
         doc.moveDown(0.4)
-        
+
         // Agradecimiento
-        doc.fontSize(7).font('Courier-Bold').text(`GRACIAS POR SU PREFERENCIA`, { align: 'center' })
+        doc.fontSize(7).font('Courier-Bold').text(`GRACIAS POR SU PREFERENCIA`, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
         doc.moveDown(1.5)
-        
-        doc.fontSize(6).font('Courier').text(barcodeText, { align: 'center' })
-        
+
+        doc.fontSize(6).font('Courier').text(barcodeText, LX, doc.y, { width: doc.page.width - 20, align: 'center' })
+
         // Finalizar el documento
         doc.end()
         
