@@ -23,6 +23,10 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - **Fix:** Motor de dibujado reescrito a coordenadas absolutas `doc.text(..., x, y, { width, align: 'right' })`. Precisión perfecta a nivel de píxel.
 - **Error 403 al Descargar PDF (Legacy):** El PDF fallaba en pedidos "legacy_delivery" porque la API verificaba `if (order.store_id !== user.id)` pero el mapeador interno `getOrderById` omitía transferir el `store_id` a la respuesta, evaluándose `undefined !== user.id` y retornando 403.
   - **Fix:** Añadido explícitamente `store_id: deliveryData.store_id` en el mapeador.
+- **Zona Horaria de Secuencias de Tickets (BARR-XXX):** La función RPC `get_next_order_sequence` usaba `CURRENT_DATE` (UTC), provocando que los pedidos hechos en Lima después de las 7:00 PM acumularan secuencias en la "cubeta" del día siguiente. Al cambiar la medianoche local, el número correlativo continuaba incrementándose desde 30+ en lugar de reiniciar a 1.
+  - **Fix:** Función actualizada a usar `(CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::DATE`.
+- **Carga de Dashboad rota y WebSockets ignorados por orden_type:** Al erradicar la doble escritura, la petición a BD fallaba silenciosamente por un join huérfano (`order_items (*, products (name))`) sin Foreign Key. Además, los WebSockets en tiempo real inyectaban la orden sin `order_type`, por lo que las pestañas del Dashboard las filtraban y hacían invisibles.
+  - **Fix:** Eliminado join de `products` en `useDashboardStore.ts`. Inyectado `order_type` explícitamente en `normalizarOrder()`.
 
 ### Deprecado / Removido
 - **Tabla `delivery_orders` deprecada y erradicada:** Se eliminó por completo la estrategia de "doble escritura" implementada para compras por WhatsApp y flujos legacy. 
