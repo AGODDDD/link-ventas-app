@@ -150,24 +150,34 @@ export default function PedidosPage() {
         const orderId = order.id
         const currentStatus = order.status
         let currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
-        if (currentStatus === 'paid') currentIdx = 2; // Paid is visually equal to pendiente
+        if (currentStatus === 'paid') currentIdx = 2; // Paid visualmente = pendiente
 
         if (currentIdx < 0 || currentIdx >= DELIVERY_STATUSES.length - 1) return
         const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
         
-        // Determinar tabla basándose en el origen normalizado
-        const table = order._source === 'core' ? 'orders' : 'delivery_orders'
-        
-        const { error } = await supabase
-            .from(table)
+        // Actualizar en AMBAS tablas para mantener sincronía
+        // Tabla principal según origen
+        const primaryTable = order._source === 'core' ? 'orders' : 'delivery_orders'
+        const { error: primaryError } = await supabase
+            .from(primaryTable)
             .update({ status: nextStatus })
             .eq('id', orderId)
         
-        if (!error) {
-            actualizarEstadoOrderLocal(orderId, nextStatus)
-            toast.success(`Estado actualizado a: ${DELIVERY_LABELS[nextStatus]}`)
-        } else {
-            toast.error('Error actualizando estado: ' + error.message)
+        if (primaryError) {
+            toast.error('Error actualizando estado: ' + primaryError.message)
+            return
+        }
+
+        actualizarEstadoOrderLocal(orderId, nextStatus)
+        toast.success(`Estado actualizado a: ${DELIVERY_LABELS[nextStatus] || nextStatus}`)
+
+        // Sincronizar tabla espejo si aplica
+        if (order._source === 'core' && order.legacy_id) {
+            // Si la orden tiene legacy_id, actualizar también delivery_orders
+            await supabase.from('delivery_orders').update({ status: nextStatus }).eq('id', order.legacy_id)
+        } else if (order._source === 'legacy_delivery') {
+            // Si el origen es legacy, buscar el core equivalente por legacy_id y actualizar
+            await supabase.from('orders').update({ status: nextStatus }).eq('legacy_id', orderId)
         }
     }
 
@@ -176,15 +186,18 @@ export default function PedidosPage() {
         const confirmed = window.confirm('¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.')
         if (!confirmed) return
 
-        const table = order._source === 'core' ? 'orders' : 'delivery_orders'
+        const primaryTable = order._source === 'core' ? 'orders' : 'delivery_orders'
+        const { error } = await supabase.from(primaryTable).update({ status: 'cancelado' }).eq('id', orderId)
 
-        const { error } = await supabase
-            .from(table)
-            .update({ status: 'cancelado' })
-            .eq('id', orderId)
         if (!error) {
             actualizarEstadoOrderLocal(orderId, 'cancelado')
             toast.error('Pedido cancelado')
+            // Sincronizar tabla espejo
+            if (order._source === 'core' && order.legacy_id) {
+                await supabase.from('delivery_orders').update({ status: 'cancelado' }).eq('id', order.legacy_id)
+            } else if (order._source === 'legacy_delivery') {
+                await supabase.from('orders').update({ status: 'cancelado' }).eq('legacy_id', orderId)
+            }
         } else {
             toast.error('Error al cancelar: ' + error.message)
         }

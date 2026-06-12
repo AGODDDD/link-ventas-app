@@ -116,8 +116,12 @@ export default function AnalyticsPage() {
 
     const ticketPromedio = ordersFiltradas.length > 0 ? ingresoTotal / ordersFiltradas.length : 0
 
-    const pedidosPendientes = ordersFiltradas.filter(o => o.status === 'pending').length
-    const pedidosCompletados = ordersFiltradas.filter(o => o.status === 'paid' || o.status === 'shipped').length
+    const pedidosPendientes = ordersFiltradas.filter(o => 
+        ['pending', 'pendiente', 'pendiente_pago', 'pendiente_verificacion'].includes(o.status)
+    ).length
+    const pedidosCompletados = ordersFiltradas.filter(o => 
+        ['paid', 'shipped', 'completado'].includes(o.status)
+    ).length
 
     const tasaConversion = leads.length > 0
         ? Math.round((ordersFiltradas.length / leads.length) * 100)
