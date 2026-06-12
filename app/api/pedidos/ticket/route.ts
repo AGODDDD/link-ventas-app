@@ -49,6 +49,7 @@ async function getOrderById(orderId: string) {
             status: deliveryData.status,
             payment_proof_url: deliveryData.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
             order_items: deliveryData.items || [],
+            store_id: deliveryData.store_id,
             _source: 'legacy_delivery'
         }
     }
