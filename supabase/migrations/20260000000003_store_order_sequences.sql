@@ -19,7 +19,7 @@ SECURITY DEFINER -- Se ejecuta con permisos de creador para saltar RLS en store_
 AS $$
 DECLARE
     v_seq INTEGER;
-    v_today DATE := CURRENT_DATE;
+    v_today DATE := (CURRENT_TIMESTAMP AT TIME ZONE 'America/Lima')::DATE;
 BEGIN
     INSERT INTO store_sequences (store_id, date, seq_value)
     VALUES (p_store_id, v_today, 1)
