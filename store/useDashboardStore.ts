@@ -216,6 +216,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 subtotal: raw.subtotal || 0,
                 delivery_fee: raw.delivery_fee || 0,
                 status: raw.status,
+                order_type: raw.order_type,
+                metodo_pago: raw.metodo_pago,
                 payment_proof_url: raw.payment_proof_url || 'NUEVO_CORE',
                 order_items: raw.order_items || [],
                 _source: 'core'
