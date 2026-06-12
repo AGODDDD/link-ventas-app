@@ -158,6 +158,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           const customerStore = useCustomerStore.getState();
           customerStore.addOrder({
             id: pendingOrder?.legacyId || orderId,
+            coreId: pendingOrder?.orderId, // UUID for realtime subscription
             storeId: perfil.id,
             storeName: perfil.store_name || '',
             date: new Date().toISOString(),
@@ -242,11 +243,13 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
          throw new Error("No se pudo generar el correlativo del pedido.");
      }
      const orderId = formatOrderId(prefix, seqRes.data || 1);
+     const coreOrderId = crypto.randomUUID(); // UUID for DB primary key + realtime
 
      // Save order to persistent store
      const customerStore = useCustomerStore.getState();
      const newOrder: Order = {
        id: orderId,
+       coreId: coreOrderId, // UUID for realtime subscription
        storeId: perfil.id,
        storeName: perfil.store_name || '',
        date: new Date().toISOString(),
@@ -271,7 +274,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
           return;
         }
-        const coreOrderId = crypto.randomUUID();
         const { error: coreOrderError } = await supabase.from('orders').insert({
           id: coreOrderId,
           store_id: perfil.id,
@@ -349,8 +351,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         if (orderError) console.error('⚠️ Error en tabla legacy:', orderError.message);
 
         // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
+        // coreOrderId already generated above
         const { error: coreError } = await supabase.from('orders').insert({
-          id: orderId, // Mismo ID para consistencia
+          id: coreOrderId, // UUID
           store_id: perfil.id,
           status: newOrder.status,
           order_type: 'delivery',

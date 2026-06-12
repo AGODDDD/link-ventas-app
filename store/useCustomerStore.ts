@@ -13,6 +13,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  coreId?: string; // UUID in 'orders' table — used for realtime subscriptions
   storeId: string;
   storeName: string;
   date: string; // ISO string

@@ -81,27 +81,79 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
       })
   }, [isOpen, mounted, storeId])
 
-  // ── 2. Sincronizar statuses desde Supabase al abrir ──
+  // ── 2. Sincronizar statuses desde Supabase (initial + polling cada 2s) ──
   React.useEffect(() => {
     if (!isOpen || !mounted) return
-    const storeOrders = customerStore.orders.filter(o => o.storeId === storeId)
-    if (!storeOrders.length) return
-    const ids = storeOrders.map(o => o.id)
-    import('@/lib/supabase').then(({ supabase }) => {
-      supabase
-        .from('delivery_orders')
-        .select('id, status')
-        .in('id', ids)
-        .then(({ data }) => {
-          if (!data) return
-          data.forEach(row => {
-            const local = storeOrders.find(o => o.id === row.id)
-            if (local && local.status !== row.status) {
-              customerStore.updateOrderStatus(row.id, row.status as Order['status'])
-            }
-          })
-        })
-    })
+    
+    const syncStatuses = async () => {
+      const storeOrders = customerStore.orders.filter(o => o.storeId === storeId)
+      if (!storeOrders.length) return
+
+      const { supabase } = await import('@/lib/supabase')
+      
+      // Fetch by coreId (UUID) for orders that have it — much faster
+      const ordersWithCoreId = storeOrders.filter(o => o.coreId)
+      const ordersWithoutCoreId = storeOrders.filter(o => !o.coreId)
+
+      const promises: Promise<void>[] = []
+
+      if (ordersWithCoreId.length > 0) {
+        const coreIds = ordersWithCoreId.map(o => o.coreId!)
+        promises.push(
+          Promise.resolve(
+            supabase
+              .from('orders')
+              .select('id, legacy_id, status')
+              .in('id', coreIds)
+              .then(({ data }) => {
+                if (!data) return
+                data.forEach(row => {
+                  const mappedStatus = row.status === 'paid' ? 'pendiente' : row.status;
+                  const local = ordersWithCoreId.find(o => o.coreId === row.id)
+                  if (local && local.status !== mappedStatus) {
+                    customerStore.updateOrderStatus(local.id, mappedStatus as Order['status'])
+                  }
+                })
+              })
+          )
+        )
+      }
+
+      if (ordersWithoutCoreId.length > 0) {
+        const legacyIds = ordersWithoutCoreId.map(o => o.id)
+        promises.push(
+          Promise.resolve(
+            supabase
+              .from('orders')
+              .select('legacy_id, status')
+              .in('legacy_id', legacyIds)
+              .order('created_at', { ascending: false })
+              .then(({ data }) => {
+                if (!data) return
+                const processedLegacyIds = new Set<string>()
+                data.forEach(row => {
+                  if (processedLegacyIds.has(row.legacy_id)) return;
+                  processedLegacyIds.add(row.legacy_id);
+                  const mappedStatus = row.status === 'paid' ? 'pendiente' : row.status;
+                  const local = ordersWithoutCoreId.find(o => o.id === row.legacy_id)
+                  if (local && local.status !== mappedStatus) {
+                    customerStore.updateOrderStatus(row.legacy_id, mappedStatus as Order['status'])
+                  }
+                })
+              })
+          )
+        )
+      }
+
+      await Promise.all(promises)
+    }
+
+    // Initial sync immediately
+    syncStatuses()
+    
+    // Continuous polling every 2s while panel is open
+    const poll = setInterval(syncStatuses, 2000)
+    return () => clearInterval(poll)
   }, [isOpen, mounted, storeId])
 
   const orders = mounted ? customerStore.orders.filter(o => o.storeId === storeId) : []

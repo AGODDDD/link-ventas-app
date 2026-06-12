@@ -80,27 +80,55 @@ export default function OrderDetailModal({
   // ── Realtime + polling ──
   useEffect(() => {
     if (!isOpen || !order.id) return
+
+    // Supabase Realtime filters ONLY work reliably on primary key columns.
+    // order.coreId is the UUID (primary key in 'orders' table).
+    // order.id is the legacy ID (e.g. BARR-110626-0105) — NOT filterable in realtime.
+    const realtimeId = order.coreId // UUID primary key
+    const legacyId = order.id       // Human-readable ID
+
     const channel = supabase
-      .channel(`order-detail-${order.id}`)
+      .channel(`order-detail-${realtimeId || legacyId}`)
       .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'delivery_orders', filter: `id=eq.${order.id}` },
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'orders', 
+          ...(realtimeId ? { filter: `id=eq.${realtimeId}` } : {})
+        },
         (payload: any) => {
+          // If we don't have coreId, we need to match by legacy_id
+          if (!realtimeId && payload.new?.legacy_id !== legacyId) return;
+          
           if (payload.new?.status) {
-            setOrder(prev => ({ ...prev, status: payload.new.status }))
-            updateOrderStatus(order.id, payload.new.status) // persistir en localStorage
+            const mappedStatus = payload.new.status === 'paid' ? 'pendiente' : payload.new.status;
+            setOrder(prev => ({ ...prev, status: mappedStatus }))
+            updateOrderStatus(order.id, mappedStatus)
           }
         }
       )
       .subscribe()
+
+    // Polling as safety net (2s for near-instant feel)
     const poll = setInterval(async () => {
-      const { data } = await supabase.from('delivery_orders').select('status').eq('id', order.id).single()
-      if (data?.status && data.status !== order.status) {
-        setOrder(prev => ({ ...prev, status: data.status }))
-        updateOrderStatus(order.id, data.status) // persistir en localStorage
+      let query = supabase.from('orders').select('status')
+      if (realtimeId) {
+        query = query.eq('id', realtimeId)
+      } else {
+        query = query.eq('legacy_id', legacyId).order('created_at', { ascending: false }).limit(1)
       }
-    }, 8000)
+      const { data } = await query.single()
+      if (data?.status) {
+        const mappedStatus = data.status === 'paid' ? 'pendiente' : data.status;
+        if (mappedStatus !== order.status) {
+          setOrder(prev => ({ ...prev, status: mappedStatus }))
+          updateOrderStatus(order.id, mappedStatus)
+        }
+      }
+    }, 2000)
+
     return () => { supabase.removeChannel(channel); clearInterval(poll) }
-  }, [isOpen, order.id])
+  }, [isOpen, order.id, order.coreId])
 
   // ── Leaflet ──
   useEffect(() => {

@@ -71,13 +71,30 @@ export default function PedidosPage() {
             setLoading(false)
             fetchLeads(user.id)
 
+            // Auto-cancelar pedidos pendientes de pago expirados (> 24h)
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+            const { orders: storeOrders, actualizarEstadoOrderLocal } = useDashboardStore.getState()
+            
+            const expiredOrders = storeOrders.filter(o => 
+                (o.status === 'pendiente_pago' || (o.status === 'pendiente' && o.metodo_pago === 'whatsapp')) && 
+                new Date(o.created_at) < twentyFourHoursAgo
+            )
+
+            if (expiredOrders.length > 0) {
+                for (const order of expiredOrders) {
+                    const table = order._source === 'core' ? 'orders' : 'delivery_orders'
+                    const { error } = await supabase.from(table).update({ status: 'cancelado' }).eq('id', order.id)
+                    if (!error) {
+                        actualizarEstadoOrderLocal(order.id, 'cancelado')
+                    }
+                }
+                toast.error(`${expiredOrders.length} pedido(s) fueron cancelados automáticamente por falta de pago (24h)`)
+            }
+
             // Pedir permiso de notificaciones del navegador
             if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
                 Notification.requestPermission()
             }
-
-            // El Realtime ahora está controlado de forma unificada 100% por DashboardTopBar.tsx 
-            // Esto elimina la condición de carrera y los "memory leaks" de componentes montados/desmontados.
         }
         init()
     }, [cargarOrders])
