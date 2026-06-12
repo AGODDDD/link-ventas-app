@@ -3,7 +3,6 @@ import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import path from 'path'
 import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
-import bwipjs from 'bwip-js'
 
 // Helper para buscar el pedido por ID en las distintas tablas (Shadow Migration)
 async function getOrderById(orderId: string) {
@@ -110,7 +109,8 @@ export async function GET(request: NextRequest) {
         const orderDate = new Date(order.created_at)
         const formattedDate = orderDate.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
         const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
-        const ticketNumber = order.legacy_id || order.id.split('-')[0].toUpperCase()
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.id);
+        const ticketNumber = order.legacy_id || (isUuid ? order.id.split('-')[0].toUpperCase() : order.id.toUpperCase());
         
         // 80mm de ancho -> ~226.77 pt. Ajustamos el alto según la cantidad de items de forma dinámica.
         const itemsCount = order.order_items?.length || 0
@@ -226,25 +226,23 @@ export async function GET(request: NextRequest) {
         // Cantidad total de productos vendidos
         const totalQty = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 0
         doc.moveDown(0.4)
-        doc.text(`${totalQty} VENTA(S)`.padEnd(28, ' ') + `${total} T T`.padStart(8, ' '))
+        doc.text(`${totalQty} VENTA(S)`.padEnd(28, ' '))
         
         doc.moveDown(0.4)
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
         
         // Código de Despacho
-        const barcodeText = order.legacy_id || order.id.split('-')[0].toUpperCase();
+        const barcodeText = ticketNumber;
         doc.fontSize(7).font('Courier').text(`ORDEN DE DESPACHO: ${barcodeText}`, { align: 'center' })
         doc.moveDown(0.6)
         
-        // Código de Barras Real con bwip-js
+        // Código de Barras Real con bwip-js API
         try {
-            const barcodeBuffer = await bwipjs.toBuffer({
-                bcid: 'code128',
-                text: barcodeText,
-                scale: 3,
-                height: 10,
-                includetext: false,
-            });
+            const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(barcodeText)}&scale=3&height=10&includetext=false`;
+            const imgRes = await fetch(barcodeUrl);
+            if (!imgRes.ok) throw new Error('Failed to fetch barcode');
+            const arrayBuffer = await imgRes.arrayBuffer();
+            const barcodeBuffer = Buffer.from(arrayBuffer);
             
             // doc.x is around 10 due to margins, width is 226.77
             // Center the image: (226.77 - 190) / 2 = 18.38

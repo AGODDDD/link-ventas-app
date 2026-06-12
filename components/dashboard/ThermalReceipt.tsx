@@ -18,8 +18,9 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
     const formattedDate = orderDate.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
     const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
     
-    // Generar un número de secuencia aleatorio o basado en la orden
-    const ticketNumber = order.legacy_id || order.id.split('-')[0].toUpperCase()
+    // Determinar el número real del ticket
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order.id);
+    const ticketNumber = order.legacy_id || (isUuid ? order.id.split('-')[0].toUpperCase() : order.id.toUpperCase());
 
     return (
         <div 
@@ -149,8 +150,7 @@ export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({
             {/* Extra Info */}
             <div className="text-xs uppercase mb-4">
                 <div className="flex justify-between">
-                    <span>{order.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0)} VENTA</span>
-                    <span>{total} T T</span>
+                    <span>{order.order_items?.reduce((acc: number, item: any) => acc + item.quantity, 0)} VENTA(S)</span>
                 </div>
             </div>
 
