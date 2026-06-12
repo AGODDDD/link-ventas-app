@@ -50,7 +50,6 @@ export default function PedidosPage() {
     // Estado para Compartir Ticket
     const [shareOrder, setShareOrder] = useState<any | null>(null)
     const [sharePngPreview, setSharePngPreview] = useState<string | null>(null)
-    const [linkCopiado, setLinkCopiado] = useState(false)
 
     // Paginación UI (Performance Tweak)
     const [currentPage, setCurrentPage] = useState(1);
@@ -299,14 +298,8 @@ export default function PedidosPage() {
         }, 300)
     }
 
-    const copiarEnlacePDF = (order: any) => {
-        const ticketId = order.legacy_id || order.id
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
-        navigator.clipboard.writeText(pdfUrl)
-        setLinkCopiado(true)
-        setTimeout(() => setLinkCopiado(false), 2000)
-        toast.success('¡Enlace del ticket copiado! 🔗')
-    }
+
+
 
     const descargarPdfDesdeModal = async (order: any) => {
         toast.loading('Generando PDF oficial... 📄', { id: 'modal-pdf' })
@@ -1061,28 +1054,12 @@ export default function PedidosPage() {
                                     <FileText size={15} /> Descargar PDF (Ticketera 80mm)
                                 </button>
 
-                                {/* PNG CLÁSICO */}
+                                {/* PNG */}
                                 <button
                                     onClick={() => descargarPngDesdeModal(shareOrder)}
                                     className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-4 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95"
                                 >
                                     <Download size={15} /> Descargar Imagen PNG
-                                </button>
-
-                                {/* COPIAR ENLACE */}
-                                <button
-                                    onClick={() => copiarEnlacePDF(shareOrder)}
-                                    className={`w-full border px-4 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95 ${
-                                        linkCopiado 
-                                            ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
-                                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-primary/40'
-                                    }`}
-                                >
-                                    {linkCopiado ? (
-                                        <><CheckCircle size={14} /> ¡Enlace copiado!</>
-                                    ) : (
-                                        <><Copy size={14} /> Copiar enlace del ticket</>
-                                    )}
                                 </button>
                             </div>
 
@@ -1090,15 +1067,11 @@ export default function PedidosPage() {
                             <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 space-y-1.5">
                                 <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
                                     <span className="shrink-0 mt-0.5">📄</span>
-                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PDF</strong> — Formato térmico 80mm, listo para imprimir o compartir manualmente.</span>
+                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PDF</strong> — Formato térmico 80mm, listo para ticketera o imprimir.</span>
                                 </p>
                                 <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
                                     <span className="shrink-0 mt-0.5">🖼️</span>
-                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PNG</strong> — Imagen del ticket, ideal para enviar por WhatsApp o redes sociales.</span>
-                                </p>
-                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
-                                    <span className="shrink-0 mt-0.5">🔗</span>
-                                    <span><strong className="text-zinc-600 dark:text-zinc-400">Enlace</strong> — URL del PDF en la nube para pegar en WhatsApp, correo o donde quieras.</span>
+                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PNG</strong> — Imagen del ticket, ideal para enviar por WhatsApp al cliente.</span>
                                 </p>
                             </div>
                         </div>
