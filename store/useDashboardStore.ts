@@ -200,9 +200,26 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     agregarOrderLocal: (order: any) => {
         // Inyecta el pedido nuevo al principio de la matriz (evitando duplicados)
+        // Deduplicamos por 'id' Y por 'legacy_id' porque el mismo pedido puede llegar
+        // desde el canal de 'orders' (con UUID como id) y desde 'delivery_orders' (con legacy_id como id)
         set((state) => {
-            const exists = state.orders.some(o => o.id === order.id);
-            if (exists) return state;
+            const existsById = state.orders.some(o => o.id === order.id);
+            if (existsById) return state;
+            // Si el pedido trae legacy_id, verificar que no haya uno con ese legacy_id ya
+            if (order.legacy_id) {
+                const existsByLegacy = state.orders.some(
+                    o => o.legacy_id === order.legacy_id || o.id === order.legacy_id
+                );
+                if (existsByLegacy) return state;
+            }
+            // Si el pedido es de delivery_orders (su id es el legacy BARR-...), verificar también
+            // contra los ids que podrían ser legacy_ids de órdenes core ya cargadas
+            if (order._source === 'legacy_delivery') {
+                const existsAsCoreOrder = state.orders.some(
+                    o => o.legacy_id === order.id
+                );
+                if (existsAsCoreOrder) return state;
+            }
             return { orders: [order, ...state.orders] };
         });
     },

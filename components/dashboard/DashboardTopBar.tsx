@@ -238,6 +238,17 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     { event: 'INSERT', schema: 'public', table: 'delivery_orders', filter: `store_id=eq.${userId}` }, // Usar userId Legacy Original!
                     (payload) => {
                         const pedido = payload.new
+                        
+                        // Esperamos 500ms antes de inyectar al store local.
+                        // La orden TAMBIÉN se inserta en 'orders' (tabla core) con ~300ms de diferencia.
+                        // Si dejamos que el canal de 'orders' llegue primero, su deduplicación 
+                        // por legacy_id rechazará este duplicado automáticamente.
+                        setTimeout(() => {
+                            const store = useDashboardStore.getState()
+                            const norm = store.normalizarOrder(pedido, 'legacy_delivery')
+                            store.agregarOrderLocal(norm) // agregarOrderLocal filtrará si ya existe
+                        }, 500)
+
                         toast.success(`🛵 NUEVO PEDIDO DELIVERY`, {
                             description: `${pedido.customer_name || 'Cliente'} — S/ ${parseFloat(pedido.total || 0).toFixed(2)}`,
                             duration: 10000,
@@ -250,11 +261,6 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             fecha: new Date(),
                             leida: false
                         }, ...prev])
-                        
-                        // Inyectar sin recargar base de datos
-                        const store = useDashboardStore.getState()
-                        const norm = store.normalizarOrder(pedido, 'legacy_delivery')
-                        store.agregarOrderLocal(norm)
 
                         playNotificationSound();
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
