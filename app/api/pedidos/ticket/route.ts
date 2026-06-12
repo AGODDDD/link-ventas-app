@@ -159,8 +159,9 @@ export async function GET(request: NextRequest) {
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
         
         // Encabezado de la Tabla de Items
-        doc.fontSize(7).text(`CANT  DESCRIPCION                MONTO`)
-        doc.text(`---------------------------------------`)
+        // Columnas: CANT(5) + DESCRIPCION(23) + MONTO(8) = 36 chars total
+        doc.fontSize(7).font('Courier-Bold').text(`CANT `.padEnd(5) + `DESCRIPCION`.padEnd(23) + `MONTO`.padStart(8))
+        doc.font('Courier').text(`---------------------------------------`)
         
         // Render de los Items
         doc.font('Courier')
@@ -207,25 +208,25 @@ export async function GET(request: NextRequest) {
         doc.moveDown(0.4)
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
         
-        // Subtotales — columna label: 20 chars, columna monto: 16 chars → total 36
-        // Todos los decimales caen en la misma posición (col 34)
+        // Subtotales — columna label: 28 chars, columna monto: 8 chars → total 36
+        // Misma distribución que los items (qty+name=28, price=8)
         const subtotal = order.subtotal > 0 ? parseFloat(order.subtotal).toFixed(2) : total
         const delivery = parseFloat(order.delivery_fee || 0).toFixed(2)
         
         doc.fontSize(7)
         if (order.subtotal > 0 && order.delivery_fee > 0) {
-            doc.text(`SUBTOTAL:`.padEnd(20, ' ') + String(subtotal).padStart(16, ' '))
-            doc.text(`DELIVERY:`.padEnd(20, ' ') + String(delivery).padStart(16, ' '))
+            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(subtotal).padStart(8, ' '))
+            doc.text(`DELIVERY:`.padEnd(28, ' ') + String(delivery).padStart(8, ' '))
         } else {
-            doc.text(`SUBTOTAL:`.padEnd(20, ' ') + String(total).padStart(16, ' '))
+            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(total).padStart(8, ' '))
         }
         
-        // Total a pagar — mismo ancho total (36), S/ incluido dentro de los 16 del monto
-        doc.fontSize(8).font('Courier-Bold').text(`TOTAL:`.padEnd(20, ' ') + `S/ ${total}`.padStart(16, ' '))
+        // Total — en negrita, sin prefijo S/, mismo ancho que el resto
+        doc.fontSize(8).font('Courier-Bold').text(`TOTAL:`.padEnd(28, ' ') + String(total).padStart(8, ' '))
         
         // Método de pago — misma alineación
         const paymentMethod = order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO' : 'DIGITAL'
-        doc.fontSize(7).font('Courier').text(paymentMethod.padEnd(20, ' ') + String(total).padStart(16, ' '))
+        doc.fontSize(7).font('Courier').text(paymentMethod.padEnd(28, ' ') + String(total).padStart(8, ' '))
         
         // Cantidad total de productos vendidos
         const totalQty = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 0
