@@ -136,26 +136,46 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         let unifiedOrders: any[] = [];
         const seenLegacyIds = new Set<string>();
 
+        // Mapa de delivery_orders items (JSONB) indexado por su id (BARR-...)
+        // Usado como fallback cuando un core order no tiene order_items relacionales aún
+        const deliveryItemsMap = new Map<string, any[]>();
+        if (deliveryRes.data) {
+            deliveryRes.data.forEach((d: any) => {
+                if (d.items && d.items.length > 0) {
+                    deliveryItemsMap.set(d.id, d.items);
+                }
+            });
+        }
+
         // 1. Agregar órdenes del NUEVO CORE (Unificadas) - Prioridad 1
         if (unifiedRes.data) {
             const coreOrders = unifiedRes.data
                 .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'culqi' || o.metodo_pago === 'tarjeta_culqi')))
-                .map(o => ({
-                id: o.id,
-                legacy_id: o.legacy_id,
-                created_at: o.created_at,
-                customer_name: o.customer_name || 'Sin nombre',
-                customer_phone: o.customer_phone || '-',
-                direccion: o.direccion || 'Sin dirección',
-                referencia: o.referencia || '',
-                total_amount: (o.total || o.total_amount || 0).toString(),
-                subtotal: o.subtotal || 0,
-                delivery_fee: o.delivery_fee || 0,
-                status: o.status,
-                payment_proof_url: 'NUEVO_CORE',
-                order_items: o.order_items || [],
-                _source: 'core'
-            }));
+                .map(o => {
+                    // Si el core order no tiene items relacionales, usar el JSONB de delivery_orders como fallback
+                    const relationalItems = o.order_items || [];
+                    const fallbackItems = (relationalItems.length === 0 && o.legacy_id)
+                        ? (deliveryItemsMap.get(o.legacy_id) || [])
+                        : relationalItems;
+                    return {
+                        id: o.id,
+                        legacy_id: o.legacy_id,
+                        created_at: o.created_at,
+                        customer_name: o.customer_name || 'Sin nombre',
+                        customer_phone: o.customer_phone || '-',
+                        direccion: o.direccion || 'Sin dirección',
+                        referencia: o.referencia || '',
+                        total_amount: (o.total || o.total_amount || 0).toString(),
+                        total: o.total || o.total_amount || 0,
+                        subtotal: o.subtotal || 0,
+                        delivery_fee: o.delivery_fee || 0,
+                        status: o.status,
+                        metodo_pago: o.metodo_pago,
+                        payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
+                        order_items: fallbackItems,
+                        _source: 'core'
+                    };
+                });
             coreOrders.forEach(o => {
                 if (o.legacy_id) seenLegacyIds.add(o.legacy_id);
                 unifiedOrders.push(o);
