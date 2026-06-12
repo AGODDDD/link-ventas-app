@@ -303,16 +303,20 @@ export default function PedidosPage() {
 
     const descargarPdfDesdeModal = async (order: any) => {
         toast.loading('Generando PDF oficial... 📄', { id: 'modal-pdf' })
+        // Para la API: legacy_delivery usa su propio id (BARR-...), core usa UUID
+        const ticketId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id)
+        // Para el nombre del archivo: mostrar siempre el BARR completo
+        const displayId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id.split('-')[0].toUpperCase())
         try {
             const { data: { session } } = await supabase.auth.getSession()
-            const response = await fetch(`/api/pedidos/ticket?id=${order.id}`, {
+            const response = await fetch(`/api/pedidos/ticket?id=${ticketId}`, {
                 headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
             })
             if (!response.ok) throw new Error("No se pudo generar el PDF")
             const blob = await response.blob()
             const link = document.createElement('a')
             link.href = URL.createObjectURL(blob)
-            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.pdf`
+            link.download = `Ticket_${displayId}.pdf`
             link.click()
             toast.success('¡Ticket PDF descargado con éxito! 📄', { id: 'modal-pdf' })
         } catch (err: any) {
@@ -324,7 +328,8 @@ export default function PedidosPage() {
         if (sharePngPreview) {
             const link = document.createElement('a')
             link.href = sharePngPreview
-            link.download = `Ticket_${order.id.split('-')[0].toUpperCase()}.png`
+        const displayId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id.split('-')[0].toUpperCase())
+            link.download = `Ticket_${displayId}.png`
             link.click()
             toast.success('Ticket descargado como PNG con éxito!')
         } else {
@@ -1036,7 +1041,7 @@ export default function PedidosPage() {
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-1">Ticket del Pedido</p>
                                 <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-1">
-                                    {shareOrder.legacy_id || shareOrder.id.split('-')[0].toUpperCase()}
+                                    {shareOrder.legacy_id || (shareOrder._source === 'legacy_delivery' ? shareOrder.id : shareOrder.id.split('-')[0].toUpperCase())}
                                 </h3>
                                 <p className="text-xs text-zinc-400 dark:text-zinc-500">
                                     {shareOrder.customer_name} · S/ {parseFloat(shareOrder.total_amount || shareOrder.total || 0).toFixed(2)}
