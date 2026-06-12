@@ -21,6 +21,8 @@ async function getOrderById(orderId: string) {
         if (orderData) {
             return {
                 ...orderData,
+                // Normalizar: core orders usan 'total', legacy usan 'total_amount'
+                total_amount: (orderData.total_amount || orderData.total || 0).toString(),
                 _source: orderData.store_id ? 'core' : 'legacy_standard'
             }
         }
@@ -105,7 +107,8 @@ export async function GET(request: NextRequest) {
         }
         
         // Formatear metadatos del ticket
-        const total = parseFloat(order.total_amount).toFixed(2)
+        const totalRaw = parseFloat(order.total_amount || order.total || order.total_price || 0)
+        const total = isNaN(totalRaw) ? '0.00' : totalRaw.toFixed(2)
         const orderDate = new Date(order.created_at)
         const formattedDate = orderDate.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
         const formattedTime = orderDate.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })

@@ -49,8 +49,8 @@ export default function PedidosPage() {
 
     // Estado para Compartir Ticket
     const [shareOrder, setShareOrder] = useState<any | null>(null)
-    const [shareEmail, setShareEmail] = useState('')
     const [sharePngPreview, setSharePngPreview] = useState<string | null>(null)
+    const [linkCopiado, setLinkCopiado] = useState(false)
 
     // Paginación UI (Performance Tweak)
     const [currentPage, setCurrentPage] = useState(1);
@@ -284,7 +284,6 @@ export default function PedidosPage() {
     // Compartir Ticket con Vista Previa Rápida en PNG y PDF Oficial
     const abrirCompartir = async (order: any) => {
         setShareOrder(order)
-        setShareEmail(order.customer_email || '')
         setSharePngPreview(null)
         
         setTimeout(async () => {
@@ -300,47 +299,13 @@ export default function PedidosPage() {
         }, 300)
     }
 
-    const compartirWhatsApp = (order: any) => {
-        const phone = order.customer_phone ? order.customer_phone.replace(/\D/g, '') : ''
-        const store_name = perfil?.store_name || 'nuestra tienda'
-        // Usar legacy_id (BARR-...) si existe, sino el UUID
-        const ticketId = order.legacy_id || order.id
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
-        const customerName = order.customer_name || 'Cliente'
-        
-        const message = `Hola ${customerName}, ¡gracias por tu compra! Aquí puedes visualizar y descargar el ticket digital oficial de tu pedido en ${store_name.toUpperCase()}: ${pdfUrl}`
-        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-        
-        window.open(whatsappUrl, '_blank')
-        toast.success('Abriendo WhatsApp... 💬')
-    }
-
-    const compartirEmail = (order: any, email: string) => {
-        if (!email || !email.includes('@')) {
-            toast.error('Por favor, ingresa un correo electrónico válido')
-            return
-        }
-        
-        const store_name = perfil?.store_name || 'nuestra tienda'
-        // Usar legacy_id (BARR-...) si existe, sino el UUID
-        const ticketId = order.legacy_id || order.id
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
-        const customerName = order.customer_name || 'Cliente'
-        const displayId = order.legacy_id || order.id.split('-')[0].toUpperCase()
-        
-        const subject = `Ticket Digital - Pedido #${displayId} en ${store_name}`
-        const body = `Hola ${customerName},\n\n¡Gracias por tu compra! Adjuntamos el enlace para visualizar y descargar tu ticket digital optimizado:\n\n${pdfUrl}\n\nGracias por tu preferencia.\n\n${store_name.toUpperCase()}`
-        
-        // Nota: mailto abre el cliente de correo local del sistema (Outlook, Apple Mail, Gmail app)
-        const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-        window.open(mailtoUrl, '_blank')
-        toast.success('Abriendo cliente de correo... ✉️')
-    }
-
     const copiarEnlacePDF = (order: any) => {
-        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${order.id}`
+        const ticketId = order.legacy_id || order.id
+        const pdfUrl = `${window.location.origin}/api/pedidos/ticket?id=${ticketId}`
         navigator.clipboard.writeText(pdfUrl)
-        toast.success('¡Enlace del ticket PDF copiado al portapapeles! 🔗')
+        setLinkCopiado(true)
+        setTimeout(() => setLinkCopiado(false), 2000)
+        toast.success('¡Enlace del ticket copiado! 🔗')
     }
 
     const descargarPdfDesdeModal = async (order: any) => {
@@ -1073,65 +1038,68 @@ export default function PedidosPage() {
                             </div>
                         </div>
 
-                        {/* Columna Derecha: Canales de Envío y PDF Oficial */}
-                        <div className="md:w-1/2 p-6 flex flex-col justify-between space-y-6">
+                        {/* Columna Derecha: Acciones reales */}
+                        <div className="md:w-1/2 p-6 flex flex-col gap-5">
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-1">Compartir Comprobante</p>
-                                <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-2">Pedido #{shareOrder.legacy_id || shareOrder.id.split('-')[0].toUpperCase()}</h3>
-                                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                                    Generamos un <strong className="text-primary font-bold">PDF oficial optimizado para ticketera</strong> directamente en el servidor. Puedes compartir el enlace oficial o enviarlo:
+                                <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-1">Ticket del Pedido</p>
+                                <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-1">
+                                    {shareOrder.legacy_id || shareOrder.id.split('-')[0].toUpperCase()}
+                                </h3>
+                                <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                                    {shareOrder.customer_name} · S/ {parseFloat(shareOrder.total_amount || shareOrder.total || 0).toFixed(2)}
                                 </p>
                             </div>
 
-                            {/* Acciones principales */}
-                            <div className="space-y-3 flex-1 flex flex-col justify-center">
-                                {/* CANAL WHATSAPP */}
-                                <button
-                                    onClick={() => compartirWhatsApp(shareOrder)}
-                                    className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
-                                >
-                                    💬 Enviar por WhatsApp
-                                </button>
+                            {/* ACCIONES */}
+                            <div className="flex flex-col gap-3 flex-1 justify-center">
 
-                                {/* DESCARGAR PDF OFICIAL */}
+                                {/* PDF OFICIAL */}
                                 <button
                                     onClick={() => descargarPdfDesdeModal(shareOrder)}
-                                    className="w-full bg-primary hover:brightness-110 text-on-primary px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-primary/20"
+                                    className="w-full bg-zinc-900 dark:bg-white hover:opacity-90 text-white dark:text-zinc-900 px-4 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
                                 >
-                                    <FileText size={14} /> Descargar PDF Oficial
+                                    <FileText size={15} /> Descargar PDF (Ticketera 80mm)
                                 </button>
 
-                                {/* SECCIÓN CORREO ELECTRÓNICO */}
-                                <div className="border-t border-zinc-200 dark:border-zinc-800/50 pt-4 mt-2">
-                                    <label className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest block mb-2">Enviar por Correo Electrónico</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="email"
-                                            placeholder="correo@ejemplo.com"
-                                            value={shareEmail}
-                                            onChange={(e) => setShareEmail(e.target.value)}
-                                            className="flex-1 bg-zinc-50 dark:bg-[#131317] border border-zinc-200 dark:border-zinc-800/50 focus:border-primary/50 outline-none text-xs text-zinc-900 dark:text-zinc-100 px-3 py-2.5 rounded-lg font-medium"
-                                        />
-                                        <button
-                                            onClick={() => compartirEmail(shareOrder, shareEmail)}
-                                            className="bg-primary hover:brightness-110 text-on-primary p-2.5 rounded-lg flex items-center justify-center transition-all hover:scale-[1.02] active:scale-95"
-                                            title="Enviar Correo"
-                                        >
-                                            <Mail size={16} />
-                                        </button>
-                                    </div>
-                                </div>
+                                {/* PNG CLÁSICO */}
+                                <button
+                                    onClick={() => descargarPngDesdeModal(shareOrder)}
+                                    className="w-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-4 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95"
+                                >
+                                    <Download size={15} /> Descargar Imagen PNG
+                                </button>
+
+                                {/* COPIAR ENLACE */}
+                                <button
+                                    onClick={() => copiarEnlacePDF(shareOrder)}
+                                    className={`w-full border px-4 py-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2.5 transition-all hover:scale-[1.02] active:scale-95 ${
+                                        linkCopiado 
+                                            ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-700 dark:text-green-400'
+                                            : 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-primary/40'
+                                    }`}
+                                >
+                                    {linkCopiado ? (
+                                        <><CheckCircle size={14} /> ¡Enlace copiado!</>
+                                    ) : (
+                                        <><Copy size={14} /> Copiar enlace del ticket</>
+                                    )}
+                                </button>
                             </div>
 
-                            {/* Descargar PNG de respaldo en el pie del modal */}
-                            <div className="border-t border-zinc-200 dark:border-zinc-800/50 pt-4 flex justify-between items-center text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                                <span>TAMAÑO: TICKET 80MM</span>
-                                <button 
-                                    onClick={() => descargarPngDesdeModal(shareOrder)}
-                                    className="text-primary hover:underline font-bold uppercase tracking-widest flex items-center gap-1"
-                                >
-                                    <Download size={10} /> Descargar PNG
-                                </button>
+                            {/* INFO */}
+                            <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 space-y-1.5">
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
+                                    <span className="shrink-0 mt-0.5">📄</span>
+                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PDF</strong> — Formato térmico 80mm, listo para imprimir o compartir manualmente.</span>
+                                </p>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
+                                    <span className="shrink-0 mt-0.5">🖼️</span>
+                                    <span><strong className="text-zinc-600 dark:text-zinc-400">PNG</strong> — Imagen del ticket, ideal para enviar por WhatsApp o redes sociales.</span>
+                                </p>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
+                                    <span className="shrink-0 mt-0.5">🔗</span>
+                                    <span><strong className="text-zinc-600 dark:text-zinc-400">Enlace</strong> — URL del PDF en la nube para pegar en WhatsApp, correo o donde quieras.</span>
+                                </p>
                             </div>
                         </div>
                     </div>
