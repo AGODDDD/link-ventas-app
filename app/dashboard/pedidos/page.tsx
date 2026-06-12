@@ -354,11 +354,11 @@ export default function PedidosPage() {
     if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Cargando pedidos... 🛰️</div>
 
     // UI Pagination Bounds computation
-    const filteredDelivery = orders.filter(o => o._source === 'legacy_delivery' || o._source === 'core');
+    const filteredDelivery = orders.filter(o => o.order_type === 'delivery');
     const totalDeliveryPages = Math.ceil(filteredDelivery.length / ITEMS_PER_PAGE);
     const paginatedDelivery = filteredDelivery.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    const filteredStandard = orders.filter(o => o._source === 'legacy_standard');
+    const filteredStandard = orders.filter(o => o.order_type !== 'delivery');
     const totalStandardPages = Math.ceil(filteredStandard.length / ITEMS_PER_PAGE);
     const paginatedStandard = filteredStandard.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -518,13 +518,13 @@ export default function PedidosPage() {
                     onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
-                    🛵 Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => (o._source === 'legacy_delivery' || o._source === 'core') && o.status !== 'completado').length}</span>
+                    🛵 Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => o.order_type === 'delivery' && o.status !== 'completado').length}</span>
                 </button>
                 <button 
                     onClick={() => { setActiveTab('orders'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
-                    Standard / Legacy ({orders.filter(o => o._source === 'legacy_standard').length})
+                    Standard / Legacy ({orders.filter(o => o.order_type !== 'delivery').length})
                 </button>
                 <button 
                     onClick={() => { setActiveTab('leads'); setCurrentPage(1); }}

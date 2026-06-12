@@ -110,7 +110,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
         const { data, error } = await supabase
             .from('orders')
-            .select(`*, order_items (*, products (name))`)
+            .select(`*, order_items (*)`)
             .eq('store_id', userId)
             .order('created_at', { ascending: false })
             .limit(300);
@@ -138,6 +138,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                     subtotal: o.subtotal || 0,
                     delivery_fee: o.delivery_fee || 0,
                     status: o.status,
+                    order_type: o.order_type,
                     metodo_pago: o.metodo_pago,
                     payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
                     order_items: o.order_items || [],
