@@ -157,21 +157,30 @@ export async function GET(request: NextRequest) {
         
         // Línea Separadora superior
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
-        
+
+        // Layout de columnas basado en coordenadas absolutas (no character-padding)
+        // Columna izquierda: x=10  |  Columna monto: x=152, w=54.77, align='right'
+        // Esto garantiza alineación perfecta sin importar el fontSize de cada fila
+        const LX = 10          // left column x
+        const LW = 140         // left column width
+        const RX = 152         // right (amount) column x
+        const RW = doc.page.width - RX - 10  // right column width hasta el margen derecho
+
         // Encabezado de la Tabla de Items
-        // Columnas: CANT(5) + DESCRIPCION(23) + MONTO(8) = 36 chars total
-        doc.fontSize(7).font('Courier-Bold').text(`CANT `.padEnd(5) + `DESCRIPCION`.padEnd(23) + `MONTO`.padStart(8))
+        let ry = doc.y
+        doc.fontSize(7).font('Courier-Bold')
+        doc.text('CANT  DESCRIPCION', LX, ry, { width: LW, lineBreak: false })
+        doc.text('MONTO', RX, ry, { width: RW, align: 'right' })
         doc.font('Courier').text(`---------------------------------------`)
-        
+
         // Render de los Items
-        doc.font('Courier')
         order.order_items?.forEach((item: any, idx: number) => {
             const qty = item.quantity || 1
-            const name = (item.name || item.product?.name || `PRODUCTO ${idx + 1}`).substring(0, 22).toUpperCase()
-            
+            const name = (item.name || item.product?.name || `PRODUCTO ${idx + 1}`).substring(0, 24).toUpperCase()
+
             // Cálculo de precios e importes
             const combinedPriceRaw = parseFloat(item.unitPrice || item.price || item.price_at_time || 0)
-            
+
             // Modificadores / Opciones
             const rawMods = item.modifiersList || item.modifiers || item.options || ''
             const isModsObject = rawMods && !Array.isArray(rawMods) && typeof rawMods === 'object' && rawMods.items
@@ -180,58 +189,72 @@ export async function GET(request: NextRequest) {
             const modsTotal = modsList.reduce((acc: number, m: any) => acc + (parseFloat(m.price) || 0), 0)
             const basePrice = combinedPriceRaw - modsTotal
             const lineTotal = (basePrice * qty).toFixed(2)
-            
-            // Alinear Cantidad (5 chars), Descripción (25 chars) e Importe (8 chars)
-            const qtyStr = String(qty).padEnd(5, ' ')
-            const nameStr = name.padEnd(23, ' ')
-            const priceStr = String(lineTotal).padStart(8, ' ')
-            doc.text(`${qtyStr}${nameStr}${priceStr}`)
-            
-            // Mostrar modificadores
+
+            // Fila del item: cantidad + nombre (izquierda) | precio (derecha, alineado)
+            ry = doc.y
+            doc.fontSize(7).font('Courier')
+            doc.text(`${qty}  ${name}`, LX, ry, { width: LW, lineBreak: false })
+            doc.text(lineTotal, RX, ry, { width: RW, align: 'right' })
+
+            // Modificadores — nombre en gris, precio alineado a la misma columna derecha
             modsList.forEach((m: any) => {
-                const mName = `- ${m.name}`.substring(0, 20).toUpperCase()
+                const mName = `  - ${m.name}`.substring(0, 26).toUpperCase()
                 const mPrice = m.price && parseFloat(m.price) > 0 ? (parseFloat(m.price) * qty).toFixed(2) : ''
-                const mLine = `${''.padEnd(5, ' ')}${mName.padEnd(23, ' ')}${String(mPrice).padStart(8, ' ')}`
-                doc.fontSize(6).fillColor('#333333').text(mLine).fillColor('#000000').fontSize(7)
+                ry = doc.y
+                doc.fontSize(6).fillColor('#444444')
+                doc.text(mName, LX, ry, { width: LW, lineBreak: !!mPrice === false })
+                if (mPrice) doc.text(mPrice, RX, ry, { width: RW, align: 'right' })
+                doc.fillColor('#000000').fontSize(7)
             })
-            
-            // Mostrar notas opcionales de cocina/pedido
+
+            // Notas opcionales de cocina/pedido
             const notes = item.notes || (isModsObject ? rawMods.notes : '') || ''
             if (notes) {
-                const noteLine = `  ** ${notes.toUpperCase()} **`.substring(0, 28)
-                doc.fontSize(6).text(noteLine).fontSize(7)
+                doc.fontSize(6).text(`  ** ${notes.toUpperCase()} **`, LX, doc.y).fontSize(7)
             }
-            
+
             doc.moveDown(0.2)
         })
-        
+
         doc.moveDown(0.4)
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
-        
-        // Subtotales — columna label: 28 chars, columna monto: 8 chars → total 36
-        // Misma distribución que los items (qty+name=28, price=8)
+
+        // Totales — misma columna derecha (RX, RW, align:'right')
+        // Al usar coordenadas, el fontSize de TOTAL (8) no afecta la alineación del monto
         const subtotal = order.subtotal > 0 ? parseFloat(order.subtotal).toFixed(2) : total
         const delivery = parseFloat(order.delivery_fee || 0).toFixed(2)
-        
-        doc.fontSize(7)
+
+        doc.fontSize(7).font('Courier')
         if (order.subtotal > 0 && order.delivery_fee > 0) {
-            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(subtotal).padStart(8, ' '))
-            doc.text(`DELIVERY:`.padEnd(28, ' ') + String(delivery).padStart(8, ' '))
+            ry = doc.y
+            doc.text('SUBTOTAL:', LX, ry, { width: LW, lineBreak: false })
+            doc.text(subtotal, RX, ry, { width: RW, align: 'right' })
+            ry = doc.y
+            doc.text('DELIVERY:', LX, ry, { width: LW, lineBreak: false })
+            doc.text(delivery, RX, ry, { width: RW, align: 'right' })
         } else {
-            doc.text(`SUBTOTAL:`.padEnd(28, ' ') + String(total).padStart(8, ' '))
+            ry = doc.y
+            doc.text('SUBTOTAL:', LX, ry, { width: LW, lineBreak: false })
+            doc.text(total, RX, ry, { width: RW, align: 'right' })
         }
-        
-        // Total — en negrita, sin prefijo S/, mismo ancho que el resto
-        doc.fontSize(8).font('Courier-Bold').text(`TOTAL:`.padEnd(28, ' ') + String(total).padStart(8, ' '))
-        
-        // Método de pago — misma alineación
+
+        // TOTAL — bold + fontSize 8, pero el monto queda en la misma columna derecha exacta
+        ry = doc.y
+        doc.fontSize(8).font('Courier-Bold')
+        doc.text('TOTAL:', LX, ry, { width: LW, lineBreak: false })
+        doc.text(total, RX, ry, { width: RW, align: 'right' })
+
+        // Método de pago
         const paymentMethod = order.payment_proof_url === 'CONTRA_ENTREGA' ? 'EFECTIVO' : 'DIGITAL'
-        doc.fontSize(7).font('Courier').text(paymentMethod.padEnd(28, ' ') + String(total).padStart(8, ' '))
-        
+        ry = doc.y
+        doc.fontSize(7).font('Courier')
+        doc.text(paymentMethod, LX, ry, { width: LW, lineBreak: false })
+        doc.text(total, RX, ry, { width: RW, align: 'right' })
+
         // Cantidad total de productos vendidos
         const totalQty = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 0
         doc.moveDown(0.4)
-        doc.text(`${totalQty} VENTA(S)`.padEnd(28, ' '))
+        doc.text(`${totalQty} VENTA(S)`)
         
         doc.moveDown(0.4)
         doc.fontSize(8).font('Courier-Bold').text(`---------------------------------------`)
