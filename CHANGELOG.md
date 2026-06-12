@@ -5,6 +5,29 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-11] — Sesión 11
+### Corregido (Alta Severidad)
+- **Realtime del cliente Culqi roto:** El `OrderDetailModal.tsx` escuchaba cambios en `delivery_orders` por `id`, pero Culqi solo escribe en `orders`. Además, el filtro usaba `legacy_id` (no es clave primaria), lo cual Supabase Realtime **ignora silenciosamente**. El cliente caía al polling de 8s, causando retraso perceptible de 3-5s.
+  - **Fix:** Se añadió `coreId` (UUID) a la interfaz `Order` del cliente (`useCustomerStore.ts`). La suscripción Realtime ahora filtra por `id=eq.<UUID>` (clave primaria) → **instantáneo**.
+  - **Fix:** Polling de respaldo reducido de 8s a 2s como safety net.
+- **Pedidos auto-cancelados al crearse (Culqi + WhatsApp):** El `RestauranteCheckoutModal.tsx` insertaba el `legacy_id` (ej. `BARR-110626-0006`) directamente como `id` en la tabla `orders`, cuya columna exige UUID. Postgres rechazaba con `invalid input syntax for type uuid`, la orden nunca se creaba, y el frontend lo interpretaba como "cancelado".
+  - **Fix:** Se genera `crypto.randomUUID()` compartido antes de ambos flujos (Culqi y WhatsApp). El UUID va como `id`, el código bonito va como `legacy_id`.
+- **Historial del cliente mostraba "Completado" al instante:** Colisión de `legacy_id` entre pruebas antiguas y nuevas. El `OrderHistoryPanel.tsx` consultaba `delivery_orders` (tabla legacy con datos viejos marcados como completados).
+  - **Fix:** Migrada la consulta a tabla `orders` (core), con deduplicación por `legacy_id` tomando siempre el registro más reciente. Status `paid` se mapea a `pendiente` en la vista del comprador.
+- **DB: REPLICA IDENTITY FULL:** Ejecutado `ALTER TABLE orders REPLICA IDENTITY FULL` para que Supabase Realtime transmita todos los campos en cada UPDATE por WebSocket.
+
+### Restaurado
+- **Auto-expiración 24h en Dashboard:** Se restauró la lógica eliminada accidentalmente que cancela pedidos `pendiente_pago` o `pendiente` (WhatsApp) con más de 24 horas en el panel del vendedor (`app/dashboard/pedidos/page.tsx`).
+
+### Modificado
+- `store/useCustomerStore.ts`: Interfaz `Order` ahora incluye `coreId?: string` para suscripción realtime por UUID.
+- `components/tienda/templates/RestauranteCheckoutModal.tsx`: UUID compartido para Culqi y WhatsApp. `coreId` se persiste en localStorage del comprador.
+- `components/tienda/templates/OrderDetailModal.tsx`: Realtime apunta a `orders` con filtro por UUID. Polling a 2s.
+- `components/tienda/templates/OrderHistoryPanel.tsx`: Sincronización por `coreId` (UUID) cuando disponible. Polling continuo a 2s mientras el panel está abierto.
+- `app/dashboard/pedidos/page.tsx`: Restaurada lógica de auto-cancelación 24h.
+
+---
+
 ## [2026-06-11] — Sesión 10
 ### Resolución de Bugs Críticos (Alta Severidad)
 - **Checkout Estándar:** Corregido un fallo crítico de columnas fantasma. Se extirpó la inyección de `merchant_id` y `total_amount` en el payload de Supabase dentro de `app/tienda/[id]/checkout/page.tsx`, los cuales provocaban un error Postgres silencioso (PGRST204) impidiendo la generación de órdenes.

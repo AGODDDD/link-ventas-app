@@ -22,9 +22,10 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
   - **Estrategia de doble escritura** (`legacy_delivery` en `delivery_orders` + `core` en `orders`): Garantiza compatibilidad hacia atrás y adopción del nuevo esquema simultáneamente.
-  - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras en INSERT/UPDATE de pedidos. Canal `delivery_orders` activo en producción.
-  - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard.
-  - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime + polling cada 8s, con integración opcional a OpenRouteService para rutas reales.
+  - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras en INSERT/UPDATE de pedidos. Canales `orders` y `delivery_orders` activos en producción.
+  - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard. Auto-cancelación a las 24h para pedidos no pagados.
+  - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime (filtro por UUID clave primaria) + polling cada 2s, con integración opcional a OpenRouteService para rutas reales. `REPLICA IDENTITY FULL` habilitado en tabla `orders` para transmisión completa por WebSocket.
+  - **Arquitectura Dual-ID:** Cada pedido tiene un `coreId` (UUID interno para BD/Realtime) y un `legacy_id` (código secuencial humano como `BARR-110626-0105` para tickets/clientes). Ambos se persisten en el `localStorage` del comprador vía `useCustomerStore`.
   - **Tickets e impresión** (`ThermalReceipt`): Impresión térmica de 80mm, descarga PNG/PDF, compartir por WhatsApp o email.
 
 ## Funcionalidades Parcialmente Implementadas
@@ -45,6 +46,9 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Refactor de Estados de Pago:** Se eliminó el hardcodeo de `status: 'pending'`. Ahora los pagos manuales por transferencia nacen en estado `pendiente_verificacion` y los pagos por Culqi nacen en `pendiente_pago` respetando la Idempotencia Zero-Trust de Webhooks. Se actualizó el Dashboard para soportarlo con etiquetas y colores amigables.
 - **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
+- **Realtime del cliente Culqi (Alta Severidad):** El `OrderDetailModal.tsx` escuchaba `delivery_orders` por `id`, pero Culqi solo escribe en `orders`. Además, Supabase Realtime ignora filtros en columnas no-PK (`legacy_id`). Se añadió `coreId` (UUID) al store del cliente para filtrar por clave primaria. Polling reducido a 2s.
+- **Pedidos auto-cancelados al crearse:** El `RestauranteCheckoutModal.tsx` usaba el `legacy_id` como `id` en inserts a `orders` (que exige UUID). Se unificó la generación de `crypto.randomUUID()` compartido antes de ambos flujos.
+- **Historial mostraba 'Completado' al instante:** Colisión de `legacy_id` entre pruebas. Se migró la consulta a tabla `orders` con deduplicación por fecha. Status `paid` se mapea a `pendiente` para el comprador.
 
 ## Bugs Potenciales Detectados
 - **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
