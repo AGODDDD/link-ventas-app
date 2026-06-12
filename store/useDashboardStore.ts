@@ -19,7 +19,7 @@ interface DashboardState {
     ordersCargadas: boolean
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
-    actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => void
+    actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string, legacyId?: string) => void
     actualizarItemsOrderLocal: (orderId: string, items: any[]) => void
     normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
 }
@@ -245,9 +245,17 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         });
     },
 
-    actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string) => {
+    actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string, legacyId?: string) => {
         set((state) => ({
-            orders: state.orders.map(o => o.id === orderId ? { ...o, status: nuevoEstado } : o)
+            orders: state.orders.map(o => o.id === orderId
+                ? {
+                    ...o,
+                    status: nuevoEstado,
+                    // Si el trigger de BD ya asignó el BARR-... y antes era null, actualizarlo
+                    ...(legacyId && !o.legacy_id ? { legacy_id: legacyId } : {})
+                }
+                : o
+            )
         }))
     },
 

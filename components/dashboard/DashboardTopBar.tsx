@@ -250,7 +250,13 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                                 })
                             }
                         } else if (exists) {
-                            store.actualizarEstadoOrderLocal(payload.new.id, payload.new.status);
+                            // Pasar también legacy_id: el trigger de BD puede haberlo asignado
+                            // en un UPDATE posterior al INSERT inicial (race condition BARR-...)
+                            store.actualizarEstadoOrderLocal(
+                                payload.new.id,
+                                payload.new.status,
+                                payload.new.legacy_id || undefined
+                            );
                         }
                     }
                 )
