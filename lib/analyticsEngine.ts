@@ -74,6 +74,14 @@ export function generateInsights(
       message: 'Tu tasa de conversión ha mejorado significativamente respecto a la semana pasada. ¡Excelente trabajo!',
       metric: `${Math.round(convL7 * 100)}%`
     });
+  } else if (leads.length > 0) {
+    insights.push({
+      id: 'conversion-stable',
+      type: 'success',
+      title: 'Conversión Saludable',
+      message: 'Tu tasa de conversión se mantiene estable y dentro de los rangos normales respecto a la semana pasada.',
+      metric: `${Math.round(convL7 * 100)}%`
+    });
   }
 
   // 3. Recomendación de Horario Pico (Info)
@@ -128,7 +136,23 @@ export function generateInsights(
         message: `Tienes ${recentAbandonedCarts.length} carritos abandonados recientes. Envía un mensaje manual con un descuento para rescatarlos hoy.`,
         metric: `S/ ${lostCapital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       });
+    } else {
+      insights.push({
+        id: 'no-abandoned-carts',
+        type: 'success',
+        title: 'Cero Fugas',
+        message: `Excelente. No tienes carritos abandonados sin recuperar en las últimas 48 horas. Tu flujo de pago es eficiente.`,
+        metric: `S/ 0.00`
+      });
     }
+  } else if (orders.length > 0) {
+    insights.push({
+      id: 'no-abandoned-carts',
+      type: 'success',
+      title: 'Cero Fugas de Capital',
+      message: `No hemos detectado carritos abandonados en las últimas 48 horas. Todos los intentos de compra fueron exitosos.`,
+      metric: `S/ 0.00`
+    });
   }
 
   // 5. Producto Estrella en Riesgo (Danger/Warning)
@@ -159,6 +183,7 @@ export function generateInsights(
     const oldestOrderDate = orders.length > 0 ? new Date(Math.min(...orders.map(o => new Date(o.created_at).getTime()))) : currentDate;
     const storeDaysActive = Math.max(7, Math.ceil((currentDate.getTime() - oldestOrderDate.getTime()) / (1000 * 60 * 60 * 24)));
     
+    let riskFound = false;
     for (const prod of topProducts) {
       if (prod.totalSold > 5) {
         const historicalDailyAvg = prod.totalSold / storeDaysActive;
@@ -173,9 +198,20 @@ export function generateInsights(
             message: `Tu top ventas "${prod.name}" ha caído drásticamente esta semana. ¿Problemas de stock o precios? Considera promocionarlo.`,
             metric: prod.name
           });
+          riskFound = true;
           break; // Show only one product warning to avoid spamming
         }
       }
+    }
+
+    if (!riskFound) {
+       insights.push({
+         id: 'products-healthy',
+         type: 'success',
+         title: 'Catálogo Fuerte',
+         message: `Tus productos estrella mantienen un ritmo de ventas constante y saludable. No hay caídas inusuales detectadas.`,
+         metric: 'Estable'
+       });
     }
   }
 
