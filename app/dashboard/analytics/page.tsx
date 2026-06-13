@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
-import { TrendingUp, DollarSign, ShoppingBag, Users, BarChart3, Calendar, Zap, Download, Package } from 'lucide-react'
+import { TrendingUp, DollarSign, ShoppingBag, Users, BarChart3, Calendar, Zap, Download, Package, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts'
+import { generateInsights, Insight } from '@/lib/analyticsEngine'
 
 type Order = {
     id: string
@@ -27,6 +28,8 @@ const formatCurrency = (val: number) => {
 export default function AnalyticsPage() {
     const [orders, setOrders] = useState<Order[]>([])
     const [leads, setLeads] = useState<any[]>([])
+    const [carts, setCarts] = useState<any[]>([])
+    const [insights, setInsights] = useState<Insight[]>([])
     const [loading, setLoading] = useState(true)
     const [periodo, setPeriodo] = useState<'7d' | '30d' | 'all'>('30d')
     const [planStatus, setPlanStatus] = useState<string | null>(null)
@@ -36,13 +39,15 @@ export default function AnalyticsPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const [coreRes, leadsRes, profileRes] = await Promise.all([
+            const [coreRes, leadsRes, profileRes, cartsRes] = await Promise.all([
                 // Core Orders + Items
                 supabase.from('orders').select('*, order_items(*)').eq('store_id', user.id).order('created_at', { ascending: true }),
                 // Leads
                 supabase.from('store_leads').select('*').eq('store_id', user.id),
                 // Plan
                 supabase.from('profiles').select('plan').eq('id', user.id).single(),
+                // Abandoned Carts
+                supabase.from('abandoned_carts').select('*').eq('store_id', user.id)
             ])
 
             if (profileRes.data) setPlanStatus(profileRes.data.plan ?? null)
@@ -69,6 +74,12 @@ export default function AnalyticsPage() {
 
             setOrders(unified)
             if (leadsRes.data) setLeads(leadsRes.data)
+            if (cartsRes.data) setCarts(cartsRes.data)
+            
+            // Run Analytics AI Engine
+            const generatedInsights = generateInsights(unified, leadsRes.data || [], cartsRes.data || [])
+            setInsights(generatedInsights)
+            
             setLoading(false)
         }
         cargarDatos()
@@ -309,6 +320,44 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* AI Insights Grid (2x2 Flat Semantic UI) */}
+            {insights.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {insights.map(insight => {
+                        const styleConfig = {
+                            danger: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-900/50', iconClass: 'text-red-500', Icon: AlertTriangle },
+                            warning: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-900/50', iconClass: 'text-amber-500', Icon: AlertTriangle },
+                            success: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', border: 'border-emerald-200 dark:border-emerald-900/50', iconClass: 'text-emerald-500', Icon: CheckCircle2 },
+                            prediction: { bg: 'bg-indigo-50 dark:bg-indigo-950/20', border: 'border-indigo-200 dark:border-indigo-900/50', iconClass: 'text-indigo-500', Icon: TrendingUp },
+                            info: { bg: 'bg-blue-50 dark:bg-blue-950/20', border: 'border-blue-200 dark:border-blue-900/50', iconClass: 'text-blue-500', Icon: Info }
+                        };
+                        const conf = styleConfig[insight.type];
+                        const Icon = conf.Icon;
+                        
+                        return (
+                            <div key={insight.id} className={`${conf.bg} ${conf.border} border p-5 rounded-xl shadow-sm flex gap-4 transition-colors`}>
+                                <div className="mt-1 flex-shrink-0">
+                                    <Icon className={`w-5 h-5 ${conf.iconClass}`} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <h4 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">{insight.title}</h4>
+                                        {insight.metric && (
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${conf.bg} ${conf.border} border ${conf.iconClass} bg-opacity-50`}>
+                                                {insight.metric}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+                                        {insight.message}
+                                    </p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
 
             {/* KPI Cards (Glassmorphism + Gradients) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
