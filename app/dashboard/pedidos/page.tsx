@@ -502,7 +502,7 @@ export default function PedidosPage() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Central Logística 📦</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Central Logística</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Gestión de órdenes y radar de rescates de carritos.</p>
                 </div>
                 <div className="flex gap-2">

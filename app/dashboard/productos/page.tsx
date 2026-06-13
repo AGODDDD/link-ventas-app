@@ -60,7 +60,7 @@ export default function ProductosPage() {
         <div className="space-y-6 pb-12 relative w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Bodega General 🏢</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Bodega General</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Lista de inventario global. Activa estos productos en el Catálogo desde <b>Ajustes</b>.</p>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto">

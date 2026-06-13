@@ -141,7 +141,7 @@ export default function DashboardPage() {
         <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 animate-fade-in-up delay-100">
           <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Total de Ingresos</p>
           <div className="flex items-baseline space-x-2">
-            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">S/ {ingresosTotales.toFixed(2)}</h3>
+            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">S/ {ingresosTotales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <span className={`text-xs font-medium ${crecimiento >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
               {crecimiento >= 0 ? '+' : ''}{crecimiento}%
             </span>
@@ -258,7 +258,7 @@ export default function DashboardPage() {
                         <td className="px-6 py-5 text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 whitespace-nowrap">
                             {new Date(order.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toFixed(2)}</td>
+                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className="px-6 py-5">
                             <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight group-hover:border-emerald-500/40 transition-all uppercase whitespace-nowrap">
                                 {order.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'Con QR'}

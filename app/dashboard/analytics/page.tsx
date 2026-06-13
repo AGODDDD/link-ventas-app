@@ -278,7 +278,7 @@ export default function AnalyticsPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Analytics 📊</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Analytics</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Inteligencia comercial de tu operación.</p>
                 </div>
                 <div className="flex items-center gap-3">

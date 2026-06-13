@@ -234,7 +234,7 @@ export default function ConfiguracionPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Configurar Tienda 🏪</h1>
+        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Configurar Tienda</h1>
         <p className="text-zinc-500 dark:text-zinc-400">Personaliza tu perfil, métodos de pago y apariencia.</p>
       </div>
 
