@@ -287,7 +287,7 @@ export default function AnalyticsPage() {
             )}
             
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Analytics</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Inteligencia comercial de tu operación.</p>
@@ -323,7 +323,7 @@ export default function AnalyticsPage() {
 
             {/* AI Insights Grid (2x2 Flat Semantic UI) */}
             {insights.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in-up delay-100">
                     {insights.map(insight => {
                         const styleConfig = {
                             danger: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-900/50', iconClass: 'text-red-500', Icon: AlertTriangle },
@@ -360,7 +360,7 @@ export default function AnalyticsPage() {
             )}
 
             {/* KPI Cards (Glassmorphism + Gradients) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up delay-200">
                 <div className="bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/50 dark:to-zinc-900/10 p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-xl group hover:border-primary/30 transition-all duration-300 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <DollarSign className="w-16 h-16 text-primary" />
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Charts Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up delay-300">
                 {/* Recharts Area Chart */}
                 <div className="lg:col-span-2 bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
@@ -486,7 +486,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Bottom Row: Top Products & Top Customers */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in-up delay-400">
                 
                 {/* Top Products */}
                 <div className="bg-zinc-50 dark:bg-zinc-900 p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm">

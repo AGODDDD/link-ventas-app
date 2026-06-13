@@ -500,7 +500,7 @@ export default function PedidosPage() {
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Central Logística</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Gestión de órdenes y radar de rescates de carritos.</p>
@@ -513,7 +513,7 @@ export default function PedidosPage() {
             </div>
 
             {/* TAB NAVIGATOR */}
-            <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar">
+            <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar animate-fade-in-up delay-100">
                 <button 
                     onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
@@ -534,7 +534,7 @@ export default function PedidosPage() {
                 </button>
             </div>
 
-            <div className="grid gap-6">
+            <div className="grid gap-6 animate-fade-in-up delay-200">
 
                 {/* ========== DELIVERY TAB ========== */}
                 {activeTab === 'delivery' && (

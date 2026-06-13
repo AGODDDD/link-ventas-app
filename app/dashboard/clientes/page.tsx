@@ -153,7 +153,7 @@ export default function ClientesPage() {
     return (
         <div className="space-y-6 pb-12 relative w-full">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Clientes & Leads</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Base de datos de prospectos interesados en tu marca.</p>
@@ -161,7 +161,7 @@ export default function ClientesPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-fade-in-up delay-100">
                 <div className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
                     <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Total Leads</p>
                     <div className="flex items-baseline gap-2">
@@ -187,7 +187,7 @@ export default function ClientesPage() {
             </div>
 
             {/* Search & Filters Bar */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up delay-200">
                 <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg flex-1 border border-zinc-200 dark:border-zinc-800/50">
                     <Search className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" />
                     <input
@@ -211,7 +211,7 @@ export default function ClientesPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl animate-fade-in-up delay-300">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>

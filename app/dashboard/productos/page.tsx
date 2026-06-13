@@ -58,7 +58,7 @@ export default function ProductosPage() {
 
     return (
         <div className="space-y-6 pb-12 relative w-full">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Bodega General</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Lista de inventario global. Activa estos productos en el Catálogo desde <b>Ajustes</b>.</p>
@@ -99,7 +99,7 @@ export default function ProductosPage() {
             />
 
             {/* VISTA DE TABLA COMPACTA (LISTA) */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl animate-fade-in-up delay-100">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
