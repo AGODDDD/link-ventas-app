@@ -234,6 +234,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 const orderItems = cart.map(item => ({
                     order_id: orderId,
                     product_id: item.product.id,
+                    name: item.product.name,
                     quantity: item.quantity,
                     price: item.product.price,
                     modifiers: item.variantDetails

@@ -282,7 +282,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           name: item.name,
           price: item.unitPrice,
           quantity: item.quantity,
-          modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
+          modifiers: item.modifiersList && item.modifiersList.length > 0 
+            ? item.modifiersList 
+            : (item.options ? [{ name: item.options, price: 0 }] : null)
         }));
         const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
         if (itemsError) throw itemsError;
@@ -340,7 +342,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             name: item.name,
             price: item.unitPrice,
             quantity: item.quantity,
-            modifiers: item.modifiersList && item.modifiersList.length > 0 ? item.modifiersList : (item.options || {})
+            modifiers: item.modifiersList && item.modifiersList.length > 0 
+              ? item.modifiersList 
+              : (item.options ? [{ name: item.options, price: 0 }] : null)
           }));
           const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
           if (itemsError) console.error('⚠️ Error en order_items core:', itemsError.message);
