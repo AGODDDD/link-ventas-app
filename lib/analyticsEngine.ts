@@ -34,7 +34,7 @@ export function generateInsights(
       type: 'prediction',
       title: 'Proyección de Cierre',
       message: `A este ritmo de ventas, proyectamos que cerrarás el mes con mayores ingresos. Manten el esfuerzo.`,
-      metric: `S/ ${projectedTotal.toFixed(2)}`
+      metric: `S/ ${projectedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     });
   }
 
@@ -126,7 +126,7 @@ export function generateInsights(
         type: 'danger',
         title: 'Capital Estancado',
         message: `Tienes ${recentAbandonedCarts.length} carritos abandonados recientes. Envía un mensaje manual con un descuento para rescatarlos hoy.`,
-        metric: `S/ ${lostCapital.toFixed(2)}`
+        metric: `S/ ${lostCapital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       });
     }
   }
