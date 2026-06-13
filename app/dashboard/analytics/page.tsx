@@ -20,6 +20,10 @@ type Order = {
 
 const COLORS = ['#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
 
+const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+};
+
 export default function AnalyticsPage() {
     const [orders, setOrders] = useState<Order[]>([])
     const [leads, setLeads] = useState<any[]>([])
@@ -315,7 +319,7 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-3 relative z-10">
                         <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Ingresos</p>
                     </div>
-                    <p className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 relative z-10">S/ {ingresoTotal.toFixed(2)}</p>
+                    <p className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 relative z-10">S/ {formatCurrency(ingresoTotal)}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium relative z-10">{ordersFiltradas.length} transacciones</p>
                 </div>
 
@@ -326,7 +330,7 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-3 relative z-10">
                         <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Ticket Promedio</p>
                     </div>
-                    <p className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 relative z-10">S/ {ticketPromedio.toFixed(2)}</p>
+                    <p className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 relative z-10">S/ {formatCurrency(ticketPromedio)}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium relative z-10">Por cada orden</p>
                 </div>
 
@@ -376,7 +380,7 @@ export default function AnalyticsPage() {
                                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#71717a' }} />
                                 <RechartsTooltip 
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', backgroundColor: 'var(--dash-surface)', color: 'var(--dash-text-primary)' }}
-                                    formatter={(value: any) => [`S/ ${Number(value).toFixed(2)}`, 'Ingresos']}
+                                    formatter={(value: any) => [`S/ ${formatCurrency(Number(value))}`, 'Ingresos']}
                                 />
                                 <Area type="monotone" dataKey="Ventas" stroke="#7c3aed" strokeWidth={3} fillOpacity={1} fill="url(#colorVentas)" />
                             </AreaChart>
@@ -455,7 +459,7 @@ export default function AnalyticsPage() {
                                             <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{prod.count} unidades vendidas</p>
                                         </div>
                                     </div>
-                                    <p className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter">S/ {prod.total.toFixed(2)}</p>
+                                    <p className="font-black text-zinc-900 dark:text-zinc-100 text-lg tracking-tighter">S/ {formatCurrency(prod.total)}</p>
                                 </div>
                             ))}
                         </div>
@@ -485,7 +489,7 @@ export default function AnalyticsPage() {
                                             <p className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">{cliente.count} {cliente.count === 1 ? 'compra' : 'compras'} (Retención)</p>
                                         </div>
                                     </div>
-                                    <p className="font-black text-green-600 dark:text-green-500 text-lg tracking-tighter">S/ {cliente.total.toFixed(2)}</p>
+                                    <p className="font-black text-green-600 dark:text-green-500 text-lg tracking-tighter">S/ {formatCurrency(cliente.total)}</p>
                                 </div>
                             ))}
                         </div>
