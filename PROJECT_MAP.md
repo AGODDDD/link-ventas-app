@@ -35,11 +35,14 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 
 ### Dashboard (Frontend Administrativo)
 - `app/dashboard/page.tsx`: Vista principal de ventas y estados del merchant.
-- `app/dashboard/pedidos/page.tsx`: Gestión de pedidos con timeline de 6 estados + auto-cancelación 24h.
-- `app/dashboard/configuracion/page.tsx`: Configuración del perfil, FOMO y llaves de Culqi.
-- `components/dashboard/DashboardTopBar.tsx`: Realtime unificado (canales `orders` + `delivery_orders`) con notificaciones push + sonido.
+- `app/dashboard/pedidos/page.tsx`: Gestión de pedidos con timeline de 6 estados + auto-cancelación 24h. Integrado con `PedidosSkeleton`.
+- `app/dashboard/clientes/page.tsx`: Gestión de CRM. Integrado con `ClientesSkeleton`.
+- `app/dashboard/analytics/page.tsx`: Panel de métricas e IA. Integrado con `AnalyticsSkeleton`.
+- `app/dashboard/productos/page.tsx`: Bodega general de inventario. Integrado con `ProductosSkeleton`.
+- `app/dashboard/configuracion/page.tsx`: Configuración del perfil, FOMO y llaves de Culqi. Excluido de SWR intencionalmente.
+- `components/dashboard/DashboardTopBar.tsx`: Realtime unificado con notificaciones push + sonido.
 - `components/dashboard/ThermalReceipt.tsx`: Generador de tickets para impresoras térmicas.
-- `store/useDashboardStore.ts`: Estado unificado del dashboard con fetch triple-path (core + legacy_delivery + legacy_standard).
+- `store/useDashboardStore.ts`: Estado unificado SWR (Stale-While-Revalidate) del dashboard con flags `lastFetch` para Zero-Load Navigation.
 
 ### Base de Datos
 - `supabase/migrations/20260000000002_add_pendiente_verificacion.sql`: Estado `pendiente_verificacion` para pagos por transferencia.

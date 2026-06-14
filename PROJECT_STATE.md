@@ -19,6 +19,10 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - Modo oscuro pixel-perfect con el diseño base de Stitch ✓
   - Modo claro funcional adaptado con la paleta de la marca LinkVentas ✓
   - Páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) migradas al sistema `dark:` prefix para unificar visualmente toda la experiencia ✓
+- **Dashboard SWR Architecture & Zero-Load UI (Completado):**
+  - Implementado sistema "Stale-While-Revalidate" vía Zustand (`useDashboardStore`). Las colecciones grandes (`orders`, `leads`, `abandoned_carts`, `productos`) se cachean en memoria con un flag `lastFetch`.
+  - Navegación instantánea (0ms) entre pestañas de datos del Panel de Control, eliminando re-renders intermedios.
+  - Skeletons estructurales *Pixel-Perfect* desarrollados e inyectados para *Cold Starts* en Clientes, Pedidos, Analytics y Bodega. Evaluados estrictamente bajo la regla `if (lastFetch === 0)`.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
   - **Datos unificados**: Todas las compras de WhatsApp y Culqi convergen exclusivamente en el modelo relacional `orders` y `order_items`. Se erradicó la tabla `delivery_orders` y su estrategia de doble escritura.

@@ -5,6 +5,20 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-13] — Migración SWR Dashboard
+### Añadido (Performance & UX)
+- **Arquitectura SWR (Stale-While-Revalidate) Global:** Migrado todo el panel de control (`useDashboardStore.ts`) para usar flags `lastFetch` y precargar datos en memoria en lugar de cargar en cada render de página.
+- **Skeleton Loaders Pixel-Perfect:** Implementados esqueletos estructurales (`animate-pulse`) exactos para:
+  - `ClientesSkeleton` en `app/dashboard/clientes/page.tsx`
+  - `PedidosSkeleton` en `app/dashboard/pedidos/page.tsx`
+  - `AnalyticsSkeleton` en `app/dashboard/analytics/page.tsx`
+  - `ProductosSkeleton` en `app/dashboard/productos/page.tsx`
+- **Zero-Load Navigation:** Gracias a la caché global, navegar entre pestañas del Dashboard ahora toma 0 milisegundos reales sin pantallas en blanco ni re-renders de "Cargando...".
+
+### Corregido (Dashboard)
+- **Flashes de Skeletons Infinitos:** Corregido el bug donde el estado inicial se evaluaba basado en `array.length === 0`. Si una tienda no tenía ventas, quedaba atrapada en skeleton infinito. Ahora evalúa estrictamente los timestamps `lastFetch === 0`.
+- **Race Condition de Supabase en Store:** Corregido bug donde un retorno de error o array vacío de Supabase (ej. `abandoned_carts`) prevenía la actualización del flag `lastFetch`, causando bucles de skeletons en cada re-render. Ahora el store registra `Date.now()` para todo intento independientemente del resultado.
+
 ## [2026-06-11] — Sesión 11
 ### Corregido (Alta Severidad)
 - **Realtime del cliente Culqi roto:** El `OrderDetailModal.tsx` escuchaba cambios en `delivery_orders` por `id`, pero Culqi solo escribe en `orders`. Además, el filtro usaba `legacy_id` (no es clave primaria), lo cual Supabase Realtime **ignora silenciosamente**. El cliente caía al polling de 8s, causando retraso perceptible de 3-5s.
