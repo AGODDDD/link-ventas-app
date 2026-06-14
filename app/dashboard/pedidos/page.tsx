@@ -21,9 +21,65 @@ type Order = {
     order_items: any[]
 }
 
+const PedidosSkeleton = () => (
+    <div className="space-y-6 pb-12 relative w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="space-y-3 w-full">
+                <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div className="h-4 w-96 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-40 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+        </div>
+        <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+            <div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            <div className="h-6 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            <div className="h-6 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+        </div>
+        <div className="grid gap-6">
+            {[1, 2].map(i => (
+                <div key={i} className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 overflow-hidden shadow-xl">
+                    <div className="bg-zinc-50 dark:bg-[#131317] px-6 py-4 flex flex-col sm:flex-row justify-between border-b border-zinc-200/50 dark:border-zinc-800/50 gap-3">
+                        <div className="flex gap-3">
+                            <div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                            <div className="h-6 w-20 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse"></div>
+                        </div>
+                        <div className="h-6 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    </div>
+                    <div className="p-6 grid md:grid-cols-12 gap-6">
+                        <div className="md:col-span-4 space-y-4">
+                            <div className="h-4 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-2"></div>
+                            <div className="flex gap-3">
+                                <div className="h-10 w-10 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                <div className="space-y-2">
+                                    <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                    <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                </div>
+                            </div>
+                            <div className="h-10 w-full bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mt-4"></div>
+                        </div>
+                        <div className="md:col-span-4 space-y-3">
+                            <div className="h-4 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-3"></div>
+                            <div className="h-12 w-full bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                            <div className="h-12 w-full bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                        </div>
+                        <div className="md:col-span-4 space-y-3">
+                            <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-3"></div>
+                            <div className="h-16 w-full bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                            <div className="flex gap-2">
+                                <div className="h-10 flex-1 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                <div className="h-10 flex-1 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+)
+
 export default function PedidosPage() {
-    const { orders, ordersCargadas, cargarOrders, actualizarEstadoOrderLocal } = useDashboardStore()
-    const [loading, setLoading] = useState(!ordersCargadas)
+    const { orders, cargarOrders, actualizarEstadoOrderLocal, leads, cargarLeads } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(true)
 
     // Estado para el Modal de Comprobante
     const [selectedProof, setSelectedProof] = useState<string | null>(null)
@@ -31,12 +87,6 @@ export default function PedidosPage() {
 
     // Estado para Rescates (Leads Mágicos)
     const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'delivery'>('delivery')
-    const [leads, setLeads] = useState<any[]>([])
-    const [loadingLeads, setLoadingLeads] = useState(false)
-
-    // Delivery orders
-    const [deliveryOrders, setDeliveryOrders] = useState<any[]>([])
-    const [loadingDelivery, setLoadingDelivery] = useState(true)
 
     // Referencias para Motor Térmico (html2canvas)
     const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
@@ -56,67 +106,56 @@ export default function PedidosPage() {
     const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
-        const init = async () => {
+        const load = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-            
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-            if (profile) {
-                setPerfil(profile)
-                setPlanStatus(profile.plan ?? null)
-            }
-
-            await cargarOrders(user.id)
-            setLoading(false)
-            fetchLeads(user.id)
-
-            // Auto-cancelar pedidos pendientes de pago expirados (> 24h)
-            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-            const { orders: storeOrders, actualizarEstadoOrderLocal } = useDashboardStore.getState()
-            
-            const expiredOrders = storeOrders.filter(o => 
-                (o.status === 'pendiente_pago' || (o.status === 'pendiente' && o.metodo_pago === 'whatsapp')) && 
-                new Date(o.created_at) < twentyFourHoursAgo
-            )
-
-            if (expiredOrders.length > 0) {
-                for (const order of expiredOrders) {
-                    const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-                    if (!error) {
-                        actualizarEstadoOrderLocal(order.id, 'cancelado')
-                    }
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+                if (profile) {
+                    setPerfil(profile)
+                    setPlanStatus(profile.plan ?? null)
                 }
-                toast.error(`${expiredOrders.length} pedido(s) fueron cancelados automáticamente por falta de pago (24h)`)
-            }
 
-            // Pedir permiso de notificaciones del navegador
-            if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-                Notification.requestPermission()
+                await Promise.all([
+                    cargarOrders(user.id),
+                    cargarLeads(user.id)
+                ])
+
+                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+                const { orders: storeOrders, actualizarEstadoOrderLocal: storeUpdateLocal } = useDashboardStore.getState()
+                
+                const expiredOrders = storeOrders.filter(o => 
+                    (o.status === 'pendiente_pago' || (o.status === 'pendiente' && o.metodo_pago === 'whatsapp')) && 
+                    new Date(o.created_at) < twentyFourHoursAgo
+                )
+
+                if (expiredOrders.length > 0) {
+                    for (const order of expiredOrders) {
+                        const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
+                        if (!error) {
+                            storeUpdateLocal(order.id, 'cancelado')
+                        }
+                    }
+                    toast.error(`${expiredOrders.length} pedido(s) fueron cancelados automáticamente por falta de pago (24h)`)
+                }
+
+                if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                    Notification.requestPermission()
+                }
             }
+            setIsInitialLoad(false)
         }
-        init()
-    }, [cargarOrders])
-
-    const fetchLeads = async (userId: string) => {
-        setLoadingLeads(true)
-        const { data } = await supabase
-            .from('store_leads')
-            .select('*')
-            .eq('store_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(50)
-        
-        if (data) setLeads(data)
-        setLoadingLeads(false)
-    }
+        load()
+    }, [cargarOrders, cargarLeads])
 
     const forceRefresh = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
-        setLoading(true)
-        await cargarOrders(user.id, true)
-        fetchLeads(user.id)
-        setLoading(false)
+        setIsInitialLoad(true)
+        await Promise.all([
+            cargarOrders(user.id, true),
+            cargarLeads(user.id, true)
+        ])
+        setIsInitialLoad(false)
     }
 
     const DELIVERY_STATUSES = ['pendiente_pago', 'pendiente_verificacion', 'pendiente', 'en_preparacion', 'alistando', 'en_camino', 'completado']
@@ -351,7 +390,7 @@ export default function PedidosPage() {
         }
     }
 
-    if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Cargando pedidos... 🛰️</div>
+    if (isInitialLoad) return <PedidosSkeleton />
 
     // UI Pagination Bounds computation
     const filteredDelivery = orders.filter(o => o.order_type === 'delivery');
@@ -539,9 +578,7 @@ export default function PedidosPage() {
                 {/* ========== DELIVERY TAB ========== */}
                 {activeTab === 'delivery' && (
                     <>
-                        {!ordersCargadas ? (
-                            <p className="text-center font-bold text-zinc-500 dark:text-zinc-400 animate-pulse py-10">Cargando pedidos delivery... 🛵</p>
-                        ) : filteredDelivery.length === 0 ? (
+                        {filteredDelivery.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#131317]">
                                 <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Sin pedidos delivery aún</p>
                                 <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Los pedidos del restaurante aparecerán aquí en tiempo real.</p>

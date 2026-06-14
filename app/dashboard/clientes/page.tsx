@@ -2,23 +2,96 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Search, Users, Mail, Phone, Tag, Calendar, ArrowUpDown, Trash2, MessageCircle } from 'lucide-react'
-
-type Lead = {
-    id: string
-    created_at: string
-    name: string
-    email: string
-    phone: string
-    preference: string
-    store_id: string
-}
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 type SortKey = 'created_at' | 'name' | 'preference'
 type SortDir = 'asc' | 'desc'
 
+// Componente Skeleton (Pixel Perfect)
+const ClientesSkeleton = () => (
+    <div className="space-y-6 pb-12 relative w-full">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="space-y-3 w-full">
+                <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div className="h-4 w-96 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
+                    <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-3"></div>
+                    <div className="flex items-baseline gap-2">
+                        <div className="h-8 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                        <div className="h-4 w-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {/* Search & Filters Bar Skeleton */}
+        <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg flex-1 border border-zinc-200 dark:border-zinc-800/50 opacity-50">
+                <Search className="text-zinc-400 w-4 h-4 shrink-0" />
+                <div className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            </div>
+            <div className="bg-zinc-50 dark:bg-zinc-900 w-48 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800/50 opacity-50 h-10 flex items-center">
+                <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                        <tr className="bg-zinc-50 dark:bg-zinc-900">
+                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/5">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <tr key={i}>
+                                <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse"></div>
+                                        <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-40 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                        <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse"></div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                        <div className="h-2 w-12 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4"></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+)
+
 export default function ClientesPage() {
-    const [leads, setLeads] = useState<Lead[]>([])
-    const [loading, setLoading] = useState(true)
+    const { leads, cargarLeads, eliminarLeadLocal } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterPref, setFilterPref] = useState<string>('all')
     const [sortKey, setSortKey] = useState<SortKey>('created_at')
@@ -29,20 +102,14 @@ export default function ClientesPage() {
     const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
-        const cargarLeads = async () => {
+        const load = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
-
-            const { data, error } = await supabase
-                .from('store_leads')
-                .select('*')
-                .eq('store_id', user.id)
-                .order('created_at', { ascending: false })
-
-            if (!error && data) setLeads(data)
-            setLoading(false)
+            if (user) {
+                await cargarLeads(user.id)
+            }
+            setIsInitialLoad(false)
         }
-        cargarLeads()
+        load()
     }, [])
 
     // Preferencias únicas para el filtro
@@ -100,7 +167,7 @@ export default function ClientesPage() {
     const eliminarLead = async (id: string) => {
         if (!confirm('¿Eliminar este lead permanentemente?')) return
         const { error } = await supabase.from('store_leads').delete().eq('id', id)
-        if (!error) setLeads(prev => prev.filter(l => l.id !== id))
+        if (!error) eliminarLeadLocal(id)
     }
 
     // Stats
@@ -110,7 +177,7 @@ export default function ClientesPage() {
         return diff < 7 * 24 * 60 * 60 * 1000
     }).length
 
-    if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Cargando base de clientes... 📇</div>
+    if (isInitialLoad) return <ClientesSkeleton />
 
     // Paginación (Computed Bounds)
     const totalPages = Math.ceil(leadsFiltrados.length / ITEMS_PER_PAGE);
