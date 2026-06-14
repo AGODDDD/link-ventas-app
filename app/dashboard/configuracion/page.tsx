@@ -7,70 +7,79 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap, Flame } from 'lucide-react'
+import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap, Flame, LayoutDashboard, CreditCard, MapPin, CheckCircle2, AlertTriangle, X } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
 import dynamic from 'next/dynamic'
 const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
 import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
 import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
 import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
+
+interface SettingsFormData {
+  storeName: string;
+  slug: string;
+  description: string;
+  avatarUrl: string;
+  templateType: string;
+  bannerUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  yapeUrl: string;
+  plinUrl: string;
+  culqiActive: boolean;
+  culqiPublicKey: string;
+  culqiSecretKey: string;
+  storeAddress: string;
+  storeLat: number | null;
+  storeLng: number | null;
+  storeSchedule: StoreSchedule;
+  socialFacebook: string;
+  socialInstagram: string;
+  socialTikTok: string;
+  whatsappPhone: string;
+}
+
+interface SystemData {
+  userId: string;
+  userEmail: string;
+  planStatus: string | null;
+  planExpiresAt: string | null;
+}
+
+const TABS = [
+  { id: 'general', label: 'General & Perfil', icon: LayoutDashboard },
+  { id: 'plantilla', label: 'Plantilla & Experiencia', icon: Store },
+  { id: 'diseno', label: 'Diseño & Apariencia', icon: Palette },
+  { id: 'pagos', label: 'Pagos & Facturación', icon: CreditCard },
+  { id: 'logistica', label: 'Logística & Horarios', icon: MapPin },
+  { id: 'marketing', label: 'Marketing & Redes', icon: Share2 },
+]
+
 export default function ConfiguracionPage() {
-  const [loading, setLoading] = useState(false)
-  const [userId, setUserId] = useState('')
-  const [planStatus, setPlanStatus] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState('')
-  const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null)
-
-  // Datos del formulario
-  const [storeName, setStoreName] = useState('')
-  const [description, setDescription] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState('')
-  const [slug, setSlug] = useState('')
-
-  // Pasarela Culqi
-  const [culqiActive, setCulqiActive] = useState(false)
-  const [culqiPublicKey, setCulqiPublicKey] = useState('')
-  const [culqiSecretKey, setCulqiSecretKey] = useState('')
-  const [initialPaymentSettings, setInitialPaymentSettings] = useState({
-    culqiActive: false,
-    culqiPublicKey: '',
-  })
-
-  // Nuevos campos para Personalización
-  const [templateType, setTemplateType] = useState('comercio')
-  const [bannerUrl, setBannerUrl] = useState('')
-  const [primaryColor, setPrimaryColor] = useState('#000000')
-  const [secondaryColor, setSecondaryColor] = useState('#C31432')
-  const [socialFacebook, setSocialFacebook] = useState('')
-  const [socialInstagram, setSocialInstagram] = useState('')
-  const [socialTikTok, setSocialTikTok] = useState('')
-  const [whatsappPhone, setWhatsappPhone] = useState('')
-
-  // Ubicación del local
-  const [storeAddress, setStoreAddress]   = useState('')
-  const [storeLat, setStoreLat]           = useState<number | null>(null)
-  const [storeLng, setStoreLng]           = useState<number | null>(null)
-  const storeMapRef                       = useRef<any>(null)
-  const storeMapContainerRef              = useRef<HTMLDivElement>(null)
-  const storeMarkerRef                    = useRef<any>(null)
-
-  // Estrategia Horaria
-  const [storeSchedule, setStoreSchedule] = useState<StoreSchedule>(DEFAULT_SCHEDULE)
-
-  // Nuevos campos para QRs
-  const [yapeUrl, setYapeUrl] = useState('')
-  const [plinUrl, setPlinUrl] = useState('')
-
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [activeTab, setActiveTab] = useState('general')
   const [showFomoConfig, setShowFomoConfig] = useState(false)
 
-  // 1. Cargar datos al entrar
+  const [systemData, setSystemData] = useState<SystemData>({
+    userId: '',
+    userEmail: '',
+    planStatus: null,
+    planExpiresAt: null
+  })
+
+  const [initialData, setInitialData] = useState<SettingsFormData | null>(null)
+  const [formData, setFormData] = useState<SettingsFormData | null>(null)
+  
+  // Para la confirmación de plantilla
+  const [pendingTemplate, setPendingTemplate] = useState<string | null>(null)
+  const [savingTemplate, setSavingTemplate] = useState(false)
+
   useEffect(() => {
     const cargarPerfil = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      setUserId(user.id)
-      setUserEmail(user.email || '')
 
       const { data } = await supabase
         .from('profiles')
@@ -79,44 +88,52 @@ export default function ConfiguracionPage() {
         .single()
 
       if (data) {
-        setPlanStatus(data.plan ?? null)
-        setPlanExpiresAt(data.plan_expires_at ?? null)
-        setStoreName(data.store_name || '')
-        setSlug(data.slug || '')
-        setDescription(data.description || '')
-        setAvatarUrl(data.avatar_url || '')
-        setYapeUrl(data.yape_image_url || '')
-        setPlinUrl(data.plin_image_url || '')
-        
-        // Culqi
-        setCulqiActive(data.culqi_active || false)
-        setCulqiPublicKey(data.culqi_public_key || '')
-        setCulqiSecretKey('')
-        setInitialPaymentSettings({
-          culqiActive: data.culqi_active || false,
-          culqiPublicKey: data.culqi_public_key || '',
+        setSystemData({
+          userId: user.id,
+          userEmail: user.email || '',
+          planStatus: data.plan ?? null,
+          planExpiresAt: data.plan_expires_at ?? null
         })
 
-        // Load Personalization
-        setTemplateType(data.template_type || 'comercio')
-        setBannerUrl(data.banner_url || '')
-        setPrimaryColor(data.primary_color || '#000000')
-        setSecondaryColor(data.secondary_color || '#C31432')
-        setSocialFacebook(data.social_facebook || '')
-        setSocialInstagram(data.social_instagram || '')
-        setSocialTikTok(data.social_tiktok || '')
-        setWhatsappPhone(data.whatsapp_phone || '')
-        setStoreAddress(data.store_address || '')
-        setStoreLat(data.store_lat || null)
-        setStoreLng(data.store_lng || null)
-        if (data.store_schedule) setStoreSchedule({ ...DEFAULT_SCHEDULE, ...data.store_schedule })
+        const fetchedData: SettingsFormData = {
+          storeName: data.store_name || '',
+          slug: data.slug || '',
+          description: data.description || '',
+          avatarUrl: data.avatar_url || '',
+          templateType: data.template_type || 'comercio',
+          bannerUrl: data.banner_url || '',
+          primaryColor: data.primary_color || '#000000',
+          secondaryColor: data.secondary_color || '#C31432',
+          yapeUrl: data.yape_image_url || '',
+          plinUrl: data.plin_image_url || '',
+          culqiActive: data.culqi_active || false,
+          culqiPublicKey: data.culqi_public_key || '',
+          culqiSecretKey: '', // Starts empty
+          storeAddress: data.store_address || '',
+          storeLat: data.store_lat || null,
+          storeLng: data.store_lng || null,
+          storeSchedule: data.store_schedule ? { ...DEFAULT_SCHEDULE, ...data.store_schedule } : DEFAULT_SCHEDULE,
+          socialFacebook: data.social_facebook || '',
+          socialInstagram: data.social_instagram || '',
+          socialTikTok: data.social_tiktok || '',
+          whatsappPhone: data.whatsapp_phone || '',
+        }
+        setInitialData(fetchedData)
+        setFormData(JSON.parse(JSON.stringify(fetchedData)))
       }
+      setLoading(false)
     }
     cargarPerfil()
   }, [])
 
-  // 2. Función genérica para subir Imágenes
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, bucket: string, setter: (url: string) => void) => {
+  const hasChanges = initialData && formData ? JSON.stringify(initialData) !== JSON.stringify(formData) : false
+
+  const updateForm = (key: keyof SettingsFormData, value: any) => {
+    if (!formData) return
+    setFormData({ ...formData, [key]: value })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, bucket: string, key: keyof SettingsFormData) => {
     try {
       setUploading(true)
       if (!e.target.files || e.target.files.length === 0) return
@@ -127,9 +144,8 @@ export default function ConfiguracionPage() {
         return
       }
 
-      // Optimize: convert to WebP + resize if needed
       const { blob, fileName } = await optimizeImage(file, { maxDimension: 1400, quality: 0.90 })
-      const filePath = `${userId}-${fileName}`
+      const filePath = `${systemData.userId}-${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
@@ -141,7 +157,7 @@ export default function ConfiguracionPage() {
         .from(bucket)
         .getPublicUrl(filePath)
 
-      setter(publicUrl)
+      updateForm(key, publicUrl)
     } catch (error: any) {
       alert('Error subiendo imagen: ' + error.message)
     } finally {
@@ -149,652 +165,577 @@ export default function ConfiguracionPage() {
     }
   }
 
-  // 3. Guardar Cambios en Base de Datos
-  const guardarCambios = async () => {
-    if (!userId) {
-      alert('Error de sesión: Por favor recarga la página para verificar tu usuario antes de guardar.');
-      return;
+  const descartarCambios = () => {
+    if (initialData) {
+      setFormData(JSON.parse(JSON.stringify(initialData)))
+      setPendingTemplate(null)
     }
+  }
+
+  const guardarCambios = async () => {
+    if (!systemData.userId || !formData || !initialData) return
 
     try {
-      setLoading(true)
+      setSaving(true)
 
-      // --- PASO A: Guardar todo EXCEPTO las llaves de Culqi (datos no sensibles) ---
       const { error } = await supabase
         .from('profiles')
         .update({
-          store_name: storeName,
-          slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || null,
-          description: description,
-          avatar_url: avatarUrl,
-          yape_image_url: yapeUrl,
-          plin_image_url: plinUrl,
-          // Personalization
-          template_type: templateType,
-          banner_url: bannerUrl,
-          primary_color: primaryColor,
-          secondary_color: secondaryColor,
-          social_facebook: socialFacebook,
-          social_instagram: socialInstagram,
-          social_tiktok: socialTikTok,
-          whatsapp_phone: whatsappPhone.replace(/\s/g, '') || null,
-          store_address: storeAddress || null,
-          store_lat: storeLat,
-          store_lng: storeLng,
-          store_schedule: storeSchedule,
+          store_name: formData.storeName,
+          slug: formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || null,
+          description: formData.description,
+          avatar_url: formData.avatarUrl,
+          yape_image_url: formData.yapeUrl,
+          plin_image_url: formData.plinUrl,
+          template_type: formData.templateType,
+          banner_url: formData.bannerUrl,
+          primary_color: formData.primaryColor,
+          secondary_color: formData.secondaryColor,
+          social_facebook: formData.socialFacebook,
+          social_instagram: formData.socialInstagram,
+          social_tiktok: formData.socialTikTok,
+          whatsapp_phone: formData.whatsappPhone.replace(/\s/g, '') || null,
+          store_address: formData.storeAddress || null,
+          store_lat: formData.storeLat,
+          store_lng: formData.storeLng,
+          store_schedule: formData.storeSchedule,
           updated_at: new Date(),
         })
-        .eq('id', userId)
+        .eq('id', systemData.userId)
 
       if (error) throw error
 
-      // --- PASO B: Enviar llaves Culqi al servidor cifrado (NUNCA en texto plano) ---
+      // Culqi
       const paymentSettingsChanged =
-        culqiActive !== initialPaymentSettings.culqiActive ||
-        culqiPublicKey.trim() !== initialPaymentSettings.culqiPublicKey ||
-        culqiSecretKey.trim() !== ''
+        formData.culqiActive !== initialData.culqiActive ||
+        formData.culqiPublicKey.trim() !== initialData.culqiPublicKey ||
+        formData.culqiSecretKey.trim() !== ''
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (paymentSettingsChanged && session?.access_token) {
-        const paymentRes = await fetch('/api/settings/payment', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({
-            culqi_active: culqiActive,
-            culqi_public_key: culqiPublicKey,
-            culqi_secret_key: culqiSecretKey,
+      if (paymentSettingsChanged) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.access_token) {
+          const paymentRes = await fetch('/api/settings/payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              culqi_active: formData.culqiActive,
+              culqi_public_key: formData.culqiPublicKey,
+              culqi_secret_key: formData.culqiSecretKey,
+            })
           })
-        })
-        const paymentData = await paymentRes.json()
-        if (!paymentRes.ok) {
-          throw new Error(paymentData.error || 'Error cifrando credenciales de pasarela.')
+          const paymentData = await paymentRes.json()
+          if (!paymentRes.ok) {
+            throw new Error(paymentData.error || 'Error cifrando credenciales de pasarela.')
+          }
         }
-        setInitialPaymentSettings({
-          culqiActive,
-          culqiPublicKey: culqiPublicKey.trim(),
-        })
       }
 
-      alert('✅ ¡Datos actualizados correctamente!')
+      const newInitialData = { ...formData, culqiSecretKey: '' }
+      setInitialData(newInitialData)
+      setFormData(JSON.parse(JSON.stringify(newInitialData)))
+      setPendingTemplate(null)
+      alert('Cambios guardados correctamente.')
 
     } catch (error: any) {
       if (error.code === '23505') {
-        alert('❌ Ese enlace ya está en uso por otra tienda. Por favor elige otro.')
+        alert('Ese enlace ya está en uso por otra tienda. Por favor elige otro.')
       } else {
         alert('Error guardando: ' + error.message)
       }
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
+  const confirmarCambioPlantilla = async () => {
+    if (!systemData.userId || !pendingTemplate) return
+    try {
+      setSavingTemplate(true)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ template_type: pendingTemplate, updated_at: new Date() })
+        .eq('id', systemData.userId)
+      if (error) throw error
+
+      if (initialData && formData) {
+        setInitialData({ ...initialData, templateType: pendingTemplate })
+        setFormData({ ...formData, templateType: pendingTemplate })
+      }
+      setPendingTemplate(null)
+      alert('Plantilla cambiada correctamente.')
+    } catch (error: any) {
+      alert('Error cambiando plantilla: ' + error.message)
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
+
+  if (loading || !formData) {
+    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-zinc-400" /></div>
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div className="animate-fade-in-up">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Configurar Tienda</h1>
-        <p className="text-zinc-500 dark:text-zinc-400">Personaliza tu perfil, métodos de pago y apariencia.</p>
+    <div className="max-w-6xl mx-auto pb-32">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Ajustes de Tienda</h1>
+        <p className="text-zinc-500 dark:text-zinc-400 mt-1">Configura y personaliza la experiencia de tu negocio.</p>
       </div>
 
-      <div className="grid gap-8 animate-fade-in-up delay-100">
-
-        {/* VITRINA PÚBLICA (CATALOG BUILDER) */}
-        {userId && <CatalogBuilder userId={userId} />}
-
-        {/* MI CUENTA Y SUSCRIPCIÓN */}
-        <Card className="border-2 border-primary/25 bg-white dark:bg-zinc-900/40 backdrop-blur-xl shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Zap size={20} className="text-primary animate-pulse" /> Mi Cuenta y Suscripción
-            </CardTitle>
-            <CardDescription className="text-zinc-400 dark:text-zinc-500">Administra los detalles de tu cuenta y consulta el estado de tu suscripción SaaS.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 text-zinc-800 dark:text-zinc-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Información del Perfil */}
-              <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest">Información de Cuenta</h3>
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">Correo Electrónico</Label>
-                    <p className="text-sm font-semibold text-white truncate mt-1">{userEmail || 'Cargando...'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">ID de Usuario (UUID)</Label>
-                    <p className="text-xs font-mono font-bold text-zinc-400 dark:text-zinc-500 mt-1 select-all">{userId || 'Cargando...'}</p>
-                  </div>
-                  <div>
-                    <Label className="text-zinc-500 dark:text-zinc-400 text-xs">Enlace del Comercio</Label>
-                    <p className="text-sm font-semibold text-primary mt-1">
-                      {slug ? (
-                        <a href={`/tienda/${slug}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                          linkventas.com/tienda/{slug}
-                        </a>
-                      ) : 'Aún no configurado'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Detalles de la Suscripción */}
-              <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950/40 p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-widest mb-3">Detalles de Suscripción</h3>
-                  <div className="flex items-center gap-3">
-                    {planStatus === 'pro' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-[0_0_15px_rgba(139,92,246,0.45)]">
-                        ✨ PLAN PRO
-                      </span>
-                    )}
-                    {planStatus === 'trial' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-violet-500 to-primary text-white shadow-[0_0_15px_rgba(124,58,237,0.45)]">
-                        ⚡ PRUEBA PRO
-                      </span>
-                    )}
-                    {planStatus === 'free' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-zinc-200 dark:bg-zinc-800 border border-slate-700 text-zinc-700 dark:text-zinc-300">
-                        📦 PLAN EMPRENDEDOR (GRATIS)
-                      </span>
-                    )}
-                    {planStatus === 'inactivo' && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-red-950 border border-red-900 text-red-400">
-                        ⚠️ INACTIVO
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="mt-4 space-y-2">
-                    {planStatus === 'pro' && (
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                        Tienes acceso completo e ilimitado a todas las herramientas avanzadas. Tu suscripción está activa de forma vitalicia o renovada automáticamente.
-                      </p>
-                    )}
-                    {planStatus === 'trial' && planExpiresAt && (
-                      <div className="space-y-1">
-                        <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                          Tu prueba gratuita vence el: <strong className="text-white">{new Date(planExpiresAt).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-                        </p>
-                        <p className="text-sm font-bold text-violet-400">
-                          ⏰ Te quedan {Math.max(0, Math.ceil((new Date(planExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} días de prueba.
-                        </p>
-                      </div>
-                    )}
-                    {planStatus === 'free' && (
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
-                        Estás usando el plan gratuito con limitaciones de productos (máximo 10) y sin pasarela Culqi ni analíticas avanzadas.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Acciones de Suscripción */}
-                <div className="mt-4 pt-2">
-                  {(planStatus === 'free' || planStatus === 'trial') ? (
-                    <a
-                      href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero subir a Plan Pro por S/ 29/mes para desbloquear Culqi y analíticas.')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-gradient-to-r from-primary to-violet-600 hover:from-primary hover:to-violet-700 text-white rounded-xl text-xs font-bold transition-all shadow-[0_4px_20px_rgba(124,58,237,0.3)] hover:scale-[1.02] active:scale-95 text-center decoration-none"
-                    >
-                      🚀 Subir a Plan Pro — S/ 29/mes
-                    </a>
-                  ) : (
-                    <a
-                      href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, tengo el Plan Pro y necesito asistencia con mi cuenta.')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-zinc-200 dark:bg-zinc-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition-all border border-slate-700 text-center decoration-none"
-                    >
-                      💬 Solicitar Soporte Pro
-                    </a>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* PLANTILLA DE LA TIENDA */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Store size={20} /> Experiencia de Compra (Plantilla)</CardTitle>
-            <CardDescription>Elige cómo interactuarán tus clientes y cómo se verá tu catálogo.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Restaurante */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'restaurante' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
-                <input type="radio" className="hidden" name="template" value="restaurante" checked={templateType === 'restaurante'} onChange={() => setTemplateType('restaurante')} />
-                <div className={`p-4 rounded-full ${templateType === 'restaurante' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
-                  <Store size={28} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-zinc-900 dark:text-white">Restaurante / Food</h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">El pedido se envía directamente al WhatsApp. Destaca platos y menú. Sin carrito.</p>
-                </div>
-              </label>
-
-              {/* Comercio */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'comercio' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
-                <input type="radio" className="hidden" name="template" value="comercio" checked={templateType === 'comercio'} onChange={() => setTemplateType('comercio')} />
-                <div className={`p-4 rounded-full ${templateType === 'comercio' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
-                  <ShoppingBag size={28} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-zinc-900 dark:text-white">Comercio General</h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Flujo de compra estándar. Carrito de compras, checkout y métodos de pago.</p>
-                </div>
-              </label>
-
-              {/* Moda */}
-              <label className={`cursor-pointer border-2 rounded-xl p-4 transition-all flex flex-col items-center text-center gap-3 ${templateType === 'moda' ? 'border-primary bg-primary/5' : 'border-zinc-200 dark:border-zinc-800 hover:border-primary/50 shadow-sm hover:shadow'}`}>
-                <input type="radio" className="hidden" name="template" value="moda" checked={templateType === 'moda'} onChange={() => setTemplateType('moda')} />
-                <div className={`p-4 rounded-full ${templateType === 'moda' ? 'bg-primary text-white' : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400'}`}>
-                  <Shirt size={28} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-zinc-900 dark:text-white">Moda / Boutique</h3>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Look premium aspiracional. Soporta variantes obligatorias por producto (talla/color).</p>
-                </div>
-              </label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* IDENTIDAD VISUAL */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Identidad Visual</CardTitle>
-            <CardDescription>Cómo te ven tus clientes.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* LOGO UPLOAD */}
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="h-24 w-24 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center overflow-hidden relative">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Logo" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-2xl">🏪</span>
-                )}
-              </div>
-              <div className="space-y-2 text-center sm:text-left">
-                <Label htmlFor="logo" className="cursor-pointer inline-block">
-                  <div className="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-900 text-white px-4 py-2 rounded-md hover:bg-zinc-200 dark:bg-zinc-800 transition-colors">
-                    <Upload size={16} />
-                    {uploading ? 'Subiendo...' : 'Subir Logo'}
-                  </div>
-                </Label>
-                <Input id="logo" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setAvatarUrl)} disabled={uploading} />
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Recomendado: 400x400px (Cuadrado)</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Nombre de la Tienda</Label>
-              <Input value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="Ej: Bodega Mark" />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Enlace de tu Tienda (Slug)</Label>
-              <div className="flex items-center">
-                <span className="bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 px-3 py-2 border border-r-0 rounded-l-md text-sm whitespace-nowrap">linkventas.com/tienda/</span>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="mi-nombre" className="rounded-l-none" />
-              </div>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">Solo minúsculas, números y guiones. Ejemplo: ropa-lima</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Descripción Corta (Bio)</Label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ej: Las bebidas más frías de Pucusana 🌊" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* PERSONALIZACIÓN (COLORES & BANNER) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Palette size={20} /> Personalización (Estilo)</CardTitle>
-            <CardDescription>Define los colores y portada de tu tienda.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-
-            {/* Banner Upload */}
-            <div className="space-y-3">
-              <Label>Imagen de Portada (Banner)</Label>
-              <div className="relative w-full h-32 bg-zinc-100 dark:bg-zinc-900 border-2 border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
-                {bannerUrl ? (
-                  <img src={bannerUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity" />
-                ) : (
-                  <div className="text-zinc-400 dark:text-zinc-500 flex flex-col items-center">
-                    <ImageIcon size={24} />
-                    <span className="text-xs mt-1">Subir Banner (1200x400px)</span>
-                  </div>
-                )}
-                <Label htmlFor="banner" className="absolute inset-0 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
-                  <div className="bg-white text-black px-3 py-1 rounded shadow text-sm font-medium">Cambiar Imagen</div>
-                </Label>
-                <Input id="banner" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setBannerUrl)} disabled={uploading} />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Colors */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label>Color Principal (Texto/Fondos)</Label>
-                <div className="flex gap-3">
-                  <Input type="color" className="w-12 h-10 p-1 cursor-pointer" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
-                  <Input value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="font-mono uppercase" maxLength={7} />
-                </div>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Usado en textos oscuros y el tono base del gradiente.</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Color Secundario (Botones/Gradiente)</Label>
-                <div className="flex gap-3">
-                  <Input type="color" className="w-12 h-10 p-1 cursor-pointer" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} />
-                  <Input value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="font-mono uppercase" maxLength={7} />
-                </div>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">Usado en botones, acentos y el final del gradiente.</p>
-              </div>
-            </div>
-
-            {/* Preview */}
-            <div className="p-4 rounded-lg border text-center" style={{ background: `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)` }}>
-              <span className="text-white font-bold opacity-90">Vista Previa del Gradiente</span>
-            </div>
-
-          </CardContent>
-        </Card>
-
-        {/* REDES SOCIALES */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Share2 size={20} /> Redes Sociales</CardTitle>
-            <CardDescription>Conecta tus perfiles sociales.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Instagram (Usuario)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">@</span>
-                <Input className="pl-8" placeholder="usuario_insta" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Facebook (URL)</Label>
-              <Input placeholder="https://facebook.com/paginatuya" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>TikTok (Usuario)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">@</span>
-                <Input className="pl-8" placeholder="usuario_tiktok" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>WhatsApp de Ventas (Número)</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-zinc-400 dark:text-zinc-500">+</span>
-                <Input className="pl-8" placeholder="51999123456" value={whatsappPhone} onChange={(e) => setWhatsappPhone(e.target.value)} />
-              </div>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">Código de país + número. Ej: 51999123456 (Perú)</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* MÉTODOS DE PAGO (QRs) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Métodos de Pago (QRs)</CardTitle>
-            <CardDescription>Sube tus códigos QR de Yape y Plin.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-              {/* YAPE */}
-              <div className="border rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="font-bold text-purple-600">Yape</Label>
-                  <QrCode size={18} className="text-purple-600" />
-                </div>
-                <div className="aspect-square bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
-                  {yapeUrl ? (
-                    <img src={yapeUrl} alt="Yape QR" className="w-full h-full object-contain" />
-                  ) : <span className="text-zinc-700 dark:text-zinc-300 text-sm">Sin QR</span>}
-                  {uploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="animate-spin text-purple-600" /></div>}
-                </div>
-                <Label htmlFor="yape-upload" className="block cursor-pointer">
-                  <div className="w-full border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 flex items-center justify-center gap-2 py-2 rounded-md transition-colors text-sm font-medium">
-                    <Upload size={14} /> Subir Yape QR
-                  </div>
-                </Label>
-                <Input id="yape-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setYapeUrl)} disabled={uploading} />
-              </div>
-
-              {/* PLIN */}
-              <div className="border rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="font-bold text-cyan-600">Plin</Label>
-                  <QrCode size={18} className="text-cyan-600" />
-                </div>
-                <div className="aspect-square bg-zinc-50 dark:bg-zinc-900/50 border-2 border-dashed rounded-md flex items-center justify-center overflow-hidden relative group">
-                  {plinUrl ? (
-                    <img src={plinUrl} alt="Plin QR" className="w-full h-full object-contain" />
-                  ) : <span className="text-zinc-700 dark:text-zinc-300 text-sm">Sin QR</span>}
-                  {uploading && <div className="absolute inset-0 bg-white/50 flex items-center justify-center"><Loader2 className="animate-spin text-cyan-600" /></div>}
-                </div>
-                <Label htmlFor="plin-upload" className="block cursor-pointer">
-                  <div className="w-full border border-cyan-200 text-cyan-700 bg-cyan-50 hover:bg-cyan-100 flex items-center justify-center gap-2 py-2 rounded-md transition-colors text-sm font-medium">
-                    <Upload size={14} /> Subir Plin QR
-                  </div>
-                </Label>
-                <Input id="plin-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', setPlinUrl)} disabled={uploading} />
-              </div>
-
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* MÉTODOS DE PAGO AUTOMATIZADOS (CULQI) */}
-        {/* ── PAYWALL GLASSMORPHISM para plan free ─────────────────────────────── */}
-        <div className="relative">
-          <Card className="border-2 border-primary/20 shadow-lg shadow-primary/5">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="bg-primary text-primary-foreground text-[10px] uppercase font-black px-2 py-1 rounded">PRO</span>
-                    Pasarela Automatizada (Culqi)
-                  </CardTitle>
-                  <CardDescription className="mt-1">Recibe pagos con Tarjeta y Yape automáticos. Nada de validar pantallazos.</CardDescription>
-                </div>
-                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800/50">
-                  <Label className="font-bold cursor-pointer" htmlFor="culqi-switch">
-                    {culqiActive ? '🟢 Activo' : '⚪ Apagado'}
-                  </Label>
-                  <div 
-                    className={`w-12 h-6 rounded-full p-1 cursor-pointer transition-colors ${culqiActive ? 'bg-primary' : 'bg-slate-300'}`}
-                    onClick={() => setCulqiActive(!culqiActive)}
-                    id="culqi-switch"
-                  >
-                    <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${culqiActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            {culqiActive && (
-              <CardContent className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800/50 bg-primary/5">
-                <div className="space-y-2">
-                  <Label className="font-bold text-zinc-900 dark:text-zinc-100">Llave Pública (Public Key, pk_live_... / pk_test_...)</Label>
-                  <Input 
-                    value={culqiPublicKey} 
-                    onChange={(e) => setCulqiPublicKey(e.target.value)} 
-                    placeholder="pk_test_xxxxxxxxxxxxxxxx" 
-                    className="font-mono bg-white"
-                    disabled={planStatus === 'free'}
-                  />
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Usada de cara al público para mostrar el modal en tu Tienda.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="font-bold text-zinc-900 dark:text-zinc-100">Llave Privada (Secret Key, sk_live_... / sk_test_...)</Label>
-                  <Input 
-                    type="password"
-                    value={culqiSecretKey} 
-                    onChange={(e) => setCulqiSecretKey(e.target.value)} 
-                    placeholder="sk_test_xxxxxxxxxxxxxxxx" 
-                    className="font-mono bg-white"
-                    disabled={planStatus === 'free'}
-                  />
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Mantén esto en secreto extremo. Se usa solo en el servidor para efectuar cargos automáticos.</p>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Overlay glassmorphism bloqueador — solo visible en plan free */}
-          {planStatus === 'free' && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '12px',
-                background: 'rgba(10, 10, 20, 0.72)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '1px solid rgba(124, 58, 237, 0.25)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px',
-                padding: '32px',
-                textAlign: 'center',
-                zIndex: 10,
-              }}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        
+        {/* SIDEBAR NAVEGACIÓN */}
+        <div className="md:col-span-1">
+          {/* Mobile Select */}
+          <div className="md:hidden mb-6">
+            <select 
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg h-12 px-4"
             >
-              <div style={{
-                width: '52px', height: '52px',
-                background: 'rgba(124,58,237,0.15)',
-                border: '1px solid rgba(139,92,246,0.4)',
-                borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Lock size={22} style={{ color: '#a78bfa' }} />
-              </div>
-              <div>
-                <p style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff', marginBottom: '6px' }}>
-                  Disponible en Plan Pro
-                </p>
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', lineHeight: '1.6' }}>
-                  Automatiza tus ventas aceptando tarjetas de crédito y débito directamente en tu tienda.
-                </p>
-              </div>
-              <a
-                href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para usar Culqi.')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  padding: '10px 24px',
-                  background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                  borderRadius: '99px',
-                  fontSize: '13px', fontWeight: 700, color: '#fff',
-                  textDecoration: 'none',
-                  boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <Zap size={14} />
-                Activar Pro — S/ 29/mes
-              </a>
+              {TABS.map(tab => (
+                <option key={tab.id} value={tab.id}>{tab.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Desktop Menu */}
+          <nav className="hidden md:flex flex-col space-y-1 sticky top-24">
+            {TABS.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? 'bg-primary text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
+                >
+                  <Icon size={18} />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+
+        {/* CONTENIDO ACTIVO */}
+        <div className="md:col-span-3 space-y-6">
+
+          {/* 1. GENERAL & PERFIL */}
+          {activeTab === 'general' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Mi Cuenta y Suscripción</CardTitle>
+                  <CardDescription>Información técnica y estado de facturación.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-100 dark:border-zinc-800/50">
+                    <div>
+                      <Label className="text-zinc-500 text-xs">Correo Electrónico</Label>
+                      <p className="font-medium text-sm mt-1 text-zinc-900 dark:text-zinc-100">{systemData.userEmail}</p>
+                    </div>
+                    <div>
+                      <Label className="text-zinc-500 text-xs">ID de Usuario (UUID)</Label>
+                      <p className="text-xs font-mono text-zinc-400 mt-1 select-all">{systemData.userId}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-100 dark:border-zinc-800/50 flex flex-col justify-between">
+                    <div>
+                      <Label className="text-zinc-500 text-xs block mb-2">Estado de Suscripción</Label>
+                      {systemData.planStatus === 'pro' && <span className="inline-block px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold rounded">PLAN PRO ACTIVO</span>}
+                      {systemData.planStatus === 'trial' && <span className="inline-block px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold rounded">PRUEBA PRO</span>}
+                      {systemData.planStatus === 'free' && <span className="inline-block px-3 py-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-semibold rounded">PLAN EMPRENDEDOR</span>}
+                      {systemData.planStatus === 'inactivo' && <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">INACTIVO</span>}
+                    </div>
+                    {(systemData.planStatus === 'free' || systemData.planStatus === 'trial') && (
+                      <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-md text-sm font-semibold transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                        Mejorar Plan
+                      </a>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Identidad Visual</CardTitle>
+                  <CardDescription>Información pública de la tienda.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <div className="h-20 w-20 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden">
+                      {formData.avatarUrl ? (
+                        <img src={formData.avatarUrl} alt="Logo" className="h-full w-full object-cover" />
+                      ) : (
+                        <Store className="text-zinc-400" size={24} />
+                      )}
+                    </div>
+                    <div className="space-y-2 text-center sm:text-left">
+                      <Label htmlFor="logo" className="cursor-pointer inline-flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white px-4 py-2 rounded-md text-sm font-medium transition-colors border border-zinc-200 dark:border-zinc-700">
+                        <Upload size={16} />
+                        {uploading ? 'Subiendo...' : 'Subir Logo'}
+                      </Label>
+                      <Input id="logo" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'avatarUrl')} disabled={uploading} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Nombre de la Tienda</Label>
+                    <Input value={formData.storeName} onChange={(e) => updateForm('storeName', e.target.value)} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Enlace de tu Tienda (Slug)</Label>
+                    <div className="flex items-center">
+                      <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-3 py-2 border border-r-0 border-zinc-200 dark:border-zinc-700 rounded-l-md text-sm">linkventas.com/tienda/</span>
+                      <Input value={formData.slug} onChange={(e) => updateForm('slug', e.target.value)} className="rounded-l-none" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Descripción Corta (Bio)</Label>
+                    <Input value={formData.description} onChange={(e) => updateForm('description', e.target.value)} />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
-        </div>
 
-        {/* ── UBICACIÓN DEL LOCAL ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>📍</span> Ubicación del Local
-            </CardTitle>
-            <CardDescription>Marca en el mapa dónde está tu local. Esto se mostrará como punto de salida en el mapa del cliente cuando el pedido esté "en camino".</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Dirección del local (texto)</Label>
-              <Input
-                value={storeAddress}
-                onChange={e => setStoreAddress(e.target.value)}
-                placeholder="Ej: Av. Larco 1234, Miraflores"
-              />
+          {/* 2. PLANTILLA & EXPERIENCIA */}
+          {activeTab === 'plantilla' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Selección de Plantilla</CardTitle>
+                  <CardDescription>Define el modelo operativo y la interfaz de tu negocio.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  
+                  {pendingTemplate && pendingTemplate !== formData.templateType && (
+                    <div className="mb-6 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" size={20} />
+                        <div>
+                          <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-400">Atención: Cambio de Plantilla Detectado</h4>
+                          <p className="text-xs text-amber-700 dark:text-amber-500 mt-1 mb-3">
+                            Cambiar de plantilla modifica el comportamiento completo de tu tienda pública y puede requerir que actualices tus productos.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={confirmarCambioPlantilla} disabled={savingTemplate} className="bg-amber-600 hover:bg-amber-700 text-white">
+                              {savingTemplate ? 'Guardando...' : 'Confirmar Cambio de Plantilla'}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setPendingTemplate(null)} disabled={savingTemplate} className="border-amber-200 text-amber-700">
+                              Cancelar
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                      { id: 'restaurante', icon: Store, title: 'Restaurante / Food', desc: 'Envío directo a WhatsApp. Destaca platos y menú. Sin carrito genérico.' },
+                      { id: 'comercio', icon: ShoppingBag, title: 'Comercio General', desc: 'Flujo estándar. Carrito de compras y checkout estructurado.' },
+                      { id: 'moda', icon: Shirt, title: 'Moda / Boutique', desc: 'Look premium. Soporta variantes obligatorias (talla/color).' }
+                    ].map(tpl => {
+                      const isCurrent = formData.templateType === tpl.id
+                      const isPending = pendingTemplate === tpl.id
+                      const Icon = tpl.icon
+                      
+                      return (
+                        <div 
+                          key={tpl.id}
+                          onClick={() => { if (!isCurrent) setPendingTemplate(tpl.id) }}
+                          className={`relative cursor-pointer border rounded-xl p-5 flex flex-col items-center text-center gap-3 transition-all ${isCurrent ? 'border-primary bg-primary/5 ring-1 ring-primary' : isPending ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10 ring-1 ring-amber-500' : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50 dark:bg-zinc-950/50'}`}
+                        >
+                          <div className={`p-3 rounded-full ${isCurrent ? 'bg-primary text-white' : isPending ? 'bg-amber-500 text-white' : 'bg-white dark:bg-zinc-900 text-zinc-500 border border-zinc-200 dark:border-zinc-800'}`}>
+                            <Icon size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{tpl.title}</h3>
+                            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{tpl.desc}</p>
+                          </div>
+                          {isCurrent && <div className="absolute top-2 right-2 text-primary"><CheckCircle2 size={18} /></div>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+          )}
 
-            {storeLat && storeLng && (
-              <p className="text-xs text-green-600 font-medium">✅ Ubicación guardada: {storeLat.toFixed(5)}, {storeLng.toFixed(5)}</p>
-            )}
+          {/* 3. DISEÑO & APARIENCIA */}
+          {activeTab === 'diseno' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Diseño Visual</CardTitle>
+                  <CardDescription>Colores y portada de la tienda.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div className="space-y-3">
+                    <Label>Imagen de Portada (Banner)</Label>
+                    <div className="relative w-full h-32 bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
+                      {formData.bannerUrl ? (
+                        <img src={formData.bannerUrl} className="w-full h-full object-cover" alt="Banner" />
+                      ) : (
+                        <div className="text-zinc-400 flex flex-col items-center">
+                          <ImageIcon size={20} />
+                          <span className="text-xs mt-2">1200x400px</span>
+                        </div>
+                      )}
+                      <Label htmlFor="banner" className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="bg-white text-black px-3 py-1 rounded text-xs font-medium">Cambiar</span>
+                      </Label>
+                      <Input id="banner" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'bannerUrl')} disabled={uploading} />
+                    </div>
+                  </div>
 
-            <div className="space-y-2">
-              <Label>Marca tu local en el mapa</Label>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Haz clic en el mapa para marcar la ubicación exacta de tu local.</p>
-              <StoreMapPicker
-                initialLat={storeLat}
-                initialLng={storeLng}
-                onPick={(lat, lng) => { setStoreLat(lat); setStoreLng(lng) }}
-              />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Color Principal</Label>
+                      <div className="flex gap-3">
+                        <Input type="color" className="w-12 h-10 p-1 cursor-pointer border-zinc-200 dark:border-zinc-700" value={formData.primaryColor} onChange={(e) => updateForm('primaryColor', e.target.value)} />
+                        <Input value={formData.primaryColor} onChange={(e) => updateForm('primaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Color Secundario</Label>
+                      <div className="flex gap-3">
+                        <Input type="color" className="w-12 h-10 p-1 cursor-pointer border-zinc-200 dark:border-zinc-700" value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} />
+                        <Input value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {systemData.userId && <CatalogBuilder userId={systemData.userId} />}
             </div>
-          </CardContent>
-        </Card>
+          )}
 
-        {/* ── ESTRATEGIA HORARIA ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <span>🕐</span> Estrategia Horaria
-            </CardTitle>
-            <CardDescription>
-              Define los días y horarios en que tu tienda acepta pedidos. El checkout se bloqueará automáticamente fuera de este horario.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ScheduleEditor value={storeSchedule} onChange={setStoreSchedule} />
-          </CardContent>
-        </Card>
+          {/* 4. PAGOS & FACTURACIÓN */}
+          {activeTab === 'pagos' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              
+              {/* Culqi Global */}
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden relative">
+                {systemData.planStatus === 'free' && (
+                  <div className="absolute inset-0 bg-zinc-100/90 dark:bg-zinc-950/90 z-10 flex flex-col items-center justify-center p-6 text-center">
+                    <Lock size={24} className="text-zinc-400 mb-3" />
+                    <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Disponible en Plan Pro</h4>
+                    <p className="text-xs text-zinc-500 max-w-sm mb-4">Automatiza tus ventas aceptando tarjetas de crédito y débito directamente en tu tienda.</p>
+                    <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" className="bg-zinc-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-md text-sm font-medium">Activar Pro</a>
+                  </div>
+                )}
+                
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50 flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Pasarela Culqi</CardTitle>
+                    <CardDescription>Cargos automáticos con tarjeta.</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Label className="font-semibold text-sm cursor-pointer" htmlFor="culqi-switch">
+                      {formData.culqiActive ? 'Activo' : 'Inactivo'}
+                    </Label>
+                    <div 
+                      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors ${formData.culqiActive ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                      onClick={() => updateForm('culqiActive', !formData.culqiActive)}
+                      id="culqi-switch"
+                    >
+                      <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${formData.culqiActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </div>
+                  </div>
+                </CardHeader>
+                {formData.culqiActive && (
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="space-y-2">
+                      <Label>Llave Pública (pk_...)</Label>
+                      <Input value={formData.culqiPublicKey} onChange={(e) => updateForm('culqiPublicKey', e.target.value)} className="font-mono text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Llave Privada (sk_...)</Label>
+                      <Input type="password" value={formData.culqiSecretKey} onChange={(e) => updateForm('culqiSecretKey', e.target.value)} className="font-mono text-sm" placeholder="Ingresa para modificar" />
+                      <p className="text-xs text-zinc-500">Solo visible al momento de editar. Se guarda cifrada en el servidor.</p>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
 
-        {/* ── MOTOR DE STOCK SOCIAL (FOMO) ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Flame size={20} className="text-orange-500" /> Motor de Stock Social (FOMO)
-            </CardTitle>
-            <CardDescription>
-              Muestra alertas en tiempo real de otros usuarios simulando ver la misma oferta para generar urgencia de compra.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setShowFomoConfig(true)} variant="outline" className="w-full flex items-center justify-center gap-2 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700 transition-colors">
-              <Flame size={18} /> Configurar Motor FOMO
-            </Button>
-            <FomoConfigModal 
-              isOpen={showFomoConfig}
-              onClose={() => setShowFomoConfig(false)}
-              userId={userId}
-            />
-          </CardContent>
-        </Card>
+              {/* Lógica Condicional de Pagos Manuales */}
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Métodos Manuales</CardTitle>
+                  <CardDescription>Configuración según plantilla actual.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {formData.templateType === 'restaurante' ? (
+                    <div className="space-y-6">
+                      <div className="bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800">
+                        <h4 className="text-sm font-semibold mb-2">WhatsApp Directo</h4>
+                        <p className="text-xs text-zinc-500 mb-4">El checkout de restaurante agrupa Contra Entrega y Yape/Plin en la coordinación directa por WhatsApp.</p>
+                        <div className="space-y-2">
+                          <Label>Número de WhatsApp para pedidos</Label>
+                          <Input value={formData.whatsappPhone} onChange={(e) => updateForm('whatsappPhone', e.target.value)} placeholder="51999123456" />
+                        </div>
+                      </div>
+                      <div className="opacity-50 pointer-events-none border border-dashed border-zinc-300 dark:border-zinc-700 p-4 rounded-lg flex items-center justify-between">
+                        <span className="text-sm text-zinc-500">Carga de QRs Yape/Plin</span>
+                        <span className="bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded text-xs font-medium">Disponible en Comercio y Moda</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {/* YAPE */}
+                      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-4">
+                        <Label className="font-semibold text-sm">QR Yape</Label>
+                        <div className="aspect-square bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-md flex items-center justify-center relative">
+                          {formData.yapeUrl ? (
+                            <img src={formData.yapeUrl} alt="Yape" className="w-full h-full object-contain p-2" />
+                          ) : <span className="text-zinc-400 text-xs">Sin imagen</span>}
+                        </div>
+                        <Label htmlFor="yape-upload" className="block cursor-pointer text-center border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 py-2 rounded-md text-xs font-medium transition-colors">
+                          Subir QR
+                        </Label>
+                        <Input id="yape-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'yapeUrl')} />
+                      </div>
 
-        <div className="sticky bottom-4 z-10">
-          <Button onClick={guardarCambios} disabled={loading} size="lg" className="w-full text-lg shadow-2xl">
-            {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-            Guardar Todos los Cambios
-          </Button>
+                      {/* PLIN */}
+                      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-4">
+                        <Label className="font-semibold text-sm">QR Plin</Label>
+                        <div className="aspect-square bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-md flex items-center justify-center relative">
+                          {formData.plinUrl ? (
+                            <img src={formData.plinUrl} alt="Plin" className="w-full h-full object-contain p-2" />
+                          ) : <span className="text-zinc-400 text-xs">Sin imagen</span>}
+                        </div>
+                        <Label htmlFor="plin-upload" className="block cursor-pointer text-center border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700 py-2 rounded-md text-xs font-medium transition-colors">
+                          Subir QR
+                        </Label>
+                        <Input id="plin-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'plinUrl')} />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* 5. LOGÍSTICA & HORARIOS */}
+          {activeTab === 'logistica' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Ubicación Faltante</CardTitle>
+                  <CardDescription>Dirección para envíos o recojo en tienda.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Dirección Física</Label>
+                    <Input value={formData.storeAddress} onChange={e => updateForm('storeAddress', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Punto en el Mapa</Label>
+                    <StoreMapPicker
+                      initialLat={formData.storeLat}
+                      initialLng={formData.storeLng}
+                      onPick={(lat, lng) => { updateForm('storeLat', lat); updateForm('storeLng', lng) }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Estrategia Horaria</CardTitle>
+                  <CardDescription>Bloquea pedidos fuera del horario de atención.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ScheduleEditor value={formData.storeSchedule} onChange={(sch) => updateForm('storeSchedule', sch)} />
+                </CardContent>
+              </Card>
+
+            </div>
+          )}
+
+          {/* 6. MARKETING & REDES */}
+          {activeTab === 'marketing' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+              
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg">Redes Sociales</CardTitle>
+                  <CardDescription>Enlaces visibles en el pie de página (Comercio/Moda).</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Instagram (Usuario)</Label>
+                    <Input placeholder="usuario_insta" value={formData.socialInstagram} onChange={(e) => updateForm('socialInstagram', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>TikTok (Usuario)</Label>
+                    <Input placeholder="usuario_tiktok" value={formData.socialTikTok} onChange={(e) => updateForm('socialTikTok', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Facebook (URL completa)</Label>
+                    <Input placeholder="https://facebook.com/pagina" value={formData.socialFacebook} onChange={(e) => updateForm('socialFacebook', e.target.value)} />
+                  </div>
+                  {formData.templateType !== 'restaurante' && (
+                    <div className="space-y-2">
+                      <Label>WhatsApp de Contacto (Comercio/Moda)</Label>
+                      <Input placeholder="51999123456" value={formData.whatsappPhone} onChange={(e) => updateForm('whatsappPhone', e.target.value)} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                  <CardTitle className="text-lg flex items-center gap-2">Motor FOMO</CardTitle>
+                  <CardDescription>Stock social y urgencia de compra.</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <Button onClick={() => setShowFomoConfig(true)} variant="outline" className="w-full border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                    Configurar Motor FOMO
+                  </Button>
+                  <FomoConfigModal isOpen={showFomoConfig} onClose={() => setShowFomoConfig(false)} userId={systemData.userId} />
+                </CardContent>
+              </Card>
+
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* STICKY SAVE BAR */}
+      {hasChanges && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-300">
+          <div className="max-w-6xl mx-auto px-4 md:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm font-medium text-zinc-600 dark:text-zinc-300 text-center sm:text-left">
+              Tienes cambios sin guardar en esta pestaña o en otras.
+            </div>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button variant="ghost" onClick={descartarCambios} disabled={saving} className="flex-1 sm:flex-none text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                Descartar
+              </Button>
+              <Button onClick={guardarCambios} disabled={saving} className="flex-1 sm:flex-none bg-zinc-900 dark:bg-white text-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                Guardar cambios
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
