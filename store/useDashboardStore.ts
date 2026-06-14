@@ -140,9 +140,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
-        if (!error && data) {
-            set({ productos: data, productosLastFetch: Date.now(), productosCargados: true });
-        }
+        set({ 
+            productos: data || [], 
+            productosLastFetch: Date.now(), 
+            productosCargados: true 
+        });
     },
 
     eliminarProductoLocal: (productId: string) => {
@@ -199,7 +201,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 }));
         }
 
-        set({ orders: unifiedOrders, ordersLastFetch: Date.now(), ordersCargadas: true });
+        set({ 
+            orders: unifiedOrders, 
+            ordersLastFetch: Date.now(), 
+            ordersCargadas: true 
+        });
     },
 
     agregarOrderLocal: (order: any) => {
@@ -294,9 +300,10 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .eq('store_id', userId)
             .order('created_at', { ascending: false });
 
-        if (!error && data) {
-            set({ leads: data, leadsLastFetch: Date.now() });
-        }
+        set({ 
+            leads: data || [], 
+            leadsLastFetch: Date.now() 
+        });
     },
 
     eliminarLeadLocal: (leadId: string) => {
@@ -320,8 +327,9 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .eq('store_id', userId)
             .order('last_updated', { ascending: false });
 
-        if (!error && data) {
-            set({ abandonedCarts: data, cartsLastFetch: Date.now() });
-        }
+        set({ 
+            abandonedCarts: data || [], 
+            cartsLastFetch: Date.now() 
+        });
     }
 }))
