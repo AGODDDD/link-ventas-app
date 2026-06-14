@@ -6,10 +6,68 @@ import { Trash2, Edit3, Image as ImageIcon, PlusCircle, Search, FileSpreadsheet 
 import { useDashboardStore } from '@/store/useDashboardStore'
 import ImportProductsModal from '@/components/dashboard/ImportProductsModal'
 
+
+const ProductosSkeleton = () => (
+    <div className="space-y-6 pb-12 relative w-full">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+            <div className="space-y-3 w-full">
+                <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div className="h-4 w-96 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+            </div>
+            <div className="flex gap-3">
+                <div className="h-10 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                <div className="h-10 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                <div className="h-10 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+            </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                    <thead>
+                        <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800/50">
+                            <th className="px-6 py-4"><div className="h-3 w-12 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-40 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mx-auto"></div></th>
+                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mx-auto"></div></th>
+                            <th className="px-6 py-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/5">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                            <tr key={i}>
+                                <td className="px-6 py-3">
+                                    <div className="w-10 h-10 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse"></div>
+                                </td>
+                                <td className="px-6 py-3">
+                                    <div className="h-4 w-48 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-2"></div>
+                                    <div className="h-3 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
+                                </td>
+                                <td className="px-6 py-3"><div className="h-4 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></td>
+                                <td className="px-6 py-3"><div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse mx-auto"></div></td>
+                                <td className="px-6 py-3"><div className="h-5 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mx-auto"></div></td>
+                                <td className="px-6 py-3">
+                                    <div className="flex justify-end gap-2">
+                                        <div className="w-8 h-8 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse"></div>
+                                        <div className="w-8 h-8 rounded bg-zinc-200 dark:bg-zinc-800 animate-pulse"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+)
+
 export default function ProductosPage() {
     const router = useRouter()
-    const { productos, productosCargados, cargarProductos, eliminarProductoLocal } = useDashboardStore()
-    const [loading, setLoading] = useState(!productosCargados)
+    const { productos, productosLastFetch, cargarProductos, eliminarProductoLocal } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(productosLastFetch === 0)
     const [searchTerm, setSearchTerm] = useState('')
     const [isImportOpen, setIsImportOpen] = useState(false)
 
@@ -20,9 +78,8 @@ export default function ProductosPage() {
                 router.push('/')
                 return
             }
-            // Esto tomará 0ms si ya estaban en caché (productosCargados)
             await cargarProductos(user.id)
-            setLoading(false)
+            setIsInitialLoad(false)
         }
         init()
     }, [cargarProductos, router])
@@ -54,7 +111,7 @@ export default function ProductosPage() {
 
     const productosFiltrados = productos.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
-    if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Cargando Bodega Maestra... 📦</div>
+    if (isInitialLoad) return <ProductosSkeleton />
 
     return (
         <div className="space-y-6 pb-12 relative w-full">
