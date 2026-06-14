@@ -5,12 +5,12 @@ import { Store, StoreConfig, UnifiedOrder, UnifiedOrderItem } from '@/types/core
 export interface Product {
     id: string;
     name: string;
-    price: string | number;
-    stock: number;
-    image_url?: string;
-    brand?: string;
-    is_active?: boolean;
-    created_at?: string;
+    price: any;
+    stock: any;
+    image_url?: any;
+    brand?: any;
+    is_active?: any;
+    created_at?: any;
     [key: string]: any;
 }
 
@@ -47,12 +47,14 @@ interface DashboardState {
     // Estado de Productos
     productos: Product[]
     productosLastFetch: number
+    productosCargados: boolean
     cargarProductos: (userId: string, force?: boolean) => Promise<void>
     eliminarProductoLocal: (productId: string) => void
     
     // Estado de Órdenes
-    orders: UnifiedOrder[]
+    orders: any[]
     ordersLastFetch: number
+    ordersCargadas: boolean
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string, legacyId?: string) => void
@@ -126,6 +128,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     // ---- PRODUCTOS ----
     productos: [],
     productosLastFetch: 0,
+    productosCargados: false,
     
     cargarProductos: async (userId: string, force: boolean = false) => {
         const isStale = Date.now() - get().productosLastFetch > CACHE_TTL;
@@ -138,7 +141,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .order('created_at', { ascending: false });
 
         if (!error && data) {
-            set({ productos: data, productosLastFetch: Date.now() });
+            set({ productos: data, productosLastFetch: Date.now(), productosCargados: true });
         }
     },
 
@@ -152,6 +155,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     // ---- ÓRDENES ----
     orders: [],
     ordersLastFetch: 0,
+    ordersCargadas: false,
 
     cargarOrders: async (userId: string, force: boolean = false) => {
         const isStale = Date.now() - get().ordersLastFetch > CACHE_TTL;
@@ -195,7 +199,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 }));
         }
 
-        set({ orders: unifiedOrders, ordersLastFetch: Date.now() });
+        set({ orders: unifiedOrders, ordersLastFetch: Date.now(), ordersCargadas: true });
     },
 
     agregarOrderLocal: (order: any) => {
