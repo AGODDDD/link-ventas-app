@@ -90,8 +90,8 @@ const ClientesSkeleton = () => (
 )
 
 export default function ClientesPage() {
-    const { leads, cargarLeads, eliminarLeadLocal } = useDashboardStore()
-    const [isInitialLoad, setIsInitialLoad] = useState(true)
+    const { leads, cargarLeads, eliminarLeadLocal, leadsLastFetch } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(leadsLastFetch === 0)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterPref, setFilterPref] = useState<string>('all')
     const [sortKey, setSortKey] = useState<SortKey>('created_at')

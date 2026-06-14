@@ -78,8 +78,8 @@ const PedidosSkeleton = () => (
 )
 
 export default function PedidosPage() {
-    const { orders, cargarOrders, actualizarEstadoOrderLocal, leads, cargarLeads } = useDashboardStore()
-    const [isInitialLoad, setIsInitialLoad] = useState(true)
+    const { orders, cargarOrders, actualizarEstadoOrderLocal, leads, cargarLeads, ordersLastFetch } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(ordersLastFetch === 0)
 
     // Estado para el Modal de Comprobante
     const [selectedProof, setSelectedProof] = useState<string | null>(null)
