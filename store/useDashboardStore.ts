@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import { Store, StoreConfig, UnifiedOrder, UnifiedOrderItem } from '@/types/core'
 
+const CACHE_TTL = 300000; // 5 minutos en milisegundos
+
 interface DashboardState {
     // Estado de Tienda (Core)
     storeInfo: Store | null
@@ -10,18 +12,29 @@ interface DashboardState {
 
     // Estado de Productos
     productos: any[]
-    productosCargados: boolean
+    productosLastFetch: number
     cargarProductos: (userId: string, force?: boolean) => Promise<void>
     eliminarProductoLocal: (productId: string) => void
     
     // Estado de Órdenes
     orders: any[]
-    ordersCargadas: boolean
+    ordersLastFetch: number
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string, legacyId?: string) => void
     actualizarItemsOrderLocal: (orderId: string, items: any[]) => void
     normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
+
+    // Estado de Leads (Clientes)
+    leads: any[]
+    leadsLastFetch: number
+    cargarLeads: (userId: string, force?: boolean) => Promise<void>
+    eliminarLeadLocal: (leadId: string) => void
+
+    // Estado de Carritos Abandonados (Analytics)
+    abandonedCarts: any[]
+    cartsLastFetch: number
+    cargarCarts: (userId: string, force?: boolean) => Promise<void>
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -78,11 +91,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
     // ---- PRODUCTOS ----
     productos: [],
-    productosCargados: false,
+    productosLastFetch: 0,
     
     cargarProductos: async (userId: string, force: boolean = false) => {
-        // Si ya están en memoria y no estamos forzando, no viajamos a la DB. (0 ms load = Velocidad Extrema)
-        if (get().productosCargados && !force) return;
+        const isStale = Date.now() - get().productosLastFetch > CACHE_TTL;
+        if (!force && !isStale && get().productosLastFetch > 0) return;
 
         const { data, error } = await supabase
             .from('products')
@@ -91,22 +104,24 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .order('created_at', { ascending: false });
 
         if (!error && data) {
-            set({ productos: data, productosCargados: true });
+            set({ productos: data, productosLastFetch: Date.now() });
         }
     },
 
     eliminarProductoLocal: (productId: string) => {
         set((state) => ({
-            productos: state.productos.filter(p => p.id !== productId)
+            productos: state.productos.filter(p => p.id !== productId),
+            productosLastFetch: 0 // Forzar revalidación en próxima visita
         }))
     },
 
     // ---- ÓRDENES ----
     orders: [],
-    ordersCargadas: false,
+    ordersLastFetch: 0,
 
     cargarOrders: async (userId: string, force: boolean = false) => {
-        if (get().ordersCargadas && !force) return;
+        const isStale = Date.now() - get().ordersLastFetch > CACHE_TTL;
+        if (!force && !isStale && get().ordersLastFetch > 0) return;
 
         const { data, error } = await supabase
             .from('orders')
@@ -146,19 +161,22 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 }));
         }
 
-        set({ orders: unifiedOrders, ordersCargadas: true });
+        set({ orders: unifiedOrders, ordersLastFetch: Date.now() });
     },
 
     agregarOrderLocal: (order: any) => {
         set((state) => {
             const existsById = state.orders.some(o => o.id === order.id);
-            if (existsById) return state;
+            if (existsById) return { ordersLastFetch: 0 };
             
             if (order.legacy_id) {
                 const existsByLegacy = state.orders.some(o => o.legacy_id === order.legacy_id);
-                if (existsByLegacy) return state;
+                if (existsByLegacy) return { ordersLastFetch: 0 };
             }
-            return { orders: [order, ...state.orders] };
+            return { 
+                orders: [order, ...state.orders],
+                ordersLastFetch: 0 // Forzar revalidación
+            };
         });
     },
 
@@ -168,23 +186,21 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 ? {
                     ...o,
                     status: nuevoEstado,
-                    // Si el trigger de BD ya asignó el BARR-... y antes era null, actualizarlo
                     ...(legacyId && !o.legacy_id ? { legacy_id: legacyId } : {})
                 }
                 : o
-            )
+            ),
+            ordersLastFetch: 0 // Forzar revalidación
         }))
     },
 
     actualizarItemsOrderLocal: (orderId: string, items: any[]) => {
-        // Actualiza los order_items de una orden ya inyectada en el store
-        // Usado por el retry del TopBar cuando los items no estaban disponibles al momento del INSERT
         set((state) => ({
-            orders: state.orders.map(o => o.id === orderId ? { ...o, order_items: items } : o)
+            orders: state.orders.map(o => o.id === orderId ? { ...o, order_items: items } : o),
+            ordersLastFetch: 0 // Forzar revalidación
         }))
     },
 
-    // Helper para normalizar cualquier fuente de orden (Legacy o Core)
     normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => {
         if (source === 'legacy_delivery') {
             return {
@@ -224,5 +240,50 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             }
         }
         return { ...raw, _source: 'legacy_standard' }
+    },
+
+    // ---- LEADS (CLIENTES) ----
+    leads: [],
+    leadsLastFetch: 0,
+
+    cargarLeads: async (userId: string, force: boolean = false) => {
+        const isStale = Date.now() - get().leadsLastFetch > CACHE_TTL;
+        if (!force && !isStale && get().leadsLastFetch > 0) return;
+
+        const { data, error } = await supabase
+            .from('store_leads')
+            .select('*')
+            .eq('store_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            set({ leads: data, leadsLastFetch: Date.now() });
+        }
+    },
+
+    eliminarLeadLocal: (leadId: string) => {
+        set((state) => ({
+            leads: state.leads.filter(l => l.id !== leadId),
+            leadsLastFetch: 0 // Forzar revalidación
+        }))
+    },
+
+    // ---- CARRITOS ABANDONADOS (ANALYTICS) ----
+    abandonedCarts: [],
+    cartsLastFetch: 0,
+
+    cargarCarts: async (userId: string, force: boolean = false) => {
+        const isStale = Date.now() - get().cartsLastFetch > CACHE_TTL;
+        if (!force && !isStale && get().cartsLastFetch > 0) return;
+
+        const { data, error } = await supabase
+            .from('abandoned_carts')
+            .select('*')
+            .eq('store_id', userId)
+            .order('last_updated', { ascending: false });
+
+        if (!error && data) {
+            set({ abandonedCarts: data, cartsLastFetch: Date.now() });
+        }
     }
 }))
