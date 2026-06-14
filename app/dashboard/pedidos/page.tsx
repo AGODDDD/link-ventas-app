@@ -957,9 +957,7 @@ export default function PedidosPage() {
 
                 {activeTab === 'leads' && (
                     <>
-                        {loadingLeads ? (
-                            <p className="text-center font-bold text-zinc-500 dark:text-zinc-400 animate-pulse py-10">Buscando leads fantasmas...</p>
-                        ) : filteredLeads.length === 0 ? (
+                        {filteredLeads.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#131317]">
                                 <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Sin actividad fantasma.</p>
                                 <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Los clientes están cerrando todas sus cuentas correctamente.</p>
