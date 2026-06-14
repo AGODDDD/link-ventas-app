@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useDashboardStore } from '@/store/useDashboardStore'
 import { TrendingUp, DollarSign, ShoppingBag, Users, BarChart3, Calendar, Zap, Download, Package, AlertTriangle, Info, CheckCircle2 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -25,65 +26,75 @@ const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
 };
 
+
+function AnalyticsSkeleton() {
+    return (
+        <div className="space-y-8 pb-12 w-full animate-pulse">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <div className="h-8 w-48 bg-zinc-200 dark:bg-zinc-800 rounded mb-2"></div>
+                    <div className="h-4 w-64 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
+                </div>
+                <div className="flex gap-3">
+                    <div className="h-10 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+                    <div className="h-10 w-48 bg-zinc-200 dark:bg-zinc-800 rounded-lg"></div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="h-28 bg-zinc-200 dark:bg-zinc-800 rounded-xl"></div>
+                <div className="h-28 bg-zinc-200 dark:bg-zinc-800 rounded-xl"></div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-32 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"></div>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 h-80 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"></div>
+                <div className="h-80 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"></div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"></div>
+                <div className="h-64 bg-zinc-200 dark:bg-zinc-800 rounded-2xl"></div>
+            </div>
+        </div>
+    )
+}
+
 export default function AnalyticsPage() {
-    const [orders, setOrders] = useState<Order[]>([])
-    const [leads, setLeads] = useState<any[]>([])
-    const [carts, setCarts] = useState<any[]>([])
+    const { orders, cargarOrders, leads, cargarLeads, abandonedCarts, cargarCarts, ordersLastFetch, leadsLastFetch, cartsLastFetch } = useDashboardStore()
+    const [isInitialLoad, setIsInitialLoad] = useState(ordersLastFetch === 0 || leadsLastFetch === 0 || cartsLastFetch === 0)
     const [insights, setInsights] = useState<Insight[]>([])
-    const [loading, setLoading] = useState(true)
     const [periodo, setPeriodo] = useState<'7d' | '30d' | 'all'>('30d')
     const [planStatus, setPlanStatus] = useState<string | null>(null)
 
     useEffect(() => {
-        const cargarDatos = async () => {
+        const load = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+                if (profile) setPlanStatus(profile.plan ?? null)
 
-            const [coreRes, leadsRes, profileRes, cartsRes] = await Promise.all([
-                // Core Orders + Items
-                supabase.from('orders').select('*, order_items(*)').eq('store_id', user.id).order('created_at', { ascending: true }),
-                // Leads
-                supabase.from('store_leads').select('*').eq('store_id', user.id),
-                // Plan
-                supabase.from('profiles').select('plan').eq('id', user.id).single(),
-                // Abandoned Carts
-                supabase.from('abandoned_carts').select('*').eq('store_id', user.id)
-            ])
-
-            if (profileRes.data) setPlanStatus(profileRes.data.plan ?? null)
-
-            let unified: Order[] = []
-
-            if (coreRes.data) {
-                coreRes.data.forEach((o: any) => {
-                    unified.push({
-                        id: o.id,
-                        created_at: o.created_at,
-                        total_amount: o.total?.toString() || o.total_amount?.toString() || '0',
-                        status: o.status,
-                        customer_name: o.customer_name || 'Sin nombre',
-                        payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
-                        metodo_pago: o.metodo_pago || 'whatsapp',
-                        order_items: o.order_items || []
-                    })
-                })
+                await Promise.all([
+                    cargarOrders(user.id),
+                    cargarLeads(user.id),
+                    cargarCarts(user.id)
+                ])
             }
-
-            // Ordenar por fecha para los gráficos
-            unified.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-
-            setOrders(unified)
-            if (leadsRes.data) setLeads(leadsRes.data)
-            if (cartsRes.data) setCarts(cartsRes.data)
-            
-            // Run Analytics AI Engine
-            const generatedInsights = generateInsights(unified, leadsRes.data || [], cartsRes.data || [])
-            setInsights(generatedInsights)
-            
-            setLoading(false)
+            setIsInitialLoad(false)
         }
-        cargarDatos()
-    }, [])
+        load()
+    }, [cargarOrders, cargarLeads, cargarCarts])
+
+    useEffect(() => {
+        if (!isInitialLoad) {
+            setInsights(generateInsights(orders, leads, abandonedCarts))
+        }
+    }, [isInitialLoad, orders, leads, abandonedCarts])
 
     // Filtrar por periodo
     const ordersFiltradas = useMemo(() => {
@@ -205,7 +216,7 @@ export default function AnalyticsPage() {
         document.body.removeChild(a)
     }
 
-    if (loading) return <div className="p-8 text-center text-zinc-500 dark:text-zinc-400 font-bold animate-pulse">Analizando métricas... 📊</div>
+    if (isInitialLoad) return <AnalyticsSkeleton />
 
     return (
         <div className="space-y-8 pb-12 relative w-full">
