@@ -2,6 +2,40 @@ import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
 import { Store, StoreConfig, UnifiedOrder, UnifiedOrderItem } from '@/types/core'
 
+export interface Product {
+    id: string;
+    name: string;
+    price: string | number;
+    stock: number;
+    image_url?: string;
+    brand?: string;
+    is_active?: boolean;
+    created_at?: string;
+    [key: string]: any;
+}
+
+export interface Lead {
+    id: string;
+    store_id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    preference?: string;
+    created_at: string;
+    [key: string]: any;
+}
+
+export interface AbandonedCart {
+    id: string;
+    store_id: string;
+    customer_name?: string;
+    customer_phone?: string;
+    cart_items: any;
+    total_amount: number;
+    last_updated: string;
+    [key: string]: any;
+}
+
 const CACHE_TTL = 300000; // 5 minutos en milisegundos
 
 interface DashboardState {
@@ -11,13 +45,13 @@ interface DashboardState {
     cargarStoreInfo: (userId: string) => Promise<void>
 
     // Estado de Productos
-    productos: any[]
+    productos: Product[]
     productosLastFetch: number
     cargarProductos: (userId: string, force?: boolean) => Promise<void>
     eliminarProductoLocal: (productId: string) => void
     
     // Estado de Órdenes
-    orders: any[]
+    orders: UnifiedOrder[]
     ordersLastFetch: number
     cargarOrders: (userId: string, force?: boolean) => Promise<void>
     agregarOrderLocal: (order: any) => void
@@ -26,13 +60,13 @@ interface DashboardState {
     normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
 
     // Estado de Leads (Clientes)
-    leads: any[]
+    leads: Lead[]
     leadsLastFetch: number
     cargarLeads: (userId: string, force?: boolean) => Promise<void>
     eliminarLeadLocal: (leadId: string) => void
 
     // Estado de Carritos Abandonados (Analytics)
-    abandonedCarts: any[]
+    abandonedCarts: AbandonedCart[]
     cartsLastFetch: number
     cargarCarts: (userId: string, force?: boolean) => Promise<void>
 }
