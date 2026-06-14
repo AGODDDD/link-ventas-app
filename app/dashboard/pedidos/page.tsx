@@ -982,7 +982,7 @@ export default function PedidosPage() {
                                         <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Acción Rápida</p>
                                         <div className="flex gap-2 w-full mt-2">
                                             <a
-                                                href={`https://wa.me/${lead.phone.replace(/\s/g, '')}?text=Hola%20${encodeURIComponent(lead.name)},%20te%20escribimos%20de%20nuestra%20tienda`}
+                                                href={`https://wa.me/${(lead.phone || '').replace(/\s/g, '')}?text=Hola%20${encodeURIComponent(lead.name || '')},%20te%20escribimos%20de%20nuestra%20tienda`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transform transition-all hover:scale-[1.02] active:scale-95 shadow-xl shadow-[#25D366]/20"
