@@ -50,7 +50,8 @@ const COLOR_MAP: Record<string, string> = {
   rosa: '#d9a8b6',
 }
 
-const FALLBACK_COLORS = ['#1a1a1a', '#f5f5f0', '#1a3a5c', '#8a8a8a', '#d4c5b2']
+const FALLBACK_COLORS = ['#1a1a1a', '#f5f5f0', '#1a3a5c', '#8a8a8a', '#d4c5b2'];
+const CARD_BG_COLORS = ['#f5f0e8', '#f0f0f0', '#eef2f5', '#f5f0e8'];
 
 function getVariants(product: Product): ModaVariant[] {
   return Array.isArray(product.variants) ? product.variants as ModaVariant[] : []
@@ -419,10 +420,15 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
           <div id="catalogView">
             {/* Solo mostramos hero si no hay busqueda activa */}
             {!searchQuery && (
-              <section className="hero">
-                <span className="hero-badge">Nueva Coleccion</span>
-                <h1>Descubre tu estilo</h1>
-                <p>{description}</p>
+              <section className="hero-editorial">
+                <div className="hero-editorial-inner">
+                  <span className="hero-tag">Nueva Coleccion</span>
+                  <h1 className="hero-heading">
+                    {storeName.toUpperCase()}
+                    <span className="hero-heading-underline">COLECCION</span>
+                  </h1>
+                  <p className="hero-desc">{description}</p>
+                </div>
               </section>
             )}
 
@@ -633,7 +639,7 @@ function ProductCard({
 
   return (
     <div className="product-card animate-in" style={{ animationDelay: `${index * 0.07}s` }}>
-      <div className="product-image-wrapper" onClick={onOpenDetail}>
+      <div className="product-image-wrapper" style={{ background: CARD_BG_COLORS[index % 4] }} onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
         <ProductMediaFrame media={primaryMedia} alt={`${product.name}${colors[selectedColorIndex] ? ` - ${colors[selectedColorIndex]}` : ''}`} hoverPlay className="product-media" />
@@ -818,7 +824,7 @@ function DetailView({
       { threshold: 0.1 }
     )
 
-    const cards = benefitsRef.current.querySelectorAll('.benefit-card')
+    const cards = benefitsRef.current.querySelectorAll('.benefit-item')
     cards.forEach((card, index) => {
       ;(card as HTMLElement).style.transitionDelay = `${index * 0.1}s`
       observer.observe(card)
@@ -908,24 +914,37 @@ function DetailView({
       {/* DYNAMIC EDITABLE BLOCKS */}
       <div className="detail-blocks-container">
         {benefits.length > 0 && (
-          <div className="detail-section" id="benefitsSection">
-            <h2>Beneficios Exclusivos</h2>
-            <div className="benefits-grid" ref={benefitsRef}>
-              {benefits.slice(0, 4).map((b: any, i: number) => (
-                <div className="benefit-card" key={i}>
-                  <div className="benefit-number">{String(i + 1).padStart(2, '0')}</div>
-                  <h3>{b.title}</h3>
-                  <p>{b.description}</p>
-                </div>
-              ))}
+          <div className="detail-section benefits-editorial" id="benefitsSection">
+            <div className="benefits-editorial-header">
+              <h2 className="benefits-editorial-title">
+                POR QUE<br/>
+                <span className="benefits-underline">ELEGIRNOS</span>
+              </h2>
+            </div>
+
+            <div className="benefits-editorial-body">
+              <div className="benefits-list" ref={benefitsRef}>
+                {benefits.slice(0, 4).map((b: any, i: number) => (
+                  <div className="benefit-item" key={i}>
+                    <span className="benefit-item-number">{String(i + 1).padStart(2, '0')}</span>
+                    <div className="benefit-item-content">
+                      <h3>{b.title}</h3>
+                      <p>{b.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {promoTitle && (
-          <div className="detail-section promo-section animate-in" id="promoSection">
-            <h2>{promoTitle}</h2>
-            {promoDesc && <p>{promoDesc}</p>}
+          <div className="promo-banner animate-in" id="promoSection">
+            <div className="promo-banner-inner">
+              <span className="promo-banner-tag">Promocion</span>
+              <h2 className="promo-banner-title">{promoTitle}</h2>
+              {promoDesc && <p className="promo-banner-desc">{promoDesc}</p>}
+            </div>
           </div>
         )}
 
@@ -1062,15 +1081,59 @@ const modaUrbanStyles = `
 .moda-urban-template .nav-links a { display: block; padding: 10px; color: var(--text); text-decoration: none; font-weight: 500; border-radius: 8px; }
 .moda-urban-template .nav-links a:hover { background: #f5f5f5; }
 
-.moda-urban-template .hero {
-  background: #f5f5f5; padding: 3.5rem 2rem; text-align: center;
-  position: relative; overflow: hidden; border-radius: var(--radius); margin-bottom: 2rem;
+.moda-urban-template .hero-editorial {
+  padding: 4rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.5rem;
 }
-.moda-urban-template .hero h1 { font-size: 2.8rem; font-weight: 900; letter-spacing: -1px; margin: 0 0 0.5rem; animation: modaSlideDown 0.7s ease; }
-.moda-urban-template .hero p { font-size: 1.1rem; color: var(--text-light); margin: 0; animation: modaSlideDown 0.7s ease 0.15s both; }
-.moda-urban-template .hero-badge {
-  display: inline-block; background: var(--accent); color: #fff; padding: 6px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 600;
-  margin-bottom: 1rem; animation: modaBounceIn 0.7s ease 0.3s both; text-transform: uppercase; letter-spacing: 1px;
+.moda-urban-template .hero-editorial-inner {
+  max-width: 700px;
+}
+.moda-urban-template .hero-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+.moda-urban-template .hero-heading {
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.moda-urban-template .hero-heading-underline {
+  display: inline-block;
+  position: relative;
+  color: var(--text);
+}
+.moda-urban-template .hero-heading-underline::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--text);
+  border-radius: 2px;
+}
+.moda-urban-template .hero-desc {
+  font-size: 1rem;
+  color: var(--text-light);
+  max-width: 500px;
+  line-height: 1.6;
+  margin: 0;
 }
 .moda-urban-template .main-container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
 .moda-urban-template .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 2rem; align-items: center; animation: modaFadeInUp 0.6s ease; }
@@ -1093,7 +1156,12 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #d0d0d0; }
 .moda-urban-template .product-image-wrapper {
-  position: relative; overflow: hidden; aspect-ratio: 3/4; background: #f9f9f9; display: flex; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3/4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .moda-urban-template .product-media { width: 100%; height: 100%; object-fit: cover; display: block; }
 .moda-urban-template video.product-media { background: #f3f3f3; }
@@ -1291,9 +1359,41 @@ const modaUrbanStyles = `
   line-height: 1.6;
 }
 
-.moda-urban-template .promo-section { text-align: center; padding: 3rem 2rem; background: #f9f9f9; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-.moda-urban-template .promo-section h2 { margin-bottom: 1rem; font-size: 1.8rem; }
-.moda-urban-template .promo-section p { font-size: 1.1rem; color: var(--text-light); max-width: 600px; margin: 0 auto; line-height: 1.6; }
+.moda-urban-template .promo-banner {
+  background: var(--text);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 4rem 3rem;
+  text-align: center;
+}
+.moda-urban-template .promo-banner-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 4px 12px;
+  border-radius: 50px;
+}
+.moda-urban-template .promo-banner-title {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  color: #fff;
+  margin: 0 0 1rem;
+  line-height: 1.1;
+}
+.moda-urban-template .promo-banner-desc {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
 
 .moda-urban-template .faq-list { display: flex; flex-direction: column; gap: 1rem; }
 .moda-urban-template .faq-item { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
