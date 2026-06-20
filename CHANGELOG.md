@@ -5,6 +5,54 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-06-20] — Sistema de Reseñas + Rediseño ModaTemplate
+
+### Features
+- feat(moda): complete ModaTemplate with search, customer portal, address modal, dynamic content blocks and remove hardcoded sections
+- feat(moda): editorial redesign — hero, product card backgrounds, benefits layout, promo banner
+- feat(moda): add product reviews system with verified purchase check
+- feat(configuracion): redesign settings page with two-column SaaS layout
+- feat(configuracion): add Contenido de Tienda section with benefits, faqs and promo blocks
+- feat(dashboard): implement SWR cache + skeleton loaders for clientes and pedidos pages
+
+### Fixes
+- fix(moda): restore video poster on mouse leave (`video.load()` after pause)
+- fix(moda): use `product.image_url` as video poster fallback when `poster_url` is missing
+- fix(moda): fix benefits editorial layout — CSS classes were missing from `modaUrbanStyles`; video card background set to `#000`
+- fix(moda): redesign benefits cards with staggered IntersectionObserver animation
+- fix(dashboard): use `lastFetch` flag instead of array length for initial state check
+- fix(store): implement SWR architecture with Zustand preventing skeleton loops on empty results
+
+### Database
+- `ALTER TABLE profiles`: added columns `benefits (jsonb)`, `faqs (jsonb)`, `promo_title (text)`, `promo_description (text)`
+- `GRANT UPDATE` on new columns to `authenticated` role (resolved `permission denied` on save)
+- `CREATE TABLE product_reviews` with RLS policies (`SELECT` public, `DELETE` merchant-only) and unique index `(store_id, product_id, customer_email)` to prevent duplicate reviews
+- `CREATE INDEX` on `product_id` and `store_id` for query performance
+- `GRANT INSERT ON product_reviews TO service_role` — inserts only allowed via API route with verified purchase check
+
+### Commits
+- `9ded425` — feat(configuracion): redesign settings page with two-column SaaS layout
+- `0b6e4db` — feat(moda): complete ModaTemplate with search, customer portal, address modal, dynamic content blocks and remove hardcoded sections
+- `f6143eb` — feat(configuracion): add Contenido de Tienda section with benefits, faqs and promo blocks
+- `baa6702` — feat(moda): redesign benefits cards with staggered intersection observer animation
+- `ae53e81` — feat(moda): editorial redesign - hero, product card backgrounds, benefits layout, promo banner
+- `d8a3e23` — fix(moda): fix benefits editorial layout and video card background
+- `21c03fd` — fix(moda): restore video poster on mouse leave
+- `7a71d62` — fix(moda): use product image_url as video poster fallback
+- `d3a0551` — feat(moda): add product reviews system with verified purchase check
+
+---
+
+## [2026-06-14] — Refactorización Configuración (SaaS Layout)
+
+### Modificado (UI/UX)
+- **Rediseño `configuracion/page.tsx`:** Implementado un layout profesional de dos columnas (Sidebar sticky izquierdo, contenido derecho), reemplazando el apilamiento vertical infinito.
+- **Consolidación de Estado:** Refactorizados 32 `useState` sueltos en dos objetos unificados `formData` e `initialData`.
+- **Barra de Guardado Flotante:** Creada una barra inferior reactiva que detecta cambios (`hasChanges`) usando comparación de objetos para guardar de forma inteligente y segura.
+- **Diseño Plano (Flat Design):** Eliminados todos los gradientes, emojis y efectos *glassmorphism* de la tarjeta de Suscripción y en general, asegurando la coherencia visual con el resto del Dashboard.
+- **Pagos Dinámicos:** Lógica de renderizado condicional en la pestaña Pagos: esconde formularios innecesarios de carga de QRs cuando la plantilla es "Restaurante" (ya que delega el pago a WhatsApp).
+- **Protección de Cambio de Plantilla:** Cambiar de plantilla ahora requiere un paso de confirmación explícito in-situ con una advertencia de riesgo, independizando esta acción de la barra de guardado global.
+
 ## [2026-06-13] — Migración SWR Dashboard
 ### Añadido (Performance & UX)
 - **Arquitectura SWR (Stale-While-Revalidate) Global:** Migrado todo el panel de control (`useDashboardStore.ts`) para usar flags `lastFetch` y precargar datos en memoria en lugar de cargar en cada render de página.
