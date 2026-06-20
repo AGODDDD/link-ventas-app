@@ -131,8 +131,10 @@ function playReadyVideo(event: React.SyntheticEvent<HTMLVideoElement>) {
 }
 
 function pauseHoverVideo(event: React.MouseEvent<HTMLVideoElement>) {
-  event.currentTarget.pause()
-  event.currentTarget.currentTime = 0
+  const video = event.currentTarget
+  video.pause()
+  video.currentTime = 0
+  video.load() // Recarga el poster
 }
 
 function ProductMediaFrame({
