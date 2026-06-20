@@ -631,6 +631,7 @@ function ProductCard({
 }) {
   const colors = getColors(product)
   const primaryMedia = getProductMedia(product)[0]
+  const cardBg = primaryMedia.type === 'video' ? '#000' : CARD_BG_COLORS[index % 4]
   const displaySwatches = colors.slice(0, 5)
   const discount = product.original_price && product.original_price > product.price
     ? Math.round((1 - product.price / product.original_price) * 100)
@@ -639,7 +640,7 @@ function ProductCard({
 
   return (
     <div className="product-card animate-in" style={{ animationDelay: `${index * 0.07}s` }}>
-      <div className="product-image-wrapper" style={{ background: CARD_BG_COLORS[index % 4] }} onClick={onOpenDetail}>
+      <div className="product-image-wrapper" style={{ background: cardBg }} onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
         <ProductMediaFrame media={primaryMedia} alt={`${product.name}${colors[selectedColorIndex] ? ` - ${colors[selectedColorIndex]}` : ''}`} hoverPlay className="product-media" />
@@ -1307,17 +1308,20 @@ const modaUrbanStyles = `
 .moda-urban-template .detail-section { background: transparent; }
 .moda-urban-template .detail-section h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; }
 
-.moda-urban-template .benefits-grid { 
-  display: grid; 
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 1.5rem; 
-}
-@media (max-width: 768px) {
-  .moda-urban-template .benefits-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 380px) {
-  .moda-urban-template .benefits-grid { grid-template-columns: 1fr; }
-}
+/* Benefits Editorial */
+.moda-urban-template .benefits-editorial { padding: 2rem 0; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+.moda-urban-template .benefits-editorial-header { text-align: center; margin-bottom: 1.5rem; }
+.moda-urban-template .benefits-editorial-title { font-size: 1.5rem; font-weight: 700; }
+.moda-urban-template .benefits-editorial-body { }
+.moda-urban-template .benefits-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+@media (max-width: 768px) { .moda-urban-template .benefits-list { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 380px) { .moda-urban-template .benefits-list { grid-template-columns: 1fr; } }
+.moda-urban-template .benefit-item { position: relative; padding: 1.5rem; background: #fff; border: 1px solid #e8e8e8; border-radius: 12px; transition: all 0.3s ease; opacity: 0; transform: translateY(20px); }
+.moda-urban-template .benefit-item.visible { opacity: 1; transform: translateY(0); }
+.moda-urban-template .benefit-item:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-4px); }
+.moda-urban-template .benefit-item-number { font-size: 3rem; font-weight: 800; color: #e8e8e8; margin-bottom: 0.5rem; line-height: 1; }
+.moda-urban-template .benefit-item-content h3 { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.5rem; }
+.moda-urban-template .benefit-item-content p { font-size: 0.85rem; color: #666; margin: 0; }
 
 .moda-urban-template .benefit-card { 
   position: relative;
