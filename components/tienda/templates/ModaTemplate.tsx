@@ -1,6 +1,7 @@
 'use client'
 
-import React, { FormEvent, useMemo, useState, useEffect } from 'react'
+import React, { FormEvent, useMemo, useState, useEffect, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { ProductMedia, Profile, Product } from '@/types/tienda'
 import { useCartStore } from '@/store/useCartStore'
@@ -986,6 +987,222 @@ function DetailView({
             </div>
           </div>
         )}
+
+        <ReviewsSection productId={product.id} storeId={perfil.id} />
+      </div>
+    </div>
+  )
+}
+
+function StarDisplay({ rating, size = '1rem' }: { rating: number; size?: string }) {
+  return (
+    <span className="reviews-stars-row">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={`review-star${n > rating ? ' empty' : ''}`} style={{ fontSize: size }}>
+          {n <= rating ? '★' : '☆'}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+function ReviewsSection({ productId, storeId }: { productId: string; storeId: string }) {
+  type Review = {
+    id: string
+    customer_name: string
+    rating: number
+    comment: string
+    verified_purchase: boolean
+    created_at: string
+  }
+
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loadingReviews, setLoadingReviews] = useState(true)
+
+  // Form state
+  const [hoverStar, setHoverStar] = useState(0)
+  const [selectedStar, setSelectedStar] = useState(0)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  useEffect(() => {
+    async function fetchReviews() {
+      setLoadingReviews(true)
+      const { data } = await supabase
+        .from('product_reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('store_id', storeId)
+        .order('created_at', { ascending: false })
+      setReviews(data ?? [])
+      setLoadingReviews(false)
+    }
+    fetchReviews()
+  }, [productId, storeId])
+
+  const avgRating = reviews.length > 0
+    ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
+    : 0
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (selectedStar === 0) {
+      setFeedback({ type: 'error', message: 'Selecciona una calificación.' })
+      return
+    }
+    setSubmitting(true)
+    setFeedback(null)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          store_id: storeId,
+          product_id: productId,
+          customer_name: name,
+          customer_email: email,
+          rating: selectedStar,
+          comment,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setFeedback({ type: 'error', message: data.error || 'Error al enviar la reseña.' })
+      } else {
+        setFeedback({ type: 'success', message: 'Tu reseña fue enviada correctamente.' })
+        setName('')
+        setEmail('')
+        setComment('')
+        setSelectedStar(0)
+        // Reload reviews
+        const { data: updated } = await supabase
+          .from('product_reviews')
+          .select('*')
+          .eq('product_id', productId)
+          .eq('store_id', storeId)
+          .order('created_at', { ascending: false })
+        setReviews(updated ?? [])
+      }
+    } catch {
+      setFeedback({ type: 'error', message: 'Error de conexion. Intenta de nuevo.' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  return (
+    <div className="detail-section reviews-section" id="reviewsSection">
+      {/* Header with average */}
+      <div className="reviews-header">
+        {reviews.length > 0 && (
+          <span className="reviews-avg-score">{avgRating.toFixed(1)}</span>
+        )}
+        <div className="reviews-avg-meta">
+          <h2>Resenas</h2>
+          {reviews.length > 0 && (
+            <>
+              <StarDisplay rating={Math.round(avgRating)} />
+              <span className="reviews-count">{reviews.length} reseña{reviews.length !== 1 ? 's' : ''}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Reviews list */}
+      <div className="reviews-list">
+        {loadingReviews ? (
+          <p className="reviews-empty">Cargando reseñas...</p>
+        ) : reviews.length === 0 ? (
+          <p className="reviews-empty">Sé el primero en dejar una reseña.</p>
+        ) : (
+          reviews.map((r) => (
+            <div key={r.id} className="review-card">
+              <div className="review-card-top">
+                <span className="review-author">{r.customer_name}</span>
+                <div className="review-meta">
+                  {r.verified_purchase && (
+                    <span className="verified-badge">Compra verificada</span>
+                  )}
+                  <span className="review-date">{formatDate(r.created_at)}</span>
+                </div>
+              </div>
+              <StarDisplay rating={r.rating} size="0.95rem" />
+              <p className="review-comment">{r.comment}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Form */}
+      <div className="review-form-section">
+        <h3>Dejar una reseña</h3>
+        <form className="review-form" onSubmit={handleSubmit}>
+          <div>
+            <div className="star-selector" role="group" aria-label="Calificacion">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`star-btn${n <= (hoverStar || selectedStar) ? ' active' : ''}`}
+                  aria-label={`${n} estrella${n !== 1 ? 's' : ''}`}
+                  onMouseEnter={() => setHoverStar(n)}
+                  onMouseLeave={() => setHoverStar(0)}
+                  onClick={() => setSelectedStar(n)}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+          <input
+            id="review-name"
+            className="review-input"
+            type="text"
+            placeholder="Nombre completo"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            maxLength={80}
+          />
+          <input
+            id="review-email"
+            className="review-input"
+            type="email"
+            placeholder="Correo electronico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <textarea
+            id="review-comment"
+            className="review-input review-textarea"
+            placeholder="Escribe tu comentario..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            required
+            maxLength={600}
+          />
+          {feedback && (
+            <div className={`review-feedback ${feedback.type}`} role="alert">
+              {feedback.message}
+            </div>
+          )}
+          <button
+            id="review-submit"
+            type="submit"
+            className="review-submit-btn"
+            disabled={submitting}
+          >
+            {submitting ? 'Enviando...' : 'Enviar reseña'}
+          </button>
+        </form>
       </div>
     </div>
   )
@@ -1456,4 +1673,42 @@ const modaUrbanStyles = `
   .moda-urban-template .detail-layout { gap: 1.5rem; }
   .moda-urban-template .logo-text { display: none; }
 }
+
+/* Reviews Section */
+.moda-urban-template .reviews-section { border-top: 1px solid var(--border); padding-top: 3rem; }
+.moda-urban-template .reviews-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; }
+.moda-urban-template .reviews-header h2 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+.moda-urban-template .reviews-avg-score { font-size: 2rem; font-weight: 800; color: var(--text); }
+.moda-urban-template .reviews-avg-meta { display: flex; flex-direction: column; gap: 2px; }
+.moda-urban-template .reviews-stars-row { display: flex; align-items: center; gap: 2px; }
+.moda-urban-template .review-star { color: #f5a623; font-size: 1.1rem; line-height: 1; }
+.moda-urban-template .review-star.empty { color: #e0e0e0; }
+.moda-urban-template .reviews-count { font-size: 0.85rem; color: var(--text-light); }
+
+.moda-urban-template .reviews-list { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 3rem; }
+.moda-urban-template .review-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem 1.5rem; }
+.moda-urban-template .review-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+.moda-urban-template .review-author { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+.moda-urban-template .review-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.moda-urban-template .verified-badge { font-size: 0.72rem; font-weight: 600; color: #15803d; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+.moda-urban-template .review-date { font-size: 0.8rem; color: var(--text-light); }
+.moda-urban-template .review-comment { font-size: 0.9rem; color: #444; line-height: 1.6; margin-top: 0.5rem; }
+.moda-urban-template .reviews-empty { color: var(--text-light); font-size: 0.95rem; padding: 1.5rem 0; }
+
+.moda-urban-template .review-form-section { border-top: 1px solid var(--border); padding-top: 2rem; }
+.moda-urban-template .review-form-section h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.5rem; }
+.moda-urban-template .review-form { display: flex; flex-direction: column; gap: 1rem; max-width: 560px; }
+.moda-urban-template .star-selector { display: flex; gap: 4px; margin-bottom: 0.25rem; }
+.moda-urban-template .star-btn { background: none; border: none; cursor: pointer; padding: 2px; font-size: 1.6rem; color: #e0e0e0; line-height: 1; transition: color 0.15s, transform 0.15s; }
+.moda-urban-template .star-btn.active { color: #f5a623; }
+.moda-urban-template .star-btn:hover { transform: scale(1.15); }
+.moda-urban-template .review-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 0.9rem; background: #fff; color: var(--text); outline: none; font-family: inherit; transition: border-color 0.2s; }
+.moda-urban-template .review-input:focus { border-color: var(--accent); }
+.moda-urban-template .review-textarea { resize: vertical; min-height: 100px; }
+.moda-urban-template .review-submit-btn { align-self: flex-start; background: var(--accent); color: #fff; border: none; padding: 11px 24px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+.moda-urban-template .review-submit-btn:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+.moda-urban-template .review-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.moda-urban-template .review-feedback { font-size: 0.88rem; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid; margin-top: 0.25rem; }
+.moda-urban-template .review-feedback.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.moda-urban-template .review-feedback.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 `
