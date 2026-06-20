@@ -90,7 +90,14 @@ function getProductMedia(product?: Product | null): ProductMedia[] {
     ? product.media.filter(item => item?.url && (item.type === 'image' || item.type === 'video'))
     : []
 
-  if (media.length > 0) return media
+  if (media.length > 0) {
+    // Si un item es video sin poster, usar image_url del producto como fallback
+    return media.map(item =>
+      item.type === 'video' && !item.poster_url && product.image_url
+        ? { ...item, poster_url: product.image_url }
+        : item
+    )
+  }
 
   const galleryMedia = Array.isArray(product.gallery)
     ? product.gallery
