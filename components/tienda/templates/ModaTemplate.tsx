@@ -399,6 +399,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  value={searchQuery}
                  onChange={(e) => {
                    setSearchQuery(e.target.value)
+                   if (e.target.value) setCurrentFilter('all')
                    if (!catalogVisible || selectedProduct) {
                      setCatalogVisible(true)
                      setSelectedProduct(null)
@@ -441,6 +442,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  value={searchQuery}
                  onChange={(e) => {
                    setSearchQuery(e.target.value)
+                   if (e.target.value) setCurrentFilter('all')
                    if (!catalogVisible || selectedProduct) {
                      setCatalogVisible(true)
                      setSelectedProduct(null)
