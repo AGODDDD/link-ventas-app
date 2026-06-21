@@ -497,18 +497,32 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             {!searchQuery && (
               <div className="hero-fullwidth" data-animate="from-bottom">
                 <img
-                  src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1400&q=80'}
+                  src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1400&q=80'}
                   alt={storeName}
                   className="hero-fullwidth-img"
                 />
                 <div className="hero-fullwidth-overlay">
-                  <span className="hero-tag">NUEVA COLECCIÓN</span>
-                  <h1 className="hero-heading">{storeName.toUpperCase()}</h1>
-                  <p className="hero-desc">{description}</p>
-                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
-                    VER CATÁLOGO
-                  </button>
+                  {/* Badge pill centrado en la parte superior */}
+                  <div className="hero-top-badge-row">
+                    <span className="hero-badge-pill">{perfil.hero_tagline || 'SEE BEYOND'}</span>
+                  </div>
+
+                  {/* Nombre de marca masivo */}
+                  <h1 className="hero-brand-name">{storeName.toUpperCase()}</h1>
+
+                  {/* Subtítulo dividido */}
+                  <div className="hero-subtitle-row">
+                    <span className="hero-subtitle-left">{perfil.hero_subtitle_left || 'intelligence'}</span>
+                    <span className="hero-subtitle-right">{perfil.hero_subtitle_right || 'in motion'}</span>
+                  </div>
                 </div>
+              </div>
+            )}
+
+            {/* EXPLORE COLLECTION label */}
+            {!searchQuery && (
+              <div className="explore-collection-label">
+                <span>EXPLORE COLLECTION</span>
               </div>
             )}
 
@@ -2071,6 +2085,19 @@ const modaUrbanStyles = `
 .moda-urban-template .filter-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); }
 .moda-urban-template .color-swatch-small { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ddd; }
 
+/* Explore Collection Label */
+.moda-urban-template .explore-collection-label {
+  padding: 1.25rem 0 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.moda-urban-template .explore-collection-label span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #111;
+}
+
 /* Hero Fullwidth */
 .moda-urban-template .hero-fullwidth {
   position: relative;
@@ -2101,59 +2128,63 @@ const modaUrbanStyles = `
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 60%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.15) 100%);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
-  padding: 2.5rem 3rem;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 2rem 2.5rem 2.5rem;
 }
-.moda-urban-template .hero-tag {
-  color: rgba(255,255,255,0.8) !important;
-  border: 1px solid rgba(255,255,255,0.4) !important;
+
+/* Badge pill centrado en el top */
+.moda-urban-template .hero-top-badge-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.moda-urban-template .hero-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px solid rgba(255,255,255,0.8);
   border-radius: 50px;
-  padding: 8px 24px;
-  font-size: 0.8rem;
+  padding: 6px 22px;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  background: transparent !important;
-  align-self: flex-start;
-  margin-bottom: 1.5rem;
-}
-.moda-urban-template .hero-heading {
-  color: #fff !important;
-  font-size: clamp(2rem, 4vw, 3.5rem) !important;
-  font-weight: 900;
-  letter-spacing: -1px;
-  line-height: 1.1;
-  text-transform: uppercase;
-  margin: 0 0 1rem 0;
-  text-align: left;
-}
-.moda-urban-template .hero-desc {
-  color: rgba(255,255,255,0.9);
-  font-size: 1.1rem;
-  max-width: 600px;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-.moda-urban-template .hero-cta {
-  background: transparent;
   color: #fff;
-  border: 1px solid #fff;
-  padding: 12px 32px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  background: transparent;
 }
-.moda-urban-template .hero-cta:hover {
-  background: #fff;
-  color: #000;
+
+/* Nombre de marca masivo en verde lima */
+.moda-urban-template .hero-brand-name {
+  color: #c8f75a !important;
+  font-size: clamp(5.5rem, 17vw, 14rem) !important;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 0.88;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
+  width: 100%;
+  font-stretch: condensed;
+  text-shadow: 0 4px 40px rgba(0,0,0,0.18);
+}
+
+/* Subtítulo dividido izquierda / derecha */
+.moda-urban-template .hero-subtitle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+.moda-urban-template .hero-subtitle-left,
+.moda-urban-template .hero-subtitle-right {
+  color: rgba(255,255,255,0.92);
+  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  font-style: italic;
 }
 
 /* Scroll Animations */
@@ -2170,8 +2201,11 @@ const modaUrbanStyles = `
 }
 
 @media (max-width: 768px) {
-  .moda-urban-template .hero-fullwidth { min-height: 50vh; }
-  .moda-urban-template .hero-fullwidth-img { min-height: 50vh; }
-  .moda-urban-template .hero-fullwidth-overlay { padding: 2rem 1.5rem; }
+  .moda-urban-template .hero-fullwidth { min-height: 55vh; max-height: 55vh; }
+  .moda-urban-template .hero-fullwidth-img { min-height: 55vh; max-height: 55vh; }
+  .moda-urban-template .hero-fullwidth-overlay { padding: 1.5rem 1.25rem 1.75rem; }
+  .moda-urban-template .hero-brand-name { font-size: clamp(4rem, 22vw, 7rem) !important; line-height: 0.85; }
+  .moda-urban-template .hero-subtitle-left,
+  .moda-urban-template .hero-subtitle-right { font-size: 0.8rem; }
 }
 `
