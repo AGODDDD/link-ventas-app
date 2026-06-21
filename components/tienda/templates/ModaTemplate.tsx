@@ -117,6 +117,14 @@ function getProductMedia(product?: Product | null): ProductMedia[] {
   return [{ type: 'image', url: product.image_url || 'https://picsum.photos/seed/linkventas-moda/600/800' }]
 }
 
+function getColorImage(product: Product, colorName: string): string | null {
+  if (!Array.isArray(product.variants)) return null
+  const variant = (product.variants as any[]).find(
+    v => v.color && normalize(v.color) === normalize(colorName)
+  )
+  return variant?.image_url || null
+}
+
 function categoryLabel(category?: string) {
   if (!category) return 'Moda'
   const normalized = normalize(category)
@@ -640,7 +648,11 @@ function ProductCard({
   isReadOnly?: boolean;
 }) {
   const colors = getColors(product)
-  const primaryMedia = getProductMedia(product)[0]
+  const selectedColor = colors[selectedColorIndex] || ''
+  const colorImage = selectedColor ? getColorImage(product, selectedColor) : null
+  const primaryMedia: ProductMedia = colorImage 
+    ? { type: 'image', url: colorImage }
+    : getProductMedia(product)[0]
   const cardBg = primaryMedia.type === 'video' ? '#000' : CARD_BG_COLORS[index % 4]
   const displaySwatches = colors.slice(0, 5)
   const discount = product.original_price && product.original_price > product.price
@@ -814,7 +826,15 @@ function DetailView({
   const sizes = getSizes(product)
   const selectedColor = colors[selectedColorIndex]
   const media = getProductMedia(product)
-  const activeMedia = media[selectedMediaIndex] || media[0]
+  
+  // Cuando cambia el color seleccionado, buscar si tiene imagen propia
+  const selectedColorName = colors[selectedColorIndex] || ''
+  const colorImage = selectedColorName ? getColorImage(product, selectedColorName) : null
+
+  // La imagen activa es: colorImage si existe, sino la de la galería
+  const activeMedia: ProductMedia = colorImage
+    ? { type: 'image', url: colorImage }
+    : (media[selectedMediaIndex] || media[0])
   
   // Dynamic blocks
   const benefits = Array.isArray(perfil.benefits) ? perfil.benefits : []
