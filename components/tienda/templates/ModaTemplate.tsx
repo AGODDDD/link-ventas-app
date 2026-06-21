@@ -502,39 +502,12 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   className="hero-fullwidth-img"
                 />
                 <div className="hero-fullwidth-overlay">
-                  <div className="hero-tag-wrapper">
-                    <span className="hero-tag">SEE BEYOND</span>
-                  </div>
+                  <span className="hero-tag">NUEVA COLECCIÓN</span>
                   <h1 className="hero-heading">{storeName.toUpperCase()}</h1>
-                  <div className="hero-desc-split">
-                    <span>{description.split(' ')[0] || 'inteligencia'}</span>
-                    <span>{description.split(' ').slice(1).join(' ') || 'en movimiento'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!searchQuery && (
-              <div className="explore-strip" data-animate="from-bottom">
-                <span className="explore-strip-label">EXPLORE COLLECTION</span>
-                <div className="explore-strip-products">
-                  {activeProducts.slice(0, 3).map((product, i) => {
-                    const media = getProductMedia(product)[0]
-                    return (
-                      <button key={product.id} className="explore-strip-item" onClick={() => openDetail(product)}>
-                        <div className="explore-strip-img">
-                          {media.type === 'image' 
-                            ? <img src={media.url} alt={product.name} />
-                            : <video src={media.url} muted playsInline poster={media.poster_url || product.image_url} />
-                          }
-                        </div>
-                        <div className="explore-strip-info">
-                          <span className="explore-strip-name">{product.name.toUpperCase()}</span>
-                          <span className="explore-strip-price">{formatPrice(product.price)}</span>
-                        </div>
-                      </button>
-                    )
-                  })}
+                  <p className="hero-desc">{description}</p>
+                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
+                    VER CATÁLOGO
+                  </button>
                 </div>
               </div>
             )}
@@ -2098,7 +2071,7 @@ const modaUrbanStyles = `
 .moda-urban-template .filter-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); }
 .moda-urban-template .color-swatch-small { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ddd; }
 
-/* Hero Fullwidth NOEME Style */
+/* Hero Fullwidth */
 .moda-urban-template .hero-fullwidth {
   position: relative;
   width: 100vw;
@@ -2109,7 +2082,7 @@ const modaUrbanStyles = `
   min-height: 85vh;
   max-height: 85vh;
   overflow: hidden;
-  margin-bottom: 0;
+  margin-bottom: 3rem;
   border-radius: 0;
 }
 .moda-urban-template .hero-fullwidth-img {
@@ -2132,11 +2105,8 @@ const modaUrbanStyles = `
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  align-items: center;
+  align-items: flex-start;
   padding: 2.5rem 3rem;
-}
-.moda-urban-template .hero-tag-wrapper {
-  margin-bottom: 2rem;
 }
 .moda-urban-template .hero-tag {
   color: rgba(255,255,255,0.8) !important;
@@ -2149,108 +2119,41 @@ const modaUrbanStyles = `
   text-transform: uppercase;
   background: transparent !important;
   align-self: flex-start;
+  margin-bottom: 1.5rem;
 }
 .moda-urban-template .hero-heading {
   color: #fff !important;
   font-size: clamp(2rem, 4vw, 3.5rem) !important;
   font-weight: 900;
   letter-spacing: -1px;
-  line-height: 0.8;
+  line-height: 1.1;
   text-transform: uppercase;
-  margin: 0;
-  text-align: center;
-  transform: scaleX(1.1);
-}
-.moda-urban-template .hero-heading-underline {
-  color: #fff !important;
-}
-.moda-urban-template .hero-heading-underline::after {
-  background: #fff !important;
-}
-.moda-urban-template .hero-desc-split {
-  color: #c7ffb0;
-  font-family: monospace;
-  font-size: 1.1rem;
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 900px;
-  margin-top: 2rem;
-  letter-spacing: 0.1em;
-}
-
-/* Explore Strip */
-.moda-urban-template .explore-strip {
-  padding: 4rem 0 2.5rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2rem;
-}
-.moda-urban-template .explore-strip-label {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: #4a2b2b;
-  margin-bottom: 2.5rem;
-}
-.moda-urban-template .explore-strip-products {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-}
-.moda-urban-template .explore-strip-item {
-  background: none;
-  border: none;
-  cursor: pointer;
+  margin: 0 0 1rem 0;
   text-align: left;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
 }
-.moda-urban-template .explore-strip-img {
-  aspect-ratio: 16/9;
-  overflow: hidden;
-  border-radius: 8px;
+.moda-urban-template .hero-desc {
+  color: rgba(255,255,255,0.9);
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+.moda-urban-template .hero-cta {
   background: transparent;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.moda-urban-template .explore-strip-img img,
-.moda-urban-template .explore-strip-img video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: transform 0.4s ease;
-}
-.moda-urban-template .explore-strip-item:hover .explore-strip-img img,
-.moda-urban-template .explore-strip-item:hover .explore-strip-img video {
-  transform: scale(1.05);
-}
-
-.moda-urban-template .explore-strip-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-.moda-urban-template .explore-strip-name {
-  font-size: 0.8rem;
-  font-weight: 700;
+  color: #fff;
+  border: 1px solid #fff;
+  padding: 12px 32px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #4a2b2b;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
-.moda-urban-template .explore-strip-price {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #4a2b2b;
-}
-@media (max-width: 768px) {
-  .moda-urban-template .explore-strip-products {
-    grid-template-columns: repeat(1, 1fr);
-  }
+.moda-urban-template .hero-cta:hover {
+  background: #fff;
+  color: #000;
 }
 
 /* Scroll Animations */
