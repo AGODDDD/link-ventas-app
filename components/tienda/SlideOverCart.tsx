@@ -18,7 +18,7 @@ interface Props {
 export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, templateType }: Props) {
   const router = useRouter()
   const cartStore = useCartStore()
-  const isMinimalist = templateType === 'restaurante';
+  const isMinimalist = templateType === 'restaurante' || templateType === 'moda';
   
   // To prevent hydration errors, we ensure store binds correctly
   const cart = cartStore.carts[storeId] || []
