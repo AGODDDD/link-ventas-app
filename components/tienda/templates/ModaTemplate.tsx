@@ -1,6 +1,6 @@
 'use client'
 
-import React, { FormEvent, useMemo, useState, useEffect, useRef } from 'react'
+import React, { FormEvent, useMemo, useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { ProductMedia, Profile, Product } from '@/types/tienda'
@@ -1549,45 +1549,8 @@ const modaUrbanStyles = `
 .moda-urban-template .benefit-item-content h3 { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; margin-bottom: 0.5rem; }
 .moda-urban-template .benefit-item-content p { font-size: 0.85rem; color: #666; margin: 0; }
 
-.moda-urban-template .benefit-card { 
-  position: relative;
-  text-align: left; 
-  padding: 1.5rem; 
-  background: #fff; 
-  border: 1px solid #e8e8e8; 
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  opacity: 0;
-  transform: translateY(20px);
-}
-.moda-urban-template .benefit-card.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.moda-urban-template .benefit-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  transform: translateY(-4px);
-}
-
-.moda-urban-template .benefit-number { 
-  font-size: 3rem; 
-  font-weight: 800; 
-  color: #e8e8e8; 
-  margin-bottom: 0.5rem;
-  line-height: 1;
-}
-.moda-urban-template .benefit-card h3 { 
-  font-size: 0.95rem; 
-  font-weight: 600; 
-  color: #1a1a1a;
-  margin-bottom: 0.5rem; 
-}
-.moda-urban-template .benefit-card p { 
-  font-size: 0.85rem; 
-  color: #666; 
-  margin: 0; 
-  line-height: 1.6;
-}
+.moda-urban-template .benefits-underline { display: inline-block; position: relative; }
+.moda-urban-template .benefits-underline::after { content: ''; position: absolute; bottom: 2px; left: 0; width: 100%; height: 4px; background: var(--text); border-radius: 2px; }
 
 .moda-urban-template .promo-banner {
   background: var(--text);
