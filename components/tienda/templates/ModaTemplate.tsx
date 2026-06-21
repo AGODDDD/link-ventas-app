@@ -302,24 +302,33 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
   useEffect(() => {
     if (!mounted) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            const delay = entry.target.getAttribute('data-animate-delay') || '0'
-            ;(entry.target as HTMLElement).style.transitionDelay = `${delay}ms`
             entry.target.classList.add('animate-visible')
             observer.unobserve(entry.target)
           }
         })
       },
-      { threshold: 0.08 }
+      { threshold: 0.06, rootMargin: '0px 0px -40px 0px' }
     )
 
-    const elements = document.querySelectorAll('.moda-urban-template [data-animate]')
-    elements.forEach(el => observer.observe(el))
+    // Pequeño delay para asegurar que el DOM está listo
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll('.moda-urban-template [data-animate]')
+      elements.forEach(el => {
+        // Aplicar el delay desde el atributo si no está ya en el inline style
+        const delay = el.getAttribute('data-animate-delay')
+        if (delay && !(el as HTMLElement).style.transitionDelay) {
+          (el as HTMLElement).style.transitionDelay = `${delay}ms`
+        }
+        observer.observe(el)
+      })
+    }, 50)
 
-    return () => observer.disconnect()
+    return () => { observer.disconnect(); clearTimeout(timer) }
   }, [mounted, catalogVisible, selectedProduct])
 
   const searchResults = useMemo(() => {
@@ -495,7 +504,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
         {catalogVisible ? (
           <div id="catalogView">
             {!searchQuery && (
-              <div className="hero-fullwidth" data-animate="from-bottom">
+              <div className="hero-fullwidth">
                 <img
                   src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1400&q=80'}
                   alt={storeName}
@@ -503,17 +512,17 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                 />
                 <div className="hero-fullwidth-overlay">
                   {/* Badge pill centrado en la parte superior */}
-                  <div className="hero-top-badge-row">
+                  <div className="hero-top-badge-row" data-animate="blur-in" data-animate-delay="0">
                     <span className="hero-badge-pill">{perfil.hero_tagline || 'SEE BEYOND'}</span>
                   </div>
 
                   {/* Nombre de marca masivo */}
-                  <h1 className="hero-brand-name">{storeName.toUpperCase()}</h1>
+                  <h1 className="hero-brand-name" data-animate="zoom-in" data-animate-delay="100">{storeName.toUpperCase()}</h1>
 
                   {/* Subtítulo dividido */}
                   <div className="hero-subtitle-row">
-                    <span className="hero-subtitle-left">{perfil.hero_subtitle_left || 'intelligence'}</span>
-                    <span className="hero-subtitle-right">{perfil.hero_subtitle_right || 'in motion'}</span>
+                    <span className="hero-subtitle-left" data-animate="fade-left" data-animate-delay="250">{perfil.hero_subtitle_left || 'intelligence'}</span>
+                    <span className="hero-subtitle-right" data-animate="fade-right" data-animate-delay="250">{perfil.hero_subtitle_right || 'in motion'}</span>
                   </div>
                 </div>
               </div>
@@ -521,7 +530,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
             {/* EXPLORE COLLECTION label */}
             {!searchQuery && (
-              <div className="explore-collection-label">
+              <div className="explore-collection-label" data-animate="fade-up" data-animate-delay="100">
                 <span>EXPLORE COLLECTION</span>
               </div>
             )}
@@ -915,7 +924,12 @@ function ProductCard({
   const isOutOfStock = product.stock !== null && product.stock !== undefined && product.stock <= 0
 
   return (
-    <div className="product-card" data-animate={index % 2 === 0 ? 'from-left' : 'from-right'} data-animate-delay={index * 100} style={{}}>
+    <div
+      className="product-card"
+      data-animate="fade-up"
+      data-animate-delay={String(Math.min((index % 4) * 100, 300))}
+      style={{}}
+    >
       <div className="product-image-wrapper" style={{ background: cardBg }} onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
@@ -1643,7 +1657,7 @@ const modaUrbanStyles = `
   line-height: 1.6;
   margin: 0;
 }
-.moda-urban-template .main-container { max-width: 1300px; margin: 0 auto; padding: 2rem; }
+.moda-urban-template .main-container { max-width: 1300px; margin: 0 auto; padding: 0 2rem 2rem; }
 .moda-urban-template .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 2rem; align-items: center; animation: modaFadeInUp 0.6s ease; }
 .moda-urban-template .filter-btn {
   padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 500;
@@ -2118,7 +2132,7 @@ const modaUrbanStyles = `
   min-height: 58vh;
   max-height: 58vh;
   object-fit: cover;
-  object-position: center top;
+  object-position: center 15%;
   display: block;
   transition: transform 0.8s ease;
 }
@@ -2188,17 +2202,65 @@ const modaUrbanStyles = `
   font-style: italic;
 }
 
-/* Scroll Animations */
+/* ═══════════════════════════════════════════
+   SCROLL ANIMATIONS — Elementor-style
+   Tipos: fade-up | fade-left | fade-right | zoom-in | blur-in | fade-up-stagger
+═══════════════════════════════════════════ */
+
 .moda-urban-template [data-animate] {
   opacity: 0;
-  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: opacity, transform, filter;
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.moda-urban-template [data-animate="from-left"] { transform: translateX(-80px); }
-.moda-urban-template [data-animate="from-right"] { transform: translateX(80px); }
-.moda-urban-template [data-animate="from-bottom"] { transform: translateY(60px); }
+
+/* Estados iniciales por tipo */
+.moda-urban-template [data-animate="from-bottom"],
+.moda-urban-template [data-animate="fade-up"] {
+  transform: translateY(52px);
+}
+.moda-urban-template [data-animate="from-left"],
+.moda-urban-template [data-animate="fade-left"] {
+  transform: translateX(-60px);
+}
+.moda-urban-template [data-animate="from-right"],
+.moda-urban-template [data-animate="fade-right"] {
+  transform: translateX(60px);
+}
+.moda-urban-template [data-animate="zoom-in"] {
+  transform: scale(0.88);
+}
+.moda-urban-template [data-animate="blur-in"] {
+  transform: translateY(24px);
+  filter: blur(8px);
+}
+
+/* Estado visible — todos resetean a 0 */
 .moda-urban-template [data-animate].animate-visible {
   opacity: 1;
-  transform: translate(0, 0);
+  transform: translate(0,0) scale(1);
+  filter: blur(0);
+}
+
+/* Delays de stagger para hijos consecutivos */
+.moda-urban-template [data-animate-delay="100"] { transition-delay: 100ms; }
+.moda-urban-template [data-animate-delay="150"] { transition-delay: 150ms; }
+.moda-urban-template [data-animate-delay="200"] { transition-delay: 200ms; }
+.moda-urban-template [data-animate-delay="250"] { transition-delay: 250ms; }
+.moda-urban-template [data-animate-delay="300"] { transition-delay: 300ms; }
+.moda-urban-template [data-animate-delay="400"] { transition-delay: 400ms; }
+.moda-urban-template [data-animate-delay="500"] { transition-delay: 500ms; }
+.moda-urban-template [data-animate-delay="600"] { transition-delay: 600ms; }
+
+/* Línea decorativa que crece (para títulos de sección) */
+.moda-urban-template [data-animate="line-grow"] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.moda-urban-template [data-animate="line-grow"].animate-visible {
+  transform: scaleX(1);
 }
 
 @media (max-width: 768px) {
