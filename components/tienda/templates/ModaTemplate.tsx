@@ -300,6 +300,26 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    if (!mounted) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.12 }
+    )
+
+    const elements = document.querySelectorAll('.moda-urban-template [data-animate]')
+    elements.forEach(el => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [mounted, catalogVisible, selectedProduct])
+
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return null
     return fuzzySearch(searchQuery, activeProducts)
@@ -472,16 +492,28 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       <main className="main-container" id="mainContent">
         {catalogVisible ? (
           <div id="catalogView">
-            <section className="hero-editorial">
-                <div className="hero-editorial-inner">
+            {!searchQuery && (
+              <section className="hero-split">
+                <div className="hero-split-text" data-animate="from-left">
                   <span className="hero-tag">Nueva Coleccion</span>
                   <h1 className="hero-heading">
                     {storeName.toUpperCase()}
                     <span className="hero-heading-underline">COLECCION</span>
                   </h1>
                   <p className="hero-desc">{description}</p>
+                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
+                    Ver catalogo
+                  </button>
+                </div>
+                <div className="hero-split-image" data-animate="from-right">
+                  <img 
+                    src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80'}
+                    alt={storeName}
+                    className="hero-img"
+                  />
                 </div>
               </section>
+            )}
 
             {/* FACET FILTERS BAR */}
             <div className="flex items-center justify-between mb-4">
@@ -872,7 +904,7 @@ function ProductCard({
   const isOutOfStock = product.stock !== null && product.stock !== undefined && product.stock <= 0
 
   return (
-    <div className="product-card animate-in" style={{ animationDelay: `${index * 0.07}s` }}>
+    <div className="product-card animate-in" data-animate={index % 2 === 0 ? 'from-left' : 'from-right'} style={{ animationDelay: `${index * 0.07}s` }}>
       <div className="product-image-wrapper" style={{ background: cardBg }} onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
@@ -1163,7 +1195,7 @@ function DetailView({
       {/* DYNAMIC EDITABLE BLOCKS */}
       <div className="detail-blocks-container">
         {benefits.length > 0 && (
-          <div className="detail-section benefits-editorial" id="benefitsSection">
+          <div className="detail-section benefits-editorial" id="benefitsSection" data-animate="from-bottom">
             <div className="benefits-editorial-header">
               <h2 className="benefits-editorial-title">
                 POR QUE<br/>
@@ -1188,7 +1220,7 @@ function DetailView({
         )}
 
         {promoTitle && (
-          <div className="promo-banner animate-in" id="promoSection">
+          <div className="promo-banner animate-in" id="promoSection" data-animate="from-bottom">
             <div className="promo-banner-inner">
               <span className="promo-banner-tag">Promocion</span>
               <h2 className="promo-banner-title">{promoTitle}</h2>
@@ -1198,7 +1230,7 @@ function DetailView({
         )}
 
         {faqs.length > 0 && (
-          <div className="detail-section" id="faqSection">
+          <div className="detail-section" id="faqSection" data-animate="from-left">
             <h2>Preguntas Frecuentes</h2>
             <div className="faq-list">
               {faqs.map((faq: any, i: number) => (
@@ -2041,4 +2073,37 @@ const modaUrbanStyles = `
 .moda-urban-template .filter-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
 .moda-urban-template .filter-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); }
 .moda-urban-template .color-swatch-small { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ddd; }
+
+/* Hero Split */
+.moda-urban-template .hero-split {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 560px;
+  margin-bottom: 3rem; overflow: hidden; border-radius: var(--radius);
+}
+.moda-urban-template .hero-split-text {
+  display: flex; flex-direction: column; justify-content: center; padding: 4rem 3rem; background: #f9f9f9;
+}
+.moda-urban-template .hero-split-image { overflow: hidden; }
+.moda-urban-template .hero-img {
+  width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.8s ease;
+}
+.moda-urban-template .hero-split:hover .hero-img { transform: scale(1.03); }
+.moda-urban-template .hero-cta {
+  display: inline-block; margin-top: 2rem; padding: 12px 28px; background: var(--text);
+  color: #fff; border: none; border-radius: 50px; font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: var(--transition); align-self: flex-start;
+}
+.moda-urban-template .hero-cta:hover { background: var(--accent-hover); transform: translateY(-2px); }
+
+/* Scroll Animations */
+.moda-urban-template [data-animate] { opacity: 0; transition: opacity 0.7s ease, transform 0.7s ease; }
+.moda-urban-template [data-animate="from-left"] { transform: translateX(-60px); }
+.moda-urban-template [data-animate="from-right"] { transform: translateX(60px); }
+.moda-urban-template [data-animate="from-bottom"] { transform: translateY(40px); }
+.moda-urban-template [data-animate].animate-visible { opacity: 1; transform: translate(0); }
+
+@media (max-width: 768px) {
+  .moda-urban-template .hero-split { grid-template-columns: 1fr; min-height: auto; }
+  .moda-urban-template .hero-split-image { height: 320px; order: -1; }
+  .moda-urban-template .hero-split-text { padding: 2rem 1.5rem; }
+}
 `

@@ -20,6 +20,7 @@ interface SettingsFormData {
   slug: string;
   description: string;
   avatarUrl: string;
+  heroImageUrl: string;
   templateType: string;
   bannerUrl: string;
   primaryColor: string;
@@ -105,6 +106,7 @@ export default function ConfiguracionPage() {
           slug: data.slug || '',
           description: data.description || '',
           avatarUrl: data.avatar_url || '',
+          heroImageUrl: data.hero_image_url || '',
           templateType: data.template_type || 'comercio',
           bannerUrl: data.banner_url || '',
           primaryColor: data.primary_color || '#000000',
@@ -194,6 +196,7 @@ export default function ConfiguracionPage() {
           slug: formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || null,
           description: formData.description,
           avatar_url: formData.avatarUrl,
+          hero_image_url: formData.heroImageUrl,
           yape_image_url: formData.yapeUrl,
           plin_image_url: formData.plinUrl,
           template_type: formData.templateType,
@@ -509,6 +512,25 @@ export default function ConfiguracionPage() {
                         <span className="bg-white text-black px-3 py-1 rounded text-xs font-medium">Cambiar</span>
                       </Label>
                       <Input id="banner" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'bannerUrl')} disabled={uploading} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <Label>Foto Hero (Plantilla Moda)</Label>
+                    <p className="text-xs text-zinc-500">Imagen principal que aparece en el encabezado de tu tienda Moda. Recomendado: foto vertical de producto o modelo, mínimo 800x1000px.</p>
+                    <div className="relative w-full h-48 bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
+                      {formData.heroImageUrl ? (
+                        <img src={formData.heroImageUrl} className="w-full h-full object-cover" alt="Hero" />
+                      ) : (
+                        <div className="text-zinc-400 flex flex-col items-center">
+                          <ImageIcon size={20} />
+                          <span className="text-xs mt-2">800x1000px recomendado</span>
+                        </div>
+                      )}
+                      <Label htmlFor="hero" className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="bg-white text-black px-3 py-1 rounded text-xs font-medium">Cambiar</span>
+                      </Label>
+                      <Input id="hero" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'heroImageUrl')} disabled={uploading} />
                     </div>
                   </div>
 

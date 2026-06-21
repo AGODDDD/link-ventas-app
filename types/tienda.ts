@@ -5,6 +5,7 @@ export interface Profile {
   description?: string;
   avatar_url?: string;
   banner_url?: string;
+  hero_image_url?: string;
   primary_color?: string;
   secondary_color?: string;
   social_instagram?: string;
