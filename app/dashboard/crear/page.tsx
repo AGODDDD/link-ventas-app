@@ -4,9 +4,30 @@ import { supabase } from '@/lib/supabase'
 import { getProductMediaThumbnail, serializeProductMedia, uploadProductMediaFiles } from '@/lib/productMedia'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play } from 'lucide-react'
+import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play, Upload } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { useEffect } from 'react'
+
+const COLOR_MAP: Record<string, string> = {
+  negro: '#1a1a1a', black: '#1a1a1a', blanco: '#f5f5f0', white: '#f5f5f0',
+  gris: '#8a8a8a', gray: '#8a8a8a', plomo: '#777777', azul: '#3b5998',
+  blue: '#3b5998', navy: '#1a3a5c', rojo: '#c0392b', red: '#c0392b',
+  verde: '#5a6e3f', green: '#5a6e3f', oliva: '#5a6e3f', beige: '#d4c5b2',
+  crema: '#efe3d1', caqui: '#c4a882', khaki: '#c4a882', marron: '#7c5643',
+  cafe: '#7c5643', rosa: '#d9a8b6',
+}
+
+const FALLBACK_COLORS = ['#1a1a1a', '#f5f5f0', '#1a3a5c', '#8a8a8a', '#d4c5b2'];
+
+function normalize(value: string) {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function getColorHex(color: string, index = 0) {
+  const normalized = normalize(color)
+  const found = Object.entries(COLOR_MAP).find(([key]) => normalized.includes(key))
+  return found?.[1] || FALLBACK_COLORS[index % FALLBACK_COLORS.length]
+}
 
 export default function CrearProducto() {
   const router = useRouter()
@@ -28,11 +49,54 @@ export default function CrearProducto() {
   const [preparationTime, setPreparationTime] = useState('')
   const [isAvailable, setIsAvailable] = useState(true)
   const [tallasInput, setTallasInput] = useState('')
-  const [coloresInput, setColoresInput] = useState('')
+  const [coloresList, setColoresList] = useState<{ color: string; image_url?: string }[]>([])
+  const [colorInputTemp, setColorInputTemp] = useState('')
+  const [uploadingColor, setUploadingColor] = useState<string | null>(null)
   const [modifiers, setModifiers] = useState<any[]>([])
   
   // Media handling
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
+
+  const addColor = () => {
+    const trimmed = colorInputTemp.trim()
+    if (!trimmed) return
+    if (coloresList.some(c => c.color.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error('Este color ya está en la lista')
+      return
+    }
+    setColoresList([...coloresList, { color: trimmed }])
+    setColorInputTemp('')
+  }
+
+  const removeColor = (colorName: string) => {
+    setColoresList(coloresList.filter(c => c.color !== colorName))
+  }
+
+  const uploadColorImage = async (colorName: string, file: File) => {
+    setUploadingColor(colorName)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const { data, error } = await supabase.storage
+        .from('productos')
+        .upload(`variants/${fileName}`, file)
+
+      if (error) throw error
+
+      const { data: publicUrlData } = supabase.storage
+        .from('productos')
+        .getPublicUrl(`variants/${fileName}`)
+
+      setColoresList(coloresList.map(c => 
+        c.color === colorName ? { ...c, image_url: publicUrlData.publicUrl } : c
+      ))
+      toast.success('Imagen subida correctamente')
+    } catch (err: any) {
+      toast.error('Error al subir imagen: ' + err.message)
+    } finally {
+      setUploadingColor(null)
+    }
+  }
 
   const [availableCategories, setAvailableCategories] = useState<any[]>([])
 
@@ -101,19 +165,21 @@ export default function CrearProducto() {
       const oldPrice = originalPrice ? parseFloat(originalPrice) : null
 
       // Formatear Variables Especiales
-      let variants = []
+      let variants: any[] = []
       if (templateType === 'moda') {
         const tList = tallasInput.split(',').map(s => s.trim()).filter(Boolean)
-        const cList = coloresInput.split(',').map(s => s.trim()).filter(Boolean)
         
         const tallasFinal = tList.length > 0 ? tList : [null]
-        const coloresFinal = cList.length > 0 ? cList : [null]
+        const coloresFinal = coloresList.length > 0 ? coloresList : [{ color: null }]
 
         for (const t of tallasFinal) {
           for (const c of coloresFinal) {
             const variant: any = {}
             if (t) variant.talla = t
-            if (c) variant.color = c
+            if (c.color) {
+              variant.color = c.color
+              if (c.image_url) variant.image_url = c.image_url
+            }
             variants.push(variant)
           }
         }
@@ -404,10 +470,83 @@ export default function CrearProducto() {
                   <p className="text-[10px] text-on-surface-variant">Separadas por comas (Ej: S, M, L, XL)</p>
                   <input value={tallasInput} onChange={(e) => setTallasInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Colores Disponibles</label>
-                  <p className="text-[10px] text-on-surface-variant">Separados por comas (Ej: Rojo, Azul Marino, Negro)</p>
-                  <input value={coloresInput} onChange={(e) => setColoresInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                  <div className="flex gap-2">
+                    <input 
+                      value={colorInputTemp} 
+                      onChange={(e) => setColorInputTemp(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addColor()
+                        }
+                      }}
+                      placeholder="Ej: Rojo, Azul Marino"
+                      className="flex-1 bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" 
+                    />
+                    <button type="button" onClick={addColor} className="bg-primary text-on-primary px-4 rounded-lg font-bold text-sm hover:brightness-110 transition-all flex items-center gap-2">
+                      <Plus size={16} /> Agregar
+                    </button>
+                  </div>
+                  
+                  {coloresList.length > 0 && (
+                    <div className="space-y-2 mt-4">
+                      {coloresList.map((c, i) => (
+                        <div key={c.color} className="flex items-center justify-between p-3 border border-outline-variant/20 rounded-xl bg-surface-container">
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-full border shadow-sm" style={{ backgroundColor: getColorHex(c.color, i) }}></div>
+                            <span className="font-bold text-sm text-on-surface">{c.color.toUpperCase()}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            {c.image_url ? (
+                              <div className="flex items-center gap-2">
+                                <img src={c.image_url} alt={c.color} className="w-8 h-8 rounded-md object-cover border border-outline-variant/30" />
+                                <div className="relative">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    onChange={(e) => {
+                                      if (e.target.files && e.target.files[0]) {
+                                        uploadColorImage(c.color, e.target.files[0])
+                                      }
+                                    }}
+                                    disabled={uploadingColor === c.color}
+                                  />
+                                  <button type="button" disabled={uploadingColor === c.color} className="text-[10px] uppercase tracking-widest bg-surface-variant hover:bg-surface-variant/80 text-on-surface px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold">
+                                    {uploadingColor === c.color ? 'Subiendo...' : <><Upload size={12}/> Cambiar</>}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="relative">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                  onChange={(e) => {
+                                    if (e.target.files && e.target.files[0]) {
+                                      uploadColorImage(c.color, e.target.files[0])
+                                    }
+                                  }}
+                                  disabled={uploadingColor === c.color}
+                                />
+                                <button type="button" disabled={uploadingColor === c.color} className="text-[10px] uppercase tracking-widest bg-surface-variant hover:bg-surface-variant/80 text-on-surface px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold">
+                                  {uploadingColor === c.color ? 'Subiendo...' : <><Upload size={12}/> Añadir Foto</>}
+                                </button>
+                              </div>
+                            )}
+                            
+                            <button type="button" onClick={() => removeColor(c.color)} className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
