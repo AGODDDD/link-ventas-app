@@ -1,6 +1,7 @@
 'use client'
 
 import React, { FormEvent, useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { fuzzySearch, SearchResult } from '@/lib/searchEngine'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { ProductMedia, Profile, Product } from '@/types/tienda'
@@ -273,6 +274,11 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
   const [currentFilter, setCurrentFilter] = useState('all')
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [showFiltersDrawer, setShowFiltersDrawer] = useState(false)
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [priceMin, setPriceMin] = useState<number | ''>('')
+  const [priceMax, setPriceMax] = useState<number | ''>('')
   const [catalogVisible, setCatalogVisible] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null)
@@ -294,11 +300,28 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
     setMounted(true)
   }, [])
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return null
+    return fuzzySearch(searchQuery, activeProducts)
+  }, [searchQuery, activeProducts])
+
+  const isFuzzyUsed = searchResults ? searchResults.some(r => r.isFuzzy) : false
+
   const filteredProducts = useMemo(() => {
-    return activeProducts.filter(product => {
-      return currentFilter === 'all' || product.category === currentFilter
-    })
-  }, [activeProducts, currentFilter])
+    let result = searchResults ? searchResults.map(r => r.product) : activeProducts
+    if (currentFilter !== 'all') {
+      result = result.filter(p => p.category === currentFilter)
+    }
+    if (selectedSizes.length > 0) {
+      result = result.filter(p => getVariants(p).some(v => v.talla && selectedSizes.includes(v.talla)))
+    }
+    if (selectedColors.length > 0) {
+      result = result.filter(p => getVariants(p).some(v => v.color && selectedColors.includes(normalize(v.color))))
+    }
+    if (priceMin !== '') result = result.filter(p => p.price >= Number(priceMin))
+    if (priceMax !== '') result = result.filter(p => p.price <= Number(priceMax))
+    return result
+  }, [searchResults, activeProducts, currentFilter, selectedSizes, selectedColors, priceMin, priceMax])
 
   const currentProductColor = (product: Product) => {
     const colors = getColors(product)
@@ -460,7 +483,9 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                 </div>
               </section>
 
-            <div className="filters-bar" id="filtersBar">
+            {/* FACET FILTERS BAR */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="filters-bar" id="filtersBar" style={{ margin: 0 }}>
                 <button className={`filter-btn ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => filterCatalog('all')}>Todos</button>
                 {categories.map(category => (
                   <button
@@ -472,6 +497,26 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   </button>
                 ))}
               </div>
+              
+              <button 
+                className="filter-drawer-btn" 
+                onClick={() => setShowFiltersDrawer(true)}
+              >
+                Filtros
+                {(selectedSizes.length > 0 || selectedColors.length > 0 || priceMin !== '' || priceMax !== '') && (
+                  <span className="filter-badge">
+                    {selectedSizes.length + selectedColors.length + (priceMin !== '' ? 1 : 0) + (priceMax !== '' ? 1 : 0)}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* AVISO FUZZY SEARCH */}
+            {isFuzzyUsed && searchQuery && (
+              <div className="mb-6 p-3 bg-zinc-50 border border-zinc-200 text-sm text-zinc-600 rounded">
+                No encontramos resultados exactos para '{searchQuery}'. Mostrando productos similares.
+              </div>
+            )}
 
 
             <div className="catalog-grid" id="catalogGrid">
@@ -647,63 +692,48 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             </div>
           </div>
           <div className="search-overlay-body">
-            {searchQuery.trim() ? (() => {
-              const query = normalize(searchQuery)
-              const matchedProducts = activeProducts.filter(p =>
-                normalize(p.name).includes(query) || normalize(p.category || '').includes(query) || normalize(p.description || '').includes(query)
-              )
-              // Text suggestions: unique name combos
-              const nameSuggestions = matchedProducts.slice(0, 6).map(p => p.name.toUpperCase())
-              // Products with thumbnails
-              const suggestedProducts = matchedProducts.slice(0, 8)
+            {searchQuery.trim().length >= 2 ? (() => {
+              const searchRes = fuzzySearch(searchQuery, activeProducts)
+              const matchedProducts = searchRes.map(r => r.product).slice(0, 5)
+              const hasFuzzy = searchRes.some(r => r.isFuzzy)
 
               return (
-                <>
-                  {nameSuggestions.length > 0 && (
-                    <div className="search-overlay-section">
-                      {nameSuggestions.map((name, i) => (
-                        <button key={i} className="search-suggestion-text" onClick={() => {
-                          const prod = matchedProducts[i]
+                <div className="search-overlay-section">
+                  {hasFuzzy && (
+                    <div className="text-sm text-zinc-500 mb-4 italic">
+                      Mostrando resultados similares a "{searchQuery}"
+                    </div>
+                  )}
+                  {matchedProducts.length > 0 ? (
+                    matchedProducts.map(p => {
+                      const media = getProductMedia(p)[0]
+                      return (
+                        <button key={p.id} className="search-product-row" onClick={() => {
                           setSearchOverlayOpen(false)
                           setSearchQuery('')
-                          openDetail(prod)
+                          openDetail(p)
                         }}>
-                          {name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {suggestedProducts.length > 0 && (
-                    <div className="search-overlay-section">
-                      <div className="search-overlay-section-title">PRODUCTOS SUGERIDOS</div>
-                      {suggestedProducts.map(p => {
-                        const media = getProductMedia(p)[0]
-                        return (
-                          <button key={p.id} className="search-product-row" onClick={() => {
-                            setSearchOverlayOpen(false)
-                            setSearchQuery('')
-                            openDetail(p)
-                          }}>
-                            <div className="search-product-thumb">
-                              {media.type === 'image' ? <img src={media.url} alt={p.name} /> : <video src={media.url} muted poster={media.poster_url} />}
-                            </div>
+                          <div className="search-product-thumb" style={{ width: 40, height: 40 }}>
+                            {media.type === 'image' ? <img src={media.url} alt={p.name} /> : <video src={media.url} muted poster={media.poster_url} />}
+                          </div>
+                          <div className="flex flex-col text-left flex-1">
                             <span className="search-product-name">{p.name.toUpperCase()}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                  {matchedProducts.length === 0 && (
+                            <span className="text-sm font-semibold mt-1">{formatPrice(p.price)}</span>
+                          </div>
+                        </button>
+                      )
+                    })
+                  ) : (
                     <div className="search-overlay-empty">
                       <p>No se encontraron resultados para "<strong>{searchQuery}</strong>"</p>
                     </div>
                   )}
-                </>
+                </div>
               )
             })() : (
               <div className="search-overlay-section">
                 <div className="search-overlay-section-title">PRODUCTOS POPULARES</div>
-                {activeProducts.slice(0, 6).map(p => {
+                {activeProducts.slice(0, 5).map(p => {
                   const media = getProductMedia(p)[0]
                   return (
                     <button key={p.id} className="search-product-row" onClick={() => {
@@ -711,15 +741,97 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                       setSearchQuery('')
                       openDetail(p)
                     }}>
-                      <div className="search-product-thumb">
+                      <div className="search-product-thumb" style={{ width: 40, height: 40 }}>
                         {media.type === 'image' ? <img src={media.url} alt={p.name} /> : <video src={media.url} muted poster={media.poster_url} />}
                       </div>
-                      <span className="search-product-name">{p.name.toUpperCase()}</span>
+                      <div className="flex flex-col text-left flex-1">
+                        <span className="search-product-name">{p.name.toUpperCase()}</span>
+                        <span className="text-sm font-semibold mt-1">{formatPrice(p.price)}</span>
+                      </div>
                     </button>
                   )
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* FILTERS DRAWER */}
+      {showFiltersDrawer && (
+        <div className="filters-drawer-overlay" onClick={() => setShowFiltersDrawer(false)}>
+          <div className="filters-drawer" onClick={e => e.stopPropagation()}>
+            <div className="filters-drawer-header">
+              <h2 className="text-lg font-bold uppercase">Filtros</h2>
+              <button className="text-sm underline" onClick={() => {
+                setSelectedSizes([])
+                setSelectedColors([])
+                setPriceMin('')
+                setPriceMax('')
+              }}>Limpiar</button>
+            </div>
+            
+            <div className="filters-drawer-body">
+              {/* PRECIO */}
+              <div className="filter-section">
+                <h3 className="filter-title">Precio</h3>
+                <div className="flex items-center gap-2">
+                  <input type="number" placeholder="Min" className="filter-input" value={priceMin} onChange={e => setPriceMin(e.target.value ? Number(e.target.value) : '')} />
+                  <span>-</span>
+                  <input type="number" placeholder="Max" className="filter-input" value={priceMax} onChange={e => setPriceMax(e.target.value ? Number(e.target.value) : '')} />
+                </div>
+              </div>
+
+              {/* TALLAS */}
+              <div className="filter-section">
+                <h3 className="filter-title">Talla</h3>
+                <div className="filter-options-grid">
+                  {uniqueValues(activeProducts.flatMap(p => getSizes(p))).map(size => (
+                    <label key={size} className="filter-checkbox-label">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedSizes.includes(size)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedSizes([...selectedSizes, size])
+                          else setSelectedSizes(selectedSizes.filter(s => s !== size))
+                        }}
+                      />
+                      <span className="uppercase">{size}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* COLORES */}
+              <div className="filter-section">
+                <h3 className="filter-title">Color</h3>
+                <div className="filter-options-grid">
+                  {uniqueValues(activeProducts.flatMap(p => getColors(p))).map(color => {
+                    const normColor = normalize(color)
+                    return (
+                      <label key={color} className="filter-checkbox-label">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedColors.includes(normColor)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedColors([...selectedColors, normColor])
+                            else setSelectedColors(selectedColors.filter(c => c !== normColor))
+                          }}
+                        />
+                        <span className="color-swatch-small" style={{ background: getColorHex(color) }} />
+                        <span className="capitalize">{color}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="filters-drawer-footer">
+              <button className="btn-primary w-full" onClick={() => setShowFiltersDrawer(false)}>
+                Ver {filteredProducts.length} resultados
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1890,4 +2002,43 @@ const modaUrbanStyles = `
   .moda-urban-template .search-overlay-body { padding: 1rem; }
   .moda-urban-template .search-overlay-input { font-size: 1.1rem; }
 }
+
+/* Filters Drawer & Buttons */
+.moda-urban-template .filter-drawer-btn {
+  display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--border);
+  padding: 8px 16px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s ease;
+}
+.moda-urban-template .filter-drawer-btn:hover { border-color: var(--text); }
+.moda-urban-template .filter-badge {
+  background: var(--text); color: #fff; width: 20px; height: 20px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+}
+
+.moda-urban-template .filters-drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300;
+  display: flex; justify-content: flex-start;
+  animation: fadeIn 0.2s ease-out;
+}
+.moda-urban-template .filters-drawer {
+  background: #fff; width: 350px; max-width: 85vw; height: 100%;
+  display: flex; flex-direction: column;
+  animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.moda-urban-template .filters-drawer-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.moda-urban-template .filters-drawer-body { flex: 1; overflow-y: auto; padding: 1.5rem; }
+.moda-urban-template .filters-drawer-footer { padding: 1.5rem; border-top: 1px solid var(--border); }
+
+.moda-urban-template .filter-section { margin-bottom: 2rem; }
+.moda-urban-template .filter-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.moda-urban-template .filter-input { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-size: 0.9rem; }
+.moda-urban-template .filter-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.moda-urban-template .filter-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; }
+.moda-urban-template .filter-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); }
+.moda-urban-template .color-swatch-small { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ddd; }
 `
