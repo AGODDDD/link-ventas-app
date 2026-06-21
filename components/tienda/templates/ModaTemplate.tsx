@@ -306,12 +306,14 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            const delay = entry.target.getAttribute('data-animate-delay') || '0'
+            ;(entry.target as HTMLElement).style.transitionDelay = `${delay}ms`
             entry.target.classList.add('animate-visible')
             observer.unobserve(entry.target)
           }
         })
       },
-      { threshold: 0.12 }
+      { threshold: 0.08 }
     )
 
     const elements = document.querySelectorAll('.moda-urban-template [data-animate]')
@@ -904,7 +906,7 @@ function ProductCard({
   const isOutOfStock = product.stock !== null && product.stock !== undefined && product.stock <= 0
 
   return (
-    <div className="product-card animate-in" data-animate={index % 2 === 0 ? 'from-left' : 'from-right'} style={{ animationDelay: `${index * 0.07}s` }}>
+    <div className="product-card" data-animate={index % 2 === 0 ? 'from-left' : 'from-right'} data-animate-delay={index * 100} style={{}}>
       <div className="product-image-wrapper" style={{ background: cardBg }} onClick={onOpenDetail}>
         {discount > 0 && <span className="product-tag">Oferta</span>}
         {!discount && product.created_at && <span className="product-tag new">Nuevo</span>}
@@ -2095,11 +2097,17 @@ const modaUrbanStyles = `
 .moda-urban-template .hero-cta:hover { background: var(--accent-hover); transform: translateY(-2px); }
 
 /* Scroll Animations */
-.moda-urban-template [data-animate] { opacity: 0; transition: opacity 0.7s ease, transform 0.7s ease; }
-.moda-urban-template [data-animate="from-left"] { transform: translateX(-60px); }
-.moda-urban-template [data-animate="from-right"] { transform: translateX(60px); }
-.moda-urban-template [data-animate="from-bottom"] { transform: translateY(40px); }
-.moda-urban-template [data-animate].animate-visible { opacity: 1; transform: translate(0); }
+.moda-urban-template [data-animate] {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.moda-urban-template [data-animate="from-left"] { transform: translateX(-80px); }
+.moda-urban-template [data-animate="from-right"] { transform: translateX(80px); }
+.moda-urban-template [data-animate="from-bottom"] { transform: translateY(60px); }
+.moda-urban-template [data-animate].animate-visible {
+  opacity: 1;
+  transform: translate(0, 0);
+}
 
 @media (max-width: 768px) {
   .moda-urban-template .hero-split { grid-template-columns: 1fr; min-height: auto; }
