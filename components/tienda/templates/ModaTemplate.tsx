@@ -399,7 +399,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  value={searchQuery}
                  onChange={(e) => {
                    setSearchQuery(e.target.value)
-                   if (selectedProduct) {
+                   if (!catalogVisible || selectedProduct) {
+                     setCatalogVisible(true)
                      setSelectedProduct(null)
                      window.scrollTo({ top: 0, behavior: 'smooth' })
                    }
@@ -440,7 +441,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  value={searchQuery}
                  onChange={(e) => {
                    setSearchQuery(e.target.value)
-                   if (selectedProduct) {
+                   if (!catalogVisible || selectedProduct) {
+                     setCatalogVisible(true)
                      setSelectedProduct(null)
                      window.scrollTo({ top: 0, behavior: 'smooth' })
                    }
