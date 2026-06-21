@@ -1527,7 +1527,7 @@ const modaUrbanStyles = `
 .moda-urban-template .modal-swatch:hover, .moda-urban-template .detail-swatch:hover { transform: scale(1.1); }
 .moda-urban-template .modal-swatch.selected, .moda-urban-template .detail-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--text); }
 .moda-urban-template .size-btn {
-  padding: 8px 14px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 500; transition: var(--transition); font-size: 0.85rem; color: var(--text);
+  padding: 8px 14px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 500; transition: var(--transition); font-size: 0.85rem; color: var(--text); text-transform: uppercase;
 }
 .moda-urban-template .size-btn:hover { border-color: #999; }
 .moda-urban-template .size-btn.selected { background: var(--text); color: #fff; border-color: var(--text); }
