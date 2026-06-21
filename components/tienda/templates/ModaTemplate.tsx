@@ -159,15 +159,31 @@ function ProductMediaFrame({
   className,
   hoverPlay = false,
   autoplay = false,
+  zoomable = false,
 }: {
   media: ProductMedia;
   alt: string;
   className?: string;
   hoverPlay?: boolean;
   autoplay?: boolean;
+  zoomable?: boolean;
 }) {
   const [isHovering, setIsHovering] = useState(false)
   const [isVideoReady, setIsVideoReady] = useState(false)
+  const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({})
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!zoomable || media.type !== 'image') return
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - left) / width) * 100
+    const y = ((e.clientY - top) / height) * 100
+    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: 'scale(2)' })
+  }
+
+  const handleMouseLeave = () => {
+    if (!zoomable || media.type !== 'image') return
+    setZoomStyle({ transformOrigin: 'center center', transform: 'scale(1)' })
+  }
 
   if (media.type === 'video') {
     if (hoverPlay) {
@@ -222,6 +238,18 @@ function ProductMediaFrame({
         onMouseLeave={hoverPlay ? pauseHoverVideo : undefined}
         aria-label={alt}
       />
+    )
+  }
+
+  if (zoomable && media.type === 'image') {
+    return (
+      <div 
+        className={`zoomable-image-container ${className || ''}`}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
+        <img src={media.url} alt={alt} style={zoomStyle} loading="lazy" />
+      </div>
     )
   }
 
@@ -293,21 +321,19 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
     const sizes = getSizes(product)
     const colors = getColors(product)
-    const hasExplicitSize = Object.prototype.hasOwnProperty.call(selectedSize, product.id)
-    const hasExplicitColor = Object.prototype.hasOwnProperty.call(selectedColorIndex, product.id)
 
-    if (sizes.length > 0 && !hasExplicitSize) {
+    const color = currentProductColor(product)
+    const size = currentProductSize(product)
+
+    if (sizes.length > 0 && !size) {
       toast.error('Selecciona una talla')
       return
     }
 
-    if (colors.length > 0 && !hasExplicitColor) {
+    if (colors.length > 0 && !color) {
       toast.error('Selecciona un color')
       return
     }
-
-    const color = currentProductColor(product)
-    const size = currentProductSize(product)
     const variantDetails = {
       ...(color ? { color } : {}),
       ...(size ? { talla: size } : {}),
@@ -392,7 +418,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             <button className="cart-btn" onClick={() => setCartOpen(true)}>
               <ShoppingBag size={18} />
               <span className="hidden sm:inline ml-1">Carrito</span>
-              <span className={`cart-count ${totalItems > 0 ? 'bump' : ''}`}>{totalItems}</span>
+              <span key={totalItems} className={`cart-count ${totalItems > 0 ? 'bump pop-animation' : ''}`}>{totalItems}</span>
             </button>
           </div>
         </div>
@@ -875,7 +901,14 @@ function DetailView({
       <div className="detail-layout">
         <div className="gallery-section">
           <div className="gallery-main">
-            <ProductMediaFrame media={activeMedia} alt={product.name} autoplay={activeMedia.type === 'video'} className="product-media" />
+            <ProductMediaFrame 
+              key={activeMedia.url} 
+              media={activeMedia} 
+              alt={product.name} 
+              autoplay={activeMedia.type === 'video'} 
+              zoomable={activeMedia.type === 'image'} 
+              className="product-media fade-in-image" 
+            />
             {activeMedia.type === 'video' && <span className="video-indicator gallery-video-indicator"><Play fill="currentColor" size={20}/></span>}
           </div>
           <div className="gallery-thumbs">
@@ -1694,4 +1727,23 @@ const modaUrbanStyles = `
 .moda-urban-template .review-feedback { font-size: 0.88rem; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid; margin-top: 0.25rem; }
 .moda-urban-template .review-feedback.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
 .moda-urban-template .review-feedback.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+
+/* Micro-animaciones */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.moda-urban-template .pop-animation { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+@keyframes fadeInImage {
+  from { opacity: 0.6; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+.moda-urban-template .fade-in-image { animation: fadeInImage 0.3s ease-out forwards; }
+
+.moda-urban-template .zoomable-image-container { overflow: hidden; position: relative; width: 100%; height: 100%; cursor: zoom-in; }
+.moda-urban-template .zoomable-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.1s ease-out; }
+
+.moda-urban-template .btn-add-cart:active { transform: scale(0.97); }
 `
