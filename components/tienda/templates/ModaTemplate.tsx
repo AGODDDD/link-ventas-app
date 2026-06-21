@@ -397,7 +397,13 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  type="search" 
                  placeholder="Buscar productos..." 
                  value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
+                 onChange={(e) => {
+                   setSearchQuery(e.target.value)
+                   if (selectedProduct) {
+                     setSelectedProduct(null)
+                     window.scrollTo({ top: 0, behavior: 'smooth' })
+                   }
+                 }}
                  className="search-input"
                />
              </div>
@@ -432,7 +438,13 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                  type="search" 
                  placeholder="Buscar productos..." 
                  value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
+                 onChange={(e) => {
+                   setSearchQuery(e.target.value)
+                   if (selectedProduct) {
+                     setSelectedProduct(null)
+                     window.scrollTo({ top: 0, behavior: 'smooth' })
+                   }
+                 }}
                  className="search-input"
                />
              </div>
