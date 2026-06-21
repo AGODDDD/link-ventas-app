@@ -495,26 +495,48 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
         {catalogVisible ? (
           <div id="catalogView">
             {!searchQuery && (
-              <section className="hero-split">
-                <div className="hero-split-text" data-animate="from-left">
-                  <span className="hero-tag">Nueva Coleccion</span>
-                  <h1 className="hero-heading">
-                    {storeName.toUpperCase()}
-                    <span className="hero-heading-underline">COLECCION</span>
-                  </h1>
-                  <p className="hero-desc">{description}</p>
-                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
-                    Ver catalogo
-                  </button>
+              <div className="hero-fullwidth" data-animate="from-bottom">
+                <img
+                  src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1400&q=80'}
+                  alt={storeName}
+                  className="hero-fullwidth-img"
+                />
+                <div className="hero-fullwidth-overlay">
+                  <div className="hero-tag-wrapper">
+                    <span className="hero-tag">SEE BEYOND</span>
+                  </div>
+                  <h1 className="hero-heading">{storeName.toUpperCase()}</h1>
+                  <div className="hero-desc-split">
+                    <span>{description.split(' ')[0] || 'inteligencia'}</span>
+                    <span>{description.split(' ').slice(1).join(' ') || 'en movimiento'}</span>
+                  </div>
                 </div>
-                <div className="hero-split-image" data-animate="from-right">
-                  <img 
-                    src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80'}
-                    alt={storeName}
-                    className="hero-img"
-                  />
+              </div>
+            )}
+
+            {!searchQuery && (
+              <div className="explore-strip" data-animate="from-bottom">
+                <span className="explore-strip-label">EXPLORE COLLECTION</span>
+                <div className="explore-strip-products">
+                  {activeProducts.slice(0, 3).map((product, i) => {
+                    const media = getProductMedia(product)[0]
+                    return (
+                      <button key={product.id} className="explore-strip-item" onClick={() => openDetail(product)}>
+                        <div className="explore-strip-img">
+                          {media.type === 'image' 
+                            ? <img src={media.url} alt={product.name} />
+                            : <video src={media.url} muted playsInline poster={media.poster_url || product.image_url} />
+                          }
+                        </div>
+                        <div className="explore-strip-info">
+                          <span className="explore-strip-name">{product.name.toUpperCase()}</span>
+                          <span className="explore-strip-price">{formatPrice(product.price)}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
-              </section>
+              </div>
             )}
 
             {/* FACET FILTERS BAR */}
@@ -2076,25 +2098,160 @@ const modaUrbanStyles = `
 .moda-urban-template .filter-checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--text); }
 .moda-urban-template .color-swatch-small { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #ddd; }
 
-/* Hero Split */
-.moda-urban-template .hero-split {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 560px;
-  margin-bottom: 3rem; overflow: hidden; border-radius: var(--radius);
+/* Hero Fullwidth NOEME Style */
+.moda-urban-template .hero-fullwidth {
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  min-height: 85vh;
+  max-height: 85vh;
+  overflow: hidden;
+  margin-bottom: 0;
+  border-radius: 0;
 }
-.moda-urban-template .hero-split-text {
-  display: flex; flex-direction: column; justify-content: center; padding: 4rem 3rem; background: #f9f9f9;
+.moda-urban-template .hero-fullwidth-img {
+  width: 100%;
+  height: 100%;
+  min-height: 85vh;
+  max-height: 85vh;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s ease;
 }
-.moda-urban-template .hero-split-image { overflow: hidden; }
-.moda-urban-template .hero-img {
-  width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.8s ease;
+.moda-urban-template .hero-fullwidth:hover .hero-fullwidth-img {
+  transform: scale(1.03);
 }
-.moda-urban-template .hero-split:hover .hero-img { transform: scale(1.03); }
-.moda-urban-template .hero-cta {
-  display: inline-block; margin-top: 2rem; padding: 12px 28px; background: var(--text);
-  color: #fff; border: none; border-radius: 50px; font-weight: 600; font-size: 0.9rem;
-  cursor: pointer; transition: var(--transition); align-self: flex-start;
+.moda-urban-template .hero-fullwidth-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 2.5rem 3rem;
 }
-.moda-urban-template .hero-cta:hover { background: var(--accent-hover); transform: translateY(-2px); }
+.moda-urban-template .hero-tag-wrapper {
+  margin-bottom: 2rem;
+}
+.moda-urban-template .hero-tag {
+  color: rgba(255,255,255,0.8) !important;
+  border: 1px solid rgba(255,255,255,0.4) !important;
+  border-radius: 50px;
+  padding: 8px 24px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: transparent !important;
+  align-self: flex-start;
+}
+.moda-urban-template .hero-heading {
+  color: #fff !important;
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  font-weight: 900;
+  letter-spacing: -1px;
+  line-height: 0.8;
+  text-transform: uppercase;
+  margin: 0;
+  text-align: center;
+  transform: scaleX(1.1);
+}
+.moda-urban-template .hero-heading-underline {
+  color: #fff !important;
+}
+.moda-urban-template .hero-heading-underline::after {
+  background: #fff !important;
+}
+.moda-urban-template .hero-desc-split {
+  color: #c7ffb0;
+  font-family: monospace;
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 900px;
+  margin-top: 2rem;
+  letter-spacing: 0.1em;
+}
+
+/* Explore Strip */
+.moda-urban-template .explore-strip {
+  padding: 4rem 0 2.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+.moda-urban-template .explore-strip-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a2b2b;
+  margin-bottom: 2.5rem;
+}
+.moda-urban-template .explore-strip-products {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+.moda-urban-template .explore-strip-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.moda-urban-template .explore-strip-img {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  border-radius: 8px;
+  background: transparent;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.moda-urban-template .explore-strip-img img,
+.moda-urban-template .explore-strip-img video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+.moda-urban-template .explore-strip-item:hover .explore-strip-img img,
+.moda-urban-template .explore-strip-item:hover .explore-strip-img video {
+  transform: scale(1.05);
+}
+
+.moda-urban-template .explore-strip-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.moda-urban-template .explore-strip-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #4a2b2b;
+}
+.moda-urban-template .explore-strip-price {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #4a2b2b;
+}
+@media (max-width: 768px) {
+  .moda-urban-template .explore-strip-products {
+    grid-template-columns: repeat(1, 1fr);
+  }
+}
 
 /* Scroll Animations */
 .moda-urban-template [data-animate] {
@@ -2110,8 +2267,8 @@ const modaUrbanStyles = `
 }
 
 @media (max-width: 768px) {
-  .moda-urban-template .hero-split { grid-template-columns: 1fr; min-height: auto; }
-  .moda-urban-template .hero-split-image { height: 320px; order: -1; }
-  .moda-urban-template .hero-split-text { padding: 2rem 1.5rem; }
+  .moda-urban-template .hero-fullwidth { min-height: 50vh; }
+  .moda-urban-template .hero-fullwidth-img { min-height: 50vh; }
+  .moda-urban-template .hero-fullwidth-overlay { padding: 2rem 1.5rem; }
 }
 `
