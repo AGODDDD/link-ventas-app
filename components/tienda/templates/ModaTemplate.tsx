@@ -2106,18 +2106,19 @@ const modaUrbanStyles = `
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  min-height: 85vh;
-  max-height: 85vh;
+  min-height: 58vh;
+  max-height: 58vh;
   overflow: hidden;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   border-radius: 0;
 }
 .moda-urban-template .hero-fullwidth-img {
   width: 100%;
   height: 100%;
-  min-height: 85vh;
-  max-height: 85vh;
+  min-height: 58vh;
+  max-height: 58vh;
   object-fit: cover;
+  object-position: center top;
   display: block;
   transition: transform 0.8s ease;
 }
@@ -2201,8 +2202,8 @@ const modaUrbanStyles = `
 }
 
 @media (max-width: 768px) {
-  .moda-urban-template .hero-fullwidth { min-height: 55vh; max-height: 55vh; }
-  .moda-urban-template .hero-fullwidth-img { min-height: 55vh; max-height: 55vh; }
+  .moda-urban-template .hero-fullwidth { min-height: 42vh; max-height: 42vh; }
+  .moda-urban-template .hero-fullwidth-img { min-height: 42vh; max-height: 42vh; }
   .moda-urban-template .hero-fullwidth-overlay { padding: 1.5rem 1.25rem 1.75rem; }
   .moda-urban-template .hero-brand-name { font-size: clamp(4rem, 22vw, 7rem) !important; line-height: 0.85; }
   .moda-urban-template .hero-subtitle-left,
