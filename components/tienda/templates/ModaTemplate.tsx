@@ -1,6 +1,6 @@
 'use client'
 
-import React, { FormEvent, useMemo, useState, useEffect } from 'react'
+import React, { FormEvent, useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { ProductMedia, Profile, Product } from '@/types/tienda'
@@ -271,6 +271,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [currentFilter, setCurrentFilter] = useState('all')
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [catalogVisible, setCatalogVisible] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null)
@@ -294,12 +296,9 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
   const filteredProducts = useMemo(() => {
     return activeProducts.filter(product => {
-      const matchesCategory = currentFilter === 'all' || product.category === currentFilter
-      const query = normalize(searchQuery)
-      const matchesSearch = query === '' || normalize(product.name).includes(query) || normalize(product.category || '').includes(query)
-      return matchesCategory && matchesSearch
+      return currentFilter === 'all' || product.category === currentFilter
     })
-  }, [activeProducts, currentFilter, searchQuery])
+  }, [activeProducts, currentFilter])
 
   const currentProductColor = (product: Product) => {
     const colors = getColors(product)
@@ -391,24 +390,10 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
           </div>
 
           <div className="header-center hidden md:flex">
-             <div className="search-container">
+             <button className="search-container" onClick={() => { setSearchOverlayOpen(true); setTimeout(() => searchInputRef.current?.focus(), 100) }}>
                <Search size={16} className="search-icon" />
-               <input 
-                 type="search" 
-                 placeholder="Buscar productos..." 
-                 value={searchQuery}
-                 onChange={(e) => {
-                   setSearchQuery(e.target.value)
-                   if (e.target.value) setCurrentFilter('all')
-                   if (!catalogVisible || selectedProduct) {
-                     setCatalogVisible(true)
-                     setSelectedProduct(null)
-                     window.scrollTo({ top: 0, behavior: 'smooth' })
-                   }
-                 }}
-                 className="search-input"
-               />
-             </div>
+               <span className="search-placeholder">Buscar productos...</span>
+             </button>
           </div>
 
           <div className="header-right">
@@ -434,24 +419,10 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
         {/* MOBILE NAV AND SEARCH (Slides down) */}
         <div className={`mobile-menu-drawer ${mobileMenuOpen ? 'show' : ''}`}>
           <div className="p-4 border-b border-zinc-100">
-            <div className="search-container w-full">
+            <button className="search-container w-full" onClick={() => { setMobileMenuOpen(false); setSearchOverlayOpen(true); setTimeout(() => searchInputRef.current?.focus(), 100) }}>
                <Search size={16} className="search-icon" />
-               <input 
-                 type="search" 
-                 placeholder="Buscar productos..." 
-                 value={searchQuery}
-                 onChange={(e) => {
-                   setSearchQuery(e.target.value)
-                   if (e.target.value) setCurrentFilter('all')
-                   if (!catalogVisible || selectedProduct) {
-                     setCatalogVisible(true)
-                     setSelectedProduct(null)
-                     window.scrollTo({ top: 0, behavior: 'smooth' })
-                   }
-                 }}
-                 className="search-input"
-               />
-             </div>
+               <span className="search-placeholder">Buscar productos...</span>
+            </button>
           </div>
           <nav>
             <ul className="nav-links">
@@ -478,9 +449,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       <main className="main-container" id="mainContent">
         {catalogVisible ? (
           <div id="catalogView">
-            {/* Solo mostramos hero si no hay busqueda activa */}
-            {!searchQuery && (
-              <section className="hero-editorial">
+            <section className="hero-editorial">
                 <div className="hero-editorial-inner">
                   <span className="hero-tag">Nueva Coleccion</span>
                   <h1 className="hero-heading">
@@ -490,10 +459,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   <p className="hero-desc">{description}</p>
                 </div>
               </section>
-            )}
 
-            {!searchQuery && (
-              <div className="filters-bar" id="filtersBar">
+            <div className="filters-bar" id="filtersBar">
                 <button className={`filter-btn ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => filterCatalog('all')}>Todos</button>
                 {categories.map(category => (
                   <button
@@ -505,13 +472,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   </button>
                 ))}
               </div>
-            )}
 
-            {searchQuery && (
-              <div className="mb-6 pb-2 border-b border-zinc-200">
-                <h2 className="text-lg font-semibold text-zinc-900">Resultados para: "{searchQuery}"</h2>
-              </div>
-            )}
 
             <div className="catalog-grid" id="catalogGrid">
               {filteredProducts.length === 0 ? (
@@ -666,6 +627,102 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       </footer>
 
       <SlideOverCart storeId={storeId} isOpen={cartOpen} onClose={() => setCartOpen(false)} templateType="moda" />
+
+      {/* SEARCH OVERLAY */}
+      {searchOverlayOpen && (
+        <div className="search-overlay">
+          <div className="search-overlay-header">
+            <div className="search-overlay-input-row">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Buscar productos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-overlay-input"
+                autoFocus
+              />
+              <button className="search-overlay-action" onClick={() => { /* just visual */ }} aria-label="Buscar"><Search size={22} /></button>
+              <button className="search-overlay-action" onClick={() => { setSearchOverlayOpen(false); setSearchQuery('') }} aria-label="Cerrar"><X size={22} /></button>
+            </div>
+          </div>
+          <div className="search-overlay-body">
+            {searchQuery.trim() ? (() => {
+              const query = normalize(searchQuery)
+              const matchedProducts = activeProducts.filter(p =>
+                normalize(p.name).includes(query) || normalize(p.category || '').includes(query) || normalize(p.description || '').includes(query)
+              )
+              // Text suggestions: unique name combos
+              const nameSuggestions = matchedProducts.slice(0, 6).map(p => p.name.toUpperCase())
+              // Products with thumbnails
+              const suggestedProducts = matchedProducts.slice(0, 8)
+
+              return (
+                <>
+                  {nameSuggestions.length > 0 && (
+                    <div className="search-overlay-section">
+                      {nameSuggestions.map((name, i) => (
+                        <button key={i} className="search-suggestion-text" onClick={() => {
+                          const prod = matchedProducts[i]
+                          setSearchOverlayOpen(false)
+                          setSearchQuery('')
+                          openDetail(prod)
+                        }}>
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {suggestedProducts.length > 0 && (
+                    <div className="search-overlay-section">
+                      <div className="search-overlay-section-title">PRODUCTOS SUGERIDOS</div>
+                      {suggestedProducts.map(p => {
+                        const media = getProductMedia(p)[0]
+                        return (
+                          <button key={p.id} className="search-product-row" onClick={() => {
+                            setSearchOverlayOpen(false)
+                            setSearchQuery('')
+                            openDetail(p)
+                          }}>
+                            <div className="search-product-thumb">
+                              {media.type === 'image' ? <img src={media.url} alt={p.name} /> : <video src={media.url} muted poster={media.poster_url} />}
+                            </div>
+                            <span className="search-product-name">{p.name.toUpperCase()}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {matchedProducts.length === 0 && (
+                    <div className="search-overlay-empty">
+                      <p>No se encontraron resultados para "<strong>{searchQuery}</strong>"</p>
+                    </div>
+                  )}
+                </>
+              )
+            })() : (
+              <div className="search-overlay-section">
+                <div className="search-overlay-section-title">PRODUCTOS POPULARES</div>
+                {activeProducts.slice(0, 6).map(p => {
+                  const media = getProductMedia(p)[0]
+                  return (
+                    <button key={p.id} className="search-product-row" onClick={() => {
+                      setSearchOverlayOpen(false)
+                      setSearchQuery('')
+                      openDetail(p)
+                    }}>
+                      <div className="search-product-thumb">
+                        {media.type === 'image' ? <img src={media.url} alt={p.name} /> : <video src={media.url} muted poster={media.poster_url} />}
+                      </div>
+                      <span className="search-product-name">{p.name.toUpperCase()}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -1762,4 +1819,75 @@ const modaUrbanStyles = `
 .moda-urban-template .zoomable-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.1s ease-out; }
 
 .moda-urban-template .btn-add-cart:active { transform: scale(0.97); }
+
+/* Search Overlay */
+.moda-urban-template .search-overlay {
+  position: fixed; inset: 0; z-index: 200; background: #fff;
+  display: flex; flex-direction: column;
+  animation: searchOverlayIn 0.25s ease-out;
+}
+@keyframes searchOverlayIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.moda-urban-template .search-overlay-header {
+  border-bottom: 2px solid var(--text); padding: 1.5rem 2rem;
+}
+.moda-urban-template .search-overlay-input-row {
+  display: flex; align-items: center; gap: 1rem; max-width: 800px; margin: 0 auto;
+}
+.moda-urban-template .search-overlay-input {
+  flex: 1; border: none; background: transparent; font-size: 1.25rem; font-weight: 400;
+  color: var(--text); outline: none; font-family: inherit; padding: 0.5rem 0;
+}
+.moda-urban-template .search-overlay-input::placeholder { color: #999; }
+.moda-urban-template .search-overlay-action {
+  background: none; border: none; cursor: pointer; color: var(--text); padding: 6px;
+  display: flex; align-items: center; justify-content: center; transition: opacity 0.15s;
+}
+.moda-urban-template .search-overlay-action:hover { opacity: 0.5; }
+.moda-urban-template .search-overlay-body {
+  flex: 1; overflow-y: auto; padding: 1.5rem 2rem; max-width: 800px; margin: 0 auto; width: 100%;
+}
+.moda-urban-template .search-overlay-section {
+  margin-bottom: 2rem;
+}
+.moda-urban-template .search-overlay-section-title {
+  font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; color: var(--text);
+  margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+}
+.moda-urban-template .search-suggestion-text {
+  display: block; width: 100%; text-align: left; background: none; border: none;
+  font-size: 0.9rem; font-weight: 500; color: var(--text); padding: 0.6rem 0;
+  cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.15s; font-family: inherit;
+}
+.moda-urban-template .search-suggestion-text:hover { opacity: 0.5; }
+.moda-urban-template .search-product-row {
+  display: flex; align-items: center; gap: 1rem; width: 100%; text-align: left;
+  background: none; border: none; padding: 0.75rem 0; cursor: pointer;
+  border-bottom: 1px solid #f0f0f0; transition: opacity 0.15s; font-family: inherit;
+}
+.moda-urban-template .search-product-row:last-child { border-bottom: none; }
+.moda-urban-template .search-product-row:hover { opacity: 0.6; }
+.moda-urban-template .search-product-thumb {
+  width: 64px; height: 80px; border-radius: 4px; overflow: hidden; background: #f5f5f5; flex-shrink: 0;
+}
+.moda-urban-template .search-product-thumb img,
+.moda-urban-template .search-product-thumb video {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.moda-urban-template .search-product-name {
+  font-size: 0.88rem; font-weight: 600; color: var(--text); letter-spacing: 0.03em;
+}
+.moda-urban-template .search-overlay-empty {
+  text-align: center; padding: 3rem 1rem; color: #888; font-size: 0.95rem;
+}
+.moda-urban-template .search-placeholder {
+  flex: 1; text-align: left; font-size: 0.95rem; color: #999; pointer-events: none;
+}
+@media (max-width: 768px) {
+  .moda-urban-template .search-overlay-header { padding: 1rem; }
+  .moda-urban-template .search-overlay-body { padding: 1rem; }
+  .moda-urban-template .search-overlay-input { font-size: 1.1rem; }
+}
 `
