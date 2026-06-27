@@ -306,32 +306,28 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
   useEffect(() => {
     if (!mounted) return
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-visible')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.06, rootMargin: '0px 0px -40px 0px' }
-    )
-
-    // Pequeño delay para asegurar que el DOM está listo
+    // Pequeño delay para asegurar que el DOM está completo
     const timer = setTimeout(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const delay = entry.target.getAttribute('data-animate-delay') || '0'
+              ;(entry.target as HTMLElement).style.transitionDelay = `${delay}ms`
+              entry.target.classList.add('animate-visible')
+              observer.unobserve(entry.target)
+            }
+          })
+        },
+        { threshold: 0.08 }
+      )
       const elements = document.querySelectorAll('.moda-urban-template [data-animate]')
-      elements.forEach(el => {
-        // Aplicar el delay desde el atributo si no está ya en el inline style
-        const delay = el.getAttribute('data-animate-delay')
-        if (delay && !(el as HTMLElement).style.transitionDelay) {
-          (el as HTMLElement).style.transitionDelay = `${delay}ms`
-        }
-        observer.observe(el)
-      })
-    }, 50)
+      elements.forEach(el => observer.observe(el))
 
-    return () => { observer.disconnect(); clearTimeout(timer) }
+      return () => observer.disconnect()
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [mounted, catalogVisible, selectedProduct])
 
   useEffect(() => {
@@ -602,36 +598,51 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                     <span className="hero-heading-underline">COLECCION</span>
                   </h1>
                   <p className="hero-desc">{description}</p>
-                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
+                  <button className="hero-cta" onClick={() => {
+                    document.getElementById('catalogSection')?.scrollIntoView({ behavior: 'smooth' })
+                  }}>
                     Ver catalogo
                   </button>
                 </div>
               </div>
             )}
 
-            {/* EXPLORE COLLECTION label */}
-            {!searchQuery && (
-              <div className="explore-collection-label" data-animate="fade-up" data-animate-delay="100">
-                <span>EXPLORE COLLECTION</span>
-              </div>
-            )}
-
-            {/* EDITORIAL SECTIONS */}
-            {!searchQuery && activeProducts.length >= 2 && (
+            {/* EDITORIAL SECTIONS — antes del catálogo */}
+            {activeProducts.length >= 2 && (
               <>
-                {/* Bloque 1 — Texto revelado con scroll */}
-                <section className="editorial-reveal" ref={editorialRevealRef}>
-                  <div className="editorial-reveal-inner">
-                    <p className="editorial-reveal-text">
-                      {['Cada', 'pieza', 'cuenta', 'una', 'historia.'].map((word, i) => (
-                        <span key={i} className="editorial-word" data-index={i}>{word}&nbsp;</span>
-                      ))}
-                    </p>
-                    <p className="editorial-reveal-sub">{description}</p>
+                {/* Bloque 1 — Trio: LA COLECCION */}
+                <section className="editorial-trio" ref={editorialTrioRef}>
+                  <div className="editorial-trio-label">La coleccion</div>
+                  <div className="editorial-trio-grid">
+                    {/* Mostrar hasta 4 productos, repitiendo si hay menos de 4 */}
+                    {Array.from({ length: Math.min(4, activeProducts.length) }).map((_, i) => {
+                      const product = activeProducts[i % activeProducts.length]
+                      return (
+                        <div
+                          key={`${product.id}-${i}`}
+                          className="editorial-trio-item"
+                          data-animate={i % 2 === 0 ? 'from-left' : 'from-right'}
+                          data-animate-delay={i * 150}
+                          onClick={() => openDetail(product)}
+                        >
+                          <div className="editorial-trio-img-wrap">
+                            <img
+                              src={getProductMedia(product)[0]?.url || ''}
+                              alt={product.name}
+                              className="editorial-trio-img"
+                            />
+                          </div>
+                          <div className="editorial-trio-info">
+                            <span className="editorial-trio-name">{product.name.toUpperCase()}</span>
+                            <span className="editorial-trio-price">{formatPrice(product.price)}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </section>
 
-                {/* Bloque 2 — Imagen + texto en parallax opuesto */}
+                {/* Bloque 2 — Feature: producto destacado */}
                 <section className="editorial-feature" ref={editorialFeatureRef}>
                   <div className="editorial-feature-img-wrap">
                     <img
@@ -653,102 +664,89 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   </div>
                 </section>
 
-                {/* Bloque 3 — 3 productos en secuencia con scrub */}
-                <section className="editorial-trio" ref={editorialTrioRef}>
-                  <div className="editorial-trio-label">La coleccion</div>
-                  <div className="editorial-trio-grid">
-                    {activeProducts.slice(1, Math.min(4, activeProducts.length)).map((product, i) => (
-                      <div
-                        key={product.id}
-                        className="editorial-trio-item"
-                        data-animate="from-bottom"
-                        data-animate-delay={i * 150}
-                        onClick={() => openDetail(product)}
-                      >
-                        <div className="editorial-trio-img-wrap">
-                          <img
-                            src={getProductMedia(product)[0]?.url || ''}
-                            alt={product.name}
-                            className="editorial-trio-img"
-                          />
-                        </div>
-                        <div className="editorial-trio-info">
-                          <span className="editorial-trio-name">{product.name.toUpperCase()}</span>
-                          <span className="editorial-trio-price">{formatPrice(product.price)}</span>
-                        </div>
-                      </div>
-                    ))}
+                {/* Bloque 3 — Texto revelado con scroll */}
+                <section className="editorial-reveal" ref={editorialRevealRef}>
+                  <div className="editorial-reveal-inner">
+                    <p className="editorial-reveal-text">
+                      {['Cada', 'pieza', 'cuenta', 'una', 'historia.'].map((word, i) => (
+                        <span key={i} className="editorial-word" data-index={i}>{word}&nbsp;</span>
+                      ))}
+                    </p>
+                    <p className="editorial-reveal-sub">{description}</p>
                   </div>
                 </section>
               </>
             )}
 
-            {/* FACET FILTERS BAR */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="filters-bar" id="filtersBar" style={{ margin: 0 }}>
-                <button className={`filter-btn ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => filterCatalog('all')}>Todos</button>
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    className={`filter-btn ${currentFilter === category ? 'active' : ''}`}
-                    onClick={() => filterCatalog(category)}
-                  >
-                    {categoryLabel(category)}
-                  </button>
-                ))}
-              </div>
-              
-              <button 
-                className="filter-drawer-btn" 
-                onClick={() => setShowFiltersDrawer(true)}
-              >
-                Filtros
-                {(selectedSizes.length > 0 || selectedColors.length > 0 || priceMin !== '' || priceMax !== '') && (
-                  <span className="filter-badge">
-                    {selectedSizes.length + selectedColors.length + (priceMin !== '' ? 1 : 0) + (priceMax !== '' ? 1 : 0)}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* AVISO FUZZY SEARCH */}
-            {isFuzzyUsed && searchQuery && (
-              <div className="mb-6 p-3 bg-zinc-50 border border-zinc-200 text-sm text-zinc-600 rounded">
-                No encontramos resultados exactos para '{searchQuery}'. Mostrando productos similares.
-              </div>
-            )}
-
-
-            <div className="catalog-grid" id="catalogGrid">
-              {filteredProducts.length === 0 ? (
-                <div className="empty-catalog">
-                  <strong>No encontramos productos para tu busqueda</strong>
-                  <span>Intenta con otras palabras o categorias.</span>
+            {/* CATALOG SECTION */}
+            <div id="catalogSection">
+              {/* FACET FILTERS BAR */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="filters-bar" id="filtersBar" style={{ margin: 0 }}>
+                  <button className={`filter-btn ${currentFilter === 'all' ? 'active' : ''}`} onClick={() => filterCatalog('all')}>Todos</button>
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      className={`filter-btn ${currentFilter === category ? 'active' : ''}`}
+                      onClick={() => filterCatalog(category)}
+                    >
+                      {categoryLabel(category)}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                filteredProducts.map((product, index) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    index={index}
-                    selectedColorIndex={selectedColorIndex[product.id] || 0}
-                    onColorChange={(colorIndex) => setSelectedColorIndex(prev => ({ ...prev, [product.id]: colorIndex }))}
-                    onOpenDetail={() => openDetail(product)}
-                    onOpenQuickView={() => { setQuickViewProduct(product); setModalQty(1) }}
-                    onQuickAdd={() => {
-                      if (getVariants(product).length > 0) {
-                        setQuickViewProduct(product)
-                        setModalQty(1)
-                        return
-                      }
-                      addToCart(product)
-                    }}
-                    isReadOnly={isReadOnly}
-                  />
-                ))
+                
+                <button 
+                  className="filter-drawer-btn" 
+                  onClick={() => setShowFiltersDrawer(true)}
+                >
+                  Filtros
+                  {(selectedSizes.length > 0 || selectedColors.length > 0 || priceMin !== '' || priceMax !== '') && (
+                    <span className="filter-badge">
+                      {selectedSizes.length + selectedColors.length + (priceMin !== '' ? 1 : 0) + (priceMax !== '' ? 1 : 0)}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* AVISO FUZZY SEARCH */}
+              {isFuzzyUsed && searchQuery && (
+                <div className="mb-6 p-3 bg-zinc-50 border border-zinc-200 text-sm text-zinc-600 rounded">
+                  No encontramos resultados exactos para '{searchQuery}'. Mostrando productos similares.
+                </div>
               )}
+
+              <div className="catalog-grid" id="catalogGrid">
+                {filteredProducts.length === 0 ? (
+                  <div className="empty-catalog">
+                    <strong>No encontramos productos para tu busqueda</strong>
+                    <span>Intenta con otras palabras o categorias.</span>
+                  </div>
+                ) : (
+                  filteredProducts.map((product, index) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      index={index}
+                      selectedColorIndex={selectedColorIndex[product.id] || 0}
+                      onColorChange={(colorIndex) => setSelectedColorIndex(prev => ({ ...prev, [product.id]: colorIndex }))}
+                      onOpenDetail={() => openDetail(product)}
+                      onOpenQuickView={() => { setQuickViewProduct(product); setModalQty(1) }}
+                      onQuickAdd={() => {
+                        if (getVariants(product).length > 0) {
+                          setQuickViewProduct(product)
+                          setModalQty(1)
+                          return
+                        }
+                        addToCart(product)
+                      }}
+                      isReadOnly={isReadOnly}
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
+
         ) : selectedProduct ? (
           <DetailView
             product={selectedProduct}
@@ -1074,8 +1072,8 @@ function ProductCard({
   return (
     <div
       className="product-card"
-      data-animate="fade-up"
-      data-animate-delay={String(Math.min((index % 4) * 100, 300))}
+      data-animate={index % 2 === 0 ? 'from-left' : 'from-right'}
+      data-animate-delay={index * 100}
       style={{}}
     >
       <div className="product-image-wrapper" style={{ background: cardBg }} onClick={onOpenDetail}>
@@ -2268,8 +2266,8 @@ const modaUrbanStyles = `
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  min-height: 58vh;
-  max-height: 58vh;
+  min-height: 55vh;
+  max-height: 55vh;
   overflow: hidden;
   margin-bottom: 2rem;
   border-radius: 0;
@@ -2277,8 +2275,8 @@ const modaUrbanStyles = `
 .moda-urban-template .hero-fullwidth-img {
   width: 100%;
   height: 100%;
-  min-height: 58vh;
-  max-height: 58vh;
+  min-height: 55vh;
+  max-height: 55vh;
   object-fit: cover;
   object-position: center 15%;
   display: block;
@@ -2301,8 +2299,8 @@ const modaUrbanStyles = `
 
 .moda-urban-template .hero-fullwidth .hero-heading {
   color: #fff !important;
-  font-size: clamp(2rem, 4vw, 3.5rem) !important;
-  letter-spacing: -1px;
+  font-size: clamp(2.5rem, 6vw, 5rem) !important;
+  letter-spacing: -2px;
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
@@ -2448,8 +2446,8 @@ const modaUrbanStyles = `
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
-  min-height: 600px;
-  margin: 0 0 4rem;
+  min-height: 480px;
+  margin: 2rem 0 2rem;
   overflow: hidden;
 }
 .moda-urban-template .editorial-feature-img-wrap {
@@ -2467,7 +2465,7 @@ const modaUrbanStyles = `
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 4rem 3rem;
+  padding: 2.5rem 2.5rem;
   background: #f9f9f9;
 }
 .moda-urban-template .editorial-feature-label {
@@ -2522,8 +2520,8 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .editorial-trio-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
 }
 .moda-urban-template .editorial-trio-item {
   opacity: 0;
@@ -2561,6 +2559,6 @@ const modaUrbanStyles = `
 @media (max-width: 768px) {
   .moda-urban-template .editorial-feature { grid-template-columns: 1fr; }
   .moda-urban-template .editorial-feature-img-wrap { height: 400px; }
-  .moda-urban-template .editorial-trio-grid { grid-template-columns: 1fr 1fr; }
+  .moda-urban-template .editorial-trio-grid { grid-template-columns: repeat(2, 1fr); }
 }
 `
