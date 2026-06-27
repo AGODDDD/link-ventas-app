@@ -274,6 +274,9 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
   const [currentFilter, setCurrentFilter] = useState('all')
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const editorialRevealRef = useRef<HTMLElement>(null)
+  const editorialFeatureRef = useRef<HTMLElement>(null)
+  const editorialTrioRef = useRef<HTMLElement>(null)
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false)
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
@@ -330,6 +333,88 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
     return () => { observer.disconnect(); clearTimeout(timer) }
   }, [mounted, catalogVisible, selectedProduct])
+
+  useEffect(() => {
+    if (!mounted) return
+    let ctx: any = null
+
+    const initGSAP = async () => {
+      const { default: gsap } = await import('gsap')
+      const { ScrollTrigger } = await import('gsap/ScrollTrigger')
+      gsap.registerPlugin(ScrollTrigger)
+
+      ctx = gsap.context(() => {
+        // Parallax de la imagen — se mueve más lento que el scroll
+        gsap.to('.moda-urban-template .hero-fullwidth-img', {
+          yPercent: 30,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.moda-urban-template .hero-fullwidth',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true
+          }
+        })
+
+        // Texto se mueve más rápido — efecto de profundidad
+        gsap.to('.moda-urban-template .hero-fullwidth-overlay', {
+          yPercent: -8,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.moda-urban-template .hero-fullwidth',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true
+          }
+        })
+
+        // Editorial Reveal — palabras se revelan secuencialmente con scrub
+        gsap.fromTo('.editorial-word',
+          { opacity: 0.1, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            stagger: 0.1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '.editorial-reveal',
+              start: 'top 80%',
+              end: 'bottom 40%',
+              scrub: 1
+            }
+          }
+        )
+
+        // Editorial Feature — parallax opuesto imagen/texto
+        gsap.to('.editorial-feature-img', {
+          yPercent: -15,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.editorial-feature',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        })
+        gsap.to('.editorial-feature-text', {
+          yPercent: 10,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.editorial-feature',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        })
+      })
+    }
+
+    initGSAP()
+
+    return () => {
+      if (ctx) ctx.revert()
+    }
+  }, [mounted])
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return null
@@ -506,24 +591,20 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             {!searchQuery && (
               <div className="hero-fullwidth">
                 <img
-                  src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=1400&q=80'}
+                  src={perfil.hero_image_url || 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1400&q=80'}
                   alt={storeName}
                   className="hero-fullwidth-img"
                 />
                 <div className="hero-fullwidth-overlay">
-                  {/* Badge pill centrado en la parte superior */}
-                  <div className="hero-top-badge-row" data-animate="blur-in" data-animate-delay="0">
-                    <span className="hero-badge-pill">{perfil.hero_tagline || 'SEE BEYOND'}</span>
-                  </div>
-
-                  {/* Nombre de marca masivo */}
-                  <h1 className="hero-brand-name" data-animate="zoom-in" data-animate-delay="100">{storeName.toUpperCase()}</h1>
-
-                  {/* Subtítulo dividido */}
-                  <div className="hero-subtitle-row">
-                    <span className="hero-subtitle-left" data-animate="fade-left" data-animate-delay="250">{perfil.hero_subtitle_left || 'intelligence'}</span>
-                    <span className="hero-subtitle-right" data-animate="fade-right" data-animate-delay="250">{perfil.hero_subtitle_right || 'in motion'}</span>
-                  </div>
+                  <span className="hero-tag">Nueva Coleccion</span>
+                  <h1 className="hero-heading">
+                    {storeName.toUpperCase()}
+                    <span className="hero-heading-underline">COLECCION</span>
+                  </h1>
+                  <p className="hero-desc">{description}</p>
+                  <button className="hero-cta" onClick={() => filterCatalog('all')}>
+                    Ver catalogo
+                  </button>
                 </div>
               </div>
             )}
@@ -533,6 +614,73 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
               <div className="explore-collection-label" data-animate="fade-up" data-animate-delay="100">
                 <span>EXPLORE COLLECTION</span>
               </div>
+            )}
+
+            {/* EDITORIAL SECTIONS */}
+            {!searchQuery && activeProducts.length >= 2 && (
+              <>
+                {/* Bloque 1 — Texto revelado con scroll */}
+                <section className="editorial-reveal" ref={editorialRevealRef}>
+                  <div className="editorial-reveal-inner">
+                    <p className="editorial-reveal-text">
+                      {['Cada', 'pieza', 'cuenta', 'una', 'historia.'].map((word, i) => (
+                        <span key={i} className="editorial-word" data-index={i}>{word}&nbsp;</span>
+                      ))}
+                    </p>
+                    <p className="editorial-reveal-sub">{description}</p>
+                  </div>
+                </section>
+
+                {/* Bloque 2 — Imagen + texto en parallax opuesto */}
+                <section className="editorial-feature" ref={editorialFeatureRef}>
+                  <div className="editorial-feature-img-wrap">
+                    <img
+                      src={getProductMedia(activeProducts[0])[0]?.url || ''}
+                      alt={activeProducts[0]?.name}
+                      className="editorial-feature-img"
+                    />
+                  </div>
+                  <div className="editorial-feature-text">
+                    <span className="editorial-feature-label">Destacado</span>
+                    <h2 className="editorial-feature-title">{activeProducts[0]?.name?.toUpperCase()}</h2>
+                    <p className="editorial-feature-price">{formatPrice(activeProducts[0]?.price)}</p>
+                    <button
+                      className="editorial-feature-cta"
+                      onClick={() => openDetail(activeProducts[0])}
+                    >
+                      Ver producto
+                    </button>
+                  </div>
+                </section>
+
+                {/* Bloque 3 — 3 productos en secuencia con scrub */}
+                <section className="editorial-trio" ref={editorialTrioRef}>
+                  <div className="editorial-trio-label">La coleccion</div>
+                  <div className="editorial-trio-grid">
+                    {activeProducts.slice(1, Math.min(4, activeProducts.length)).map((product, i) => (
+                      <div
+                        key={product.id}
+                        className="editorial-trio-item"
+                        data-animate="from-bottom"
+                        data-animate-delay={i * 150}
+                        onClick={() => openDetail(product)}
+                      >
+                        <div className="editorial-trio-img-wrap">
+                          <img
+                            src={getProductMedia(product)[0]?.url || ''}
+                            alt={product.name}
+                            className="editorial-trio-img"
+                          />
+                        </div>
+                        <div className="editorial-trio-info">
+                          <span className="editorial-trio-name">{product.name.toUpperCase()}</span>
+                          <span className="editorial-trio-price">{formatPrice(product.price)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
             )}
 
             {/* FACET FILTERS BAR */}
@@ -2151,55 +2299,49 @@ const modaUrbanStyles = `
   padding: 2rem 2.5rem 2.5rem;
 }
 
-/* Badge pill centrado en el top */
-.moda-urban-template .hero-top-badge-row {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-}
-.moda-urban-template .hero-badge-pill {
+.moda-urban-template .hero-fullwidth .hero-heading {
+  color: #fff !important;
+  font-size: clamp(2rem, 4vw, 3.5rem) !important;
+  letter-spacing: -1px;
   display: inline-flex;
-  align-items: center;
-  border: 1.5px solid rgba(255,255,255,0.8);
+  flex-direction: column;
+  align-items: flex-start;
+}
+.moda-urban-template .hero-fullwidth .hero-heading-underline {
+  color: #fff !important;
+}
+.moda-urban-template .hero-fullwidth .hero-heading-underline::after {
+  background: #fff !important;
+}
+.moda-urban-template .hero-fullwidth .hero-tag {
+  color: rgba(255,255,255,0.8) !important;
+  border-color: rgba(255,255,255,0.4) !important;
+  background: transparent !important;
+  align-self: flex-start;
+}
+.moda-urban-template .hero-fullwidth .hero-desc {
+  color: rgba(255,255,255,0.8);
+  max-width: 500px;
+}
+.moda-urban-template .hero-fullwidth .hero-cta {
+  background: #fff;
+  color: #1a1a1a;
+  border: none;
+  padding: 14px 32px;
   border-radius: 50px;
-  padding: 6px 22px;
-  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: 2rem;
+  align-self: flex-start;
+  width: auto;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #fff;
-  background: transparent;
 }
-
-/* Nombre de marca masivo en verde lima */
-.moda-urban-template .hero-brand-name {
-  color: #c8f75a !important;
-  font-size: clamp(5.5rem, 17vw, 14rem) !important;
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  line-height: 0.88;
-  text-transform: uppercase;
-  margin: 0;
-  text-align: center;
-  width: 100%;
-  font-stretch: condensed;
-  text-shadow: 0 4px 40px rgba(0,0,0,0.18);
-}
-
-/* Subtítulo dividido izquierda / derecha */
-.moda-urban-template .hero-subtitle-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  width: 100%;
-}
-.moda-urban-template .hero-subtitle-left,
-.moda-urban-template .hero-subtitle-right {
-  color: rgba(255,255,255,0.92);
-  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  font-style: italic;
+.moda-urban-template .hero-fullwidth .hero-cta:hover {
+  background: rgba(255,255,255,0.85);
+  transform: translateY(-2px);
 }
 
 /* ═══════════════════════════════════════════
@@ -2267,8 +2409,158 @@ const modaUrbanStyles = `
   .moda-urban-template .hero-fullwidth { min-height: 42vh; max-height: 42vh; }
   .moda-urban-template .hero-fullwidth-img { min-height: 42vh; max-height: 42vh; }
   .moda-urban-template .hero-fullwidth-overlay { padding: 1.5rem 1.25rem 1.75rem; }
-  .moda-urban-template .hero-brand-name { font-size: clamp(4rem, 22vw, 7rem) !important; line-height: 0.85; }
-  .moda-urban-template .hero-subtitle-left,
-  .moda-urban-template .hero-subtitle-right { font-size: 0.8rem; }
+}
+/* EDITORIAL SECTIONS */
+.moda-urban-template .editorial-reveal {
+  background: #0a0a0a;
+  padding: 8rem 2rem;
+  text-align: center;
+  width: 100vw;
+  left: 50%;
+  margin-left: -50vw;
+  position: relative;
+}
+.moda-urban-template .editorial-reveal-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.moda-urban-template .editorial-reveal-text {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -2px;
+  line-height: 1.1;
+  margin-bottom: 2rem;
+}
+.moda-urban-template .editorial-word {
+  display: inline-block;
+  opacity: 0.1;
+  transition: none;
+}
+.moda-urban-template .editorial-reveal-sub {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.5);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+.moda-urban-template .editorial-feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 600px;
+  margin: 0 0 4rem;
+  overflow: hidden;
+}
+.moda-urban-template .editorial-feature-img-wrap {
+  overflow: hidden;
+  position: relative;
+}
+.moda-urban-template .editorial-feature-img {
+  width: 100%;
+  height: 120%;
+  object-fit: cover;
+  display: block;
+  margin-top: -10%;
+}
+.moda-urban-template .editorial-feature-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem 3rem;
+  background: #f9f9f9;
+}
+.moda-urban-template .editorial-feature-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 1rem;
+}
+.moda-urban-template .editorial-feature-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--text);
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+.moda-urban-template .editorial-feature-price {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2rem;
+}
+.moda-urban-template .editorial-feature-cta {
+  align-self: flex-start;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.moda-urban-template .editorial-feature-cta:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+.moda-urban-template .editorial-trio {
+  padding: 4rem 0;
+  margin-bottom: 4rem;
+}
+.moda-urban-template .editorial-trio-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 2rem;
+}
+.moda-urban-template .editorial-trio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+.moda-urban-template .editorial-trio-item {
+  opacity: 0;
+  cursor: pointer;
+}
+.moda-urban-template .editorial-trio-img-wrap {
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  background: #f5f5f5;
+}
+.moda-urban-template .editorial-trio-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+.moda-urban-template .editorial-trio-item:hover .editorial-trio-img {
+  transform: scale(1.04);
+}
+.moda-urban-template .editorial-trio-name {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+.moda-urban-template .editorial-trio-price {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-light);
+}
+@media (max-width: 768px) {
+  .moda-urban-template .editorial-feature { grid-template-columns: 1fr; }
+  .moda-urban-template .editorial-feature-img-wrap { height: 400px; }
+  .moda-urban-template .editorial-trio-grid { grid-template-columns: 1fr 1fr; }
 }
 `
