@@ -519,8 +519,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
         <div className="header-inner">
           <div className="header-left">
             <button className="menu-toggle" aria-label="Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}><Menu size={20} /></button>
-            <a href="#" className="logo" onClick={goToCatalog}>
-              <span className="logo-icon">{storeName.slice(0, 2).toUpperCase()}</span> <span className="logo-text">{storeName}</span>
+            <a href="#" className="logo-moda" onClick={goToCatalog}>
+              {storeName.toUpperCase()}
             </a>
           </div>
 
@@ -897,12 +897,13 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       <footer className="moda-footer">
         <div className="moda-footer-inner">
           <div className="moda-footer-brand">
-            <span className="moda-footer-logo">{storeName.slice(0, 2).toUpperCase()}</span>
-            <span className="moda-footer-name">{storeName}</span>
+            <span className="moda-footer-name">{storeName.toUpperCase()}</span>
           </div>
 
-          <div className="moda-footer-social">
-            {perfil.social_instagram && (
+          {(perfil.social_instagram || perfil.social_tiktok || perfil.social_facebook) && (
+            <div className="moda-footer-social">
+              <span className="moda-footer-social-label">Síguenos en</span>
+              {perfil.social_instagram && (
               <a
                 href={`https://instagram.com/${perfil.social_instagram}`}
                 target="_blank"
@@ -944,6 +945,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
               </a>
             )}
           </div>
+          )}
 
           <p className="moda-footer-copy">© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
         </div>
@@ -1770,6 +1772,18 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .header-left, .moda-urban-template .header-right { display: flex; align-items: center; gap: 1rem; }
 .moda-urban-template .header-center { flex: 1; max-width: 400px; margin: 0 2rem; }
+.moda-urban-template .logo-moda {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text);
+  font-family: 'Georgia', serif;
+}
+.moda-urban-template .logo-moda:hover {
+  opacity: 0.7;
+}
 
 .moda-urban-template .logo {
   font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text);
@@ -2523,25 +2537,26 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .editorial-feature {
   display: grid;
-  grid-template-columns: 55% 45%;
+  grid-template-columns: 1fr 1fr;
   gap: 0;
-  min-height: 700px;
-  margin: 0;
   overflow: hidden;
-  background: #fafafa;
+  margin: 0 0 0;
+  align-items: stretch;
 }
 .moda-urban-template .editorial-feature-img-wrap {
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
   background: #f0f0f0;
-  min-height: 700px;
+  min-height: 650px;
 }
 .moda-urban-template .editorial-feature-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
+  object-fit: contain;
+  object-position: center center;
+  padding: 2rem;
 }
 .moda-urban-template .editorial-feature-content {
   display: flex;
@@ -2549,7 +2564,6 @@ const modaUrbanStyles = `
   justify-content: space-between;
   padding: 4rem 3.5rem;
   background: #0a0a0a;
-  min-height: 700px;
 }
 .moda-urban-template .editorial-feature-top {
   display: flex;
@@ -2708,9 +2722,11 @@ const modaUrbanStyles = `
 }
 /* Footer */
 .moda-urban-template .moda-footer {
-  background: #0a0a0a;
+  background: linear-gradient(135deg, #ffffff 0%, #d8dbe0 25%, #a6aab2 60%, #8b8f97 100%);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.9), inset 0 -5px 15px rgba(0, 0, 0, 0.2), 0 -4px 15px rgba(0, 0, 0, 0.15);
   padding: 3rem 2rem;
   margin-top: 4rem;
+  border-top: 1px solid rgba(255,255,255,0.6);
 }
 .moda-urban-template .moda-footer-inner {
   max-width: 1300px;
@@ -2726,52 +2742,51 @@ const modaUrbanStyles = `
   align-items: center;
   gap: 10px;
 }
-.moda-urban-template .moda-footer-logo {
-  width: 34px;
-  height: 34px;
-  background: #fff;
-  color: #0a0a0a;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 900;
-  flex-shrink: 0;
-}
 .moda-urban-template .moda-footer-name {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 0.05em;
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #0a0a0a;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
+  font-family: 'Georgia', serif;
 }
 .moda-urban-template .moda-footer-social {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1.5rem;
+}
+.moda-urban-template .moda-footer-social-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0a0a0a;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: -0.5rem;
 }
 .moda-urban-template .moda-footer-social-link {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.7);
+  color: rgba(10,10,10,0.5);
   text-decoration: none;
   transition: all 0.2s ease;
+  background: transparent;
 }
 .moda-urban-template .moda-footer-social-link:hover {
-  border-color: #fff;
-  color: #fff;
-  background: rgba(255,255,255,0.08);
+  color: #0a0a0a;
   transform: translateY(-2px);
+}
+.moda-urban-template .moda-footer-social-link svg {
+  width: 24px;
+  height: 24px;
 }
 .moda-urban-template .moda-footer-copy {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.3);
+  color: rgba(10,10,10,0.5);
   margin: 0;
   letter-spacing: 0.03em;
 }
