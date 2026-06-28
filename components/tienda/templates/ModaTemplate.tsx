@@ -642,27 +642,56 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                   </div>
                 </section>
 
-                {/* Bloque 2 — Feature: producto destacado */}
-                <section className="editorial-feature" ref={editorialFeatureRef}>
-                  <div className="editorial-feature-img-wrap">
-                    <img
-                      src={getProductMedia(activeProducts[0])[0]?.url || ''}
-                      alt={activeProducts[0]?.name}
-                      className="editorial-feature-img"
-                    />
-                  </div>
-                  <div className="editorial-feature-text">
-                    <span className="editorial-feature-label">Destacado</span>
-                    <h2 className="editorial-feature-title">{activeProducts[0]?.name?.toUpperCase()}</h2>
-                    <p className="editorial-feature-price">{formatPrice(activeProducts[0]?.price)}</p>
-                    <button
-                      className="editorial-feature-cta"
-                      onClick={() => openDetail(activeProducts[0])}
-                    >
-                      Ver producto
-                    </button>
-                  </div>
-                </section>
+                {/* Bloque 2 — Feature: marca y beneficios */}
+                {activeProducts.length >= 1 && (
+                  <section className="editorial-feature" ref={editorialFeatureRef}>
+                    <div className="editorial-feature-img-wrap" data-animate="from-left">
+                      <img
+                        src={getProductMedia(activeProducts[0])[0]?.url || ''}
+                        alt={activeProducts[0]?.name}
+                        className="editorial-feature-img"
+                      />
+                    </div>
+                    <div className="editorial-feature-content" data-animate="from-right">
+
+                      {/* TOP — Identidad de marca */}
+                      <div className="editorial-feature-top">
+                        <span className="editorial-feature-eyebrow">Quienes somos</span>
+                        <h2 className="editorial-feature-brand">{storeName.toUpperCase()}</h2>
+                        <p className="editorial-feature-desc">{description}</p>
+                      </div>
+
+                      {/* MIDDLE — Por qué elegirnos */}
+                      {Array.isArray((perfil as any).benefits) && ((perfil as any).benefits as any[]).length > 0 && (
+                        <div className="editorial-feature-middle">
+                          <span className="editorial-feature-section-label">Por que elegirnos</span>
+                          <div className="editorial-feature-benefits">
+                            {((perfil as any).benefits as any[]).slice(0, 3).map((b: any, i: number) => (
+                              <div key={i} className="editorial-feature-benefit-item">
+                                <span className="editorial-feature-benefit-num">{String(i + 1).padStart(2, '0')}</span>
+                                <div>
+                                  <p className="editorial-feature-benefit-title">{b.title}</p>
+                                  <p className="editorial-feature-benefit-desc">{b.description}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BOTTOM — CTA */}
+                      <button
+                        className="editorial-feature-cta"
+                        onClick={() => {
+                          document.getElementById('catalogSection')?.scrollIntoView({ behavior: 'smooth' })
+                        }}
+                      >
+                        Ver coleccion completa
+                      </button>
+
+                    </div>
+                  </section>
+                )}
 
                 {/* Bloque 3 — Texto revelado con scroll */}
                 <section className="editorial-reveal" ref={editorialRevealRef}>
@@ -865,8 +894,59 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
          whatsappPhone={(perfil as any).whatsapp_phone ?? null}
       />
 
-      <footer className="footer">
-        © 2026 {storeName}. Todos los derechos reservados.
+      <footer className="moda-footer">
+        <div className="moda-footer-inner">
+          <div className="moda-footer-brand">
+            <span className="moda-footer-logo">{storeName.slice(0, 2).toUpperCase()}</span>
+            <span className="moda-footer-name">{storeName}</span>
+          </div>
+
+          <div className="moda-footer-social">
+            {perfil.social_instagram && (
+              <a
+                href={`https://instagram.com/${perfil.social_instagram}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="moda-footer-social-link"
+                aria-label="Instagram"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+                </svg>
+              </a>
+            )}
+            {perfil.social_tiktok && (
+              <a
+                href={`https://tiktok.com/@${perfil.social_tiktok}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="moda-footer-social-link"
+                aria-label="TikTok"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+                </svg>
+              </a>
+            )}
+            {perfil.social_facebook && (
+              <a
+                href={perfil.social_facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="moda-footer-social-link"
+                aria-label="Facebook"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>
+                </svg>
+              </a>
+            )}
+          </div>
+
+          <p className="moda-footer-copy">© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+        </div>
       </footer>
 
       <SlideOverCart storeId={storeId} isOpen={cartOpen} onClose={() => setCartOpen(false)} templateType="moda" />
@@ -2047,7 +2127,6 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .whatsapp-btn:hover { transform: translateY(-2px); }
 
-.moda-urban-template .footer { border-top: 1px solid var(--border); padding: 2rem; text-align: center; color: var(--text-light); font-size: 0.85rem; margin-top: 4rem; }
 
 @media (max-width: 768px) {
   .moda-urban-template .header { padding: 0; }
@@ -2444,66 +2523,127 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .editorial-feature {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 55% 45%;
   gap: 0;
-  min-height: 480px;
-  margin: 2rem 0 2rem;
+  min-height: 700px;
+  margin: 0;
   overflow: hidden;
+  background: #fafafa;
 }
 .moda-urban-template .editorial-feature-img-wrap {
   overflow: hidden;
   position: relative;
+  background: #f0f0f0;
+  min-height: 700px;
 }
 .moda-urban-template .editorial-feature-img {
   width: 100%;
-  height: 120%;
+  height: 100%;
   object-fit: cover;
+  object-position: center top;
   display: block;
-  margin-top: -10%;
 }
-.moda-urban-template .editorial-feature-text {
+.moda-urban-template .editorial-feature-content {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 2.5rem 2.5rem;
-  background: #f9f9f9;
+  justify-content: space-between;
+  padding: 4rem 3.5rem;
+  background: #0a0a0a;
+  min-height: 700px;
 }
-.moda-urban-template .editorial-feature-label {
-  font-size: 0.75rem;
+.moda-urban-template .editorial-feature-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.moda-urban-template .editorial-feature-middle {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.moda-urban-template .editorial-feature-section-label {
+  font-size: 0.6rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--text-light);
-  margin-bottom: 1rem;
+  color: rgba(255,255,255,0.3);
+  display: block;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 0;
 }
-.moda-urban-template .editorial-feature-title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 900;
-  letter-spacing: -1px;
-  color: var(--text);
-  margin-bottom: 1rem;
-  line-height: 1;
-}
-.moda-urban-template .editorial-feature-price {
-  font-size: 1.5rem;
+.moda-urban-template .editorial-feature-eyebrow {
+  font-size: 0.65rem;
   font-weight: 700;
-  color: var(--text);
-  margin-bottom: 2rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+.moda-urban-template .editorial-feature-brand {
+  font-size: clamp(3rem, 5vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -3px;
+  color: #fff;
+  line-height: 0.9;
+  margin-bottom: 1.5rem;
+}
+.moda-urban-template .editorial-feature-desc {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+  margin-bottom: 0;
+  max-width: 340px;
+}
+.moda-urban-template .editorial-feature-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 0;
+}
+.moda-urban-template .editorial-feature-benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.moda-urban-template .editorial-feature-benefit-num {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 0.1em;
+  min-width: 20px;
+}
+.moda-urban-template .editorial-feature-benefit-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+.moda-urban-template .editorial-feature-benefit-desc {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.5;
+  margin: 0.2rem 0 0;
 }
 .moda-urban-template .editorial-feature-cta {
   align-self: flex-start;
-  background: var(--text);
-  color: #fff;
+  background: #fff;
+  color: #0a0a0a;
   border: none;
-  padding: 12px 28px;
+  padding: 13px 28px;
   border-radius: 50px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: 0.8rem;
   cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   transition: var(--transition);
 }
 .moda-urban-template .editorial-feature-cta:hover {
-  opacity: 0.85;
+  background: rgba(255,255,255,0.85);
   transform: translateY(-2px);
 }
 .moda-urban-template .editorial-trio {
@@ -2558,7 +2698,88 @@ const modaUrbanStyles = `
 }
 @media (max-width: 768px) {
   .moda-urban-template .editorial-feature { grid-template-columns: 1fr; }
-  .moda-urban-template .editorial-feature-img-wrap { height: 400px; }
+  .moda-urban-template .editorial-feature-img-wrap { height: 380px; }
+  .moda-urban-template .editorial-feature-content {
+    padding: 2.5rem 1.5rem;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
   .moda-urban-template .editorial-trio-grid { grid-template-columns: repeat(2, 1fr); }
+}
+/* Footer */
+.moda-urban-template .moda-footer {
+  background: #0a0a0a;
+  padding: 3rem 2rem;
+  margin-top: 4rem;
+}
+.moda-urban-template .moda-footer-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+.moda-urban-template .moda-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.moda-urban-template .moda-footer-logo {
+  width: 34px;
+  height: 34px;
+  background: #fff;
+  color: #0a0a0a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.moda-urban-template .moda-footer-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.moda-urban-template .moda-footer-social {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.moda-urban-template .moda-footer-social-link {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.moda-urban-template .moda-footer-social-link:hover {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  transform: translateY(-2px);
+}
+.moda-urban-template .moda-footer-copy {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+@media (max-width: 768px) {
+  .moda-urban-template .moda-footer-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
 }
 `
