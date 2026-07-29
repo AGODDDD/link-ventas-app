@@ -14,6 +14,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ### Fixed
 - La configuración comercial ahora tiene una única fuente de verdad en `stores` y `store_config`; el storefront ya no mezcla datos de `profiles` con el Core.
+- La landing y el paywall ya no dependen de estilos inline: su presentación usa utilidades Tailwind, incluidos estados interactivos y valores dinámicos de la calculadora.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
