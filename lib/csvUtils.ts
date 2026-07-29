@@ -6,7 +6,7 @@
 /**
  * Convierte un arreglo de objetos JSON a un string CSV balanceado
  */
-export function jsonToCSV(data: any[]): string {
+export function jsonToCSV(data: Record<string, unknown>[]): string {
   if (data.length === 0) return "";
   
   const headers = Object.keys(data[0]);
@@ -27,12 +27,12 @@ export function jsonToCSV(data: any[]): string {
 /**
  * Convierte un string CSV a un arreglo de objetos
  */
-export function csvToJSON(csv: string): any[] {
+export function csvToJSON(csv: string): Record<string, string>[] {
   const lines = csv.split(/\r?\n/).filter(line => line.trim() !== "");
   if (lines.length < 2) return [];
 
   const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
-  const result: any[] = [];
+  const result: Record<string, string>[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const currentLine = lines[i];
@@ -50,7 +50,7 @@ export function csvToJSON(csv: string): any[] {
     }
     values.push(currentLine.substring(start).replace(/^"|"$/g, '').replace(/""/g, '"'));
 
-    const obj: any = {};
+    const obj: Record<string, string> = {};
     headers.forEach((header, index) => {
       obj[header] = values[index] || "";
     });

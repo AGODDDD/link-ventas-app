@@ -1,7 +1,7 @@
 # Punto de entrada para cualquier agente nuevo
 
 ## 1. ¿Qué es este proyecto?
-LinkVentas es una plataforma SaaS de e-commerce Serverless de alto rendimiento construida para comerciantes (B2B/B2C). Permite a los negocios crear tiendas de alta conversión con características como tickets térmicos, motor de urgencia (FOMO) y checkouts rápidos.
+LinkVentas es una plataforma SaaS de e-commerce Serverless de alto rendimiento construida para comerciantes (B2B/B2C). Permite a los negocios crear tiendas de alta conversión con características como tickets térmicos, disponibilidad basada en stock real y checkouts rápidos.
 
 ## 2. Lectura obligatoria antes de tocar código
 Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente después, lee:

@@ -46,10 +46,10 @@ La base de datos reside en Supabase y utiliza **Row Level Security (RLS)** para 
 
 ## 🔥 Módulos Destacados
 
-### 1. Motor FOMO (Stock Social)
-Ubicación: `hooks/useFomo.ts` y `components/tienda/FomoBanner.tsx`
+### 1. Señal de Stock
+Ubicación: `components/tienda/FomoBanner.tsx`
 
-Genera una sensación de urgencia real mediante la fluctuación aleatoria de "personas viendo este producto", basada en los rangos (mín/máx) configurados por el merchant en su perfil.
+Muestra disponibilidad limitada solo cuando el inventario real del producto está entre 1 y 10 unidades. No genera contadores de visitas ni mensajes simulados.
 
 ### 2. Impresión de Tickets Térmicos
 Ubicación: `lib/thermalUtils.ts` y `components/dashboard/ThermalReceipt.tsx`

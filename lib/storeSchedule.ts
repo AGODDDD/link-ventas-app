@@ -54,10 +54,9 @@ const JS_DAY_TO_KEY: Record<number, DayKey> = {
  * Devuelve true si la tienda está CERRADA ahora mismo.
  * Si no hay horario configurado → asume abierta (false).
  */
-export function isStoreClosed(schedule?: StoreSchedule | null): boolean {
+export function isStoreClosed(schedule?: StoreSchedule | null, now: Date = new Date()): boolean {
   if (!schedule) return false          // sin horario = siempre abierta
 
-  const now     = new Date()
   const dayKey  = JS_DAY_TO_KEY[now.getDay()]
   const dayConf = schedule[dayKey]
 
@@ -76,9 +75,9 @@ export function isStoreClosed(schedule?: StoreSchedule | null): boolean {
 /**
  * Devuelve el texto del horario de hoy, ej: "09:00 - 22:00"
  */
-export function getTodayScheduleText(schedule?: StoreSchedule | null): string {
+export function getTodayScheduleText(schedule?: StoreSchedule | null, now: Date = new Date()): string {
   if (!schedule) return ''
-  const dayKey  = JS_DAY_TO_KEY[new Date().getDay()]
+  const dayKey  = JS_DAY_TO_KEY[now.getDay()]
   const dayConf = schedule[dayKey]
   if (!dayConf || !dayConf.active) return 'Cerrado hoy'
   return `${dayConf.open} - ${dayConf.close}`

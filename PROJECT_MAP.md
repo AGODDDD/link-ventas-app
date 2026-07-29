@@ -6,7 +6,7 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 
 - `/app`: Rutas del sistema (Next.js 15 App Router).
 - `/components`: Componentes visuales de React reutilizables (Dashboard, Tienda, UI genérica).
-- `/hooks`: Custom React Hooks (ej: `useFomo.ts`).
+- `/hooks`: Custom React Hooks.
 - `/lib`: Utilidades, helpers y clientes (Supabase, cifrado, PDFs, impresión térmica).
 - `/scripts`: Scripts de mantenimiento del proyecto.
 - `/store`: Gestores de estado global (Zustand).
@@ -29,7 +29,7 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 - `components/tienda/templates/RestauranteCheckoutModal.tsx`: Checkout completo para Restaurantes (WhatsApp + Culqi). **CRÍTICO**.
 - `components/tienda/templates/OrderDetailModal.tsx`: Tracking del cliente con mapa Leaflet + Realtime (filtro por UUID PK) + polling 2s.
 - `components/tienda/templates/OrderHistoryPanel.tsx`: Historial de pedidos del comprador con sincronización por `coreId` (UUID).
-- `components/tienda/FomoBanner.tsx`: Módulo de persuasión (Social Stock).
+- `components/tienda/FomoBanner.tsx`: Señal de disponibilidad basada en stock real.
 - `store/useCartStore.ts`: Estado global del carrito de compras (Zustand).
 - `store/useCustomerStore.ts`: Estado del comprador con orders (incluye `coreId` UUID para realtime).
 
@@ -39,7 +39,7 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 - `app/dashboard/clientes/page.tsx`: Gestión de CRM. Integrado con `ClientesSkeleton`.
 - `app/dashboard/analytics/page.tsx`: Panel de métricas e IA. Integrado con `AnalyticsSkeleton`.
 - `app/dashboard/productos/page.tsx`: Bodega general de inventario. Integrado con `ProductosSkeleton`.
-- `app/dashboard/configuracion/page.tsx`: Configuración del perfil, FOMO y llaves de Culqi. Excluido de SWR intencionalmente.
+- `app/dashboard/configuracion/page.tsx`: Configuración del perfil, señal de stock y llaves de Culqi. Excluido de SWR intencionalmente.
 - `components/dashboard/DashboardTopBar.tsx`: Realtime unificado con notificaciones push + sonido.
 - `components/dashboard/ThermalReceipt.tsx`: Generador de tickets para impresoras térmicas.
 - `store/useDashboardStore.ts`: Estado unificado SWR (Stale-While-Revalidate) del dashboard con flags `lastFetch` para Zero-Load Navigation.
@@ -57,4 +57,3 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 - **`id` (UUID):** Clave primaria interna en tabla `orders`. Usado para Realtime, FK con `order_items`, y referencia del vendedor.
 - **`legacy_id` (String):** Código secuencial humano (ej. `BARR-110626-0105`). Usado en tickets, historial del comprador, y comunicación con el cliente.
 - **`coreId` en `useCustomerStore`:** UUID almacenado en localStorage del comprador para suscripción Realtime por clave primaria.
-

@@ -7,6 +7,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ### Changed
 - La disponibilidad limitada ahora muestra exclusivamente stock real y el delivery usa la tarifa configurada por cada restaurante.
 - Las migraciones se validan en una base local limpia desde CI.
+- El lint excluye utilidades de soporte y establece un baseline explícito para deuda heredada; la app y las pruebas básicas pasan sin errores ni advertencias.
+
+### Added
+- Pruebas unitarias para horario de tienda y serialización CSV mediante `npm run test:unit`.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.

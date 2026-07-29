@@ -6,7 +6,7 @@ Plataforma SaaS de e-commerce de alto rendimiento. Convierte tus enlaces en una 
 
 -   **Tienda Kinetica**: Diseño brutalista y fluido enfocado en productos premium.
 -   **Dashboard Analytics**: Visualización en tiempo real de ingresos, leads y ticket promedio.
--   **Motor FOMO (Social Stock)**: Generador de urgencia para maximizar ventas.
+-   **Disponibilidad real**: Señal de stock limitado basada exclusivamente en el inventario del producto.
 -   **Gestión de Órdenes**: Panel de control intuitivo con impresión de tickets térmicos.
 -   **CRM de Leads**: Captura automática de contactos para recuperación de carritos abandonados.
 
@@ -37,6 +37,12 @@ Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de 
 ### 4. Lanzar el Proyecto
 ```bash
 npm run dev
+```
+
+### 5. Verificar el código
+```bash
+npm run lint
+npm run test:unit
 ```
 
 ---

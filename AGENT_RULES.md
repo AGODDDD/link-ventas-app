@@ -34,7 +34,8 @@ REGLA DE CHANGELOG AUTOMÁTICO:
 Al finalizar cada sesión de trabajo, el agente DEBE actualizar CHANGELOG.md sin esperar instrucción del usuario. Esta actualización es parte del checklist de cierre — si el CHANGELOG no fue actualizado, la tarea NO está completa. El agente no puede marcar "TAREA COMPLETADA" si CHANGELOG.md no refleja el trabajo de la sesión actual.
 
 ## Reglas de Testing
-- **DESCONOCIDO** (No se han inferido configuraciones de Jest o Playwright en el repositorio. Testeo manual recomendado).
+- Ejecutar `npm run test:unit` para las pruebas unitarias de utilidades deterministas.
+- Ejecutar `npm run lint` y `npm run build` antes de cerrar una fase.
 
 ## Cómo Manejar Migraciones de BD
 - LinkVentas no usa un ORM tradicional con CLI de migraciones.
@@ -43,4 +44,4 @@ Al finalizar cada sesión de trabajo, el agente DEBE actualizar CHANGELOG.md sin
 
 ---
 ## Campos que requieren verificación manual
-- DESCONOCIDO: Procedimiento exacto de testeo unitario/e2e que el equipo humano utiliza, de existir alguno.
+- DESCONOCIDO: Cobertura e2e en navegador; no hay configuración de Playwright en el repositorio.
