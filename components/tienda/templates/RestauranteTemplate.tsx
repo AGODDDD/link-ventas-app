@@ -42,6 +42,8 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const cart = cartStore.carts[perfil.id] || []
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0)
   const [mounted, setMounted] = useState(false)
+  const configuredDeliveryFee = Number(extensionData?.deliverySettings?.base_delivery_fee)
+  const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0
 
   useEffect(() => {
     setMounted(true)
@@ -484,6 +486,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
               setIsOrderHistoryOpen(true);
            }}
            perfil={perfil}
+           deliveryFee={deliveryFee}
            savedAddress={savedAddress}
            profileData={{ nombre: profileName, telefono: profilePhone, correo: profileEmail }}
            onProfileUpdate={(data) => { setProfileName(data.nombre); setProfilePhone(data.telefono); setProfileEmail(data.correo); }}

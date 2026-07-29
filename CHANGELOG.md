@@ -2,6 +2,12 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [Unreleased]
+
+### Changed
+- La disponibilidad limitada ahora muestra exclusivamente stock real y el delivery usa la tarifa configurada por cada restaurante.
+- Las migraciones se validan en una base local limpia desde CI.
+
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 

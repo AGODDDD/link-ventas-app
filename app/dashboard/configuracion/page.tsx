@@ -34,6 +34,7 @@ interface SettingsFormData {
   storeLat: number | null;
   storeLng: number | null;
   storeSchedule: StoreSchedule;
+  deliveryFee: number;
   socialFacebook: string;
   socialInstagram: string;
   socialTikTok: string;
@@ -87,11 +88,11 @@ export default function ConfiguracionPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
+      const [profileResult, deliveryResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('delivery_settings').select('base_delivery_fee').eq('store_id', user.id).maybeSingle(),
+      ])
+      const { data } = profileResult
 
       if (data) {
         setSystemData({
@@ -120,6 +121,7 @@ export default function ConfiguracionPage() {
           storeLat: data.store_lat || null,
           storeLng: data.store_lng || null,
           storeSchedule: data.store_schedule ? { ...DEFAULT_SCHEDULE, ...data.store_schedule } : DEFAULT_SCHEDULE,
+          deliveryFee: Number(deliveryResult.data?.base_delivery_fee ?? 0),
           socialFacebook: data.social_facebook || '',
           socialInstagram: data.social_instagram || '',
           socialTikTok: data.social_tiktok || '',
@@ -220,6 +222,24 @@ export default function ConfiguracionPage() {
         .eq('id', systemData.userId)
 
       if (error) throw error
+
+      if (formData.templateType === 'restaurante') {
+        const fee = Number(formData.deliveryFee)
+        if (!Number.isFinite(fee) || fee < 0) {
+          throw new Error('La tarifa de delivery debe ser un número mayor o igual a cero.')
+        }
+
+        const { error: deliveryError } = await supabase
+          .from('delivery_settings')
+          .upsert({
+            store_id: systemData.userId,
+            base_delivery_fee: fee,
+            delivery_active: true,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'store_id' })
+
+        if (deliveryError) throw deliveryError
+      }
 
       // Culqi
       const paymentSettingsChanged =
@@ -688,6 +708,28 @@ export default function ConfiguracionPage() {
                 </CardContent>
               </Card>
 
+              {formData.templateType === 'restaurante' && (
+                <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+                  <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
+                    <CardTitle className="text-lg">Tarifa de Delivery</CardTitle>
+                    <CardDescription>Se calcula en el servidor al crear cada pedido.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <div className="space-y-2 max-w-xs">
+                      <Label htmlFor="delivery-fee">Tarifa base (S/)</Label>
+                      <Input
+                        id="delivery-fee"
+                        type="number"
+                        min="0"
+                        step="0.50"
+                        value={formData.deliveryFee}
+                        onChange={(e) => updateForm('deliveryFee', Number(e.target.value))}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
                   <CardTitle className="text-lg">Estrategia Horaria</CardTitle>
@@ -734,12 +776,12 @@ export default function ConfiguracionPage() {
 
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                  <CardTitle className="text-lg flex items-center gap-2">Motor FOMO</CardTitle>
-                  <CardDescription>Stock social y urgencia de compra.</CardDescription>
+                  <CardTitle className="text-lg flex items-center gap-2">Señal de Stock</CardTitle>
+                  <CardDescription>Disponibilidad limitada basada en inventario real.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
                   <Button onClick={() => setShowFomoConfig(true)} variant="outline" className="w-full border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800">
-                    Configurar Motor FOMO
+                    Configurar señal de stock
                   </Button>
                   <FomoConfigModal isOpen={showFomoConfig} onClose={() => setShowFomoConfig(false)} userId={systemData.userId} />
                 </CardContent>

@@ -16,12 +16,13 @@ interface Props {
   onClose: () => void;
   onSuccess?: () => void;
   perfil: Profile;
+  deliveryFee?: number;
   savedAddress?: { direccion: string; referencia: string; lat: number; lng: number } | null;
   profileData?: { nombre: string; telefono: string; correo: string };
   onProfileUpdate?: (data: { nombre: string; telefono: string; correo: string }) => void;
 }
 
-export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, perfil, savedAddress, profileData, onProfileUpdate }: Props) {
+export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, perfil, deliveryFee: configuredDeliveryFee = 0, savedAddress, profileData, onProfileUpdate }: Props) {
   const cartStore = useCartStore()
   const cart = cartStore.carts[perfil.id] || []
   
@@ -42,7 +43,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   }
   
   // Derived amounts
-  const deliveryFee = 8.00;
+  const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0;
   const subtotal = cartStore.getTotalPrice(perfil.id)
   const total = subtotal + deliveryFee
 

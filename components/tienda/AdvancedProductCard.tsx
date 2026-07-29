@@ -52,11 +52,6 @@ export default function AdvancedProductCard({ prod, perfil, isReadOnly }: { prod
             <Zap size={10} className="fill-black" /> ¡HOY!
           </span>
         )}
-        {prod.stock !== null && prod.stock !== undefined && prod.stock > 0 && prod.stock <= 5 && (
-          <span className="bg-error px-2 py-1 text-[10px] font-bold text-on-error uppercase tracking-widest font-headline animate-pulse">
-            ¡Solo quedan {prod.stock}!
-          </span>
-        )}
       </div>
 
       {discountPercentage > 0 && (
@@ -140,13 +135,9 @@ export default function AdvancedProductCard({ prod, perfil, isReadOnly }: { prod
           </div>
         </div>
         
-        {/* FOMO ENGINE 🔥 */}
+        {/* Disponibilidad basada exclusivamente en el inventario de la tienda. */}
         {perfil?.fomo_enabled && (
-          <FomoBanner 
-             minViewers={perfil.fomo_min_viewers || 3} 
-             maxViewers={perfil.fomo_max_viewers || 24} 
-             messageTemplate={perfil.fomo_message || '{count} personas están evaluando esta oferta ahora mismo'} 
-          />
+          <FomoBanner stock={prod.stock} />
         )}
 
         <div>
