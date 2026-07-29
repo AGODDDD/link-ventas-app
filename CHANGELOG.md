@@ -16,6 +16,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - La configuración comercial ahora tiene una única fuente de verdad en `stores` y `store_config`; el storefront ya no mezcla datos de `profiles` con el Core.
 - La landing y el paywall ya no dependen de estilos inline: su presentación usa utilidades Tailwind, incluidos estados interactivos y valores dinámicos de la calculadora.
 - La expiración de pedidos dejó de depender de abrir el dashboard: un cron protegido ejecuta mantenimiento transaccional en servidor y clasifica carritos abandonados como recuperados o expirados.
+- El Plan Pro se activa automáticamente tras el cargo síncrono de Culqi de la plataforma y los pagos de tiendas migraron a Mercado Pago con Access Tokens cifrados y confirmación inmediata en servidor.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.

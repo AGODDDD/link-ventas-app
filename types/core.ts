@@ -44,8 +44,8 @@ export interface StoreConfig {
   promo_title?: string;
   promo_description?: string;
   fomo_enabled?: boolean;
-  culqi_active?: boolean;
-  culqi_public_key?: string;
+  mercadopago_active?: boolean;
+  mercadopago_public_key?: string;
   created_at?: string;
   updated_at: string;
 }

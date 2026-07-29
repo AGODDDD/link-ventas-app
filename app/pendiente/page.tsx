@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Script from 'next/script'
 import { supabase } from '@/lib/supabase'
 
 export default function PendientePage() {
@@ -8,6 +9,8 @@ export default function PendientePage() {
   const [nombre, setNombre] = useState('')
   const [plan, setPlan] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [paying, setPaying] = useState(false)
+  const culqiPublicKey = process.env.NEXT_PUBLIC_CULQI_PUBLIC_KEY
 
   useEffect(() => {
     const getUser = async () => {
@@ -51,6 +54,46 @@ export default function PendientePage() {
     window.location.href = '/dashboard'
   }
 
+  useEffect(() => {
+    const win = window as typeof window & { Culqi?: any; culqi?: () => Promise<void> }
+    win.culqi = async () => {
+      const token = win.Culqi?.token
+      if (!token) {
+        setPaying(false)
+        alert(win.Culqi?.error?.user_message || 'El pago fue cancelado.')
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setPaying(false)
+        return alert('Tu sesión expiró. Ingresa nuevamente.')
+      }
+      const response = await fetch('/api/billing/culqi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ token_id: token.id, email: token.email || email }),
+      })
+      const data = await response.json()
+      setPaying(false)
+      try { win.Culqi.close() } catch {}
+      if (!response.ok) return alert(data.error || 'No se pudo procesar el pago.')
+      document.cookie = 'sb-plan-status=pro; path=/; SameSite=Lax'
+      window.location.href = '/dashboard'
+    }
+    return () => { delete win.culqi }
+  }, [email])
+
+  const handleProPayment = () => {
+    const win = window as typeof window & { Culqi?: any }
+    if (!culqiPublicKey || !win.Culqi) return alert('El módulo de pago aún no está disponible.')
+    setPaying(true)
+    win.Culqi.publicKey = culqiPublicKey
+    win.Culqi.settings({ title: 'LinkVentas Pro', currency: 'PEN', amount: 2900 })
+    win.Culqi.options({ lang: 'es', installments: false, paymentMethods: { tarjeta: true, yape: true, bancaMovil: false } })
+    win.Culqi.open()
+  }
+
   const trialExpired = plan === 'trial' || plan === null
   const isInactive = plan === 'inactivo'
   const whatsappMessage = encodeURIComponent(`Hola, quiero activar mi Plan Pro de LinkVentas. Mi correo es: ${email}`)
@@ -59,6 +102,7 @@ export default function PendientePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(109,40,217,0.15)_0%,#0a0a0f_60%)] p-6 font-sans">
+      <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
       <div className="mb-10 text-center">
         <div className="flex items-center justify-center gap-2 text-2xl font-extrabold tracking-[0] text-white"><span className="text-violet-400">⚡</span> LinkVentas</div>
         <p className="mt-1 text-xs uppercase tracking-[0.1em] text-white/30">Panel de control comercial</p>
@@ -80,13 +124,12 @@ export default function PendientePage() {
           </div>
         </div>
 
-        <div className="mb-6 rounded-xl border border-white/6 bg-white/[0.03] px-[18px] py-4 text-left">
-          {[`Escríbenos por WhatsApp al +51 999 999 999`, `Indícanos tu correo: ${email || 'tu correo registrado'}`, 'Paga por Yape, Plin o transferencia · S/ 29/mes', '¡Activamos tu cuenta en minutos!'].map((text, index) => <div key={text} className={`flex items-start gap-3 ${index < 3 ? 'mb-3' : ''}`}><div className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border border-violet-400/40 bg-violet-700/20 text-[10px] font-bold text-violet-400">{index + 1}</div><span className="pt-0.5 text-xs leading-[1.5] text-white/50">{text}</span></div>)}
-        </div>
-
-        <a href={`https://wa.me/51999999999?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="mb-3 flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-br from-[#25d366] to-[#128c7e] p-3.5 text-[15px] font-bold text-white no-underline shadow-[0_8px_24px_rgba(37,211,102,0.2)] transition-all duration-200">
+        <button disabled={paying || !culqiPublicKey} onClick={handleProPayment} className="mb-3 flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 p-3.5 text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(109,40,217,0.25)] disabled:opacity-50">
+          {paying ? 'Procesando pago...' : 'Pagar Plan Pro — S/ 29/mes'}
+        </button>
+        <a href={`https://wa.me/51999999999?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="mb-6 flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm font-semibold text-white/70 no-underline">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" /><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.122 1.532 5.848L.057 23.267a.75.75 0 0 0 .921.921l5.487-1.474A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.697 9.697 0 0 1-4.92-1.336l-.353-.209-3.644.978.997-3.543-.228-.366A9.698 9.698 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z" /></svg>
-          {trialExpired || isInactive ? 'Activar Plan Pro — S/ 29/mes' : 'Activar mi cuenta por WhatsApp'}
+          ¿Necesitas ayuda? Escríbenos por WhatsApp
         </a>
         <button onClick={handleDowngradeToFree} className="mb-6 flex w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] p-3.5 text-sm font-semibold text-white/80 transition-all duration-200 hover:bg-white/[0.08]">Continuar con el Plan Emprendedor (Gratis)</button>
         <button onClick={handleLogout} className="p-1 text-xs text-white/30 underline underline-offset-[3px]">Cerrar sesión</button>

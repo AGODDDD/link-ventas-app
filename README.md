@@ -28,9 +28,11 @@ ADMIN_USER_ID=uuid_del_admin
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_solo_servidor
 PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_llaves_culqi
 CRON_SECRET=secreto_largo_aleatorio_para_los_crons_de_vercel
+NEXT_PUBLIC_CULQI_PUBLIC_KEY=pk_test_o_pk_live_de_la_plataforma
+CULQI_SECRET_KEY=sk_test_o_sk_live_solo_servidor_de_la_plataforma
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY` y `CRON_SECRET` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. El cron de Vercel ejecuta `/api/cron` cada hora y necesita que `CRON_SECRET` esté definido en Production.
+`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET` y `CULQI_SECRET_KEY` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. `NEXT_PUBLIC_CULQI_PUBLIC_KEY` es la única llave de Culqi que llega al cliente para tokenizar el Plan Pro. Cada comercio configura su Public Key y Access Token de Mercado Pago desde el dashboard; el token se cifra antes de persistirse.
 
 ### 3. Configurar Base de Datos
 Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de tu Dashboard de Supabase. Esto configurará todas las tablas y políticas de seguridad (RLS).

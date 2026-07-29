@@ -8,8 +8,8 @@ import { useCustomerStore, Order } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
-import Script from 'next/script'
 import { toast } from 'sonner'
+import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPayment'
 
 interface Props {
   isOpen: boolean;
@@ -31,8 +31,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   const [telefono, setTelefono] = useState(profileData?.telefono || '')
   const [correo, setCorreo] = useState(profileData?.correo || '')
   const [direccion, setDireccion] = useState(savedAddress?.direccion || '')
-  const [metodoPago, setMetodoPago] = useState<'culqi' | 'whatsapp'>(perfil.culqi_active && perfil.culqi_public_key ? 'culqi' : 'whatsapp')
+  const [metodoPago, setMetodoPago] = useState<'mercadopago' | 'whatsapp'>(perfil.mercadopago_active && perfil.mercadopago_public_key ? 'mercadopago' : 'whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string; total: number } | null>(null)
 
   // Sync data back to parent when closing
   const handleClose = () => {
@@ -56,122 +57,6 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   // Estrategia Horaria: bloquear checkout si la tienda está cerrada
   const isStoreClosed = checkStoreClosed((perfil as any).store_schedule ?? null)
-
-  // ── CULQI CALLBACK (Global Listener) ──
-  useEffect(() => {
-    const win = window as any;
-    win.culqi = async () => {
-      if (win.Culqi?.token) {
-        const token = win.Culqi.token.id;
-        const email = win.Culqi.token.email;
-        toast.loading('Procesando pago seguro...', { id: 'culqi-charge' });
-        try {
-          const pendingOrder = (window as any).pendingCulqiRestaurantOrder;
-          const orderId = pendingOrder?.orderId;
-          if (!orderId || !pendingOrder?.order) throw new Error('Orden de pago no inicializada.');
-
-          // 2. Cobrar primero, confirmando que el dinero entró
-          const res = await fetch('/api/checkout/culqi', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              token_id: token,
-              email: email || correo || 'cliente@linkventas.com',
-              store_id: perfil.id,
-              order_id: orderId
-            })
-          });
-          const data = await res.json();
-          toast.dismiss('culqi-charge');
-          if (!res.ok) {
-            toast.error('Transacción denegada: ' + (data.error || 'Verifica tu tarjeta.'));
-            return;
-          }
-
-          // 3. SOLO después del cobro exitoso, crear orden con DOBLE ESCRITURA
-          const currentCart = useCartStore.getState().carts[perfil.id] || [];
-          const productos = (perfil as any).productos || [];
-          const orderItems = currentCart.map(item => {
-            const product = productos.find((p: any) => p.id === item.product.id);
-            let modPrice = 0;
-            let optSummary = '';
-            let modsList: any[] = [];
-            
-            if (item.variantDetails?.options && item.product.variants) {
-              const groups = item.product.variants as any[];
-              Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([gId, oIds]) => {
-                const g = groups.find(x => x.id === gId);
-                if (g) oIds.forEach(oId => {
-                  const o = g.options.find((x:any) => x.id === oId);
-                  if (o) { 
-                    modPrice += o.price_modifier; 
-                    optSummary += `${o.name}, `; 
-                    modsList.push({ name: o.name, price: o.price_modifier });
-                  }
-                });
-              });
-            }
-
-            return {
-              id: item.product.id,
-              name: item.product.name,
-              quantity: item.quantity,
-              unitPrice: item.product.price + modPrice,
-              basePrice: item.product.price,
-              modifiersList: modsList,
-              totalPrice: (item.product.price + modPrice) * item.quantity,
-              options: optSummary ? optSummary.slice(0, -2) : undefined,
-              notes: item.variantDetails?.notes || undefined,
-            };
-          });
-
-
-          // 3d. Lead capture
-          await supabase.from('store_leads').insert({
-            store_id: perfil.id,
-            name: nombre,
-            phone: telefono || null,
-            email: correo || null,
-            preference: 'Culqi Online',
-          });
-
-          // 3e. Zustand local history
-          const customerStore = useCustomerStore.getState();
-          customerStore.addOrder({
-            id: pendingOrder.order.legacy_id,
-            coreId: pendingOrder.order.order_id,
-            storeId: perfil.id,
-            storeName: perfil.store_name || '',
-            date: new Date().toISOString(),
-            status: 'pendiente',
-            items: orderItems,
-            subtotal: Number(pendingOrder.order.subtotal),
-            deliveryFee: Number(pendingOrder.order.delivery_fee),
-            total: Number(pendingOrder.order.total),
-            direccion,
-            referencia: savedAddress?.referencia,
-            lat: savedAddress?.lat,
-            lng: savedAddress?.lng,
-            cliente: { nombre, telefono, correo },
-            metodoPago: 'culqi',
-            estimatedTime: '50 - 60 min',
-          });
-
-          toast.success('¡Pago procesado exitosamente!');
-          try { win.Culqi.close(); } catch {}
-          useCartStore.getState().clearCart(perfil.id);
-          if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug);
-          if (onSuccess) onSuccess();
-          else handleClose();
-        } catch {
-          toast.dismiss('culqi-charge');
-          toast.error('Error de red al procesar el pago.');
-        }
-      } else {
-        toast.error(win.Culqi?.error?.user_message || 'El pago fue cancelado.');
-      }
-    };
-  }, [perfil.id, total, correo, nombre, telefono, direccion]);
 
   if (!isOpen) return null;
 
@@ -243,21 +128,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
      }
      const persistedOrder = createOrderData.order;
 
-      if (metodoPago === 'culqi') {
-        const win = window as any;
-        if (!win.Culqi) {
-          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
-          return;
-        }
-        win.pendingCulqiRestaurantOrder = { orderId: persistedOrder.order_id, order: persistedOrder };
-        win.Culqi.publicKey = perfil.culqi_public_key;
-        win.Culqi.settings({
-          title: perfil.store_name?.substring(0, 50) || 'Tienda',
-          currency: 'PEN',
-          amount: Math.round(Number(persistedOrder.total) * 100),
-        });
-        win.Culqi.options({ lang: 'es', installments: false, paymentMethods: { tarjeta: true, yape: true, bancaMovil: false } });
-        win.Culqi.open();
+      if (metodoPago === 'mercadopago') {
+        setPendingPayment({ orderId: persistedOrder.order_id, legacyId: persistedOrder.legacy_id, total: Number(persistedOrder.total) })
         return;
       }
 
@@ -358,7 +230,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   return (
     <>
-    <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
+    {pendingPayment && perfil.mercadopago_public_key && <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-lg bg-white p-6"><div className="mb-4 flex justify-between"><h3 className="font-bold">Pago seguro con Mercado Pago</h3><button onClick={() => setPendingPayment(null)}>Cerrar</button></div><MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={correo || `${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => { const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || correo || `${telefono.replace(/\D/g, '')}@linkventas.pe`, order_id: pendingPayment.orderId, store_id: perfil.id }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Pago no aprobado.'); useCartStore.getState().clearCart(perfil.id); if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug); setPendingPayment(null); toast.success('¡Pago aprobado!'); if (onSuccess) onSuccess(); else handleClose(); }} /></div></div>}
     <div className="fixed inset-0 z-[120] bg-neutral-100/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 overflow-y-auto">
       <div className="bg-[#F8F9FA] w-full max-w-5xl rounded-xl shadow-2xl relative my-auto animate-in fade-in zoom-in-95 duration-200">
         
@@ -526,13 +398,13 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                     </div>
                  </label>
                  
-                 {perfil.culqi_active && perfil.culqi_public_key && (
-                 <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${metodoPago === 'culqi' ? 'border-black bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:bg-neutral-50'}`}>
-                    <input type="radio" name="pago" checked={metodoPago === 'culqi'} onChange={() => setMetodoPago('culqi')} className="w-4 h-4 text-black accent-black" />
+                 {perfil.mercadopago_active && perfil.mercadopago_public_key && (
+                 <label className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${metodoPago === 'mercadopago' ? 'border-black bg-neutral-50 shadow-sm' : 'border-neutral-200 hover:bg-neutral-50'}`}>
+                    <input type="radio" name="pago" checked={metodoPago === 'mercadopago'} onChange={() => setMetodoPago('mercadopago')} className="w-4 h-4 text-black accent-black" />
                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex flex-col items-center justify-center text-emerald-600 shrink-0"><ShieldCheck size={16} /></div>
                     <div className="flex-1">
-                      <p className="font-bold text-sm text-[#222]">Pago Seguro Online</p>
-                      <p className="text-[10px] text-[#888]">Tarjeta crédito/débito o Yape (automático)</p>
+                      <p className="font-bold text-sm text-[#222]">Mercado Pago</p>
+                      <p className="text-[10px] text-[#888]">Tarjeta crédito o débito (automático)</p>
                     </div>
                  </label>
                  )}

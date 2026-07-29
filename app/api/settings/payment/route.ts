@@ -11,15 +11,15 @@ import {
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { culqi_secret_key, culqi_public_key, culqi_active } = body
+    const { mercadopago_access_token, mercadopago_public_key, mercadopago_active } = body
 
     const { user, token } = await getAuthenticatedUser(req)
     if (!user || !token) {
       return NextResponse.json({ error: 'Token invalido o expirado' }, { status: 401 })
     }
 
-    const hasSecretKeyChange = Boolean(culqi_secret_key && culqi_secret_key.trim() !== '' && !culqi_secret_key.includes('***'))
-    const hasPaymentConfigChange = culqi_active === true || Boolean(culqi_public_key?.trim()) || hasSecretKeyChange
+    const hasSecretKeyChange = Boolean(mercadopago_access_token && mercadopago_access_token.trim() !== '' && !mercadopago_access_token.includes('***'))
+    const hasPaymentConfigChange = mercadopago_active === true || Boolean(mercadopago_public_key?.trim()) || hasSecretKeyChange
 
     if (!hasSupabaseServiceRoleKey() && !hasPaymentConfigChange) {
       return NextResponse.json({ success: true, message: 'Sin cambios de pasarela' })
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     if (!hasSupabaseServiceRoleKey() && hasPaymentConfigChange) {
       return NextResponse.json(
-        { error: 'La configuracion de Culqi requiere SUPABASE_SERVICE_ROLE_KEY en el servidor.' },
+        { error: 'La configuracion de Mercado Pago requiere SUPABASE_SERVICE_ROLE_KEY en el servidor.' },
         { status: 500 }
       )
     }
@@ -56,36 +56,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No se pudo validar el plan.' }, { status: 500 })
     }
 
-    if (culqi_active === true && !hasProFeatures(profile?.plan ?? null, profile?.plan_expires_at ?? null)) {
+    if (mercadopago_active === true && !hasProFeatures(profile?.plan ?? null, profile?.plan_expires_at ?? null)) {
       return NextResponse.json(
-        { error: 'Culqi esta disponible solo para planes Pro o trial activo.' },
+        { error: 'Mercado Pago esta disponible solo para planes Pro o trial activo.' },
         { status: 403 }
       )
     }
 
     let encryptedSecretKey = null
     if (hasSecretKeyChange) {
-      encryptedSecretKey = encryptText(culqi_secret_key.trim())
+      encryptedSecretKey = encryptText(mercadopago_access_token.trim())
     }
 
     const { error: configError } = await supabase
       .from('store_config')
       .upsert({
         store_id: store.id,
-        culqi_active: culqi_active === true,
-        culqi_public_key: culqi_public_key ? culqi_public_key.trim() : null,
+        mercadopago_active: mercadopago_active === true,
+        mercadopago_public_key: mercadopago_public_key ? mercadopago_public_key.trim() : null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'store_id' })
 
     if (configError) {
-      console.error('Error guardando configuracion publica de Culqi:', configError)
+      console.error('Error guardando configuracion publica de Mercado Pago:', configError)
       return NextResponse.json({ error: 'Fallo al guardar la configuracion de pasarela.' }, { status: 500 })
     }
 
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        ...(encryptedSecretKey ? { culqi_secret_key: encryptedSecretKey } : {}),
+        ...(encryptedSecretKey ? { mercadopago_access_token: encryptedSecretKey } : {}),
       })
       .eq('id', user.id)
 

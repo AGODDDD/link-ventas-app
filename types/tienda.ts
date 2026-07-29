@@ -40,10 +40,9 @@ export interface Profile {
   // Estrategia Horaria
   store_schedule?: Record<string, { active: boolean; open: string; close: string }>;
 
-  // Pasarela de Pagos (Culqi)
-  culqi_active?: boolean;
-  culqi_public_key?: string;
-  culqi_secret_key?: string;
+  // Pasarela de Pagos (Mercado Pago)
+  mercadopago_active?: boolean;
+  mercadopago_public_key?: string;
 }
 
 export interface ProductModifierOption {

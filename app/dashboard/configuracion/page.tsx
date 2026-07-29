@@ -27,9 +27,9 @@ interface SettingsFormData {
   secondaryColor: string;
   yapeUrl: string;
   plinUrl: string;
-  culqiActive: boolean;
-  culqiPublicKey: string;
-  culqiSecretKey: string;
+  mercadopagoActive: boolean;
+  mercadopagoPublicKey: string;
+  mercadopagoAccessToken: string;
   storeAddress: string;
   storeLat: number | null;
   storeLng: number | null;
@@ -127,9 +127,9 @@ export default function ConfiguracionPage() {
           secondaryColor: config.secondary_color || '#C31432',
           yapeUrl: config.yape_image_url || '',
           plinUrl: config.plin_image_url || '',
-          culqiActive: config.culqi_active || false,
-          culqiPublicKey: config.culqi_public_key || '',
-          culqiSecretKey: '', // Starts empty
+          mercadopagoActive: config.mercadopago_active || false,
+          mercadopagoPublicKey: config.mercadopago_public_key || '',
+          mercadopagoAccessToken: '', // Never returned by the server
           storeAddress: config.store_address || '',
           storeLat: config.store_lat || null,
           storeLng: config.store_lng || null,
@@ -263,11 +263,11 @@ export default function ConfiguracionPage() {
         if (deliveryError) throw deliveryError
       }
 
-      // Culqi
+      // Mercado Pago
       const paymentSettingsChanged =
-        formData.culqiActive !== initialData.culqiActive ||
-        formData.culqiPublicKey.trim() !== initialData.culqiPublicKey ||
-        formData.culqiSecretKey.trim() !== ''
+        formData.mercadopagoActive !== initialData.mercadopagoActive ||
+        formData.mercadopagoPublicKey.trim() !== initialData.mercadopagoPublicKey ||
+        formData.mercadopagoAccessToken.trim() !== ''
 
       if (paymentSettingsChanged) {
         const { data: { session } } = await supabase.auth.getSession()
@@ -279,9 +279,9 @@ export default function ConfiguracionPage() {
               'Authorization': `Bearer ${session.access_token}`
             },
             body: JSON.stringify({
-              culqi_active: formData.culqiActive,
-              culqi_public_key: formData.culqiPublicKey,
-              culqi_secret_key: formData.culqiSecretKey,
+              mercadopago_active: formData.mercadopagoActive,
+              mercadopago_public_key: formData.mercadopagoPublicKey,
+              mercadopago_access_token: formData.mercadopagoAccessToken,
             })
           })
           const paymentData = await paymentRes.json()
@@ -291,7 +291,7 @@ export default function ConfiguracionPage() {
         }
       }
 
-      const newInitialData = { ...formData, culqiSecretKey: '' }
+      const newInitialData = { ...formData, mercadopagoAccessToken: '' }
       setInitialData(newInitialData)
       setFormData(JSON.parse(JSON.stringify(newInitialData)))
       setPendingTemplate(null)
@@ -603,7 +603,7 @@ export default function ConfiguracionPage() {
           {activeTab === 'pagos' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              {/* Culqi Global */}
+              {/* Mercado Pago */}
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden relative">
                 {systemData.planStatus === 'free' && (
                   <div className="absolute inset-0 bg-zinc-100/90 dark:bg-zinc-950/90 z-10 flex flex-col items-center justify-center p-6 text-center">
@@ -616,31 +616,31 @@ export default function ConfiguracionPage() {
                 
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50 flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg">Pasarela Culqi</CardTitle>
+                    <CardTitle className="text-lg">Pasarela Mercado Pago</CardTitle>
                     <CardDescription>Cargos automáticos con tarjeta.</CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Label className="font-semibold text-sm cursor-pointer" htmlFor="culqi-switch">
-                      {formData.culqiActive ? 'Activo' : 'Inactivo'}
+                    <Label className="font-semibold text-sm cursor-pointer" htmlFor="mercadopago-switch">
+                      {formData.mercadopagoActive ? 'Activo' : 'Inactivo'}
                     </Label>
                     <div 
-                      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors ${formData.culqiActive ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-700'}`}
-                      onClick={() => updateForm('culqiActive', !formData.culqiActive)}
-                      id="culqi-switch"
+                      className={`w-11 h-6 rounded-full p-1 cursor-pointer transition-colors ${formData.mercadopagoActive ? 'bg-primary' : 'bg-zinc-300 dark:bg-zinc-700'}`}
+                      onClick={() => updateForm('mercadopagoActive', !formData.mercadopagoActive)}
+                      id="mercadopago-switch"
                     >
-                      <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${formData.culqiActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                      <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${formData.mercadopagoActive ? 'translate-x-5' : 'translate-x-0'}`}></div>
                     </div>
                   </div>
                 </CardHeader>
-                {formData.culqiActive && (
+                {formData.mercadopagoActive && (
                   <CardContent className="pt-6 space-y-4">
                     <div className="space-y-2">
-                      <Label>Llave Pública (pk_...)</Label>
-                      <Input value={formData.culqiPublicKey} onChange={(e) => updateForm('culqiPublicKey', e.target.value)} className="font-mono text-sm" />
+                      <Label>Public Key</Label>
+                      <Input value={formData.mercadopagoPublicKey} onChange={(e) => updateForm('mercadopagoPublicKey', e.target.value)} className="font-mono text-sm" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Llave Privada (sk_...)</Label>
-                      <Input type="password" value={formData.culqiSecretKey} onChange={(e) => updateForm('culqiSecretKey', e.target.value)} className="font-mono text-sm" placeholder="Ingresa para modificar" />
+                      <Label>Access Token</Label>
+                      <Input type="password" value={formData.mercadopagoAccessToken} onChange={(e) => updateForm('mercadopagoAccessToken', e.target.value)} className="font-mono text-sm" placeholder="Ingresa para modificar" />
                       <p className="text-xs text-zinc-500">Solo visible al momento de editar. Se guarda cifrada en el servidor.</p>
                     </div>
                   </CardContent>

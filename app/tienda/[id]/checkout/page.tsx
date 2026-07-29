@@ -8,9 +8,9 @@ import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
 import { ShoppingBag, ArrowLeft, Upload, MapPin, Store, CreditCard, Wallet, QrCode, CheckCircle2, User, Phone, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
-import Script from 'next/script'
+import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPayment'
 
-type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_culqi'
+type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_mercadopago'
 type OrderStatus = 'pendiente' | 'pendiente_verificacion' | 'pagado' | 'cancelado'
 
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -26,6 +26,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [perfil, setPerfil] = useState<Profile | null>(null)
     const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null)
     const [leadId, setLeadId] = useState<string | null>(null)
+    const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string } | null>(null)
 
     // Form states
     const [nombre, setNombre] = useState('')
@@ -66,70 +67,14 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     whatsapp_phone: store.whatsapp_phone,
                     yape_image_url: config?.yape_image_url,
                     plin_image_url: config?.plin_image_url,
-                    culqi_active: config?.culqi_active,
-                    culqi_public_key: config?.culqi_public_key,
+                    mercadopago_active: config?.mercadopago_active,
+                    mercadopago_public_key: config?.mercadopago_public_key,
                 })
             }
             setLoading(false)
         }
         cargarPerfil()
     }, [storeId, router, cart.length, orderSuccessId])
-
-    // ==============================================================
-    // CULQI CALLBACK INYECCIÓN (Global Listener)
-    // ==============================================================
-    useEffect(() => {
-        const win = window as any;
-        win.culqi = async () => {
-            if (win.Culqi.token) {
-                const token = win.Culqi.token.id;
-                const email = win.Culqi.token.email;
-                toast.loading("Procesando pago seguro...", { id: 'culqi-charge' });
-                
-                try {
-                    const orderData = win.pendingCulqiOrderData;
-                    const orderId = orderData?.coreOrderId;
-                    if (!orderData?.perfil || !orderId) throw new Error('Orden de pago no inicializada.');
-                    const res = await fetch('/api/checkout/culqi', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            token_id: token,
-                            email: email || 'cliente@linkventas.com',
-                            store_id: orderData.perfil.id,
-                            order_id: orderId
-                        })
-                    });
-                    
-                    const data = await res.json();
-                    if (!res.ok) {
-                        toast.dismiss('culqi-charge');
-                        toast.error('Transacción Denegada: ' + (data.error || 'Verifica tu tarjeta.'), { duration: 5000 });
-                        setSubmitting(false);
-                        return;
-                    }
-
-                    // El pedido y el inventario se confirmaron atómicamente en /api/orders.
-                    toast.dismiss('culqi-charge');
-                    toast.success('¡Pago procesado exitosamente!');
-                    try { win.Culqi.close(); } catch {}
-                    
-                    // Limpiar carrito y mostrar éxito
-                    useCartStore.getState().clearCart(storeId);
-                    setOrderSuccessId(orderData.orderId);
-                } catch (err) {
-                    toast.dismiss('culqi-charge');
-                    toast.error('Ocurrió un error en la red al procesar el pago.');
-                    setSubmitting(false);
-                }
-            } else if (win.Culqi.order) {
-                 toast.success('Orden de pago generada. En espera del depósito.');
-            } else {
-                toast.error(win.Culqi.error?.user_message || 'El pago fue cancelado o hubo un error.');
-                setSubmitting(false);
-            }
-        };
-    }, [storeId]);
 
     // ==============================================================
     // STEALTH CAPTURE (Debounced Lead Saver)
@@ -222,7 +167,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             const proofMap: Record<PaymentMethod, string | null> = {
                 contra_entrega: 'CONTRA_ENTREGA',
-                tarjeta_culqi: 'CULQI_PENDING',
+                tarjeta_mercadopago: 'MERCADOPAGO_PENDING',
                 transferencia: fileName || 'TRANSFERENCIA_MANUAL',
             }
             const orderResponse = await fetch('/api/orders', {
@@ -249,26 +194,8 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             }
             const persistedOrder = orderResult.order
 
-            if (metodoPago === 'tarjeta_culqi') {
-                const win = window as any
-                if (!win.Culqi) {
-                    toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo.')
-                    return
-                }
-                win.pendingCulqiOrderData = {
-                    perfil,
-                    leadId,
-                    orderId: persistedOrder.legacy_id,
-                    coreOrderId: persistedOrder.order_id,
-                }
-                win.Culqi.publicKey = perfil.culqi_public_key
-                win.Culqi.settings({
-                    title: perfil.store_name?.substring(0, 50) || 'Tienda',
-                    currency: 'PEN',
-                    amount: Math.round(Number(persistedOrder.total) * 100),
-                })
-                win.Culqi.options({ lang: 'es', installments: false, paymentMethods: { tarjeta: true, yape: true, bancaMovil: false } })
-                win.Culqi.open()
+            if (metodoPago === 'tarjeta_mercadopago') {
+                setPendingPayment({ orderId: persistedOrder.order_id, legacyId: persistedOrder.legacy_id })
                 return
             }
 
@@ -346,7 +273,20 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
     return (
         <>
-        <Script src="https://checkout.culqi.com/js/v4" strategy="afterInteractive" />
+        {pendingPayment && perfil?.mercadopago_public_key && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="w-full max-w-lg bg-white p-6 text-black shadow-2xl">
+              <div className="mb-4 flex items-center justify-between"><h2 className="font-headline text-lg font-black">PAGO SEGURO</h2><button onClick={() => setPendingPayment(null)}>Cerrar</button></div>
+              <MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={Number(total)} payerEmail={`${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => {
+                const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || `${telefono.replace(/\D/g, '')}@linkventas.pe`, order_id: pendingPayment.orderId, store_id: perfil.id }) })
+                const data = await response.json()
+                if (!response.ok) throw new Error(data.error || 'Pago no aprobado.')
+                cartStore.clearCart(perfil.id); if (storeId !== perfil.id) cartStore.clearCart(storeId)
+                setOrderSuccessId(pendingPayment.legacyId); setPendingPayment(null); toast.success('¡Pago aprobado!')
+              }} />
+            </div>
+          </div>
+        )}
         <div className="min-h-screen bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container font-body flex flex-col md:flex-row">
 
             {/* LEFT: FORMULARIO */}
@@ -471,24 +411,24 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                     {metodoPago === 'contra_entrega' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5"><CheckCircle2 size={16}/></span>}
                                 </label>
 
-                                {/* Option C (CULQI Automático) - Solo si la tienda tiene active las llaves */}
-                                {perfil?.culqi_active && perfil?.culqi_public_key && (
+                                {/* Option C (Mercado Pago) */}
+                                {perfil?.mercadopago_active && perfil?.mercadopago_public_key && (
                                     <label 
-                                        className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 md:col-span-2 ${metodoPago === 'tarjeta_culqi' ? 'border-primary bg-primary/5 shadow-md' : 'border-[#00A19B]/30 bg-surface-variant hover:border-[#00A19B]'}`}
+                                        className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 md:col-span-2 ${metodoPago === 'tarjeta_mercadopago' ? 'border-primary bg-primary/5 shadow-md' : 'border-[#00A19B]/30 bg-surface-variant hover:border-[#00A19B]'}`}
                                     >
                                         <input 
                                             type="radio" 
                                             name="metodopago" 
-                                            value="tarjeta_culqi" 
-                                            checked={metodoPago === 'tarjeta_culqi'}
-                                            onChange={() => setMetodoPago('tarjeta_culqi')}
+                                            value="tarjeta_mercadopago"
+                                            checked={metodoPago === 'tarjeta_mercadopago'}
+                                            onChange={() => setMetodoPago('tarjeta_mercadopago')}
                                             className="absolute opacity-0" 
                                         />
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex items-center gap-2">
-                                                <ShieldCheck size={28} className={metodoPago === 'tarjeta_culqi' ? 'text-primary' : 'text-[#00A19B]'} />
-                                                <span className={`font-headline font-black uppercase text-lg ${metodoPago === 'tarjeta_culqi' ? 'text-primary' : 'text-on-background'}`}>
-                                                    TARJETA O YAPE (AUTOMÁTICO)
+                                                <ShieldCheck size={28} className={metodoPago === 'tarjeta_mercadopago' ? 'text-primary' : 'text-[#00A19B]'} />
+                                                <span className={`font-headline font-black uppercase text-lg ${metodoPago === 'tarjeta_mercadopago' ? 'text-primary' : 'text-on-background'}`}>
+                                                    TARJETA CON MERCADO PAGO
                                                 </span>
                                             </div>
                                             <div className="flex gap-1 md:gap-2">
@@ -499,7 +439,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         <p className="text-xs text-on-surface-variant max-w-sm mt-1">
                                             Pago instantáneo protegido con cifrado SSL bancario. Tu compra se procesará automáticamente.
                                         </p>
-                                        {metodoPago === 'tarjeta_culqi' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5 rounded shadow"><CheckCircle2 size={16}/></span>}
+                                        {metodoPago === 'tarjeta_mercadopago' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5 rounded shadow"><CheckCircle2 size={16}/></span>}
                                     </label>
                                 )}
                             </div>
@@ -591,7 +531,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                 disabled={submitting || (metodoPago === 'transferencia' && !comprobante) || (!nombre || telefono.length < 7 || direccion.length < 5)}
                                 className="w-full bg-primary text-on-primary hover:brightness-110 h-16 font-headline text-lg uppercase tracking-widest font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/20"
                             >
-                                {submitting ? 'Asegurando bóveda...' : (metodoPago === 'tarjeta_culqi' ? 'PAGAR DE FORMA SEGURA 🔒' : 'FINALIZAR ORDEN')}
+                                {submitting ? 'Asegurando bóveda...' : (metodoPago === 'tarjeta_mercadopago' ? 'PAGAR DE FORMA SEGURA 🔒' : 'FINALIZAR ORDEN')}
                             </Button>
                             <p className="text-center font-label text-[10px] uppercase text-on-surface-variant flex items-center justify-center gap-1">
                                 <ShieldCheck size={12} /> PROCESO PROTEGIDO POR LINKVENTAS
