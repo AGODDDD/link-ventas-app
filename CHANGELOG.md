@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-07-29] — Scripts de Mantenimiento y Configuración de Agentes
+
+### Added
+- Configuración global de entorno para agentes de IA en `.agents/AGENTS.md` asegurando que las reglas del proyecto se sigan automáticamente.
+- Scripts de mantenimiento y pruebas: `fix_pedidos.py`, `scripts/fix-escapes.js`, y `scripts/test_store.ts`.
+
+### Fixed
+- Limpieza de espacios en blanco al final de la línea en `app/api/checkout/culqi/route.ts`.
+
 ## [2026-06-20] — Sistema de Reseñas + Rediseño ModaTemplate
 
 ### Features

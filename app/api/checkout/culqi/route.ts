@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         description: `Orden #${String(order_id).split('-')[0].toUpperCase()} en LinkVentas`,
         metadata: { order_id, store_id },
       }),
-    })
+    })  
 
     const data = await response.json()
     if (!response.ok) {
