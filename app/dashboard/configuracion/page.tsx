@@ -47,6 +47,7 @@ interface SettingsFormData {
 
 interface SystemData {
   userId: string;
+  storeId: string;
   userEmail: string;
   planStatus: string | null;
   planExpiresAt: string | null;
@@ -71,6 +72,7 @@ export default function ConfiguracionPage() {
 
   const [systemData, setSystemData] = useState<SystemData>({
     userId: '',
+    storeId: '',
     userEmail: '',
     planStatus: null,
     planExpiresAt: null
@@ -88,48 +90,59 @@ export default function ConfiguracionPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const [profileResult, deliveryResult] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('delivery_settings').select('base_delivery_fee').eq('store_id', user.id).maybeSingle(),
+      const [{ data: store, error: storeError }, { data: profile }] = await Promise.all([
+        supabase.from('stores').select('*').eq('owner_id', user.id).single(),
+        supabase.from('profiles').select('plan, plan_expires_at').eq('id', user.id).single(),
       ])
-      const { data } = profileResult
 
-      if (data) {
+      if (storeError || !store) {
+        alert('No se encontró la tienda principal. Ejecuta la migración de configuración Core.')
+        setLoading(false)
+        return
+      }
+
+      const [{ data: config }, { data: delivery }] = await Promise.all([
+        supabase.from('store_config').select('*').eq('store_id', store.id).maybeSingle(),
+        supabase.from('delivery_settings').select('base_delivery_fee').eq('store_id', store.id).maybeSingle(),
+      ])
+
+      if (config) {
         setSystemData({
           userId: user.id,
+          storeId: store.id,
           userEmail: user.email || '',
-          planStatus: data.plan ?? null,
-          planExpiresAt: data.plan_expires_at ?? null
+          planStatus: profile?.plan ?? null,
+          planExpiresAt: profile?.plan_expires_at ?? null
         })
 
         const fetchedData: SettingsFormData = {
-          storeName: data.store_name || '',
-          slug: data.slug || '',
-          description: data.description || '',
-          avatarUrl: data.avatar_url || '',
-          heroImageUrl: data.hero_image_url || '',
-          templateType: data.template_type || 'comercio',
-          bannerUrl: data.banner_url || '',
-          primaryColor: data.primary_color || '#000000',
-          secondaryColor: data.secondary_color || '#C31432',
-          yapeUrl: data.yape_image_url || '',
-          plinUrl: data.plin_image_url || '',
-          culqiActive: data.culqi_active || false,
-          culqiPublicKey: data.culqi_public_key || '',
+          storeName: store.name || '',
+          slug: store.slug || '',
+          description: store.description || '',
+          avatarUrl: store.avatar_url || '',
+          heroImageUrl: config.hero_image_url || '',
+          templateType: store.template_type || 'comercio',
+          bannerUrl: store.banner_url || '',
+          primaryColor: config.primary_color || '#000000',
+          secondaryColor: config.secondary_color || '#C31432',
+          yapeUrl: config.yape_image_url || '',
+          plinUrl: config.plin_image_url || '',
+          culqiActive: config.culqi_active || false,
+          culqiPublicKey: config.culqi_public_key || '',
           culqiSecretKey: '', // Starts empty
-          storeAddress: data.store_address || '',
-          storeLat: data.store_lat || null,
-          storeLng: data.store_lng || null,
-          storeSchedule: data.store_schedule ? { ...DEFAULT_SCHEDULE, ...data.store_schedule } : DEFAULT_SCHEDULE,
-          deliveryFee: Number(deliveryResult.data?.base_delivery_fee ?? 0),
-          socialFacebook: data.social_facebook || '',
-          socialInstagram: data.social_instagram || '',
-          socialTikTok: data.social_tiktok || '',
-          whatsappPhone: data.whatsapp_phone || '',
-          benefits: data.benefits || [],
-          faqs: data.faqs || [],
-          promoTitle: data.promo_title || '',
-          promoDescription: data.promo_description || '',
+          storeAddress: config.store_address || '',
+          storeLat: config.store_lat || null,
+          storeLng: config.store_lng || null,
+          storeSchedule: config.store_schedule ? { ...DEFAULT_SCHEDULE, ...config.store_schedule } : DEFAULT_SCHEDULE,
+          deliveryFee: Number(delivery?.base_delivery_fee ?? 0),
+          socialFacebook: config.social_facebook || '',
+          socialInstagram: config.social_instagram || '',
+          socialTikTok: config.social_tiktok || '',
+          whatsappPhone: store.whatsapp_phone || '',
+          benefits: config.benefits || [],
+          faqs: config.faqs || [],
+          promoTitle: config.promo_title || '',
+          promoDescription: config.promo_description || '',
         }
         setInitialData(fetchedData)
         setFormData(JSON.parse(JSON.stringify(fetchedData)))
@@ -186,29 +199,39 @@ export default function ConfiguracionPage() {
   }
 
   const guardarCambios = async () => {
-    if (!systemData.userId || !formData || !initialData) return
+    if (!systemData.userId || !systemData.storeId || !formData || !initialData) return
 
     try {
       setSaving(true)
 
-      const { error } = await supabase
-        .from('profiles')
+      const { error: storeError } = await supabase
+        .from('stores')
         .update({
-          store_name: formData.storeName,
+          name: formData.storeName,
           slug: formData.slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || null,
           description: formData.description,
           avatar_url: formData.avatarUrl,
+          template_type: formData.templateType,
+          banner_url: formData.bannerUrl,
+          whatsapp_phone: formData.whatsappPhone.replace(/\s/g, '') || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', systemData.storeId)
+
+      if (storeError) throw storeError
+
+      const { error: configError } = await supabase
+        .from('store_config')
+        .upsert({
+          store_id: systemData.storeId,
           hero_image_url: formData.heroImageUrl,
           yape_image_url: formData.yapeUrl,
           plin_image_url: formData.plinUrl,
-          template_type: formData.templateType,
-          banner_url: formData.bannerUrl,
           primary_color: formData.primaryColor,
           secondary_color: formData.secondaryColor,
           social_facebook: formData.socialFacebook,
           social_instagram: formData.socialInstagram,
           social_tiktok: formData.socialTikTok,
-          whatsapp_phone: formData.whatsappPhone.replace(/\s/g, '') || null,
           benefits: formData.benefits,
           faqs: formData.faqs,
           promo_title: formData.promoTitle,
@@ -217,11 +240,10 @@ export default function ConfiguracionPage() {
           store_lat: formData.storeLat,
           store_lng: formData.storeLng,
           store_schedule: formData.storeSchedule,
-          updated_at: new Date(),
-        })
-        .eq('id', systemData.userId)
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'store_id' })
 
-      if (error) throw error
+      if (configError) throw configError
 
       if (formData.templateType === 'restaurante') {
         const fee = Number(formData.deliveryFee)
@@ -232,7 +254,7 @@ export default function ConfiguracionPage() {
         const { error: deliveryError } = await supabase
           .from('delivery_settings')
           .upsert({
-            store_id: systemData.userId,
+            store_id: systemData.storeId,
             base_delivery_fee: fee,
             delivery_active: true,
             updated_at: new Date().toISOString(),
@@ -287,13 +309,13 @@ export default function ConfiguracionPage() {
   }
 
   const confirmarCambioPlantilla = async () => {
-    if (!systemData.userId || !pendingTemplate) return
+    if (!systemData.storeId || !pendingTemplate) return
     try {
       setSavingTemplate(true)
       const { error } = await supabase
-        .from('profiles')
+        .from('stores')
         .update({ template_type: pendingTemplate, updated_at: new Date() })
-        .eq('id', systemData.userId)
+        .eq('id', systemData.storeId)
       if (error) throw error
 
       if (initialData && formData) {
@@ -783,7 +805,7 @@ export default function ConfiguracionPage() {
                   <Button onClick={() => setShowFomoConfig(true)} variant="outline" className="w-full border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800">
                     Configurar señal de stock
                   </Button>
-                  <FomoConfigModal isOpen={showFomoConfig} onClose={() => setShowFomoConfig(false)} userId={systemData.userId} />
+                  <FomoConfigModal isOpen={showFomoConfig} onClose={() => setShowFomoConfig(false)} storeId={systemData.storeId} />
                 </CardContent>
               </Card>
 

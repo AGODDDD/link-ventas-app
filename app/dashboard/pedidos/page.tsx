@@ -109,7 +109,7 @@ export default function PedidosPage() {
         const load = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+                const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
                 if (profile) {
                     setPerfil(profile)
                     setPlanStatus(profile.plan ?? null)

@@ -64,18 +64,18 @@ export async function GET(request: NextRequest) {
             })
         }
         
-        // Obtener perfil del comercio
+        // El nombre visible pertenece a la identidad Core de la tienda.
         const storeId = order.store_id
         let storeName = "TU TIENDA"
         if (storeId) {
             const supabase = getSupabaseServiceClient()
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('store_name')
+            const { data: store } = await supabase
+                .from('stores')
+                .select('name')
                 .eq('id', storeId)
                 .single()
-            if (profile?.store_name) {
-                storeName = profile.store_name
+            if (store?.name) {
+                storeName = store.name
             }
         }
         

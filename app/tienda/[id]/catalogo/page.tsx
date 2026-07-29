@@ -8,15 +8,15 @@ import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
-  const { data: perfil } = await supabase
-    .from('storefront_profiles')
-    .select('store_name, description, primary_color, secondary_color, avatar_url')
+  const { data: store } = await supabase
+    .from('stores')
+    .select('name, description')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
   return {
-    title: perfil?.store_name ? `CATÁLOGO - ${perfil.store_name}` : 'CATÁLOGO',
-    description: perfil?.description || 'Encuentra las mejores ofertas y productos.',
+    title: store?.name ? `CATÁLOGO - ${store.name}` : 'CATÁLOGO',
+    description: store?.description || 'Encuentra las mejores ofertas y productos.',
   }
 }
 
@@ -25,18 +25,36 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
 
-  // Fetch Profile Secuencialmente por el ID o el Slug
-  const { data: perfilBase } = await supabase
-    .from('storefront_profiles')
+  const { data: store } = await supabase
+    .from('stores')
     .select('*')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
   
-  const perfil = perfilBase as Profile | null;
-
-  if (!perfil) {
+  if (!store) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Tienda no encontrada 🛒</div>
   }
+
+  const { data: config } = await supabase
+    .from('store_config')
+    .select('*')
+    .eq('store_id', store.id)
+    .maybeSingle()
+
+  const perfil = {
+    id: store.id,
+    store_name: store.name,
+    description: store.description,
+    avatar_url: store.avatar_url,
+    banner_url: store.banner_url,
+    template_type: store.template_type,
+    whatsapp_phone: store.whatsapp_phone,
+    primary_color: config?.primary_color,
+    secondary_color: config?.secondary_color,
+    social_instagram: config?.social_instagram,
+    social_facebook: config?.social_facebook,
+    social_tiktok: config?.social_tiktok,
+  } as Profile
 
   // Restaurante no tiene página de catálogo separada, todo vive en el index
   if (perfil.template_type === 'restaurante') {

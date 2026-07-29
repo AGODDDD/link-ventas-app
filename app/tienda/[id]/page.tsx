@@ -1,10 +1,7 @@
 import React from 'react'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { Profile } from '@/types/tienda'
 import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
 import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
-import LeadCaptureForm from '@/components/tienda/LeadCaptureForm'
 import ComercioTemplate from '@/components/tienda/templates/ComercioTemplate'
 import RestauranteTemplate from '@/components/tienda/templates/RestauranteTemplate'
 import ModaTemplate from '@/components/tienda/templates/ModaTemplate'
@@ -14,15 +11,15 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
   
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
   
-  const { data: perfil } = await supabase
-    .from('storefront_profiles')
-    .select('store_name, description, primary_color, secondary_color, banner_url, avatar_url')
+  const { data: store } = await supabase
+    .from('stores')
+    .select('id, name, description')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
     
   return {
-    title: perfil?.store_name ? `OFERTAS BLACK - ${perfil.store_name}` : 'OFERTAS BLACK',
-    description: perfil?.description || 'Encuentra las mejores ofertas.',
+    title: store?.name ? `OFERTAS BLACK - ${store.name}` : 'OFERTAS BLACK',
+    description: store?.description || 'Encuentra las mejores ofertas.',
   }
 }
 
@@ -31,36 +28,54 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
 
-  // 1. CARGA DE CORE (Identidad y Config)
-  // Intentamos cargar de 'stores' (Nuevo Core), fallback a 'profiles' (Legacy)
-  const [storeRes, profileRes] = await Promise.all([
-    supabase.from('stores').select('*').eq(isUUID ? 'id' : 'slug', params.id).single(),
-    supabase.from('storefront_profiles').select('*').eq(isUUID ? 'id' : 'slug', params.id).single()
-  ]);
+  // stores + store_config son la fuente de verdad del storefront.
+  const { data: store } = await supabase
+    .from('stores')
+    .select('*')
+    .eq(isUUID ? 'id' : 'slug', params.id)
+    .single()
 
-  const profile = profileRes.data;
-  const store = storeRes.data;
+  if (!store) return <div>Tienda no encontrada</div>
 
-  // Si no hay perfil legacy ni tienda nueva, 404
-  if (!profile && !store) return <div>Tienda no encontrada</div>;
+  const { data: config } = await supabase
+    .from('store_config')
+    .select('*')
+    .eq('store_id', store.id)
+    .maybeSingle()
 
-  // Normalizar datos para las plantillas (Prioridad Core)
   const perfil = {
-    ...(profile || {}),
-    ...(store ? {
-        id: store.id,
-        store_name: store.name,
-        description: store.description,
-        avatar_url: store.avatar_url,
-        banner_url: store.banner_url,
-        template_type: store.template_type,
-        whatsapp_phone: store.whatsapp_phone
-    } : {})
+    id: store.id,
+    store_name: store.name,
+    description: store.description,
+    avatar_url: store.avatar_url,
+    banner_url: store.banner_url,
+    template_type: store.template_type,
+    whatsapp_phone: store.whatsapp_phone,
+    primary_color: config?.primary_color,
+    secondary_color: config?.secondary_color,
+    hero_image_url: config?.hero_image_url,
+    yape_image_url: config?.yape_image_url,
+    plin_image_url: config?.plin_image_url,
+    social_instagram: config?.social_instagram,
+    social_facebook: config?.social_facebook,
+    social_tiktok: config?.social_tiktok,
+    horario: config?.horario,
+    direccion: config?.direccion,
+    whatsapp_order_template: config?.whatsapp_order_template,
+    store_lat: config?.store_lat,
+    store_lng: config?.store_lng,
+    store_address: config?.store_address,
+    store_schedule: config?.store_schedule,
+    fomo_enabled: config?.fomo_enabled,
+    culqi_active: config?.culqi_active,
+    culqi_public_key: config?.culqi_public_key,
+    benefits: config?.benefits,
+    faqs: config?.faqs,
+    promo_title: config?.promo_title,
+    promo_description: config?.promo_description,
   } as any;
 
-  // Lógica de Solo Lectura (Paywall / Inactivo)
-  const isExpired = perfil.plan_expires_at ? new Date(perfil.plan_expires_at) < new Date() : false;
-  const isReadOnly = perfil.plan === 'inactivo' || (perfil.plan !== 'free' && isExpired);
+  const isReadOnly = !store.is_active;
 
   // 2. CARGA DE EXTENSIONES (Solo si es restaurante)
   let extensionData: any = {};

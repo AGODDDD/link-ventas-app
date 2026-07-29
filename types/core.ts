@@ -30,11 +30,22 @@ export interface StoreConfig {
   store_lng?: number;
   store_address?: string;
   store_schedule?: any;
-  // FOMO Extensions
+  hero_image_url?: string;
+  yape_image_url?: string;
+  plin_image_url?: string;
+  social_instagram?: string;
+  social_facebook?: string;
+  social_tiktok?: string;
+  horario?: string;
+  direccion?: string;
+  whatsapp_order_template?: string;
+  benefits?: { title: string; description: string }[];
+  faqs?: { question: string; answer: string }[];
+  promo_title?: string;
+  promo_description?: string;
   fomo_enabled?: boolean;
-  fomo_min_viewers?: number;
-  fomo_max_viewers?: number;
-  fomo_message?: string;
+  culqi_active?: boolean;
+  culqi_public_key?: string;
   created_at?: string;
   updated_at: string;
 }

@@ -14,12 +14,19 @@ export default function PendientePage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 setEmail(user.email || '')
-                const { data: profile } = await supabase
+                const [{ data: profile }, { data: store }] = await Promise.all([
+                  supabase
                     .from('profiles')
-                    .select('store_name, plan, plan_expires_at')
+                    .select('plan, plan_expires_at')
                     .eq('id', user.id)
-                    .single()
-                if (profile?.store_name) setNombre(profile.store_name)
+                    .single(),
+                  supabase
+                    .from('stores')
+                    .select('name')
+                    .eq('owner_id', user.id)
+                    .single(),
+                ])
+                if (store?.name) setNombre(store.name)
                 setPlan(profile?.plan ?? null)
             }
             setLoading(false)

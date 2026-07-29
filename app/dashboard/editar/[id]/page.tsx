@@ -107,18 +107,13 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
       let currentTemplateType = 'comercio'
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        // 1. Intentar cargar desde el Core (stores) prioritize identification
-        const { data: store } = await supabase.from('stores').select('template_type').eq('id', user.id).single()
+        // La plantilla vive exclusivamente en el Core.
+        const { data: store } = await supabase.from('stores').select('template_type').eq('owner_id', user.id).single()
         if (store?.template_type) {
           currentTemplateType = store.template_type
           setTemplateType(store.template_type)
         } else {
-          // 2. Fallback a Profiles (Legacy)
-          const { data: profile } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
-          if (profile?.template_type) {
-            currentTemplateType = profile.template_type
-            setTemplateType(profile.template_type)
-          }
+          toast.error('No se encontró la tienda Core. Ejecuta la migración de configuración.')
         }
       }
 

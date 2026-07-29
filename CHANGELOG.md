@@ -12,6 +12,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ### Added
 - Pruebas unitarias para horario de tienda y serialización CSV mediante `npm run test:unit`.
 
+### Fixed
+- La configuración comercial ahora tiene una única fuente de verdad en `stores` y `store_config`; el storefront ya no mezcla datos de `profiles` con el Core.
+
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
@@ -22,7 +25,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Se eliminaron los `INSERT` directos de `orders` y `order_items` desde los checkouts público y de restaurante.
 - Culqi ya no confirma pagos desde el endpoint de cargo. El webhook exige `charge_id` único, metadata exacta de orden/tienda, `PEN`, `venta_exitosa`, estado `Exitosa` y monto idéntico antes de marcar una orden como `paid`.
 - Añadida protección RLS para pedidos, ítems, carritos abandonados y configuraciones satélite; se revocó acceso anónimo directo a datos de pedido.
-- `profiles` dejó de ser un origen público completo. El storefront consume la vista limitada `storefront_profiles`; los secretos y campos internos no se serializan al cliente.
+- `profiles` dejó de ser un origen público completo. El storefront consume exclusivamente `stores` y `store_config`; los secretos y campos internos no se serializan al cliente.
 - Se añadió un guard de base de datos que bloquea cambios de totales, cargos Culqi o estado `paid` desde el navegador.
 
 ### Compatibilidad

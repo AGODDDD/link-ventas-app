@@ -9,21 +9,21 @@ import { toast } from 'sonner'
 interface FomoConfigModalProps {
     isOpen: boolean
     onClose: () => void
-    userId: string
+    storeId: string
 }
 
-export default function FomoConfigModal({ isOpen, onClose, userId }: FomoConfigModalProps) {
+export default function FomoConfigModal({ isOpen, onClose, storeId }: FomoConfigModalProps) {
     const [loading, setLoading] = useState(false)
     const [enabled, setEnabled] = useState(true)
 
     useEffect(() => {
-        if (!isOpen || !userId) return
+        if (!isOpen || !storeId) return
 
         const fetchFomoData = async () => {
             const { data } = await supabase
-                .from('profiles')
+                .from('store_config')
                 .select('fomo_enabled')
-                .eq('id', userId)
+                .eq('store_id', storeId)
                 .single()
 
             if (data) {
@@ -32,17 +32,17 @@ export default function FomoConfigModal({ isOpen, onClose, userId }: FomoConfigM
         }
         
         fetchFomoData()
-    }, [isOpen, userId])
+    }, [isOpen, storeId])
 
     const handleSave = async () => {
         setLoading(true)
         try {
             const { error } = await supabase
-                .from('profiles')
-                .update({
+                .from('store_config')
+                .upsert({
+                    store_id: storeId,
                     fomo_enabled: enabled,
-                })
-                .eq('id', userId)
+                }, { onConflict: 'store_id' })
 
             if (error) {
                 // If column does not exist error

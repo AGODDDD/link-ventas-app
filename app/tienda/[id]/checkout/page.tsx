@@ -43,13 +43,33 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
         const cargarPerfil = async () => {
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId);
-            const { data } = await supabase
-                .from('storefront_profiles')
+            const { data: store } = await supabase
+                .from('stores')
                 .select('*')
                 .eq(isUUID ? 'id' : 'slug', storeId)
                 .single()
 
-            if (data) setPerfil(data)
+            if (store) {
+                const { data: config } = await supabase
+                    .from('store_config')
+                    .select('*')
+                    .eq('store_id', store.id)
+                    .maybeSingle()
+
+                setPerfil({
+                    id: store.id,
+                    store_name: store.name,
+                    description: store.description,
+                    avatar_url: store.avatar_url,
+                    banner_url: store.banner_url,
+                    template_type: store.template_type,
+                    whatsapp_phone: store.whatsapp_phone,
+                    yape_image_url: config?.yape_image_url,
+                    plin_image_url: config?.plin_image_url,
+                    culqi_active: config?.culqi_active,
+                    culqi_public_key: config?.culqi_public_key,
+                })
+            }
             setLoading(false)
         }
         cargarPerfil()

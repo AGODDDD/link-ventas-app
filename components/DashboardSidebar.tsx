@@ -71,19 +71,19 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
         setUserEmail(user.email || '')
         
         const { data } = await supabase
-          .from('profiles')
-          .select('slug, store_name')
-          .eq('id', user.id)
+          .from('stores')
+          .select('slug, name')
+          .eq('owner_id', user.id)
           .single()
           
         if (data) {
           setStoreLink(data.slug || user.id)
-          if (data.store_name) {
-            setStoreName(data.store_name)
-            const parts = data.store_name.trim().split(/\s+/)
+          if (data.name) {
+            setStoreName(data.name)
+            const parts = data.name.trim().split(/\s+/)
             const initialsText = parts.length >= 2
               ? (parts[0][0] + parts[1][0]).toUpperCase()
-              : data.store_name.substring(0, 2).toUpperCase()
+              : data.name.substring(0, 2).toUpperCase()
             setInitials(initialsText || 'LV')
           }
         }

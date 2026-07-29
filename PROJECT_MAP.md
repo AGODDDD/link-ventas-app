@@ -45,6 +45,7 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 - `store/useDashboardStore.ts`: Estado unificado SWR (Stale-While-Revalidate) del dashboard con flags `lastFetch` para Zero-Load Navigation.
 
 ### Base de Datos
+- `supabase/migrations/20260000000005_unify_store_configuration.sql`: backfill de configuración comercial a `stores` y `store_config`; `profiles` queda para Auth, planes y secretos.
 - `supabase/migrations/20260000000002_add_pendiente_verificacion.sql`: Estado `pendiente_verificacion` para pagos por transferencia.
 - `supabase/migrations/20260000000003_store_order_sequences.sql`: Tabla `store_sequences` + RPC `get_next_order_sequence` para IDs secuenciales diarios.
 

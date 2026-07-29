@@ -38,11 +38,21 @@ export default function AdminPage() {
                 return
             }
             setIsAdmin(true)
-            const { data } = await supabase
-                .from('profiles')
-                .select('id, store_name, slug, plan, plan_expires_at')
-                .order('plan', { ascending: true })
-            setMerchants(data || [])
+            const [{ data: profiles }, { data: stores }] = await Promise.all([
+                supabase.from('profiles').select('id, plan, plan_expires_at').order('plan', { ascending: true }),
+                supabase.from('stores').select('owner_id, name, slug'),
+            ])
+            const storesByOwner = new Map((stores || []).map(store => [store.owner_id, store]))
+            setMerchants((profiles || []).map(profile => {
+                const store = storesByOwner.get(profile.id)
+                return {
+                    id: profile.id,
+                    store_name: store?.name || 'Nueva tienda',
+                    slug: store?.slug || '',
+                    plan: profile.plan || 'inactivo',
+                    plan_expires_at: profile.plan_expires_at,
+                }
+            }))
             setLoading(false)
         }
         init()

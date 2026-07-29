@@ -36,6 +36,16 @@ export async function POST(req: Request) {
       ? getSupabaseServiceClient()
       : getSupabaseUserServerClient(token)
 
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('id')
+      .eq('owner_id', user.id)
+      .single()
+
+    if (storeError || !store) {
+      return NextResponse.json({ error: 'No se encontró la tienda Core.' }, { status: 409 })
+    }
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('plan, plan_expires_at')
@@ -58,11 +68,23 @@ export async function POST(req: Request) {
       encryptedSecretKey = encryptText(culqi_secret_key.trim())
     }
 
+    const { error: configError } = await supabase
+      .from('store_config')
+      .upsert({
+        store_id: store.id,
+        culqi_active: culqi_active === true,
+        culqi_public_key: culqi_public_key ? culqi_public_key.trim() : null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'store_id' })
+
+    if (configError) {
+      console.error('Error guardando configuracion publica de Culqi:', configError)
+      return NextResponse.json({ error: 'Fallo al guardar la configuracion de pasarela.' }, { status: 500 })
+    }
+
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        culqi_active: culqi_active === true,
-        culqi_public_key: culqi_public_key ? culqi_public_key.trim() : null,
         ...(encryptedSecretKey ? { culqi_secret_key: encryptedSecretKey } : {}),
       })
       .eq('id', user.id)

@@ -105,7 +105,7 @@ export default function CrearProducto() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         // 1. Cargar Identidad del Core
-        const { data: store } = await supabase.from('stores').select('id, template_type').eq('id', user.id).single()
+        const { data: store } = await supabase.from('stores').select('id, template_type').eq('owner_id', user.id).single()
         if (store) {
           setTemplateType(store.template_type)
           
@@ -115,9 +115,7 @@ export default function CrearProducto() {
             if (cats) setAvailableCategories(cats)
           }
         } else {
-          // Fallback legacy mientras el usuario migra
-          const { data: profile } = await supabase.from('profiles').select('template_type').eq('id', user.id).single()
-          if (profile?.template_type) setTemplateType(profile.template_type)
+          toast.error('No se encontró la tienda Core. Ejecuta la migración de configuración.')
         }
       }
     }
@@ -139,24 +137,10 @@ export default function CrearProducto() {
       const { data: store } = await supabase
         .from('stores')
         .select('id')
-        .eq('id', user.id)
+        .eq('owner_id', user.id)
         .maybeSingle()
 
-      if (!store) {
-        // Migración On-the-fly si no existe en stores
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        if (profile) {
-            await supabase.from('stores').insert({
-                id: profile.id,
-                owner_id: profile.id,
-                slug: profile.slug || `store-${profile.id.slice(0,5)}`,
-                name: profile.store_name || 'Nueva Tienda',
-                template_type: profile.template_type || 'comercio'
-            })
-        } else {
-            throw new Error('No se encontró identidad de tienda activa.')
-        }
-      }
+      if (!store) throw new Error('No se encontró identidad de tienda Core.')
 
       const productMedia = mediaFiles.length > 0 ? await uploadProductMediaFiles(mediaFiles) : []
       const imageUrl = getProductMediaThumbnail(productMedia)

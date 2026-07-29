@@ -4,7 +4,7 @@
 LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrito, webhook de pagos, dashboard, tickets térmicos), pero posee deuda técnica importante en migraciones de base de datos y flujos incompletos en la facturación interna del producto (SaaS Billing).
 
 ## Funcionalidades Completadas
-- Motor FOMO (Stock Social) para urgencia de ventas.
+- Señal de disponibilidad limitada basada en stock real.
 - Generación de tickets térmicos (impresión optimizada con `html2canvas`).
 - Slugs dinámicos (`/tienda/[id]`) renderizados del lado del servidor.
 - Webhook de Culqi para verificación de pagos automatizados.
