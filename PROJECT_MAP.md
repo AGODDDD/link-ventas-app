@@ -44,6 +44,16 @@ Este documento detalla la estructura física del repositorio LinkVentas.
 - `components/dashboard/ThermalReceipt.tsx`: Generador de tickets para impresoras térmicas.
 - `store/useDashboardStore.ts`: Estado unificado SWR (Stale-While-Revalidate) del dashboard con flags `lastFetch` para Zero-Load Navigation.
 
+### Super Admin (Panel SaaS)
+- `app/admin/layout.tsx`: Layout exclusivo con validación server-side de `ADMIN_USER_ID`, sidebar admin y ThemeProvider.
+- `app/admin/page.tsx`: Dashboard KPIs (Total Tiendas, Plan Pro, Plan Emprendedor, Ingresos Estimados) + Gestor de Tiendas.
+- `components/admin/AdminSidebar.tsx`: Sidebar exclusivo del admin con navegación y link de retorno al panel merchant.
+- `components/admin/AdminStoresTable.tsx`: Tabla interactiva con búsqueda, badges de estado y acciones de plan/suspensión.
+- `app/api/admin/stores/route.ts`: GET — Consulta cruzada `stores`+`profiles` con `getSupabaseServiceClient()` (bypass RLS).
+- `app/api/admin/suspend/route.ts`: POST — Suspender/reactivar tiendas (`stores.is_active` + `profiles.plan`).
+- `app/api/admin/check/route.ts`: GET — Verificación de identidad admin via `ADMIN_USER_ID`.
+- `app/api/admin/plans/route.ts`: POST — Activar/desactivar planes Pro.
+
 ### Base de Datos
 - `supabase/migrations/20260000000005_unify_store_configuration.sql`: backfill de configuración comercial a `stores` y `store_config`; `profiles` queda para Auth, planes y secretos.
 - `supabase/migrations/20260000000002_add_pendiente_verificacion.sql`: Estado `pendiente_verificacion` para pagos por transferencia.

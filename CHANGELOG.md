@@ -4,6 +4,26 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+## [2026-07-29] — Panel Super Admin SaaS
+
+### Added
+- **Panel Super Admin** (`/admin`): Dashboard SaaS con métricas KPI, gestor de tiendas y acciones administrativas.
+  - Layout exclusivo con sidebar Admin (`components/admin/AdminSidebar.tsx`) y validación server-side via `/api/admin/check` + `ADMIN_USER_ID`.
+  - 4 KPI cards: Total Tiendas, Plan Pro Activo, Plan Emprendedor (Gratis), Ingresos Estimados (S/ 25/mes × Pro activas).
+  - Tabla interactiva (`components/admin/AdminStoresTable.tsx`) con búsqueda, badges de estado (PRO/TRIAL/VENCIDO/GRATIS/SUSPENDIDA), y acciones rápidas.
+  - API `GET /api/admin/stores`: Consulta cruzada `stores` + `profiles` usando `getSupabaseServiceClient()` (bypass RLS). Retorna merchants + KPIs.
+  - API `POST /api/admin/suspend`: Suspender tienda (`stores.is_active=false` + `profiles.plan='inactivo'`) y reactivar (`stores.is_active=true`).
+  - Acciones: Activar Plan Pro (+1m, +3m, +6m), Suspender tienda (fraude), Reactivar tienda suspendida.
+
+### Changed
+- Página `/admin/page.tsx` reescrita: de Client Component con `style={{}}` inline a diseño profesional con Tailwind CSS puro, datos obtenidos desde API server-side.
+- Precio Plan Pro actualizado a S/ 25/mes en cálculos e interfaz del admin.
+
+### Security
+- `ADMIN_USER_ID` validado exclusivamente en servidor (API routes). Nunca expuesto al frontend.
+- Todas las rutas `/api/admin/*` verifican Bearer token + `ADMIN_USER_ID` antes de ejecutar cualquier operación.
+- Datos de tiendas obtenidos con `getSupabaseServiceClient()` (service_role) — sin filtros RLS.
+
 ### Changed
 - La disponibilidad limitada ahora muestra exclusivamente stock real y el delivery usa la tarifa configurada por cada restaurante.
 - Las migraciones se validan en una base local limpia desde CI.
