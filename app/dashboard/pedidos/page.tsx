@@ -120,24 +120,6 @@ export default function PedidosPage() {
                     cargarLeads(user.id)
                 ])
 
-                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-                const { orders: storeOrders, actualizarEstadoOrderLocal: storeUpdateLocal } = useDashboardStore.getState()
-                
-                const expiredOrders = storeOrders.filter(o => 
-                    (o.status === 'pendiente_pago' || (o.status === 'pendiente' && o.metodo_pago === 'whatsapp')) && 
-                    new Date(o.created_at) < twentyFourHoursAgo
-                )
-
-                if (expiredOrders.length > 0) {
-                    for (const order of expiredOrders) {
-                        const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-                        if (!error) {
-                            storeUpdateLocal(order.id, 'cancelado')
-                        }
-                    }
-                    toast.error(`${expiredOrders.length} pedido(s) fueron cancelados automáticamente por falta de pago (24h)`)
-                }
-
                 if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
                     Notification.requestPermission()
                 }

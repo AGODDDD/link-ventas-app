@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:unit": "tsx --test tests/**/*.test.ts"
+    "test:unit": "tsx --test tests/*.test.ts tests/**/*.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

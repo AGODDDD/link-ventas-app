@@ -27,9 +27,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ADMIN_USER_ID=uuid_del_admin
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_solo_servidor
 PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_llaves_culqi
+CRON_SECRET=secreto_largo_aleatorio_para_los_crons_de_vercel
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` y `PAYMENT_ENCRYPTION_KEY` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador.
+`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY` y `CRON_SECRET` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. El cron de Vercel ejecuta `/api/cron` cada hora y necesita que `CRON_SECRET` esté definido en Production.
 
 ### 3. Configurar Base de Datos
 Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de tu Dashboard de Supabase. Esto configurará todas las tablas y políticas de seguridad (RLS).
