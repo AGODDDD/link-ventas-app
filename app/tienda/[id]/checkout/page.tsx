@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { useCartStore } from '@/store/useCartStore'
 import { Profile } from '@/types/tienda'
 import { ShoppingBag, ArrowLeft, Upload, MapPin, Store, CreditCard, Wallet, QrCode, CheckCircle2, User, Phone, ShieldCheck } from 'lucide-react'
-import { formatOrderId } from '@/store/useCustomerStore'
 import { toast } from 'sonner'
 import Script from 'next/script'
 
@@ -45,7 +44,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         const cargarPerfil = async () => {
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storeId);
             const { data } = await supabase
-                .from('profiles')
+                .from('storefront_profiles')
                 .select('*')
                 .eq(isUUID ? 'id' : 'slug', storeId)
                 .single()
@@ -71,8 +70,6 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     const orderData = win.pendingCulqiOrderData;
                     const orderId = orderData?.coreOrderId;
                     if (!orderData?.perfil || !orderId) throw new Error('Orden de pago no inicializada.');
-                    const currentCart = useCartStore.getState().carts[storeId] || [];
-
                     const res = await fetch('/api/checkout/culqi', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -92,16 +89,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         return;
                     }
 
-                    // 3. SOLO después del cobro exitoso, crear orden en DB
-                    for (const item of currentCart) {
-                        if (item.product.stock !== null && item.product.stock !== undefined) {
-                            const remaining = Math.max(0, item.product.stock - item.quantity);
-                            await supabase.from('products').update({ stock: remaining }).eq('id', item.product.id);
-                        }
-                    }
-                    if (orderData.leadId) {
-                        await supabase.from('abandoned_carts').delete().eq('id', orderData.leadId);
-                    }
+                    // El pedido y el inventario se confirmaron atómicamente en /api/orders.
                     toast.dismiss('culqi-charge');
                     toast.success('¡Pago procesado exitosamente!');
                     try { win.Culqi.close(); } catch {}
@@ -198,73 +186,6 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         try {
             if (!perfil) throw new Error('Cargando datos de tienda... por favor intente de nuevo en un segundo')
 
-            // ── Generate Sequence ID ──
-            const prefix = (perfil.store_name || '').substring(0, 4).toUpperCase();
-            const seqRes = await supabase.rpc('get_next_order_sequence', { p_store_id: perfil.id });
-            if (seqRes.error) {
-                console.error("Error generating sequence:", seqRes.error);
-                throw new Error("No se pudo generar el correlativo del pedido.");
-            }
-            const legacyId = formatOrderId(prefix, seqRes.data || 1);
-
-            // ── Si es Culqi, SOLO abrimos el modal. Nada de BD hasta confirmar pago. ──
-            if (metodoPago === 'tarjeta_culqi') {
-                const win = window as any;
-                if (!win.Culqi) {
-                    toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo.');
-                    setSubmitting(false);
-                    return;
-                }
-                const orderId = crypto.randomUUID()
-                const { error: orderError } = await supabase.from('orders').insert({
-                    id: orderId,
-                    legacy_id: legacyId,
-                    store_id: perfil.id,
-                    customer_name: nombre,
-                    customer_phone: telefono,
-                    customer_address: direccion,
-                    total,
-                    status: 'pendiente_pago',
-                    order_type: 'standard',
-                    metodo_pago: 'tarjeta_culqi',
-                    payment_proof_url: 'CULQI_PENDING',
-                })
-                if (orderError) throw orderError
-
-                const orderItems = cart.map(item => ({
-                    order_id: orderId,
-                    product_id: item.product.id,
-                    name: item.product.name,
-                    quantity: item.quantity,
-                    price: item.product.price,
-                    modifiers: item.variantDetails
-                        ? {
-                            talla: item.variantDetails.talla,
-                            color: item.variantDetails.color,
-                          }
-                        : null
-                }))
-                const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-                if (itemsError) throw itemsError
-
-                win.pendingCulqiOrderData = {
-                    perfil, nombre, telefono, direccion, cart, total, leadId, orderId: legacyId, coreOrderId: orderId
-                };
-                win.Culqi.publicKey = perfil.culqi_public_key;
-                win.Culqi.settings({
-                    title: perfil.store_name?.substring(0, 50) || 'Tienda',
-                    currency: 'PEN',
-                    amount: Math.round(total * 100),
-                });
-                win.Culqi.options({ 
-                    lang: 'es', 
-                    installments: false, 
-                    paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
-                });
-                win.Culqi.open();
-                return; // Cortar hilo acá. El callback se encargará de todo.
-            }
-
             let fileName = ''
 
             // 1. Subir Comprobante solo si es transferencia
@@ -279,73 +200,59 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 if (uploadError) throw uploadError
             }
 
-            // 2. Crear Orden (solo para flujos NO-Culqi)
-            const orderId = crypto.randomUUID()
-            const orderPayload = {
-                id: orderId,
-                legacy_id: legacyId,
-                store_id: perfil.id,
-                customer_name: nombre,
-                customer_phone: telefono,
-                customer_address: direccion,
-                total: total,
-                order_type: 'standard',
-                metodo_pago: metodoPago,
-                payment_proof_url: fileName || null,
-                status: (metodoPago === 'transferencia' ? 'pendiente_verificacion' : 'pendiente') as OrderStatus,
+            const proofMap: Record<PaymentMethod, string | null> = {
+                contra_entrega: 'CONTRA_ENTREGA',
+                tarjeta_culqi: 'CULQI_PENDING',
+                transferencia: fileName || 'TRANSFERENCIA_MANUAL',
             }
-            
-            const proofMap: Record<string, string> = {
-                'contra_entrega': 'CONTRA_ENTREGA',
-                'tarjeta_culqi': 'CULQI_PENDING_WEBHOOK',
-                'transferencia': fileName || 'TRANSFERENCIA_MANUAL'
-            };
-
-            const { error: orderError } = await supabase
-                .from('orders')
-                .insert({
-                    ...orderPayload,
+            const orderResponse = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    store_id: perfil.id,
+                    order_type: 'standard',
+                    payment_method: metodoPago,
+                    customer_name: nombre,
+                    customer_phone: telefono,
+                    address: direccion,
+                    items: cart.map((item) => ({
+                        product_id: item.product.id,
+                        quantity: item.quantity,
+                        variant_details: item.variantDetails || null,
+                    })),
                     payment_proof_url: proofMap[metodoPago],
-                })
+                }),
+            })
+            const orderResult = await orderResponse.json()
+            if (!orderResponse.ok || !orderResult.order) {
+                throw new Error(orderResult.error || 'No se pudo crear la orden.')
+            }
+            const persistedOrder = orderResult.order
 
-            if (orderError) throw orderError
-
-            // 3. Crear Items
-            const orderItems = cart.map(item => ({
-                order_id: orderId,
-                product_id: item.product.id,
-                quantity: item.quantity,
-                price: item.product.price,
-                modifiers: item.variantDetails
-                    ? {
-                        talla: item.variantDetails.talla,
-                        color: item.variantDetails.color,
-                      }
-                    : null
-            }))
-
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .insert(orderItems)
-
-            if (itemsError) throw itemsError
-
-            // 3.5. Deducir Stock de la Base de Datos (Anti-Overselling Reduction)
-            for (const item of cart) {
-                if (item.product.stock !== null && item.product.stock !== undefined) {
-                    const remainingStock = Math.max(0, item.product.stock - item.quantity);
-                    await supabase
-                        .from('products')
-                        .update({ stock: remainingStock })
-                        .eq('id', item.product.id)
+            if (metodoPago === 'tarjeta_culqi') {
+                const win = window as any
+                if (!win.Culqi) {
+                    toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo.')
+                    return
                 }
+                win.pendingCulqiOrderData = {
+                    perfil,
+                    leadId,
+                    orderId: persistedOrder.legacy_id,
+                    coreOrderId: persistedOrder.order_id,
+                }
+                win.Culqi.publicKey = perfil.culqi_public_key
+                win.Culqi.settings({
+                    title: perfil.store_name?.substring(0, 50) || 'Tienda',
+                    currency: 'PEN',
+                    amount: Math.round(Number(persistedOrder.total) * 100),
+                })
+                win.Culqi.options({ lang: 'es', installments: false, paymentMethods: { tarjeta: true, yape: true, bancaMovil: false } })
+                win.Culqi.open()
+                return
             }
 
             // 3.8. Rescate Exitoso: Eliminar el Lead Fantasma pues completó su compra
-            if (leadId) {
-                 await supabase.from('abandoned_carts').delete().eq('id', leadId);
-            }
-
             // 4. Limpiar y Redirigir Pantalla
             const cartIdToClear = perfil?.id || storeId;
             console.log('🧹 Limpiando carrito para ID:', cartIdToClear)
@@ -356,7 +263,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             if ((perfil as any)?.slug) {
                 cartStore.clearCart((perfil as any).slug)
             }
-            setOrderSuccessId(orderId)
+            setOrderSuccessId(persistedOrder.legacy_id)
 
         } catch (error: any) {
             console.error(error)

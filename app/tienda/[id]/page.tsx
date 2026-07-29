@@ -15,7 +15,7 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
   
   const { data: perfil } = await supabase
-    .from('profiles')
+    .from('storefront_profiles')
     .select('store_name, description, primary_color, secondary_color, banner_url, avatar_url')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
@@ -35,7 +35,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   // Intentamos cargar de 'stores' (Nuevo Core), fallback a 'profiles' (Legacy)
   const [storeRes, profileRes] = await Promise.all([
     supabase.from('stores').select('*').eq(isUUID ? 'id' : 'slug', params.id).single(),
-    supabase.from('profiles').select('*').eq(isUUID ? 'id' : 'slug', params.id).single()
+    supabase.from('storefront_profiles').select('*').eq(isUUID ? 'id' : 'slug', params.id).single()
   ]);
 
   const profile = profileRes.data;

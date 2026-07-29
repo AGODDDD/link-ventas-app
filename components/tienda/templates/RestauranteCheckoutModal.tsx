@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Profile } from '@/types/tienda'
 import { X, MapPin, Store, CreditCard, MessageCircle, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
-import { useCustomerStore, formatOrderId, Order, OrderItem } from '@/store/useCustomerStore'
+import { useCustomerStore, Order } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
@@ -67,7 +67,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         try {
           const pendingOrder = (window as any).pendingCulqiRestaurantOrder;
           const orderId = pendingOrder?.orderId;
-          if (!orderId) throw new Error('Orden de pago no inicializada.');
+          if (!orderId || !pendingOrder?.order) throw new Error('Orden de pago no inicializada.');
 
           // 2. Cobrar primero, confirmando que el dinero entró
           const res = await fetch('/api/checkout/culqi', {
@@ -137,16 +137,16 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           // 3e. Zustand local history
           const customerStore = useCustomerStore.getState();
           customerStore.addOrder({
-            id: pendingOrder?.legacyId || orderId,
-            coreId: pendingOrder?.orderId, // UUID for realtime subscription
+            id: pendingOrder.order.legacy_id,
+            coreId: pendingOrder.order.order_id,
             storeId: perfil.id,
             storeName: perfil.store_name || '',
             date: new Date().toISOString(),
             status: 'pendiente',
             items: orderItems,
-            subtotal,
-            deliveryFee,
-            total,
+            subtotal: Number(pendingOrder.order.subtotal),
+            deliveryFee: Number(pendingOrder.order.delivery_fee),
+            total: Number(pendingOrder.order.total),
             direccion,
             referencia: savedAddress?.referencia,
             lat: savedAddress?.lat,
@@ -215,29 +215,63 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        };
      });
 
-     // ── Generar ID Secuencial ──
-     const prefix = (perfil.store_name || '').substring(0, 4).toUpperCase();
-     const seqRes = await supabase.rpc('get_next_order_sequence', { p_store_id: perfil.id });
-     if (seqRes.error) {
-         console.error("Error generating sequence:", seqRes.error);
-         throw new Error("No se pudo generar el correlativo del pedido.");
+     const createOrderResponse = await fetch('/api/orders', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         store_id: perfil.id,
+         order_type: 'delivery',
+         payment_method: metodoPago,
+         customer_name: nombre,
+         customer_phone: telefono,
+         customer_email: correo,
+         address: direccion,
+         reference: savedAddress?.referencia || null,
+         lat: savedAddress?.lat || null,
+         lng: savedAddress?.lng || null,
+         items: cart.map((item) => ({
+           product_id: item.product.id,
+           quantity: item.quantity,
+           variant_details: item.variantDetails || null,
+         })),
+       }),
+     });
+     const createOrderData = await createOrderResponse.json();
+     if (!createOrderResponse.ok || !createOrderData.order) {
+       throw new Error(createOrderData.error || 'No se pudo crear el pedido.');
      }
-     const orderId = formatOrderId(prefix, seqRes.data || 1);
-     const coreOrderId = crypto.randomUUID(); // UUID for DB primary key + realtime
+     const persistedOrder = createOrderData.order;
 
-     // Save order to persistent store
+      if (metodoPago === 'culqi') {
+        const win = window as any;
+        if (!win.Culqi) {
+          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
+          return;
+        }
+        win.pendingCulqiRestaurantOrder = { orderId: persistedOrder.order_id, order: persistedOrder };
+        win.Culqi.publicKey = perfil.culqi_public_key;
+        win.Culqi.settings({
+          title: perfil.store_name?.substring(0, 50) || 'Tienda',
+          currency: 'PEN',
+          amount: Math.round(Number(persistedOrder.total) * 100),
+        });
+        win.Culqi.options({ lang: 'es', installments: false, paymentMethods: { tarjeta: true, yape: true, bancaMovil: false } });
+        win.Culqi.open();
+        return;
+      }
+
      const customerStore = useCustomerStore.getState();
-     const newOrder: Order = {
-       id: orderId,
-       coreId: coreOrderId, // UUID for realtime subscription
+     customerStore.addOrder({
+       id: persistedOrder.legacy_id,
+       coreId: persistedOrder.order_id,
        storeId: perfil.id,
        storeName: perfil.store_name || '',
        date: new Date().toISOString(),
-       status: 'pendiente',
+       status: persistedOrder.status,
        items: orderItems,
-       subtotal,
-       deliveryFee,
-       total,
+       subtotal: Number(persistedOrder.subtotal),
+       deliveryFee: Number(persistedOrder.delivery_fee),
+       total: Number(persistedOrder.total),
        direccion,
        referencia: savedAddress?.referencia,
        lat: savedAddress?.lat,
@@ -245,116 +279,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        cliente: { nombre, telefono, correo },
        metodoPago,
        estimatedTime: '50 - 60 min',
-     };
-
-      // ── Si es Culqi, SALTAR toda persistencia. Solo abrir modal. ──
-      if (metodoPago === 'culqi') {
-        const win = window as any;
-        if (!win.Culqi) {
-          toast.error('El módulo de pago aún no ha cargado. Intenta de nuevo en unos segundos.');
-          return;
-        }
-        const { error: coreOrderError } = await supabase.from('orders').insert({
-          id: coreOrderId,
-          store_id: perfil.id,
-          status: 'pendiente_pago',
-          order_type: 'delivery',
-          customer_name: nombre,
-          customer_phone: telefono,
-          customer_email: correo,
-          direccion,
-          referencia: savedAddress?.referencia || null,
-          lat: savedAddress?.lat || null,
-          lng: savedAddress?.lng || null,
-          delivery_fee: deliveryFee,
-          subtotal,
-          total,
-          metodo_pago: 'culqi',
-          payment_proof_url: 'CULQI_PENDING',
-          estimated_time: '50 - 60 min',
-          legacy_id: orderId,
-        });
-        if (coreOrderError) throw coreOrderError;
-
-        const relationalItems = orderItems.map((item: any) => ({
-          order_id: coreOrderId,
-          product_id: item.id && item.id.length > 20 ? item.id : null,
-          name: item.name,
-          price: item.unitPrice,
-          quantity: item.quantity,
-          modifiers: item.modifiersList && item.modifiersList.length > 0 
-            ? item.modifiersList 
-            : (item.options ? [{ name: item.options, price: 0 }] : null)
-        }));
-        const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
-        if (itemsError) throw itemsError;
-
-        win.pendingCulqiRestaurantOrder = { orderId: coreOrderId, legacyId: orderId };
-        win.Culqi.publicKey = perfil.culqi_public_key;
-        win.Culqi.settings({
-          title: perfil.store_name?.substring(0, 50) || 'Tienda',
-          currency: 'PEN',
-          amount: Math.round(total * 100),
-        });
-        win.Culqi.options({
-          lang: 'es',
-          installments: false,
-          paymentMethods: { tarjeta: true, yape: true, bancaMovil: false }
-        });
-        win.Culqi.open();
-        return;
-      }
-
-      // ── Flujo NO-Culqi: persistir orden inmediatamente ──
-     customerStore.addOrder(newOrder);
-
-      // Save to Supabase for vendor dashboard + realtime tracking (Double Write Strategy)
-      try {
-
-
-        // 2. Guardar el pedido en NUEVO CORE UNIFICADO (Fiel al esquema SQL)
-        // coreOrderId already generated above
-        const { error: coreError } = await supabase.from('orders').insert({
-          id: coreOrderId, // UUID
-          store_id: perfil.id,
-          status: newOrder.status,
-          order_type: 'delivery',
-          customer_name: nombre,
-          customer_phone: telefono,
-          customer_email: correo,
-          direccion: direccion,
-          referencia: savedAddress?.referencia || null,
-          lat: savedAddress?.lat || null,
-          lng: savedAddress?.lng || null,
-          delivery_fee: deliveryFee,
-          subtotal: subtotal,
-          total: total,
-          metodo_pago: metodoPago,
-          estimated_time: '50 - 60 min',
-          legacy_id: orderId // Trazabilidad inmediata
-        });
-
-        if (!coreError) {
-          // 3. Guardar items en tabla relacional (NUEVO CORE)
-          const relationalItems = orderItems.map((item: any) => ({
-            order_id: coreOrderId, // ← UUID del orders.id (clave primaria correcta, no el legacy BARR-...)
-            product_id: item.id && item.id.length > 20 ? item.id : null,
-            name: item.name,
-            price: item.unitPrice,
-            quantity: item.quantity,
-            modifiers: item.modifiersList && item.modifiersList.length > 0 
-              ? item.modifiersList 
-              : (item.options ? [{ name: item.options, price: 0 }] : null)
-          }));
-          const { error: itemsError } = await supabase.from('order_items').insert(relationalItems);
-          if (itemsError) console.error('⚠️ Error en order_items core:', itemsError.message);
-        } else {
-          console.error('⚠️ Error en orders core:', coreError.message);
-        }
-
-      } catch (e) {
-        console.error('❌ Error crítico en persistencia dual:', e);
-      }
+     });
 
       // 2. Registrar como Lead (INDEPENDIENTE del pedido para que no se pierda)
       try {
@@ -375,7 +300,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
       }
      if (metodoPago === 'whatsapp') {
         let text = `*NUEVO PEDIDO: ${perfil.store_name}*%0A`
-        text += `*ID:* ${orderId}%0A%0A`
+        text += `*ID:* ${persistedOrder.legacy_id}%0A%0A`
         text += `*Cliente:* ${nombre}%0A`
         text += `*Teléfono:* ${telefono}%0A`
         text += `*Dirección:* ${direccion}%0A%0A`
@@ -406,9 +331,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           if (item.variantDetails?.notes) text += `   _Nota: ${item.variantDetails.notes}_%0A`
         })
         
-        text += `%0A*- Subtotal:* S/ ${subtotal.toFixed(2)}`
-        text += `%0A*- Delivery:* S/ ${deliveryFee.toFixed(2)}`
-        text += `%0A*TOTAL FINAL: S/ ${total.toFixed(2)}*%0A%0A`
+        text += `%0A*- Subtotal:* S/ ${Number(persistedOrder.subtotal).toFixed(2)}`
+        text += `%0A*- Delivery:* S/ ${Number(persistedOrder.delivery_fee).toFixed(2)}`
+        text += `%0A*TOTAL FINAL: S/ ${Number(persistedOrder.total).toFixed(2)}*%0A%0A`
         
         // Industry Standard Hack para Safari/iOS + Deep Links (WhatsApp)
         // 2. Ejecutamos la limpieza intensiva del estado Zustand (y forzamos variables globales)

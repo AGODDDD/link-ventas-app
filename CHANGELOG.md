@@ -5,6 +5,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
+## [2026-07-29] — Fase 1: Blindaje de Pedidos, Culqi y RLS
+
+### Seguridad
+- La creación de pedidos migró a `POST /api/orders` y a la RPC transaccional `create_order_from_cart`: los precios, modificadores, stock, delivery, totales y correlativos se calculan en PostgreSQL bajo bloqueo de filas.
+- Se eliminaron los `INSERT` directos de `orders` y `order_items` desde los checkouts público y de restaurante.
+- Culqi ya no confirma pagos desde el endpoint de cargo. El webhook exige `charge_id` único, metadata exacta de orden/tienda, `PEN`, `venta_exitosa`, estado `Exitosa` y monto idéntico antes de marcar una orden como `paid`.
+- Añadida protección RLS para pedidos, ítems, carritos abandonados y configuraciones satélite; se revocó acceso anónimo directo a datos de pedido.
+- `profiles` dejó de ser un origen público completo. El storefront consume la vista limitada `storefront_profiles`; los secretos y campos internos no se serializan al cliente.
+- Se añadió un guard de base de datos que bloquea cambios de totales, cargos Culqi o estado `paid` desde el navegador.
+
+### Compatibilidad
+- El seguimiento de pedidos público ahora consulta `/api/orders/status`, que devuelve solo estado e identificadores, preservando el tracking sin reabrir acceso a la tabla `orders`.
+
 ## [2026-07-29] — Scripts de Mantenimiento y Configuración de Agentes
 
 ### Added

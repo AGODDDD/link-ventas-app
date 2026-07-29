@@ -1,31 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getSupabaseServiceClient } from '@/lib/supabaseServer'
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies()
-    // Instancia limpia (sin Auth requerida porque el cliente que compra no tiene cuenta)
-    // Para interactuar con la Base de datos sin Row Level Security (o con anon key), debemos asegurarnos de que:
-    // La política de abandoned_carts permite INSERT público.
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) { return cookieStore.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) { cookieStore.set(name, value, options) },
-          remove(name: string, options: CookieOptions) { cookieStore.set(name, '', options) },
-        },
-      }
-    )
-
     const payload = await request.json()
     const { storeId, customerName, customerPhone, cart, existingLeadId } = payload
 
-    if (!storeId || !customerPhone || cart.length === 0) {
+    if (!storeId || !customerPhone || !Array.isArray(cart) || cart.length === 0) {
       return NextResponse.json({ error: 'Faltan datos clave' }, { status: 400 })
     }
+    const supabase = getSupabaseServiceClient()
 
     // Upsert mechanism: Si ya mandamos el lead en este intento (tienen existingLeadId), lo actualizamos. 
     // Si no, creamos uno nuevo.
@@ -39,6 +23,8 @@ export async function POST(request: Request) {
           updated_at: new Date().toISOString()
         })
         .eq('id', existingLeadId)
+        .eq('store_id', storeId)
+        .eq('customer_phone', customerPhone)
 
       if (error) throw error
       return NextResponse.json({ success: true, leadId: existingLeadId })
@@ -59,8 +45,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, leadId: data.id })
     }
 
-  } catch (error: any) {
-    console.error('Error Silencioso AbandonedCarts:', error.message)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Error Silencioso AbandonedCarts:', message)
     return NextResponse.json({ error: 'Fallo interno' }, { status: 500 })
   }
 }

@@ -2,127 +2,112 @@ import { NextResponse } from 'next/server'
 import { decryptText } from '@/lib/encryption'
 import { getSupabaseServiceClient, hasProFeatures } from '@/lib/supabaseServer'
 
+type CulqiCharge = {
+  id?: string
+  amount?: number
+  currency?: string
+  currency_code?: string
+  response_code?: string
+  state?: string
+  metadata?: { order_id?: string; store_id?: string }
+}
+
 export async function POST(req: Request) {
-    try {
-        const body = await req.json()
-
-        // ===================================================================
-        // PASO 1: Evento válido de Culqi?
-        // ===================================================================
-        if (body.object !== 'event' || body.type !== 'charge.creation.succeeded') {
-            return NextResponse.json({ success: true, message: 'Event type ignored' })
-        }
-
-        const charge = typeof body.data === 'string' ? JSON.parse(body.data) : body.data;
-
-        const order_id = charge.metadata?.order_id
-        const store_id = charge.metadata?.store_id
-        const charge_id = charge.id
-
-        if (!order_id || !store_id || !charge_id) {
-            console.warn('Webhook Culqi ignorado: Falta metadata (order_id/store_id/charge_id).', charge_id)
-            return NextResponse.json({ success: true, message: 'Ignored: missing metadata' })
-        }
-
-        // ===================================================================
-        // PASO 2: Idempotencia — ¿Ya está pagado?
-        // ===================================================================
-        const supabase = getSupabaseServiceClient()
-
-        const { data: existingOrder, error: orderFetchError } = await supabase
-            .from('orders')
-            .select('id, status, total, store_id')
-            .eq('id', order_id)
-            .eq('store_id', store_id)
-            .single()
-
-        if (orderFetchError || !existingOrder) {
-            console.warn('Webhook: Orden no encontrada en DB.', order_id)
-            return NextResponse.json({ success: false, message: 'Order not found' }, { status: 404 })
-        }
-
-        if (existingOrder.status === 'paid') {
-            console.log(`Webhook: Orden ${order_id} ya está marcada como paid. Idempotencia OK.`)
-            return NextResponse.json({ success: true, message: 'Already paid (idempotent)' })
-        }
-
-        // ===================================================================
-        // PASO 3: ZERO-TRUST — Verificación con la API oficial de Culqi
-        // No confiamos en el payload del webhook. Lo verificamos independientemente.
-        // ===================================================================
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('culqi_secret_key, culqi_active, plan, plan_expires_at')
-            .eq('id', store_id)
-            .single()
-
-        if (!profile || !profile.culqi_active || !profile.culqi_secret_key) {
-            console.warn('Webhook: Tienda no tiene Culqi activo.', store_id)
-            return NextResponse.json({ success: false, message: 'Store Culqi not active' }, { status: 403 })
-        }
-        if (!hasProFeatures(profile.plan, profile.plan_expires_at)) {
-            console.warn('Webhook: Tienda sin plan activo para Culqi.', store_id)
-            return NextResponse.json({ success: false, message: 'Store plan not active' }, { status: 403 })
-        }
-
-        // Desencriptar la Secret Key del comerciante
-        let realSecretKey: string;
-        try {
-            realSecretKey = decryptText(profile.culqi_secret_key);
-        } catch (e) {
-            console.error('Webhook: Fallo al desencriptar SK para tienda', store_id);
-            return NextResponse.json({ error: 'Decryption failure' }, { status: 500 })
-        }
-
-        // Consultar a Culqi directamente: "¿Este cargo realmente existe y fue exitoso?"
-        const culqiVerifyRes = await fetch(`https://api.culqi.com/v2/charges/${charge_id}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${realSecretKey}`
-            }
-        })
-
-        if (!culqiVerifyRes.ok) {
-            console.error('Webhook RECHAZADO: Culqi no reconoce este charge_id. Posible ataque.', charge_id)
-            return NextResponse.json({ error: 'Charge verification failed at source' }, { status: 403 })
-        }
-
-        const culqiCharge = await culqiVerifyRes.json()
-
-        // ===================================================================
-        // PASO 4: Validación de Monto (Anti-Tampering)
-        // ===================================================================
-        const expectedAmountCents = Math.round(parseFloat(existingOrder.total ?? 0) * 100)
-        const actualAmountCents = culqiCharge.amount
-
-        if (actualAmountCents < expectedAmountCents) {
-            console.error(`Webhook RECHAZADO: Monto no coincide. DB espera ${expectedAmountCents} cents, Culqi dice ${actualAmountCents} cents. Orden: ${order_id}`)
-            return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 })
-        }
-
-        // ===================================================================
-        // PASO 5: Todo verificado. Marcar como PAID.
-        // ===================================================================
-        const { error: updateError } = await supabase
-            .from('orders')
-            .update({ 
-                status: 'paid',
-                payment_proof_url: 'CULQI_AUTOMATIC'
-            })
-            .eq('id', order_id)
-            .eq('store_id', store_id)
-
-        if (updateError) {
-            console.error('Webhook: Error actualizando orden en Supabase:', updateError)
-            return NextResponse.json({ error: 'DB update error' }, { status: 500 })
-        }
-
-        console.log(`✅ Webhook verificado y ejecutado: Orden ${order_id} → PAID (Charge: ${charge_id}, Monto: ${actualAmountCents} cents)`)
-        return NextResponse.json({ success: true, message: 'Order verified and marked as paid' })
-
-    } catch (error: any) {
-        console.error('Error fatal en Webhook Culqi:', error)
-        return NextResponse.json({ error: 'Webhook processing error' }, { status: 500 })
+  try {
+    const body: { object?: string; type?: string; data?: CulqiCharge | string } = await req.json()
+    if (body.object !== 'event' || body.type !== 'charge.creation.succeeded') {
+      return NextResponse.json({ success: true, message: 'Event type ignored' })
     }
+
+    const eventCharge = typeof body.data === 'string' ? JSON.parse(body.data) as CulqiCharge : body.data
+    const orderId = eventCharge?.metadata?.order_id
+    const storeId = eventCharge?.metadata?.store_id
+    const chargeId = eventCharge?.id
+    if (!orderId || !storeId || !chargeId) {
+      return NextResponse.json({ error: 'Missing charge metadata.' }, { status: 400 })
+    }
+
+    const supabase = getSupabaseServiceClient()
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('id, status, total, store_id, culqi_charge_id')
+      .eq('id', orderId)
+      .eq('store_id', storeId)
+      .single()
+    if (orderError || !order) {
+      return NextResponse.json({ error: 'Order not found.' }, { status: 404 })
+    }
+
+    if (order.status === 'paid' && order.culqi_charge_id === chargeId) {
+      return NextResponse.json({ success: true, message: 'Already processed.' })
+    }
+    if (order.culqi_charge_id && order.culqi_charge_id !== chargeId) {
+      return NextResponse.json({ error: 'Charge does not belong to this order.' }, { status: 409 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('culqi_secret_key, culqi_active, plan, plan_expires_at')
+      .eq('id', storeId)
+      .single()
+    if (!profile?.culqi_active || !profile.culqi_secret_key || !hasProFeatures(profile.plan, profile.plan_expires_at)) {
+      return NextResponse.json({ error: 'Store cannot process Culqi payments.' }, { status: 403 })
+    }
+
+    let secretKey: string
+    try {
+      secretKey = decryptText(profile.culqi_secret_key)
+    } catch (error) {
+      console.error('Culqi webhook decryption failed:', error)
+      return NextResponse.json({ error: 'Decryption failure.' }, { status: 500 })
+    }
+
+    const verificationResponse = await fetch(`https://api.culqi.com/v2/charges/${encodeURIComponent(chargeId)}`, {
+      headers: { Authorization: `Bearer ${secretKey}` },
+    })
+    if (!verificationResponse.ok) {
+      return NextResponse.json({ error: 'Charge verification failed.' }, { status: 403 })
+    }
+
+    const verifiedCharge: CulqiCharge = await verificationResponse.json()
+    const expectedAmount = Math.round(Number(order.total) * 100)
+    const chargeCurrency = verifiedCharge.currency ?? verifiedCharge.currency_code
+    const metadataMatches = verifiedCharge.metadata?.order_id === orderId && verifiedCharge.metadata?.store_id === storeId
+    const isSuccessful = verifiedCharge.response_code === 'venta_exitosa' && verifiedCharge.state === 'Exitosa'
+
+    if (
+      verifiedCharge.id !== chargeId ||
+      !metadataMatches ||
+      chargeCurrency !== 'PEN' ||
+      !isSuccessful ||
+      Number(verifiedCharge.amount) !== expectedAmount
+    ) {
+      console.error('Rejected Culqi webhook:', { chargeId, orderId, storeId, verifiedCharge })
+      return NextResponse.json({ error: 'Charge validation mismatch.' }, { status: 400 })
+    }
+
+    const { data: paidOrder, error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'paid',
+        culqi_charge_id: chargeId,
+        culqi_paid_at: new Date().toISOString(),
+        payment_proof_url: 'CULQI_AUTOMATIC',
+      })
+      .eq('id', orderId)
+      .eq('store_id', storeId)
+      .or(`culqi_charge_id.is.null,culqi_charge_id.eq.${chargeId}`)
+      .select('id')
+      .maybeSingle()
+
+    if (updateError || !paidOrder) {
+      console.error('Culqi webhook update failed:', updateError)
+      return NextResponse.json({ error: 'Order update failed.' }, { status: 409 })
+    }
+
+    return NextResponse.json({ success: true, message: 'Order verified and marked as paid.' })
+  } catch (error) {
+    console.error('Culqi webhook error:', error)
+    return NextResponse.json({ error: 'Webhook processing error.' }, { status: 500 })
+  }
 }

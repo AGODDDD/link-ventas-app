@@ -9,7 +9,7 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
   const params = await paramsPromise;
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
   const { data: perfil } = await supabase
-    .from('profiles')
+    .from('storefront_profiles')
     .select('store_name, description, primary_color, secondary_color, avatar_url')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
@@ -27,7 +27,7 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
 
   // Fetch Profile Secuencialmente por el ID o el Slug
   const { data: perfilBase } = await supabase
-    .from('profiles')
+    .from('storefront_profiles')
     .select('*')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
