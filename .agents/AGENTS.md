@@ -44,3 +44,7 @@ Al finalizar cada sesión de trabajo, el agente DEBE actualizar CHANGELOG.md sin
 ---
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Procedimiento exacto de testeo unitario/e2e que el equipo humano utiliza, de existir alguno.
+
+## Reglas de Despliegue (Vercel)
+- **NUNCA** utilices `vercel --prod --yes` sin antes verificar a qué proyecto de Vercel estás conectado (leyendo `.vercel/project.json`). El flag `--yes` creará un proyecto paralelo automáticamente si no está bien linkeado, rompiendo el entorno de producción.
+- El proyecto oficial en Vercel es `link-ventas-app`. Asegúrate de que las variables de entorno y los despliegues siempre vayan dirigidos a ese proyecto.
