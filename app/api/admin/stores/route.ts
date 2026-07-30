@@ -17,7 +17,7 @@ export async function GET(req: Request) {
         .order('created_at', { ascending: false }),
       supabase
         .from('profiles')
-        .select('id, email, plan, plan_expires_at, culqi_active, created_at'),
+        .select('id, email, plan, plan_expires_at, created_at'),
     ])
 
     if (storesRes.error || profilesRes.error) {
@@ -43,7 +43,6 @@ export async function GET(req: Request) {
         email: profile?.email || null,
         plan: profile?.plan || null,
         plan_expires_at: profile?.plan_expires_at || null,
-        culqi_active: profile?.culqi_active || false,
       }
     })
 

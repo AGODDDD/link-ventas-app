@@ -17,7 +17,6 @@ export type Merchant = {
   email: string | null
   plan: string | null
   plan_expires_at: string | null
-  culqi_active: boolean
 }
 
 interface AdminStoresTableProps {

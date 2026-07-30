@@ -119,7 +119,7 @@ export default function DashboardLayout({
                 ? (diasRestantes === 0
                   ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
                   : `✨ Prueba Pro gratis — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`)
-                : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro por S/ 29/mes para desbloquear Culqi, analíticas y más.'
+                : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro para desbloquear Mercado Pago, analíticas y más.'
               }
             </p>
           </div>

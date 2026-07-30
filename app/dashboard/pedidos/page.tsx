@@ -485,7 +485,7 @@ export default function PedidosPage() {
                                 'Impresión nativa en impresoras 80mm',
                                 'Descarga de ticket en PNG y PDF oficial',
                                 'Compartir ticket por WhatsApp o Email',
-                                'Productos ilimitados y Culqi incluidos',
+                                'Productos ilimitados y Mercado Pago incluidos',
                             ].map((f, i) => (
                                 <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
                                     <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}

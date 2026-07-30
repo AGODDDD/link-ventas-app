@@ -7,7 +7,7 @@ type CartLine = {
   variant_details?: unknown
 }
 
-const paymentMethods = new Set(['culqi', 'tarjeta_culqi', 'tarjeta_mercadopago', 'whatsapp', 'transferencia', 'contra_entrega'])
+const paymentMethods = new Set(['mercadopago', 'tarjeta_mercadopago', 'whatsapp', 'transferencia', 'contra_entrega'])
 const orderTypes = new Set(['delivery', 'pickup', 'standard'])
 
 function asText(value: unknown, maxLength: number) {
@@ -48,14 +48,11 @@ export async function POST(req: Request) {
 
     const latitude = typeof body.lat === 'number' && Number.isFinite(body.lat) ? body.lat : null
     const longitude = typeof body.lng === 'number' && Number.isFinite(body.lng) ? body.lng : null
-    // La RPC Core conserva su enum legado durante esta migración; Mercado Pago lo
-    // reemplaza por `mercadopago` al confirmar el cobro en servidor.
-    const databasePaymentMethod = paymentMethod === 'tarjeta_mercadopago' ? 'tarjeta_culqi' : paymentMethod
     const supabase = getSupabaseServiceClient()
     const { data, error } = await supabase.rpc('create_order_from_cart', {
       p_store_id: storeId,
       p_order_type: orderType,
-      p_payment_method: databasePaymentMethod,
+      p_payment_method: paymentMethod,
       p_customer_name: customerName,
       p_customer_phone: customerPhone.replace(/\s/g, ''),
       p_customer_email: asText(body.customer_email, 254) || null,

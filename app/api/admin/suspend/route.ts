@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       // 2. Desactivar plan del propietario
       const { error: profileErr } = await supabase
         .from('profiles')
-        .update({ plan: 'inactivo', plan_expires_at: null, culqi_active: false })
+        .update({ plan: 'inactivo', plan_expires_at: null })
         .eq('id', ownerId)
 
       if (storeErr || profileErr) {

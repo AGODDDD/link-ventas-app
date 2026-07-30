@@ -149,8 +149,8 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     async (payload) => {
                         const nuevaOrden = payload.new
                         
-                        // Ignorar notificaciones de Culqi cuando nacen en pendiente_pago
-                        if (nuevaOrden.status === 'pendiente_pago' && (nuevaOrden.metodo_pago === 'culqi' || nuevaOrden.metodo_pago === 'tarjeta_culqi' || nuevaOrden.payment_proof_url === 'CULQI_PENDING')) {
+                        // El pago con tarjeta se anuncia solamente al quedar aprobado.
+                        if (nuevaOrden.status === 'pendiente_pago' && (nuevaOrden.metodo_pago === 'mercadopago' || nuevaOrden.metodo_pago === 'tarjeta_mercadopago' || nuevaOrden.payment_proof_url === 'MERCADOPAGO_PENDING')) {
                             return;
                         }
 
@@ -215,7 +215,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         const store = useDashboardStore.getState();
                         const exists = store.orders.some(o => o.id === payload.new.id);
                         
-                        // Si no existía (era un Culqi pendiente) y ahora es 'paid', ingresarlo como orden nueva
+                        // Si no existía (era un pago pendiente) y ahora es 'paid', ingresarlo como orden nueva.
                         if (!exists && payload.new.status === 'paid') {
                             const nuevaOrden = payload.new;
                             const { data: items } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
@@ -224,7 +224,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             const norm = store.normalizarOrder(nuevaOrden, 'core');
                             store.agregarOrderLocal(norm);
                             
-                            toast.success(`💳 PAGO CULQI — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
+                            toast.success(`💳 PAGO MERCADO PAGO — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
                                 description: `${nuevaOrden.customer_name} pagó con tarjeta exitosamente`,
                                 duration: 6000,
                                 icon: <ShoppingBag className="text-secondary" />,
@@ -235,14 +235,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             })
                             setNotificaciones(prev => [{
                                 id: nuevaOrden.id,
-                                mensaje: `Pago Culqi de ${nuevaOrden.customer_name}`,
+                                mensaje: `Pago Mercado Pago de ${nuevaOrden.customer_name}`,
                                 monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
                                 fecha: new Date(),
                                 leida: false
                             }, ...prev])
                             playNotificationSound();
                             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                                new Notification('🛍️ Nueva Venta Pagada (Culqi)', { 
+                                new Notification('🛍️ Nueva Venta Pagada (Mercado Pago)', {
                                     body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
                                     icon: '/favicon.ico' 
                                 })

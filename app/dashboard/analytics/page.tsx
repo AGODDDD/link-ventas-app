@@ -146,13 +146,13 @@ export default function AnalyticsPage() {
     // === MÉTODO DE PAGO ===
     const metodosPagoData = useMemo(() => {
         const efectivo = ordersFiltradas.filter(o => o.payment_proof_url === 'CONTRA_ENTREGA' || o.metodo_pago === 'contra_entrega').length
-        const transferencia = ordersFiltradas.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'culqi' && o.metodo_pago !== 'contra_entrega').length
-        const culqi = ordersFiltradas.filter(o => o.metodo_pago === 'culqi').length
+        const transferencia = ordersFiltradas.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'mercadopago' && o.metodo_pago !== 'contra_entrega').length
+        const mercadopago = ordersFiltradas.filter(o => o.metodo_pago === 'mercadopago').length
         
         return [
             { name: 'Transferencia/Yape', value: transferencia },
             { name: 'Contra Entrega', value: efectivo },
-            { name: 'Tarjeta (Culqi)', value: culqi },
+            { name: 'Tarjeta (Mercado Pago)', value: mercadopago },
         ].filter(m => m.value > 0)
     }, [ordersFiltradas])
 

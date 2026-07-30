@@ -155,7 +155,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         
         if (data) {
             unifiedOrders = data
-                .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'culqi' || o.metodo_pago === 'tarjeta_culqi')))
+                .filter(o => !(o.status === 'pendiente_pago' && (o.metodo_pago === 'mercadopago' || o.metodo_pago === 'tarjeta_mercadopago')))
                 .map(o => ({
                     id: o.id,
                     legacy_id: o.legacy_id,

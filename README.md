@@ -26,13 +26,13 @@ NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
 ADMIN_USER_ID=uuid_del_admin
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_solo_servidor
-PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_llaves_culqi
+PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_secretos_de_pago
 CRON_SECRET=secreto_largo_aleatorio_para_los_crons_de_vercel
-NEXT_PUBLIC_CULQI_PUBLIC_KEY=pk_test_o_pk_live_de_la_plataforma
-CULQI_SECRET_KEY=sk_test_o_sk_live_solo_servidor_de_la_plataforma
+NEXT_PUBLIC_MP_PUBLIC_KEY=APP_USR_public_key_de_la_plataforma
+MP_ACCESS_TOKEN=APP_USR_access_token_solo_servidor_de_la_plataforma
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET` y `CULQI_SECRET_KEY` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. `NEXT_PUBLIC_CULQI_PUBLIC_KEY` es la única llave de Culqi que llega al cliente para tokenizar el Plan Pro. Cada comercio configura su Public Key y Access Token de Mercado Pago desde el dashboard; el token se cifra antes de persistirse.
+`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET` y `MP_ACCESS_TOKEN` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. `NEXT_PUBLIC_MP_PUBLIC_KEY` tokeniza el Plan Pro; cada comercio configura su Public Key y Access Token de Mercado Pago desde el dashboard, y este último se cifra antes de persistirse.
 
 ### 3. Configurar Base de Datos
 Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de tu Dashboard de Supabase. Esto configurará todas las tablas y políticas de seguridad (RLS).

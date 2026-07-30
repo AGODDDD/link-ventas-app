@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (action === 'deactivate') {
       const { error } = await supabase
         .from('profiles')
-        .update({ plan: 'inactivo', plan_expires_at: null, culqi_active: false })
+        .update({ plan: 'inactivo', plan_expires_at: null })
         .eq('id', merchantId)
 
       if (error) return NextResponse.json({ error: 'No se pudo desactivar' }, { status: 500 })

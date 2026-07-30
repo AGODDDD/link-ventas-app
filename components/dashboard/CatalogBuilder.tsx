@@ -260,7 +260,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                             <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
                                 {[
                                     'Productos ilimitados en vitrina',
-                                    'Pasarela de pago Culqi (tarjetas)',
+                                    'Pasarela de pago Mercado Pago (tarjetas)',
                                     'Tickets térmicos PDF 80mm',
                                     'Analíticas avanzadas en tiempo real',
                                 ].map((f, i) => (

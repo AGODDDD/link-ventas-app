@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const { error } = hasSupabaseServiceRoleKey()
       ? await supabase
           .from('profiles')
-          .update({ plan: 'free', plan_expires_at: null, culqi_active: false })
+          .update({ plan: 'free', plan_expires_at: null })
           .eq('id', user.id)
       : await supabase.rpc('set_own_plan_free')
 
