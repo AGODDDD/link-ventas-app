@@ -2,6 +2,24 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CartItem, Product, ProductModifierGroup } from '@/types/tienda'
 
+const MAX_QUANTITY_PER_LINE = 100
+
+function stableVariantKey(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableVariantKey).sort().join(',')}]`
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .filter(([, entry]) => entry !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, entry]) => `${JSON.stringify(key)}:${stableVariantKey(entry)}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value ?? null)
+}
+
+function sameVariant(a: unknown, b: unknown) {
+  return stableVariantKey(a) === stableVariantKey(b)
+}
+
 interface CartStore {
   // carts[storeId] = CartItem[]
   carts: Record<string, CartItem[]>
@@ -20,14 +38,14 @@ export const useCartStore = create<CartStore>()(
       
       addToCart: (storeId, product, variantDetails) => set((state) => {
         const storeCart = state.carts[storeId] || []
-        const isSameItem = (item: CartItem) => item.product.id === product.id && JSON.stringify(item.variantDetails || {}) === JSON.stringify(variantDetails || {})
+        const isSameItem = (item: CartItem) => item.product.id === product.id && sameVariant(item.variantDetails, variantDetails)
         const existing = storeCart.find(isSameItem)
         
         let newStoreCart
         if (existing) {
           newStoreCart = storeCart.map(item =>
             isSameItem(item)
-              ? { ...item, quantity: item.quantity + 1 }
+              ? { ...item, quantity: Math.min(MAX_QUANTITY_PER_LINE, item.quantity + 1) }
               : item
           )
         } else {
@@ -39,15 +57,15 @@ export const useCartStore = create<CartStore>()(
       
       removeFromCart: (storeId, productId, variantDetails) => set((state) => {
         const storeCart = state.carts[storeId] || []
-        const newStoreCart = storeCart.filter(item => !(item.product.id === productId && JSON.stringify(item.variantDetails || {}) === JSON.stringify(variantDetails || {})))
+        const newStoreCart = storeCart.filter(item => !(item.product.id === productId && sameVariant(item.variantDetails, variantDetails)))
         return { carts: { ...state.carts, [storeId]: newStoreCart } }
       }),
       
       updateQuantity: (storeId, productId, variantDetails, delta) => set((state) => {
         const storeCart = state.carts[storeId] || []
         const newStoreCart = storeCart.map(item => {
-          if (item.product.id === productId && JSON.stringify(item.variantDetails || {}) === JSON.stringify(variantDetails || {})) {
-            const newQuantity = Math.max(0, item.quantity + delta)
+          if (item.product.id === productId && sameVariant(item.variantDetails, variantDetails)) {
+            const newQuantity = Math.min(MAX_QUANTITY_PER_LINE, Math.max(0, item.quantity + delta))
             return { ...item, quantity: newQuantity }
           }
           return item
@@ -88,6 +106,22 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'link-ventas-cart-storage',
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<CartStore> | undefined
+        const carts = Object.fromEntries(
+          Object.entries(state?.carts || {}).map(([storeId, cart]) => [
+            storeId,
+            (Array.isArray(cart) ? cart : []).filter((item): item is CartItem =>
+              Boolean(item?.product?.id) &&
+              Number.isFinite(item.product.price) &&
+              Number.isInteger(item.quantity) &&
+              item.quantity > 0
+            ).map(item => ({ ...item, quantity: Math.min(MAX_QUANTITY_PER_LINE, item.quantity) })),
+          ])
+        )
+        return { carts } as CartStore
+      },
     }
   )
 )

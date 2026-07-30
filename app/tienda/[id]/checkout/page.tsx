@@ -13,6 +13,35 @@ import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPay
 type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_mercadopago'
 type OrderStatus = 'pendiente' | 'pendiente_verificacion' | 'pagado' | 'cancelado'
 
+function getLineUnitPrice(item: ReturnType<typeof useCartStore.getState>['carts'][string][number]) {
+    let modifiersPrice = 0
+    if (item.variantDetails?.options && item.product.variants) {
+        for (const [groupId, optionIds] of Object.entries(item.variantDetails.options)) {
+            const group = item.product.variants.find((candidate: any) => candidate.id === groupId) as any
+            if (!group) continue
+            for (const optionId of optionIds) {
+                const option = group.options?.find((candidate: any) => candidate.id === optionId)
+                if (option && Number.isFinite(option.price_modifier)) modifiersPrice += option.price_modifier
+            }
+        }
+    }
+    return item.product.price + modifiersPrice
+}
+
+function hasValidModaVariant(item: ReturnType<typeof useCartStore.getState>['carts'][string][number]) {
+    const variants = Array.isArray(item.product.variants) ? item.product.variants : []
+    const modaVariants = variants.filter((variant: any) => variant && ('talla' in variant || 'color' in variant))
+    if (modaVariants.length === 0) return true
+    const talla = item.variantDetails?.talla
+    const color = item.variantDetails?.color
+    const requiresTalla = modaVariants.some((variant: any) => Boolean(variant.talla))
+    const requiresColor = modaVariants.some((variant: any) => Boolean(variant.color))
+    if ((requiresTalla && !talla) || (requiresColor && !color)) return false
+    return modaVariants.some((variant: any) =>
+        (!talla || variant.talla === talla) && (!color || variant.color === color)
+    )
+}
+
 export default function CheckoutPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
     const params = React.use(paramsPromise)
     const router = useRouter()
@@ -26,7 +55,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [perfil, setPerfil] = useState<Profile | null>(null)
     const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null)
     const [leadId, setLeadId] = useState<string | null>(null)
-    const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string } | null>(null)
+    const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string; total: number } | null>(null)
 
     // Form states
     const [nombre, setNombre] = useState('')
@@ -111,11 +140,16 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     }, [nombre, telefono, storeId, cart, leadId]);
     // ==============================================================
 
-    const total = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
+    const total = cartStore.getTotalPrice(storeId)
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
+            if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+                toast.error('El comprobante debe ser una imagen de hasta 5 MB')
+                return
+            }
+            if (previewUrl) URL.revokeObjectURL(previewUrl)
             setComprobante(file)
             setPreviewUrl(URL.createObjectURL(file))
         }
@@ -140,10 +174,8 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
         // Validación de Variantes (Moda)
         for (const item of cart) {
-            if (item.product.variants && item.product.variants.length > 0) {
-                if (!item.variantDetails || (!item.variantDetails.talla && !item.variantDetails.color)) {
-                    return toast.error(`Selecciona talla/color para: ${item.product.name}`)
-                }
+            if (!hasValidModaVariant(item)) {
+                return toast.error(`Selecciona una talla y color disponibles para: ${item.product.name}`)
             }
         }
 
@@ -195,7 +227,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             const persistedOrder = orderResult.order
 
             if (metodoPago === 'tarjeta_mercadopago') {
-                setPendingPayment({ orderId: persistedOrder.order_id, legacyId: persistedOrder.legacy_id })
+                setPendingPayment({ orderId: persistedOrder.order_id, legacyId: persistedOrder.legacy_id, total: Number(persistedOrder.total) })
                 return
             }
 
@@ -277,7 +309,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-lg bg-white p-6 text-black shadow-2xl">
               <div className="mb-4 flex items-center justify-between"><h2 className="font-headline text-lg font-black">PAGO SEGURO</h2><button onClick={() => setPendingPayment(null)}>Cerrar</button></div>
-              <MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={Number(total)} payerEmail={`${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => {
+              <MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={`${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => {
                 const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || `${telefono.replace(/\D/g, '')}@linkventas.pe`, order_id: pendingPayment.orderId, store_id: perfil.id }) })
                 const data = await response.json()
                 if (!response.ok) throw new Error(data.error || 'Pago no aprobado.')
@@ -287,27 +319,27 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             </div>
           </div>
         )}
-        <div className="min-h-screen bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container font-body flex flex-col md:flex-row">
+        <div className="min-h-screen bg-[#f8f7f3] text-[#292724] selection:bg-[#e7ddd1] selection:text-[#292724] font-body flex flex-col md:flex-row">
 
             {/* LEFT: FORMULARIO */}
             <div className="flex-1 p-6 md:p-12 lg:p-16 overflow-y-auto order-2 md:order-1 relative">
                 
                 {/* Background Grid Pattern */}
-                <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,59,48,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,48,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+                <div className="absolute inset-0 pointer-events-none opacity-60" style={{ backgroundImage: 'radial-gradient(rgba(101,85,70,0.11) .7px, transparent .7px)', backgroundSize: '18px 18px' }} />
 
                 <div className="max-w-xl mx-auto space-y-12 relative z-10">
                     {/* Header Mobile */}
-                    <div className="flex items-center gap-6 mb-8 border-b border-outline pb-6">
+                    <div className="flex items-center gap-5 mb-8 border-b border-stone-200 pb-7">
                         <button 
                             onClick={() => router.back()} 
                             aria-label="Volver atrás"
-                            className="text-on-background hover:text-primary transition-colors bg-surface-variant p-2 border border-outline"
+                            className="text-[#292724] hover:bg-[#ede9e1] transition-all duration-300 active:scale-95 bg-white p-3 rounded-full border border-stone-200 shadow-[0_8px_20px_rgba(41,39,36,0.05)]"
                         >
                             <ArrowLeft size={24} />
                         </button>
                         <div>
                             <p className="font-label text-[10px] uppercase tracking-widest text-primary mb-1">PAGO SEGURO // {storeName}</p>
-                            <h1 className="text-3xl font-black font-headline uppercase tracking-tighter italic">FINALIZAR COMPRA</h1>
+                            <h1 className="text-3xl font-semibold font-headline tracking-tight">Finaliza tu compra</h1>
                         </div>
                     </div>
 
@@ -379,7 +411,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* Option A */}
                                 <label 
-                                    className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 ${metodoPago === 'transferencia' ? 'border-primary bg-primary/5' : 'border-outline/50 bg-surface-variant hover:border-outline'}`}
+                                    className={`relative cursor-pointer rounded-2xl border p-5 transition-all duration-300 ease-out active:scale-[0.99] flex flex-col gap-2 ${metodoPago === 'transferencia' ? 'border-primary bg-white shadow-[0_12px_30px_rgba(41,39,36,0.08)]' : 'border-stone-200 bg-white/70 hover:-translate-y-0.5 hover:border-stone-300'}`}
                                 >
                                     <input 
                                         type="radio" 
@@ -396,7 +428,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
                                 {/* Option B */}
                                 <label 
-                                    className={`relative cursor-pointer border-2 p-4 transition-all duration-200 flex flex-col gap-2 ${metodoPago === 'contra_entrega' ? 'border-primary bg-primary/5' : 'border-outline/50 bg-surface-variant hover:border-outline'}`}
+                                    className={`relative cursor-pointer rounded-2xl border p-5 transition-all duration-300 ease-out active:scale-[0.99] flex flex-col gap-2 ${metodoPago === 'contra_entrega' ? 'border-primary bg-white shadow-[0_12px_30px_rgba(41,39,36,0.08)]' : 'border-stone-200 bg-white/70 hover:-translate-y-0.5 hover:border-stone-300'}`}
                                 >
                                     <input 
                                         type="radio" 
@@ -542,7 +574,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
             </div>
 
             {/* RIGHT: RESUMEN (Sticky on Desktop) */}
-            <div className="hidden md:block w-[400px] lg:w-[450px] bg-surface-variant border-l border-outline p-8 lg:p-12 sticky top-0 h-screen overflow-y-auto order-1 md:order-2">
+            <div className="hidden md:block w-[400px] lg:w-[450px] bg-[#efede7] border-l border-stone-200 p-8 lg:p-12 sticky top-0 h-screen overflow-y-auto order-1 md:order-2">
                 <div className="space-y-8">
                     <div className="flex items-center justify-between pb-6 border-b border-outline">
                         <div className="flex items-center gap-3 text-primary">
@@ -576,7 +608,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         </p>
                                     )}
                                     <p className="font-headline text-primary font-black mt-2 tracking-tighter italic text-lg">
-                                        S/ {(item.product.price * item.quantity).toFixed(2)}
+                                        S/ {(getLineUnitPrice(item) * item.quantity).toFixed(2)}
                                     </p>
                                 </div>
                             </div>

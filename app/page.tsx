@@ -49,7 +49,7 @@ const testimonials = [
 
 export default function LandingPage() {
   const router = useRouter()
-  const page = useRef<main>(null)
+  const page = useRef<HTMLElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
   const [orderCount, setOrderCount] = useState(150)

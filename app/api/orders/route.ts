@@ -32,8 +32,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Datos del cliente invalidos.' }, { status: 400 })
     }
 
-    if (orderType === 'delivery' && asText(body.address, 500).length < 5) {
+    if ((orderType === 'delivery' || orderType === 'standard') && asText(body.address, 500).length < 5) {
       return NextResponse.json({ error: 'Direccion invalida.' }, { status: 400 })
+    }
+
+    if (paymentMethod === 'transferencia' && !asText(body.payment_proof_url, 500)) {
+      return NextResponse.json({ error: 'Adjunta un comprobante de transferencia.' }, { status: 400 })
     }
 
     const normalizedItems = items.map((item: CartLine) => ({

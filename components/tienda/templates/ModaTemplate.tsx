@@ -11,6 +11,7 @@ import SlideOverCart from '@/components/tienda/SlideOverCart'
 import OrderHistoryPanel from '@/components/tienda/templates/OrderHistoryPanel'
 import AddressMapModal from '@/components/tienda/templates/AddressMapModal'
 import PaymentTrustBadges from './PaymentTrustBadges'
+import FomoBanner from '@/components/tienda/FomoBanner'
 import { Search, User, ClipboardList, ShoppingBag, Eye, Play, MapPin, X, ChevronDown, ChevronRight, Check, Menu } from 'lucide-react'
 
 interface Props {
@@ -70,6 +71,15 @@ function getColors(product: Product) {
 
 function getSizes(product: Product) {
   return uniqueValues(getVariants(product).map(variant => variant.talla))
+}
+
+function isAvailableCombination(product: Product, talla?: string, color?: string) {
+  const variants = getVariants(product)
+  if (variants.length === 0) return true
+  return variants.some(variant =>
+    (!talla || normalize(variant.talla || '') === normalize(talla)) &&
+    (!color || normalize(variant.color || '') === normalize(color))
+  )
 }
 
 function normalize(value: string) {
@@ -438,13 +448,13 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
   const currentProductColor = (product: Product) => {
     const colors = getColors(product)
-    const index = selectedColorIndex[product.id] || 0
+    const index = selectedColorIndex[product.id]
+    if (index === undefined) return ''
     return colors[index] || ''
   }
 
   const currentProductSize = (product: Product) => {
-    const sizes = getSizes(product)
-    return selectedSize[product.id] || sizes[0] || ''
+    return selectedSize[product.id] || ''
   }
 
   const addToCart = (product: Product, qty = 1, closeModal = false) => {
@@ -467,6 +477,10 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
     if (colors.length > 0 && !color) {
       toast.error('Selecciona un color')
+      return
+    }
+    if (!isAvailableCombination(product, size, color)) {
+      toast.error('Esa combinación de talla y color no está disponible')
       return
     }
     const variantDetails = {
@@ -757,7 +771,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
                       key={product.id}
                       product={product}
                       index={index}
-                      selectedColorIndex={selectedColorIndex[product.id] || 0}
+                      selectedColorIndex={selectedColorIndex[product.id] ?? -1}
                       onColorChange={(colorIndex) => setSelectedColorIndex(prev => ({ ...prev, [product.id]: colorIndex }))}
                       onOpenDetail={() => openDetail(product)}
                       onOpenQuickView={() => { setQuickViewProduct(product); setModalQty(1) }}
@@ -781,11 +795,12 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
           <DetailView
             product={selectedProduct}
             perfil={perfil}
-            selectedColorIndex={selectedColorIndex[selectedProduct.id] || 0}
+            selectedColorIndex={selectedColorIndex[selectedProduct.id] ?? -1}
             selectedSize={currentProductSize(selectedProduct)}
             quantity={detailQty}
             storeName={storeName}
             whatsappPhone={perfil.whatsapp_phone}
+            fomoEnabled={perfil.fomo_enabled === true}
             onBack={() => goToCatalog()}
             selectedMediaIndex={detailMediaIndex}
             onMediaChange={setDetailMediaIndex}
@@ -802,7 +817,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       {quickViewProduct && (
         <QuickViewModal
           product={quickViewProduct}
-          selectedColorIndex={selectedColorIndex[quickViewProduct.id] || 0}
+          selectedColorIndex={selectedColorIndex[quickViewProduct.id] ?? -1}
           selectedSize={currentProductSize(quickViewProduct)}
           quantity={modalQty}
           onClose={() => setQuickViewProduct(null)}
@@ -1254,6 +1269,7 @@ function QuickViewModal({
                     className={`modal-swatch ${colorIndex === selectedColorIndex ? 'selected' : ''}`}
                     style={{ background: getColorHex(color, colorIndex) }}
                     title={color}
+                    disabled={!isAvailableCombination(product, selectedSize || undefined, color)}
                     onClick={() => onColorChange(colorIndex)}
                   />
                 ))}
@@ -1265,7 +1281,7 @@ function QuickViewModal({
               <div className="modal-colors-label">Talla:</div>
               <div className="modal-sizes">
                 {sizes.map(size => (
-                  <button key={size} className={`size-btn ${size === selectedSize ? 'selected' : ''}`} onClick={() => onSizeChange(size)}>{size}</button>
+                  <button key={size} disabled={!isAvailableCombination(product, size, selectedColor || undefined)} className={`size-btn ${size === selectedSize ? 'selected' : ''}`} onClick={() => onSizeChange(size)}>{size}</button>
                 ))}
               </div>
             </>
@@ -1296,6 +1312,7 @@ function DetailView({
   quantity,
   storeName,
   whatsappPhone,
+  fomoEnabled,
   onBack,
   selectedMediaIndex,
   onMediaChange,
@@ -1312,6 +1329,7 @@ function DetailView({
   quantity: number;
   storeName: string;
   whatsappPhone?: string;
+  fomoEnabled: boolean;
   onBack: () => void;
   selectedMediaIndex: number;
   onMediaChange: (index: number) => void;
@@ -1410,6 +1428,7 @@ function DetailView({
             {product.original_price && product.original_price > product.price && <span className="inline-old-price detail-old-price">{formatPrice(product.original_price)}</span>}
           </div>
           <p className="detail-description">{product.description || 'Prenda disponible en el catalogo.'}</p>
+          {fomoEnabled && <FomoBanner stock={product.stock} />}
           {colors.length > 0 && (
             <>
               <p className="detail-label">Color: <span>{selectedColor}</span></p>
@@ -1420,6 +1439,7 @@ function DetailView({
                     className={`detail-swatch ${colorIndex === selectedColorIndex ? 'selected' : ''}`}
                     style={{ background: getColorHex(color, colorIndex) }}
                     title={color}
+                    disabled={!isAvailableCombination(product, selectedSize || undefined, color)}
                     onClick={() => onColorChange(colorIndex)}
                   />
                 ))}
@@ -1430,7 +1450,7 @@ function DetailView({
             <>
               <p className="detail-label">Talla:</p>
               <div className="detail-sizes">
-                {sizes.map(size => <button key={size} className={`size-btn ${size === selectedSize ? 'selected' : ''}`} onClick={() => onSizeChange(size)}>{size}</button>)}
+                {sizes.map(size => <button key={size} disabled={!isAvailableCombination(product, size, selectedColor || undefined)} className={`size-btn ${size === selectedSize ? 'selected' : ''}`} onClick={() => onSizeChange(size)}>{size}</button>)}
               </div>
             </>
           )}
@@ -2011,6 +2031,7 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .modal-swatch:hover, .moda-urban-template .detail-swatch:hover { transform: scale(1.1); }
 .moda-urban-template .modal-swatch.selected, .moda-urban-template .detail-swatch.selected { box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--text); }
+.moda-urban-template .modal-swatch:disabled, .moda-urban-template .detail-swatch:disabled, .moda-urban-template .size-btn:disabled { opacity: .28; cursor: not-allowed; transform: none; }
 .moda-urban-template .size-btn {
   padding: 8px 14px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 500; transition: var(--transition); font-size: 0.85rem; color: var(--text); text-transform: uppercase;
 }
