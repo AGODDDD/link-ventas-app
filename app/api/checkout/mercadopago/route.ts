@@ -36,9 +36,10 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, 'X-Idempotency-Key': order.id },
       body: JSON.stringify({ token, transaction_amount: amount, installments, payment_method_id: paymentMethodId, issuer_id: issuerId || undefined, payer: { email }, external_reference: order.id, description: `Orden ${order.id}` }),
     })
-    const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string } = await mpResponse.json()
+    const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string; message?: string } = await mpResponse.json()
     if (!mpResponse.ok || payment.status !== 'approved' || Number(payment.transaction_amount) !== amount || payment.currency_id !== 'PEN' || !payment.id) {
-      return NextResponse.json({ error: payment.status_detail || 'Pago no aprobado.' }, { status: 400 })
+      console.error('Mercado Pago API Rechazó el pago:', payment)
+      return NextResponse.json({ error: payment.message || payment.status_detail || 'Pago no aprobado.' }, { status: 400 })
     }
 
     const { data: paidOrder, error } = await supabase.from('orders').update({ status: 'paid', metodo_pago: 'mercadopago', mercadopago_payment_id: String(payment.id), mercadopago_paid_at: new Date().toISOString(), payment_proof_url: 'MERCADOPAGO_AUTOMATIC' }).eq('id', order.id).eq('status', 'pendiente_pago').is('mercadopago_payment_id', null).select('id, legacy_id').maybeSingle()

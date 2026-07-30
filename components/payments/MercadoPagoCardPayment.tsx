@@ -76,13 +76,17 @@ export function MercadoPagoCardPayment({ publicKey, amount, payerEmail, onSubmit
         return
       }
 
-      await onSubmit({
-        token,
-        payment_method_id: paymentMethodId,
-        installments,
-        issuer_id: formData.issuer_id ? String(formData.issuer_id) : undefined,
-        payer: formData.payer,
-      })
+      try {
+        await onSubmit({
+          token,
+          payment_method_id: paymentMethodId,
+          installments,
+          issuer_id: formData.issuer_id ? String(formData.issuer_id) : undefined,
+          payer: formData.payer,
+        })
+      } catch (error: any) {
+        onError(error instanceof Error ? error.message : 'Error al procesar pago')
+      }
     },
     [onError, onSubmit],
   )
