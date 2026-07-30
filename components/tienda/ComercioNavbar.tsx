@@ -48,14 +48,14 @@ export default function ComercioNavbar({ storeId, storeName, avatarUrl, whatsapp
 
   return (
     <>
-      <header className="relative z-50 border-b border-black/[0.07] bg-white text-[#131A22]">
-        <div className="hidden bg-[#131A22] text-white lg:block">
+      <header className="relative z-50 border-b border-slate-200 bg-white text-[#172033]">
+        <div className="hidden bg-[#172033] text-white lg:block">
           <div className="mx-auto flex h-8 max-w-[1480px] items-center justify-between px-6 text-[10px]">
             <div className="flex items-center gap-5 text-white/70">
-              {whatsappPhone && <a href={`https://wa.me/${whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-[#78DDBC]"><AnimatedPhone size={12} duration={0.45} />Atención al cliente: {whatsappPhone}</a>}
+              {whatsappPhone && <a href={`https://wa.me/${whatsappPhone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 transition-colors hover:text-blue-300"><AnimatedPhone size={12} duration={0.45} />Atención al cliente: {whatsappPhone}</a>}
               <span className="flex items-center gap-1.5"><AnimatedShield size={12} duration={0.45} />Compra protegida</span>
             </div>
-            <div className="flex items-center gap-5 text-white/60"><span className="flex items-center gap-1.5"><AnimatedMail size={12} duration={0.45} />Pedidos y soporte online</span><Link href={`/tienda/${storeId}/checkout`} className="font-semibold text-white transition-colors hover:text-[#78DDBC]">Finalizar compra</Link></div>
+            <div className="flex items-center gap-5 text-white/60"><span className="flex items-center gap-1.5"><AnimatedMail size={12} duration={0.45} />Pedidos y soporte online</span><Link href={`/tienda/${storeId}/checkout`} className="font-semibold text-white transition-colors hover:text-blue-300">Finalizar compra</Link></div>
           </div>
         </div>
 
@@ -63,35 +63,35 @@ export default function ComercioNavbar({ storeId, storeName, avatarUrl, whatsapp
           <button type="button" onClick={() => setMenuOpen((value) => !value)} aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-all hover:border-zinc-300 hover:text-zinc-900 active:scale-95 lg:hidden">{menuOpen ? <AnimatedClose size={20} duration={0.4} /> : <AnimatedMenu size={20} duration={0.4} />}</button>
 
           <Link href={`/tienda/${storeId}`} className="flex min-w-0 shrink-0 items-center gap-3 lg:w-64">
-            {avatarUrl ? <span className="relative h-12 w-16 overflow-hidden"><Image src={avatarUrl} alt={storeName} fill className="object-contain" sizes="64px" /></span> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#131A22] text-xs font-black text-[#78DDBC]">{storeName.slice(0, 2).toUpperCase()}</span>}
+            {avatarUrl ? <span className="relative h-12 w-16 overflow-hidden"><Image src={avatarUrl} alt={storeName} fill className="object-contain" sizes="64px" /></span> : <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#172033] text-xs font-black text-blue-300">{storeName.slice(0, 2).toUpperCase()}</span>}
             <span className="min-w-0"><strong className="block truncate text-base font-black uppercase tracking-[-0.035em] lg:text-lg">{storeName}</strong><span className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-400 sm:block">Tu tienda especializada</span></span>
           </Link>
 
-          <form onSubmit={submitSearch} className="hidden h-12 min-w-0 flex-1 overflow-hidden rounded-xl border border-black/[0.08] bg-[#F4F3EF] transition-all duration-300 focus-within:border-[#78DDBC] focus-within:bg-white focus-within:shadow-[0_10px_35px_rgba(19,26,34,0.07)] lg:flex">
+          <form onSubmit={submitSearch} className="hidden h-12 min-w-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-[#F5F7FA] transition-all duration-300 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_10px_35px_rgba(37,99,235,0.09)] lg:flex">
             <label className="flex items-center gap-2 border-r border-zinc-200 px-4 text-[11px] font-semibold text-zinc-500">Categorías <AnimatedChevronDown size={13} duration={0.4} /></label>
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar en toda la tienda..." className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-zinc-400" />
-            <button type="submit" className="flex w-28 items-center justify-center gap-2 bg-[#78DDBC] text-xs font-bold text-[#131A22] transition-colors hover:bg-[#91E8CA]"><AnimatedSearch size={17} duration={0.45} />Buscar</button>
+            <button type="submit" className="flex w-28 items-center justify-center gap-2 border-l border-blue-100 bg-[#EAF1FF] text-xs font-bold text-[#1D5ED8] transition-colors hover:bg-[#DCE8FF]"><AnimatedSearch size={17} duration={0.45} />Buscar</button>
           </form>
 
-          <button type="button" onClick={() => setCartOpen(true)} aria-label="Abrir carrito" className="relative ml-auto flex h-12 shrink-0 items-center gap-3 rounded-xl border border-black/[0.08] bg-white px-3.5 transition-all duration-300 hover:border-[#78DDBC] hover:shadow-[0_8px_24px_rgba(19,26,34,0.08)] active:scale-95">
+          <button type="button" onClick={() => setCartOpen(true)} aria-label="Abrir carrito" className="relative ml-auto flex h-12 shrink-0 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3.5 transition-all duration-300 hover:border-blue-300 hover:shadow-[0_8px_24px_rgba(37,99,235,0.09)] active:scale-95">
             <AnimatedCart size={23} duration={0.5} />
             <span className="hidden text-left sm:block"><span className="block text-[10px] text-zinc-400">{mounted ? totalItems : 0} productos</span><strong className="block text-xs">Tu carrito</strong></span>
-            {mounted && totalItems > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#78DDBC] px-1 text-[9px] font-black text-[#131A22]">{totalItems}</span>}
+            {mounted && totalItems > 0 && <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F97316] px-1 text-[9px] font-black text-white">{totalItems}</span>}
           </button>
         </div>
 
-        <div className="border-t border-white/10 bg-[#131A22] text-white">
+        <div className="border-t border-white/10 bg-[#172033] text-white">
           <nav className="mx-auto flex h-11 max-w-[1480px] items-center overflow-x-auto px-4 [scrollbar-width:none] sm:px-6">
-            <a href="#catalogo" className="flex h-full shrink-0 items-center gap-2 border-r border-white/10 pr-6 text-[10px] font-bold uppercase tracking-[0.08em] text-[#78DDBC]"><AnimatedMenu size={16} duration={0.45} />Por categoría</a>
+            <a href="#catalogo" className="flex h-full shrink-0 items-center gap-2 border-r border-white/10 pr-6 text-[10px] font-bold uppercase tracking-[0.08em] text-blue-300"><AnimatedMenu size={16} duration={0.45} />Por categoría</a>
             <div className="flex h-full items-center">
               {categories.slice(0, 5).map((category) => <a key={category} href="#catalogo" onClick={() => window.dispatchEvent(new CustomEvent('commerce-category', { detail: category }))} className="flex h-full shrink-0 items-center px-5 text-[10px] font-semibold uppercase tracking-[0.06em] text-white/70 transition-colors hover:bg-white/5 hover:text-white">{category}</a>)}
-              <a href="#ofertas" className="flex h-full shrink-0 items-center px-5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#FFCA68]">Ofertas</a>
+              <a href="#ofertas" className="flex h-full shrink-0 items-center px-5 text-[10px] font-bold uppercase tracking-[0.06em] text-[#FB923C]">Ofertas</a>
               <a href="#pagos" className="flex h-full shrink-0 items-center px-5 text-[10px] font-semibold uppercase tracking-[0.06em] text-white/70 transition-colors hover:text-white">Formas de pago</a>
             </div>
           </nav>
         </div>
 
-        {menuOpen && <div className="border-t border-zinc-200 bg-white p-4 shadow-xl lg:hidden"><form onSubmit={submitSearch} className="flex h-12 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar productos..." className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none" /><button type="submit" className="flex w-12 items-center justify-center bg-[#78DDBC] text-[#131A22]"><AnimatedSearch size={18} /></button></form><div className="mt-3 grid grid-cols-2 gap-2">{categories.slice(0, 8).map((category) => <a key={category} href="#catalogo" onClick={() => { window.dispatchEvent(new CustomEvent('commerce-category', { detail: category })); setMenuOpen(false) }} className="rounded-lg border border-zinc-200 px-3 py-3 text-xs font-semibold text-zinc-600">{category}</a>)}</div></div>}
+        {menuOpen && <div className="border-t border-zinc-200 bg-white p-4 shadow-xl lg:hidden"><form onSubmit={submitSearch} className="flex h-12 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar productos..." className="min-w-0 flex-1 bg-transparent px-4 text-sm outline-none" /><button type="submit" className="flex w-12 items-center justify-center bg-[#EAF1FF] text-[#1D5ED8]"><AnimatedSearch size={18} /></button></form><div className="mt-3 grid grid-cols-2 gap-2">{categories.slice(0, 8).map((category) => <a key={category} href="#catalogo" onClick={() => { window.dispatchEvent(new CustomEvent('commerce-category', { detail: category })); setMenuOpen(false) }} className="rounded-lg border border-zinc-200 px-3 py-3 text-xs font-semibold text-zinc-600">{category}</a>)}</div></div>}
       </header>
 
       <SlideOverCart storeId={storeId} isOpen={cartOpen} onClose={() => setCartOpen(false)} templateType="comercio" />
