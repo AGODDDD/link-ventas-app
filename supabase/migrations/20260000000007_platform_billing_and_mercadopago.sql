@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.platform_billing_charges (
   user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   provider TEXT NOT NULL CHECK (provider = 'culqi'),
   provider_charge_id TEXT NOT NULL UNIQUE,
-  amount INTEGER NOT NULL CHECK (amount = 2900),
+  amount INTEGER NOT NULL CHECK (amount = 2500),
   currency TEXT NOT NULL CHECK (currency = 'PEN'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -41,7 +41,7 @@ AS $$
 DECLARE
   v_expires_at TIMESTAMPTZ;
 BEGIN
-  IF p_amount <> 2900 OR p_currency <> 'PEN' OR length(trim(p_charge_id)) = 0 THEN
+  IF p_amount <> 2500 OR p_currency <> 'PEN' OR length(trim(p_charge_id)) = 0 THEN
     RAISE EXCEPTION 'Cobro de suscripcion invalido';
   END IF;
 

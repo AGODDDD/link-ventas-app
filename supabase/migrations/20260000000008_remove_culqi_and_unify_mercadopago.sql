@@ -84,5 +84,5 @@ $$;
 
 DROP INDEX IF EXISTS public.orders_culqi_charge_id_unique;
 ALTER TABLE public.orders DROP COLUMN IF EXISTS culqi_charge_id, DROP COLUMN IF EXISTS culqi_paid_at;
-ALTER TABLE public.profiles DROP COLUMN IF EXISTS culqi_active, DROP COLUMN IF EXISTS culqi_public_key, DROP COLUMN IF EXISTS culqi_secret_key;
-ALTER TABLE public.store_config DROP COLUMN IF EXISTS culqi_active, DROP COLUMN IF EXISTS culqi_public_key;
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS culqi_active CASCADE, DROP COLUMN IF EXISTS culqi_public_key CASCADE, DROP COLUMN IF EXISTS culqi_secret_key CASCADE;
+ALTER TABLE public.store_config DROP COLUMN IF EXISTS culqi_active CASCADE, DROP COLUMN IF EXISTS culqi_public_key CASCADE;

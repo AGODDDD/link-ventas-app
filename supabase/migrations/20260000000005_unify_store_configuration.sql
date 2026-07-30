@@ -1,6 +1,9 @@
 -- Fuente de verdad para la configuracion comercial: stores + store_config.
 -- profiles queda reservado para identidad de Auth, planes y secretos de pasarela.
 
+ALTER TABLE public.stores DROP CONSTRAINT IF EXISTS stores_template_type_check;
+ALTER TABLE public.stores ADD CONSTRAINT stores_template_type_check CHECK (template_type = ANY (ARRAY['restaurante'::text, 'comercio'::text, 'moda'::text, 'food'::text]));
+
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS hero_image_url TEXT,
   ADD COLUMN IF NOT EXISTS benefits JSONB NOT NULL DEFAULT '[]'::JSONB,
