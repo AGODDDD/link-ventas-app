@@ -119,7 +119,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
         return <ModaTemplate perfil={perfil} productos={productos} extensionData={extensionData} isReadOnly={isReadOnly} />;
       case 'comercio':
       default:
-        return <ComercioTemplate perfil={perfil} extensionData={extensionData} isReadOnly={isReadOnly} />;
+        return <ComercioTemplate perfil={perfil} productos={productos} extensionData={extensionData} isReadOnly={isReadOnly} />;
     }
   }
 

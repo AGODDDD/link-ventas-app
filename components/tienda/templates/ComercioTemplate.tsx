@@ -1,95 +1,37 @@
+'use client'
+
 import React from 'react'
 import Image from 'next/image'
-import { Profile } from '@/types/tienda'
-import LeadCaptureForm from '@/components/tienda/LeadCaptureForm'
+import { ArrowDown, ArrowUpRight, Box, ShieldCheck, Truck } from 'lucide-react'
+import { Product, Profile } from '@/types/tienda'
+import ProductGrid from '@/components/tienda/ProductGrid'
 import PaymentTrustBadges from './PaymentTrustBadges'
 
 interface Props {
-  perfil: Profile;
-  extensionData?: {
-    deliverySettings?: any;
-    menuCategories?: any[];
-  };
-  isReadOnly?: boolean;
+  perfil: Profile
+  productos: Product[]
+  extensionData?: { deliverySettings?: any; menuCategories?: any[] }
+  isReadOnly?: boolean
 }
 
-export default function ComercioTemplate({ perfil, extensionData, isReadOnly }: Props) {
-  return (
-    <>
-      <main id="inicio" className="relative min-h-screen pt-24 overflow-hidden scroll-mt-24">
-        {/* Hero Section Asymmetric Layout */}
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-12">
-          {/* Left Column: Branding & Urgency */}
-          <div className="lg:col-span-7 z-10 space-y-8">
-            <div className="space-y-2">
-              <span className="inline-block bg-primary-container text-on-primary-container px-4 py-1 font-label text-xs font-bold tracking-[0.3em] uppercase">MOMENTO EXCLUSIVO</span>
-              <h1 className="font-headline font-black text-6xl md:text-8xl lg:text-[7rem] leading-[0.9] tracking-tighter uppercase kinetic-text">
-                BLACK FRIDAY <br/> <span className="text-primary">está llegando</span>
-              </h1>
-            </div>
-            <p className="font-body text-xl md:text-2xl text-on-surface-variant max-w-xl border-l-4 border-primary pl-6">
-              Mantente atento y elige entre múltiples ofertas especiales para ti.
-            </p>
-
-            {/* Countdown Timer Component */}
-            {perfil.fomo_enabled !== false && (
-              <div className="space-y-4 pt-8">
-                <h2 className="font-headline font-bold text-primary tracking-widest text-sm italic uppercase">¡TU TIEMPO ES AHORA!</h2>
-                <div className="flex gap-4 md:gap-8 overflow-x-auto pb-4 md:pb-0">
-                  <div className="bg-surface-container-lowest/50 backdrop-blur-md p-4 min-w-[80px] md:min-w-[100px] border-b-4 border-primary shadow-lg shadow-primary/5">
-                    <div className="font-headline font-black text-4xl md:text-6xl text-on-surface">03</div>
-                    <div className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant pt-2">DÍAS</div>
-                  </div>
-                  <div className="bg-surface-container-lowest/50 backdrop-blur-md p-4 min-w-[80px] md:min-w-[100px] border-b-4 border-primary shadow-lg shadow-primary/5">
-                    <div className="font-headline font-black text-4xl md:text-6xl text-on-surface">14</div>
-                    <div className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant pt-2">HORAS</div>
-                  </div>
-                  <div className="bg-surface-container-lowest/50 backdrop-blur-md p-4 min-w-[80px] md:min-w-[100px] border-b-4 border-primary shadow-lg shadow-primary/5">
-                    <div className="font-headline font-black text-4xl md:text-6xl text-on-surface">22</div>
-                    <div className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant pt-2">MINUTOS</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right Column: Lead Gen Form with Overlap */}
-          <div className="lg:col-span-5 relative mt-8 lg:mt-0">
-            {!isReadOnly && <LeadCaptureForm storeId={perfil.id} />}
-          </div>
+export default function ComercioTemplate({ perfil, productos, isReadOnly }: Props) {
+  return <main className="min-h-screen bg-[#FCFCFC] text-zinc-900">
+    <section id="inicio" className="relative mx-auto max-w-[1440px] scroll-mt-24 overflow-hidden px-5 pb-16 pt-28 sm:px-8 lg:px-12 lg:pb-24 lg:pt-40">
+      <div className="grid items-end gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-400"><span className="h-px w-8 bg-zinc-900/30" />{isReadOnly ? 'Catálogo en pausa' : 'Comercio seleccionado'}</div>
+          <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.09em] sm:text-8xl lg:text-[9.5rem]">{perfil.store_name || 'Tu tienda'}<span className="text-zinc-300">.</span></h1>
+          <p className="mt-8 max-w-md text-base leading-7 text-zinc-500 sm:text-lg">{perfil.description || 'Productos que resuelven. Compra rápido, recibe claro.'}</p>
+          <a href="#catalogo" className="mt-10 inline-flex items-center gap-3 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-zinc-700 active:scale-95">Explorar catálogo <ArrowDown size={16} /></a>
         </div>
-
-        {/* Promotional Bento Grid Section */}
-        <section id="ofertas" className="max-w-7xl mx-auto px-6 py-24 scroll-mt-16">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2 bg-surface-container-low p-8 h-80 flex flex-col justify-end group overflow-hidden relative">
-              <Image
-                alt="Store Banner"
-                className="absolute inset-0 object-cover opacity-20 group-hover:scale-110 transition-transform duration-700"
-                src={perfil.banner_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuAeeV5R743uZiRLWamjaLfwpXyd-W9fIvWgeuBAEn35jA1NQOWNVgXrcqsQQSc3_ZIvgSnaG_8PpWez-HFz17UztXE8PfsRX4AXL8FtakL0rsh6eXolfH3Sl-C-NmLWgRavPhkV7ZmvDSFbgxPDnBHG5JXQU93HcGvPvnO-rV_32j7CvDSdtowa_ctoCfnUT1_XbRmXCojOJspBdrRExoC92qoZ8Cfr8wP-h-l4sDqtYikSzEv8gRznRPwodhDQtD-qMGjEd0AolESK"}
-                fill
-                priority
-              />
-              <h2 className="font-headline font-bold text-4xl relative z-10 italic uppercase">ACCESORIOS <br/> <span className="text-primary">PREMIUM</span></h2>
-            </div>
-
-            <div className="bg-primary-container p-8 h-80 flex flex-col justify-between">
-              <span className="material-symbols-outlined text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-              <h3 className="font-headline font-bold text-2xl text-on-primary-container uppercase">ENVÍO <br/> PRIORITARIO</h3>
-            </div>
-
-            <div className="bg-surface-container-high p-8 h-80 flex flex-col justify-between border-t-4 border-primary">
-              <div className="font-label text-xs tracking-widest opacity-50 uppercase">STOCK LIMITADO</div>
-              <h3 className="font-headline font-bold text-2xl uppercase italic text-primary">EDICIÓN <br/> LIMITADA</h3>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-on-surface/10 px-6 py-10 text-center text-on-surface-variant">
-        <PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto mb-6 text-on-surface" />
-        <p className="font-label text-xs tracking-wide">© {new Date().getFullYear()} {perfil.store_name || 'Tienda'}. Todos los derechos reservados.</p>
-      </footer>
-    </>
-  )
+        <div className="relative min-h-[380px] overflow-hidden rounded-[2rem] bg-[#F3F1EC] lg:min-h-[540px]">
+          {perfil.hero_image_url || perfil.banner_url ? <Image src={perfil.hero_image_url || perfil.banner_url || ''} alt="" fill priority className="object-cover transition-transform duration-700 hover:scale-[1.03]" sizes="(max-width: 1024px) 100vw, 45vw" /> : <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,#ffffff_0,transparent_35%),linear-gradient(135deg,#ebe8e1,#f7f6f3)]" />}
+          <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between rounded-2xl border border-white/50 bg-white/55 p-4 backdrop-blur-xl"><span className="max-w-[180px] text-xs leading-5 text-zinc-600">Una selección precisa para el día a día.</span><ArrowUpRight size={20} className="text-zinc-900" /></div>
+        </div>
+      </div>
+      <div className="mt-16 grid grid-cols-1 gap-3 border-t border-zinc-900/10 pt-5 sm:grid-cols-3"><div className="flex items-center gap-3 text-sm text-zinc-600"><Box size={17} strokeWidth={1.4} />Compra directa, sin configuraciones</div><div className="flex items-center gap-3 text-sm text-zinc-600"><Truck size={17} strokeWidth={1.4} />Coordinamos la entrega contigo</div><div className="flex items-center gap-3 text-sm text-zinc-600"><ShieldCheck size={17} strokeWidth={1.4} />Pago y pedido acompañados</div></div>
+    </section>
+    <ProductGrid productos={productos} perfil={perfil} isReadOnly={isReadOnly} />
+    <footer className="border-t border-zinc-900/10 px-5 py-16 sm:px-8 lg:px-12"><PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto max-w-md text-zinc-900" /><p className="mt-8 text-center text-[10px] uppercase tracking-[0.18em] text-zinc-400">© {new Date().getFullYear()} {perfil.store_name || 'Tienda'}. Todos los derechos reservados.</p></footer>
+  </main>
 }
