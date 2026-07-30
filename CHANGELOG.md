@@ -4,6 +4,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+## [2026-07-30] — Debugging & Estabilidad de Pagos
+
+### Fixed
+- **Integración Mercado Pago en Tiendas**:
+  - Solucionado el bug de "barras infinitas" (skeletons) al cargar el formulario de tarjetas de crédito. Se refactorizó `MercadoPagoCardPayment.tsx` migrando del SDK Vanilla manual al paquete oficial `@mercadopago/sdk-react`.
+  - Agregado manejo de errores local en el componente (`try/catch` en `handleSubmit`) para evitar bloqueos del UI (botón de Pagar congelado) cuando el SDK o la API rechazan el pago.
+  - Actualizado el endpoint `/api/checkout/mercadopago` para interceptar correctamente errores estructurados (HTTP 400) desde la API de Mercado Pago y extraer el mensaje detallado (`payment.message` o `status_detail`), exponiéndolo al frontend.
+  - Corregida la condición de falla engañosa que ocultaba rechazos nativos (ej. `cc_rejected_other_reason`, `invalid_access_token`) con mensajes genéricos.
+
 ## [2026-07-29] — Panel Super Admin SaaS
 
 ### Added
