@@ -14,6 +14,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ### Changed
 - **Nicho de Comercio General (`ComercioTemplate.tsx`)**: Implementado flujo de tienda sin variantes con estética Premium (Bento grid asimétrica, fondos off-white). Se integraron los íconos animados (`animateicons`) para acciones de carrito rápido con validación de inventario en tiempo real.
+  - Refinamientos de UI/UX en `ComercioNavbar` y `ProductGrid` para hacer la navegación y presentación de productos más fluida.
 - **Landing Page (`/app/page.tsx`)**: Rediseño completo con paleta Off-White/Carbono, animaciones GSAP (ScrollTrigger), sección de historias y comparativa interactiva.
 - **Nicho de Moda (`ModaTemplate.tsx`, Checkout)**: Auditoría lógica y rediseño completo del flujo de selección de variantes, ahora respaldado por el total del servidor y la base de datos.
 - **Persistencia de Carrito**: Mejoras en `useCartStore.ts` para identidad estable por variante y saneamiento.
