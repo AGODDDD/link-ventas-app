@@ -13,6 +13,13 @@ import AddressMapModal from '@/components/tienda/templates/AddressMapModal'
 import PaymentTrustBadges from './PaymentTrustBadges'
 import FomoBanner from '@/components/tienda/FomoBanner'
 import { Search, User, ClipboardList, ShoppingBag, Eye, Play, MapPin, X, ChevronDown, ChevronRight, Check, Menu } from 'lucide-react'
+import {
+  EyeIcon as AnimatedEye,
+  MenuIcon as AnimatedMenu,
+  SearchIcon as AnimatedSearch,
+  ShoppingBagIcon as AnimatedShoppingBag,
+  UserIcon as AnimatedUser,
+} from '@animateicons/react/lucide'
 
 interface Props {
   perfil: Profile;
@@ -55,7 +62,7 @@ const COLOR_MAP: Record<string, string> = {
 }
 
 const FALLBACK_COLORS = ['#1a1a1a', '#f5f5f0', '#1a3a5c', '#8a8a8a', '#d4c5b2'];
-const CARD_BG_COLORS = ['#f5f0e8', '#f0f0f0', '#eef2f5', '#f5f0e8'];
+const CARD_BG_COLORS = ['#f8dbe7', '#e7f06f', '#ddd6f2', '#f6e3ba'];
 
 function getVariants(product: Product): ModaVariant[] {
   return Array.isArray(product.variants) ? product.variants as ModaVariant[] : []
@@ -533,7 +540,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
       <header className="header" id="header">
         <div className="header-inner">
           <div className="header-left">
-            <button className="menu-toggle" aria-label="Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}><Menu size={20} /></button>
+            <button className="menu-toggle" aria-label="Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}><AnimatedMenu size={20} duration={0.7} /></button>
             <a href="#" className="logo-moda" onClick={goToCatalog}>
               {storeName.toUpperCase()}
             </a>
@@ -541,14 +548,14 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
 
           <div className="header-center hidden md:flex">
              <button className="search-container" onClick={() => { setSearchOverlayOpen(true); setTimeout(() => searchInputRef.current?.focus(), 100) }}>
-               <Search size={16} className="search-icon" />
+               <AnimatedSearch size={16} duration={0.7} className="search-icon" />
                <span className="search-placeholder">Buscar productos...</span>
              </button>
           </div>
 
           <div className="header-right">
             <button className="icon-btn hidden md:flex" onClick={() => setIsProfileOpen(true)}>
-              <User size={20} />
+              <AnimatedUser size={20} duration={0.7} />
             </button>
             <button className="icon-btn relative hidden md:flex" onClick={() => setIsOrderHistoryOpen(true)}>
               <ClipboardList size={20} />
@@ -559,7 +566,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
               )}
             </button>
             <button className="cart-btn" onClick={() => setCartOpen(true)}>
-              <ShoppingBag size={18} />
+              <AnimatedShoppingBag size={18} duration={0.7} />
               <span className="hidden sm:inline ml-1">Carrito</span>
               <span key={totalItems} className={`cart-count ${totalItems > 0 ? 'bump pop-animation' : ''}`}>{totalItems}</span>
             </button>
@@ -570,7 +577,7 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
         <div className={`mobile-menu-drawer ${mobileMenuOpen ? 'show' : ''}`}>
           <div className="p-4 border-b border-zinc-100">
             <button className="search-container w-full" onClick={() => { setMobileMenuOpen(false); setSearchOverlayOpen(true); setTimeout(() => searchInputRef.current?.focus(), 100) }}>
-               <Search size={16} className="search-icon" />
+               <AnimatedSearch size={16} duration={0.7} className="search-icon" />
                <span className="search-placeholder">Buscar productos...</span>
             </button>
           </div>
@@ -1162,7 +1169,7 @@ function ProductCard({
   const primaryMedia: ProductMedia = colorImage 
     ? { type: 'image', url: colorImage }
     : getProductMedia(product)[0]
-  const cardBg = primaryMedia.type === 'video' ? '#000' : CARD_BG_COLORS[index % 4]
+  const cardBg = primaryMedia.type === 'video' ? '#e7f06f' : CARD_BG_COLORS[index % 4]
   const displaySwatches = colors.slice(0, 5)
   const discount = product.original_price && product.original_price > product.price
     ? Math.round((1 - product.price / product.original_price) * 100)
@@ -1183,8 +1190,8 @@ function ProductCard({
         {primaryMedia.type === 'video' && <span className="video-indicator"><Play fill="currentColor" size={12}/></span>}
         {isOutOfStock && <div className="soldout-layer">Agotado</div>}
         <div className="product-actions-overlay">
-          <button className="action-btn" title="Vista rapida" onClick={(event) => { event.stopPropagation(); onOpenQuickView() }}><Eye size={18}/></button>
-          <button className="action-btn" title="Agregar" disabled={isReadOnly || isOutOfStock} onClick={(event) => { event.stopPropagation(); onQuickAdd() }}><ShoppingBag size={18}/></button>
+          <button className="action-btn" title="Vista rapida" onClick={(event) => { event.stopPropagation(); onOpenQuickView() }}><AnimatedEye size={18} duration={0.7} /></button>
+          <button className="action-btn" title="Agregar" disabled={isReadOnly || isOutOfStock} onClick={(event) => { event.stopPropagation(); onQuickAdd() }}><AnimatedShoppingBag size={18} duration={0.7} /></button>
         </div>
       </div>
       <div className="product-info">
@@ -1295,7 +1302,7 @@ function QuickViewModal({
             </div>
           </div>
           <button className="btn-add-cart" disabled={isReadOnly} onClick={onAddToCart}>
-            <span className="flex items-center justify-center gap-2"><ShoppingBag size={18}/> AGREGAR AL CARRITO</span>
+            <span className="flex items-center justify-center gap-2"><AnimatedShoppingBag size={18} duration={0.7}/> AGREGAR AL CARRITO</span>
           </button>
           <button className="btn-view-details" onClick={onOpenDetail}>Ver detalles completos</button>
         </div>
@@ -1463,7 +1470,7 @@ function DetailView({
             </div>
           </div>
           <button className="btn-add-cart detail-add" disabled={isReadOnly} onClick={onAddToCart}>
-            <span className="flex items-center justify-center gap-2"><ShoppingBag size={18}/> AGREGAR AL CARRITO</span>
+            <span className="flex items-center justify-center gap-2"><AnimatedShoppingBag size={18} duration={0.7}/> AGREGAR AL CARRITO</span>
           </button>
         </div>
       </div>
@@ -1756,17 +1763,18 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
 
 const modaUrbanStyles = `
 .moda-urban-template {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --text: #1a1a1a;
-  --text-light: #666;
-  --border: #e8e8e8;
-  --accent: #1a1a1a;
-  --accent-hover: #333;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.18);
-  --radius: 12px;
+  --bg: #fff8ef;
+  --surface: #fffdf9;
+  --text: #2e1834;
+  --text-light: #785f72;
+  --border: #ead8df;
+  --accent: #d93575;
+  --accent-hover: #b32260;
+  --acid: #e7f06f;
+  --shadow-sm: 0 5px 16px rgba(86, 35, 68, 0.08);
+  --shadow: 0 12px 30px rgba(86, 35, 68, 0.12);
+  --shadow-lg: 0 24px 55px rgba(86, 35, 68, 0.17);
+  --radius: 18px;
   --radius-sm: 8px;
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --bounce: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1786,7 +1794,7 @@ const modaUrbanStyles = `
 .moda-urban-template .animate-in { animation: modaFadeInUp 0.7s ease forwards; }
 
 .moda-urban-template .header {
-  position: sticky; top: 0; z-index: 80; background: rgba(255,255,255,0.95);
+  position: sticky; top: 0; z-index: 80; background: rgba(255, 248, 239, 0.86);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border); transition: var(--transition);
 }
@@ -1818,7 +1826,7 @@ const modaUrbanStyles = `
   align-items: center; justify-content: center; color: #fff; font-size: 0.8rem; font-weight: 900;
 }
 .moda-urban-template .search-container {
-  display: flex; align-items: center; background: #f5f5f5; border-radius: 50px; padding: 0 16px; height: 42px; width: 100%; border: 1px solid transparent; transition: var(--transition);
+  display: flex; align-items: center; background: #f8e9ef; border-radius: 50px; padding: 0 16px; height: 42px; width: 100%; border: 1px solid transparent; transition: var(--transition);
 }
 .moda-urban-template .search-container:focus-within { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 .moda-urban-template .search-icon { color: #999; }
@@ -1834,7 +1842,7 @@ const modaUrbanStyles = `
   border-radius: 50%; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
 }
 
-.moda-urban-template .header-subnav { border-top: 1px solid var(--border); background: #fff; padding: 0 2rem; }
+.moda-urban-template .header-subnav { border-top: 1px solid var(--border); background: rgba(255,253,249,.75); padding: 0 2rem; }
 .moda-urban-template .subnav-links {
   max-width: 1300px; margin: 0 auto; display: flex; gap: 2rem; list-style: none; padding: 0; overflow-x: auto; scrollbar-width: none;
 }
@@ -1846,12 +1854,12 @@ const modaUrbanStyles = `
 .moda-urban-template .subnav-links a.active { color: var(--text); border-bottom-color: var(--text); font-weight: 600; }
 
 .moda-urban-template .cart-btn {
-  position: relative; background: var(--accent); color: #fff; border: none; padding: 10px 18px; border-radius: 50px;
+  position: relative; background: linear-gradient(135deg, #d93575, #ef6e9b); color: #fffdf9; border: none; padding: 10px 18px; border-radius: 50px;
   cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: var(--transition); white-space: nowrap;
 }
 .moda-urban-template .cart-btn:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: var(--shadow); }
 .moda-urban-template .cart-count {
-  background: #fff; color: var(--accent); border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  background: var(--acid); color: #382239; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700; transition: var(--bounce);
 }
 .moda-urban-template .cart-count.bump { animation: modaBounceIn 0.5s ease; }
@@ -1923,23 +1931,23 @@ const modaUrbanStyles = `
 .moda-urban-template .main-container { max-width: 1300px; margin: 0 auto; padding: 0 2rem 2rem; }
 .moda-urban-template .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 2rem; align-items: center; animation: modaFadeInUp 0.6s ease; }
 .moda-urban-template .filter-btn {
-  padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-weight: 500;
+  padding: 8px 18px; border-radius: 50px; border: 1px solid var(--border); background: #fffdf9; cursor: pointer; font-weight: 600;
   font-size: 0.9rem; transition: var(--transition); white-space: nowrap; color: var(--text-light);
 }
 .moda-urban-template .filter-btn:hover, .moda-urban-template .filter-btn.active {
-  background: var(--text); color: #fff; border-color: var(--text); transform: translateY(-1px); box-shadow: var(--shadow-sm);
+  background: var(--acid); color: var(--text); border-color: var(--acid); transform: translateY(-1px); box-shadow: var(--shadow-sm);
 }
-.moda-urban-template .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; }
+.moda-urban-template .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: clamp(1.25rem, 2.5vw, 3rem) 1.25rem; }
 .moda-urban-template .empty-catalog {
   grid-column: 1 / -1; min-height: 300px; border: 1px dashed #d0d0d0; border-radius: var(--radius); background: #fff; display: flex;
   flex-direction: column; align-items: center; justify-content: center; color: #888; text-align: center; gap: 8px;
 }
 .moda-urban-template .empty-catalog strong { color: var(--text); font-size: 1.1rem; }
 .moda-urban-template .product-card {
-  background: var(--surface); border-radius: var(--radius); overflow: hidden; position: relative; transition: var(--transition);
-  border: 1px solid var(--border); cursor: pointer; animation: modaFadeInUp 0.6s ease both;
+  background: transparent; border-radius: var(--radius); overflow: hidden; position: relative; transition: var(--transition);
+  border: none; cursor: pointer; animation: modaFadeInUp 0.6s ease both;
 }
-.moda-urban-template .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: #d0d0d0; }
+.moda-urban-template .product-card:hover { transform: translateY(-7px); }
 .moda-urban-template .product-image-wrapper {
   position: relative;
   overflow: hidden;
@@ -1947,6 +1955,8 @@ const modaUrbanStyles = `
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(86, 35, 68, 0.09);
 }
 .moda-urban-template .product-media { width: 100%; height: 100%; object-fit: cover; display: block; }
 .moda-urban-template video.product-media { background: #f3f3f3; }
@@ -1981,13 +1991,13 @@ const modaUrbanStyles = `
 .moda-urban-template .action-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); transform: scale(1.05); }
 .moda-urban-template .action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .moda-urban-template .product-tag {
-  position: absolute; top: 12px; left: 12px; background: var(--text); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;
+  position: absolute; top: 12px; left: 12px; background: var(--acid); color: var(--text); padding: 5px 11px; border-radius: 50px; font-size: 0.68rem; font-weight: 800; z-index: 2; text-transform: uppercase; letter-spacing: 0.7px;
 }
-.moda-urban-template .product-tag.new { background: #fff; color: var(--text); border: 1px solid var(--border); }
+.moda-urban-template .product-tag.new { background: #f8d7e5; color: #7f2051; border: 1px solid #f2bcd4; }
 .moda-urban-template .soldout-layer {
   position: absolute; inset: 0; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; font-weight: 800; text-transform: uppercase; color: var(--text); font-size: 1.1rem; letter-spacing: 1px; z-index: 4;
 }
-.moda-urban-template .product-info { padding: 1rem; }
+.moda-urban-template .product-info { padding: 1rem .3rem .2rem; }
 .moda-urban-template .product-category { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px; }
 .moda-urban-template .product-name { font-weight: 700; font-size: 1rem; margin-bottom: 6px; line-height: 1.3; }
 .moda-urban-template .product-price { font-weight: 800; font-size: 1.1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
@@ -2004,12 +2014,12 @@ const modaUrbanStyles = `
 
 /* Modals */
 .moda-urban-template .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; align-items: center; justify-content: center;
+  position: fixed; inset: 0; background: rgba(46,24,52,0.48); z-index: 2000; display: flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
 .moda-urban-template .modal-overlay.active { opacity: 1; pointer-events: all; }
 .moda-urban-template .modal-quick-view {
-  background: #fff; border-radius: var(--radius); width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: row;
+  background: #fffaf4; border-radius: 24px; width: 90%; max-width: 800px; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: row;
   position: relative; transform: translateY(0) scale(1); transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275); box-shadow: var(--shadow-lg);
 }
 .moda-urban-template .modal-close {
@@ -2043,7 +2053,7 @@ const modaUrbanStyles = `
 .moda-urban-template .qty-selector button:hover { background: #eaeaea; }
 .moda-urban-template .qty-selector input { width: 40px; text-align: center; border: none; font-weight: 600; font-size: 0.95rem; background: #fff; color: var(--text); }
 .moda-urban-template .btn-add-cart {
-  background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 50px; font-weight: 600; font-size: 0.95rem;
+  background: linear-gradient(135deg, #d93575, #ef6e9b); color: #fffdf9; border: none; padding: 14px; border-radius: 50px; font-weight: 700; font-size: 0.95rem;
   cursor: pointer; transition: var(--transition); width: 100%;
 }
 .moda-urban-template .btn-add-cart:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: var(--shadow); }
@@ -2406,7 +2416,7 @@ const modaUrbanStyles = `
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.15) 100%);
+  background: linear-gradient(90deg, rgba(63,22,64,.68) 0%, rgba(90,28,73,.24) 48%, rgba(231,240,111,.06) 100%);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -2426,12 +2436,12 @@ const modaUrbanStyles = `
   color: #fff !important;
 }
 .moda-urban-template .hero-fullwidth .hero-heading-underline::after {
-  background: #fff !important;
+  background: var(--acid) !important;
 }
 .moda-urban-template .hero-fullwidth .hero-tag {
-  color: rgba(255,255,255,0.8) !important;
-  border-color: rgba(255,255,255,0.4) !important;
-  background: transparent !important;
+  color: var(--text) !important;
+  border-color: var(--acid) !important;
+  background: var(--acid) !important;
   align-self: flex-start;
 }
 .moda-urban-template .hero-fullwidth .hero-desc {
@@ -2439,8 +2449,8 @@ const modaUrbanStyles = `
   max-width: 500px;
 }
 .moda-urban-template .hero-fullwidth .hero-cta {
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--acid);
+  color: var(--text);
   border: none;
   padding: 14px 32px;
   border-radius: 50px;
@@ -2455,7 +2465,7 @@ const modaUrbanStyles = `
   text-transform: uppercase;
 }
 .moda-urban-template .hero-fullwidth .hero-cta:hover {
-  background: rgba(255,255,255,0.85);
+  background: #f4f7b6;
   transform: translateY(-2px);
 }
 
@@ -2570,7 +2580,7 @@ const modaUrbanStyles = `
 .moda-urban-template .editorial-feature-img-wrap {
   position: relative;
   overflow: hidden;
-  background: #f0f0f0;
+  background: #f6d7e5;
   min-height: 650px;
 }
 .moda-urban-template .editorial-feature-img {
@@ -2587,7 +2597,7 @@ const modaUrbanStyles = `
   flex-direction: column;
   justify-content: space-between;
   padding: 4rem 3.5rem;
-  background: #0a0a0a;
+  background: linear-gradient(145deg, #4f1e4b 0%, #7d285f 58%, #b83370 100%);
 }
 .moda-urban-template .editorial-feature-top {
   display: flex;
@@ -2604,7 +2614,7 @@ const modaUrbanStyles = `
   font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: var(--acid);
   display: block;
   padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -2615,7 +2625,7 @@ const modaUrbanStyles = `
   font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: var(--acid);
   display: block;
   margin-bottom: 0.75rem;
 }
@@ -2668,8 +2678,8 @@ const modaUrbanStyles = `
 }
 .moda-urban-template .editorial-feature-cta {
   align-self: flex-start;
-  background: #fff;
-  color: #0a0a0a;
+  background: var(--acid);
+  color: var(--text);
   border: none;
   padding: 13px 28px;
   border-radius: 50px;
@@ -2681,7 +2691,7 @@ const modaUrbanStyles = `
   transition: var(--transition);
 }
 .moda-urban-template .editorial-feature-cta:hover {
-  background: rgba(255,255,255,0.85);
+  background: #f4f7b6;
   transform: translateY(-2px);
 }
 .moda-urban-template .editorial-trio {
@@ -2746,8 +2756,8 @@ const modaUrbanStyles = `
 }
 /* Footer */
 .moda-urban-template .moda-footer {
-  background: linear-gradient(135deg, #ffffff 0%, #d8dbe0 25%, #a6aab2 60%, #8b8f97 100%);
-  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.9), inset 0 -5px 15px rgba(0, 0, 0, 0.2), 0 -4px 15px rgba(0, 0, 0, 0.15);
+  background: #f6d7e5;
+  box-shadow: none;
   padding: 3rem 2rem;
   margin-top: 4rem;
   border-top: 1px solid rgba(255,255,255,0.6);
@@ -2769,7 +2779,7 @@ const modaUrbanStyles = `
 .moda-urban-template .moda-footer-name {
   font-size: 0.9rem;
   font-weight: 900;
-  color: #0a0a0a;
+  color: var(--text);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   font-family: 'Georgia', serif;
@@ -2782,7 +2792,7 @@ const modaUrbanStyles = `
 .moda-urban-template .moda-footer-social-label {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #0a0a0a;
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-right: -0.5rem;
@@ -2795,13 +2805,13 @@ const modaUrbanStyles = `
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(10,10,10,0.5);
+  color: rgba(46,24,52,.55);
   text-decoration: none;
   transition: all 0.2s ease;
   background: transparent;
 }
 .moda-urban-template .moda-footer-social-link:hover {
-  color: #0a0a0a;
+  color: var(--accent);
   transform: translateY(-2px);
 }
 .moda-urban-template .moda-footer-social-link svg {
@@ -2809,11 +2819,11 @@ const modaUrbanStyles = `
   height: 24px;
 }
 .moda-urban-template .moda-footer-payment-badges {
-  color: #0a0a0a;
+  color: var(--text);
 }
 .moda-urban-template .moda-footer-copy {
   font-size: 0.75rem;
-  color: rgba(10,10,10,0.5);
+  color: rgba(46,24,52,.55);
   margin: 0;
   letter-spacing: 0.03em;
 }

@@ -9,6 +9,16 @@ import { Profile } from '@/types/tienda'
 import { ShoppingBag, ArrowLeft, Upload, MapPin, Store, CreditCard, Wallet, QrCode, CheckCircle2, User, Phone, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPayment'
+import {
+    ChevronLeftIcon as AnimatedArrowLeft,
+    MapPinIcon as AnimatedMapPin,
+    QrCodeIcon as AnimatedQrCode,
+    ShoppingBagIcon as AnimatedShoppingBag,
+    ShieldCheckIcon as AnimatedShieldCheck,
+    UploadIcon as AnimatedUpload,
+    UserIcon as AnimatedUser,
+    WalletIcon as AnimatedWallet,
+} from '@animateicons/react/lucide'
 
 type PaymentMethod = 'transferencia' | 'contra_entrega' | 'tarjeta_mercadopago'
 type OrderStatus = 'pendiente' | 'pendiente_verificacion' | 'pagado' | 'cancelado'
@@ -335,7 +345,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                             aria-label="Volver atrás"
                             className="text-[#292724] hover:bg-[#ede9e1] transition-all duration-300 active:scale-95 bg-white p-3 rounded-full border border-stone-200 shadow-[0_8px_20px_rgba(41,39,36,0.05)]"
                         >
-                            <ArrowLeft size={24} />
+                                    <AnimatedArrowLeft size={24} duration={0.7} />
                         </button>
                         <div>
                             <p className="font-label text-[10px] uppercase tracking-widest text-primary mb-1">PAGO SEGURO // {storeName}</p>
@@ -354,7 +364,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                     <label htmlFor="customer-name" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">NOMBRE Y APELLIDO</label>
                                     <div className="relative">
                                         <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
-                                            <User size={18} />
+                                            <AnimatedUser size={18} duration={0.7} />
                                         </div>
                                         <input 
                                             id="customer-name"
@@ -387,7 +397,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                     <label htmlFor="customer-address" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">DIRECCIÓN COMPLETA DE ENTREGA</label>
                                     <div className="relative">
                                         <div className="absolute left-0 top-0 bottom-0 w-12 flex items-center justify-center bg-surface-variant border-r border-outline border-y border-l text-primary">
-                                            <MapPin size={18} />
+                                            <AnimatedMapPin size={18} duration={0.7} />
                                         </div>
                                         <input 
                                             id="customer-address"
@@ -421,7 +431,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         checked={metodoPago === 'transferencia'}
                                         className="absolute opacity-0" 
                                     />
-                                    <QrCode size={24} className={metodoPago === 'transferencia' ? 'text-primary' : 'text-on-surface-variant'} />
+                                    <AnimatedQrCode size={24} duration={0.7} className={metodoPago === 'transferencia' ? 'text-primary' : 'text-on-surface-variant'} />
                                     <span className={`font-headline font-bold uppercase ${metodoPago === 'transferencia' ? 'text-primary' : 'text-on-background'}`}>YAPE / PLIN / TRANSFERENCIA</span>
                                     {metodoPago === 'transferencia' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5"><CheckCircle2 size={16}/></span>}
                                 </label>
@@ -438,7 +448,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         onChange={() => setMetodoPago('contra_entrega')}
                                         className="absolute opacity-0" 
                                     />
-                                    <Wallet size={24} className={metodoPago === 'contra_entrega' ? 'text-primary' : 'text-on-surface-variant'} />
+                                    <AnimatedWallet size={24} duration={0.7} className={metodoPago === 'contra_entrega' ? 'text-primary' : 'text-on-surface-variant'} />
                                     <span className={`font-headline font-bold uppercase ${metodoPago === 'contra_entrega' ? 'text-primary' : 'text-on-background'}`}>PAGO CONTRA ENTREGA (EFECTIVO)</span>
                                     {metodoPago === 'contra_entrega' && <span className="absolute top-2 right-2 bg-primary text-on-primary p-0.5"><CheckCircle2 size={16}/></span>}
                                 </label>
@@ -458,7 +468,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                         />
                                         <div className="flex justify-between items-center w-full">
                                             <div className="flex items-center gap-2">
-                                                <ShieldCheck size={28} className={metodoPago === 'tarjeta_mercadopago' ? 'text-primary' : 'text-[#00A19B]'} />
+                                                <AnimatedShieldCheck size={28} duration={0.7} className={metodoPago === 'tarjeta_mercadopago' ? 'text-primary' : 'text-[#00A19B]'} />
                                                 <span className={`font-headline font-black uppercase text-lg ${metodoPago === 'tarjeta_mercadopago' ? 'text-primary' : 'text-on-background'}`}>
                                                     TARJETA CON MERCADO PAGO
                                                 </span>
@@ -535,7 +545,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center text-center space-y-4 py-8 pointer-events-none">
                                                     <div className="bg-surface-variant w-16 h-16 rounded-full flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                                        <Upload size={24} />
+                                                        <AnimatedUpload size={24} duration={0.7} />
                                                     </div>
                                                     <div>
                                                         <p className="font-headline font-bold uppercase text-on-background tracking-widest">HAZ CLIC PARA SUBIR CAPTURA</p>
@@ -578,7 +588,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                 <div className="space-y-8">
                     <div className="flex items-center justify-between pb-6 border-b border-outline">
                         <div className="flex items-center gap-3 text-primary">
-                            <ShoppingBag size={24} />
+                            <AnimatedShoppingBag size={24} duration={0.7} />
                             <h2 className="font-black font-headline uppercase tracking-widest italic text-xl">RESUMEN</h2>
                         </div>
                         <span className="bg-primary text-on-primary px-3 py-1 font-headline font-bold text-xs">{cart.reduce((a, b) => a + b.quantity, 0)} ITEMS</span>

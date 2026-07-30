@@ -53,20 +53,20 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
       {/* Backdrop */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-stone-950/35 backdrop-blur-md z-[100] transition-opacity duration-300"
+          className="fixed inset-0 bg-[#4f1e4b]/35 backdrop-blur-md z-[100] transition-opacity duration-300"
           onClick={onClose}
         />
       )}
 
       {/* Sliding Panel */}
       <div 
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] ${isMinimalist ? 'bg-[#fcfbf8] border-stone-200' : 'bg-background border-outline'} border-l shadow-[-24px_0_70px_rgba(28,25,23,0.15)] z-[101] transform transition-transform duration-500 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] ${isMinimalist ? 'bg-[#fff8ef] border-[#ead8df]' : 'bg-background border-outline'} border-l shadow-[-24px_0_70px_rgba(79,30,75,0.18)] z-[101] transform transition-transform duration-500 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${isMinimalist ? 'border-stone-200 bg-[#fcfbf8]' : 'border-outline bg-surface-variant'}`}>
+        <div className={`flex items-center justify-between p-6 border-b ${isMinimalist ? 'border-[#ead8df] bg-[#fff8ef]' : 'border-outline bg-surface-variant'}`}>
           <div className="flex items-center gap-3">
-             <ShoppingBag className={isMinimalist ? 'text-[#292724]' : 'text-primary'} />
-             <h2 className={`font-headline font-semibold text-xl tracking-tight ${isMinimalist ? 'text-[#292724]' : 'text-on-background'}`}>Tu bolsa</h2>
+             <ShoppingBag className={isMinimalist ? 'text-[#d93575]' : 'text-primary'} />
+             <h2 className={`font-headline font-semibold text-xl tracking-tight ${isMinimalist ? 'text-[#4f1e4b]' : 'text-on-background'}`}>Tu bolsa</h2>
           </div>
           <button 
             onClick={onClose}
@@ -95,8 +95,8 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
             </div>
           ) : (
              cart.map((item, index) => (
-                <div key={`${item.product.id}-${index}`} className={`flex gap-4 p-3 relative group rounded-2xl transition-all duration-300 ${isMinimalist ? 'bg-white border border-stone-100 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(41,39,36,0.07)]' : 'bg-surface-container-low border border-outline'}`}>
-                   <div className={`w-20 h-24 shrink-0 relative flex items-center justify-center overflow-hidden rounded-xl ${isMinimalist ? 'bg-stone-100' : 'bg-black'}`}>
+                <div key={`${item.product.id}-${index}`} className={`flex gap-4 p-3 relative group rounded-2xl transition-all duration-300 ${isMinimalist ? 'bg-white border border-[#f0dfe5] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(121,40,93,0.1)]' : 'bg-surface-container-low border border-outline'}`}>
+                   <div className={`w-20 h-24 shrink-0 relative flex items-center justify-center overflow-hidden rounded-xl ${isMinimalist ? 'bg-[#f8dbe7]' : 'bg-black'}`}>
                      {item.product.image_url ? (
                         <Image src={item.product.image_url} alt={item.product.name} fill className="object-cover opacity-80" />
                      ) : (
@@ -187,13 +187,13 @@ export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, te
                      </div>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
-                     <span className="font-bold text-[#292724] text-lg">Productos:</span>
-                     <span className="font-bold text-[#292724] text-lg">S/ {totalPrice.toFixed(2)}</span>
+                     <span className="font-bold text-[#4f1e4b] text-lg">Productos:</span>
+                     <span className="font-bold text-[#4f1e4b] text-lg">S/ {totalPrice.toFixed(2)}</span>
                   </div>
                   <div className="grid gap-3 pt-2">
                      <Button 
                         onClick={handleCheckout}
-                        className="w-full bg-[#292724] hover:bg-[#45413b] text-[#fcfbf8] rounded-full h-13 font-medium transition-all duration-300 active:scale-[0.98] shadow-[0_10px_24px_rgba(41,39,36,0.16)]"
+                        className="w-full bg-gradient-to-r from-[#d93575] to-[#ef6e9b] hover:brightness-105 text-[#fffdf9] rounded-full h-13 font-medium transition-all duration-300 active:scale-[0.98] shadow-[0_10px_24px_rgba(217,53,117,0.24)]"
                      >
                         Continuar al pago
                      </Button>

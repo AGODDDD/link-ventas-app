@@ -10,6 +10,7 @@
     "test:unit": "tsx --test tests/*.test.ts tests/**/*.test.ts"
   },
   "dependencies": {
+    "@animateicons/react": "^0.3.5",
     "@mercadopago/sdk-react": "^1.0.7",
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-separator": "^1.1.8",

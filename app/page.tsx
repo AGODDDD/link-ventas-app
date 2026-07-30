@@ -10,6 +10,15 @@ import {
   CreditCard, Globe2, LayoutDashboard, Menu, MessageCircle, PanelTop, Play,
   Quote, ShieldCheck, ShoppingBag, TrendingUp, X,
 } from 'lucide-react'
+import {
+  SquareArrowOutUpRightIcon as AnimatedArrowUpRight,
+  ChartBarIcon as AnimatedChartBar,
+  DashboardIcon as AnimatedLayoutDashboard,
+  MenuIcon as AnimatedMenu,
+  MessageCircleIcon as AnimatedMessageCircle,
+  ShoppingBagIcon as AnimatedShoppingBag,
+  XIcon as AnimatedX,
+} from '@animateicons/react/lucide'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -126,9 +135,9 @@ export default function LandingPage() {
           </nav>
           <div className="hidden items-center gap-2 md:flex">
             <Link href="/login" className="rounded-full px-4 py-2.5 text-[13px] font-medium text-zinc-600 transition-all duration-300 hover:bg-zinc-100 hover:text-zinc-900">Ingresar</Link>
-            <Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(24,24,27,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-700 active:scale-95">Probar gratis <ArrowUpRight size={15} strokeWidth={1.5} /></Link>
+            <Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(24,24,27,0.14)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-700 active:scale-95">Probar gratis <AnimatedArrowUpRight size={15} duration={0.7} /></Link>
           </div>
-          <button aria-label="Abrir menú" className="rounded-full p-2 transition hover:bg-zinc-100 md:hidden" onClick={() => setMobileMenuOpen(value => !value)}>{mobileMenuOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}</button>
+          <button aria-label="Abrir menú" className="rounded-full p-2 transition hover:bg-zinc-100 md:hidden" onClick={() => setMobileMenuOpen(value => !value)}>{mobileMenuOpen ? <AnimatedX size={20} duration={0.7} /> : <AnimatedMenu size={20} duration={0.7} />}</button>
         </div>
         {mobileMenuOpen && <div className="border-t border-zinc-200/60 bg-[#FCFCFC] px-6 py-5 md:hidden"><nav className="flex flex-col gap-4">{navLinks.map(([href, label]) => <a key={href} href={href} onClick={() => setMobileMenuOpen(false)} className="text-sm text-zinc-600">{label}</a>)}</nav><Link href="/login" className="mt-5 flex justify-center rounded-full bg-zinc-900 py-3 text-sm font-semibold text-white">Probar gratis</Link></div>}
       </header>
@@ -140,7 +149,7 @@ export default function LandingPage() {
             <h1 className="hero-reveal max-w-5xl text-[clamp(3.3rem,8.2vw,8.5rem)] font-semibold leading-[0.92] tracking-[-0.075em] text-zinc-950">Vende más.<br /><span className="text-zinc-400">Administra mejor.</span></h1>
             <div className="mt-9 flex max-w-2xl flex-col gap-7 sm:flex-row sm:items-end sm:justify-between">
               <p className="hero-reveal max-w-lg text-[17px] leading-8 text-zinc-500">El sistema operativo para negocios que quieren convertir cada pedido en una experiencia impecable.</p>
-              <div className="hero-reveal flex shrink-0 items-center gap-3"><Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(24,24,27,0.16)] transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-700 active:scale-95">Crear mi panel <ArrowUpRight size={17} strokeWidth={1.5} /></Link><a href="#product" className="rounded-full border border-zinc-300 bg-white px-6 py-3.5 text-sm font-semibold text-zinc-700 transition-all duration-300 hover:border-zinc-500 hover:bg-zinc-50">Conoce la plataforma</a></div>
+              <div className="hero-reveal flex shrink-0 items-center gap-3"><Link href="/login" className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(24,24,27,0.16)] transition-all duration-300 hover:-translate-y-1 hover:bg-zinc-700 active:scale-95">Crear mi panel <AnimatedArrowUpRight size={17} duration={0.7} /></Link><a href="#product" className="rounded-full border border-zinc-300 bg-white px-6 py-3.5 text-sm font-semibold text-zinc-700 transition-all duration-300 hover:border-zinc-500 hover:bg-zinc-50">Conoce la plataforma</a></div>
             </div>
           </div>
 
@@ -177,10 +186,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[1440px]">
           <div className="scroll-reveal mb-16 flex flex-col justify-between gap-7 lg:flex-row lg:items-end"><div><p className="mb-5 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Una vista para todo</p><h2 className="max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.065em] sm:text-6xl lg:text-7xl">La claridad también<br /><span className="text-zinc-400">se puede diseñar.</span></h2></div><p className="max-w-sm text-[15px] leading-7 text-zinc-500">Pedidos, catálogo, pagos y clientes en un espacio que tu equipo entiende desde el primer día.</p></div>
           <div className="grid auto-rows-[minmax(260px,auto)] gap-5 lg:grid-cols-12">
-            <FeatureCard className="lg:col-span-7" icon={<LayoutDashboard size={21} strokeWidth={1.5} />} eyebrow="Control central" title="Todo lo que pasa, en una sola vista." description="Un pipeline claro para saber qué necesita atención, qué está listo y qué ya salió." visual={<MiniKanban />} />
-            <FeatureCard className="lg:col-span-5" icon={<ShoppingBag size={21} strokeWidth={1.5} />} eyebrow="Tu tienda, tu identidad" title="Un catálogo que se siente tuyo." description="Publica productos y comparte tu link sin depender de marketplaces." visual={<CatalogVisual />} />
-            <FeatureCard className="lg:col-span-5" icon={<BarChart3 size={21} strokeWidth={1.5} />} eyebrow="Decisiones con contexto" title="Entiende qué mueve tu negocio." description="Métricas simples para tomar decisiones con seguridad." visual={<ChartVisual />} />
-            <FeatureCard className="lg:col-span-7" icon={<MessageCircle size={21} strokeWidth={1.5} />} eyebrow="Comunicación automática" title="Cada cliente sabe qué sigue." description="Actualiza estados y genera confianza sin escribir el mismo mensaje dos veces." visual={<MessageVisual />} />
+            <FeatureCard className="lg:col-span-7" icon={<AnimatedLayoutDashboard size={21} duration={0.7} />} eyebrow="Control central" title="Todo lo que pasa, en una sola vista." description="Un pipeline claro para saber qué necesita atención, qué está listo y qué ya salió." visual={<MiniKanban />} />
+            <FeatureCard className="lg:col-span-5" icon={<AnimatedShoppingBag size={21} duration={0.7} />} eyebrow="Tu tienda, tu identidad" title="Un catálogo que se siente tuyo." description="Publica productos y comparte tu link sin depender de marketplaces." visual={<CatalogVisual />} />
+            <FeatureCard className="lg:col-span-5" icon={<AnimatedChartBar size={21} duration={0.7} />} eyebrow="Decisiones con contexto" title="Entiende qué mueve tu negocio." description="Métricas simples para tomar decisiones con seguridad." visual={<ChartVisual />} />
+            <FeatureCard className="lg:col-span-7" icon={<AnimatedMessageCircle size={21} duration={0.7} />} eyebrow="Comunicación automática" title="Cada cliente sabe qué sigue." description="Actualiza estados y genera confianza sin escribir el mismo mensaje dos veces." visual={<MessageVisual />} />
           </div>
         </div>
       </section>
