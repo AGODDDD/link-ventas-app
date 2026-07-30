@@ -34,6 +34,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState(0)
   const [orderCount, setOrderCount] = useState(150)
+  const [storyMode, setStoryMode] = useState<'before' | 'after'>('after')
 
   useEffect(() => {
     void import('@/lib/supabase').then(({ supabase }) => supabase.auth.getSession()).then(({ data }) => {
@@ -47,11 +48,23 @@ export default function LandingPage() {
     const ctx = gsap.context(() => {
       gsap.from('.hero-reveal', { y: 34, opacity: 0, duration: 0.9, stagger: 0.12, ease: 'power3.out', delay: 0.15 })
       gsap.from('.hero-product', { y: 55, opacity: 0, duration: 1.1, ease: 'power3.out', delay: 0.42 })
+      gsap.to('.hero-photo', {
+        yPercent: 10, scale: 1.06, ease: 'none',
+        scrollTrigger: { trigger: '.hero-photo-frame', start: 'top bottom', end: 'bottom top', scrub: true },
+      })
+      gsap.to('.progress-line', {
+        scaleX: 1, ease: 'none',
+        scrollTrigger: { trigger: scope, start: 'top top', end: 'bottom bottom', scrub: true },
+      })
       gsap.utils.toArray<HTMLElement>('.scroll-reveal').forEach((element) => {
         gsap.from(element, {
           y: 50, opacity: 0, duration: 0.85, ease: 'power3.out',
           scrollTrigger: { trigger: element, start: 'top 84%', once: true },
         })
+      })
+      gsap.from('.image-reveal', {
+        clipPath: 'inset(0 100% 0 0)', opacity: 0, duration: 1.2, ease: 'power3.inOut',
+        scrollTrigger: { trigger: '.image-reveal', start: 'top 78%', once: true },
       })
     }, scope)
     return () => ctx.revert()
@@ -62,6 +75,7 @@ export default function LandingPage() {
 
   return (
     <main ref={page} className="min-h-screen overflow-hidden bg-[#FCFCFC] text-zinc-900">
+      <div className="progress-line fixed left-0 top-0 z-[60] h-0.5 w-full origin-left scale-x-0 bg-emerald-500" />
       <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-200/50 bg-[#FCFCFC]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-[76px] max-w-[1440px] items-center justify-between px-6 lg:px-10">
           <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-[-0.03em]">
@@ -96,6 +110,16 @@ export default function LandingPage() {
           </div>
           <div className="hero-reveal mt-8 grid grid-cols-2 gap-8 border-t border-zinc-200/70 pt-7 sm:grid-cols-4 lg:gap-4">
             {[['+2,400', 'comercios activos'], ['S/ 0', 'comisión por venta'], ['24/7', 'operación disponible'], ['1 link', 'para vender online']].map(([value, label]) => <div key={label}><p className="text-2xl font-semibold tracking-[-0.06em] text-zinc-900 lg:text-3xl">{value}</p><p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-zinc-400">{label}</p></div>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-6 pb-24 lg:px-10 lg:pb-36">
+        <div className="mx-auto max-w-[1440px]">
+          <div className="scroll-reveal mb-8 flex flex-wrap items-center justify-between gap-4 border-y border-zinc-200/70 py-5"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-400">Una plataforma para el ritmo real de tu negocio</p><div className="flex items-center gap-5 text-xs text-zinc-400"><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-500" /> Pagos seguros</span><span className="hidden sm:inline">Pedidos en tiempo real</span><span className="hidden sm:inline">WhatsApp conectado</span></div></div>
+          <div className="grid gap-5 lg:grid-cols-[1.18fr_0.82fr]">
+            <div className="image-reveal hero-photo-frame group relative min-h-[470px] overflow-hidden rounded-[2rem] bg-[#DAD6CA] sm:min-h-[600px]"><img src="/images/link-ventas-hero-v2.png" alt="Comerciante gestionando sus pedidos desde Link Ventas" className="hero-photo absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.04]" /><div className="absolute inset-0 bg-gradient-to-t from-zinc-900/55 via-transparent to-transparent" /><div className="absolute bottom-7 left-7 right-7 flex items-end justify-between gap-5 text-white sm:bottom-9 sm:left-9 sm:right-9"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/65">Hecho para vender en movimiento</p><p className="mt-2 max-w-sm text-2xl font-semibold leading-tight tracking-[-0.05em] sm:text-3xl">Una vista clara cambia la forma de trabajar.</p></div><span className="hidden rounded-full border border-white/25 bg-white/10 px-3 py-2 text-[10px] backdrop-blur-md sm:block">Link Ventas / 01</span></div></div>
+            <div className="scroll-reveal flex min-h-[470px] flex-col justify-between rounded-[2rem] bg-[#EAE8E1] p-7 sm:min-h-[600px] sm:p-10"><div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">De la complejidad a la confianza</p><h2 className="mt-6 text-4xl font-semibold leading-[0.98] tracking-[-0.065em] sm:text-5xl">Tu día cambia<br /><span className="text-zinc-400">cuando todo encaja.</span></h2></div><div><div className="mb-6 flex rounded-full bg-white/70 p-1"><button onClick={() => setStoryMode('before')} className={`flex-1 rounded-full px-4 py-3 text-xs font-semibold transition-all duration-300 ${storyMode === 'before' ? 'bg-zinc-900 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}>Antes</button><button onClick={() => setStoryMode('after')} className={`flex-1 rounded-full px-4 py-3 text-xs font-semibold transition-all duration-300 ${storyMode === 'after' ? 'bg-zinc-900 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}>Con Link Ventas</button></div><div className="min-h-[120px] transition-all duration-300"><p className="text-lg font-medium leading-7 tracking-[-0.025em]">{storyMode === 'before' ? 'Mensajes perdidos, pedidos duplicados y decisiones tomadas a ciegas.' : 'Pedidos ordenados, clientes informados y una operación que respira contigo.'}</p><div className="mt-6 flex items-center gap-8 border-t border-zinc-300/70 pt-5"><div><p className="text-2xl font-semibold tracking-[-0.06em]">{storyMode === 'before' ? '4+' : '1'}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-500">herramientas</p></div><div><p className="text-2xl font-semibold tracking-[-0.06em]">{storyMode === 'before' ? '∞' : '0%'}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-zinc-500">comisión</p></div></div></div></div></div>
           </div>
         </div>
       </section>
