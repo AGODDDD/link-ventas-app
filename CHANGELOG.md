@@ -14,6 +14,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ### Changed
 - **Nicho de Comercio General (`ComercioTemplate.tsx`)**: Implementado flujo de tienda sin variantes con estética Premium (Bento grid asimétrica, fondos off-white). Se integraron los íconos animados (`animateicons`) para acciones de carrito rápido con validación de inventario en tiempo real.
+  - Optimizaciones adicionales de UX y micro-interacciones a través del navbar, quick view y product grid.
   - Agregado `ComercioQuickView` para visualización rápida de productos sin fricción en el catálogo de Comercio General.
   - Añadido `ComercioHeroCarousel` y ajustes globales (`globals.css`) para potenciar el escaparate del nicho Comercio General.
   - Refinamientos de UI/UX en `ComercioNavbar` y `ProductGrid` para hacer la navegación y presentación de productos más fluida.
