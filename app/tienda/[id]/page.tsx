@@ -140,7 +140,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       )}
 
       {/* TopAppBar */}
-      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && (
+      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && perfil.template_type !== 'comercio' && (
         <StoreNavbarKinetic 
           storeName={storeName} 
           storeId={perfil.id} 
@@ -152,7 +152,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
       {renderTemplate()}
 
       {/* Footer */}
-      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && (
+      {perfil.template_type !== 'restaurante' && perfil.template_type !== 'moda' && perfil.template_type !== 'comercio' && (
         <StoreFooterKinetic 
           storeName={storeName} 
           socials={{

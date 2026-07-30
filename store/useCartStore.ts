@@ -4,6 +4,11 @@ import { CartItem, Product, ProductModifierGroup } from '@/types/tienda'
 
 const MAX_QUANTITY_PER_LINE = 100
 
+function productQuantityLimit(product: Product) {
+  if (product.stock === null || product.stock === undefined) return MAX_QUANTITY_PER_LINE
+  return Math.max(0, Math.min(MAX_QUANTITY_PER_LINE, Math.floor(product.stock)))
+}
+
 function stableVariantKey(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableVariantKey).sort().join(',')}]`
   if (value && typeof value === 'object') {
@@ -40,12 +45,15 @@ export const useCartStore = create<CartStore>()(
         const storeCart = state.carts[storeId] || []
         const isSameItem = (item: CartItem) => item.product.id === product.id && sameVariant(item.variantDetails, variantDetails)
         const existing = storeCart.find(isSameItem)
+        const quantityLimit = productQuantityLimit(product)
+
+        if (quantityLimit === 0) return state
         
         let newStoreCart
         if (existing) {
           newStoreCart = storeCart.map(item =>
             isSameItem(item)
-              ? { ...item, quantity: Math.min(MAX_QUANTITY_PER_LINE, item.quantity + 1) }
+              ? { ...item, product, quantity: Math.min(quantityLimit, item.quantity + 1) }
               : item
           )
         } else {
@@ -65,7 +73,7 @@ export const useCartStore = create<CartStore>()(
         const storeCart = state.carts[storeId] || []
         const newStoreCart = storeCart.map(item => {
           if (item.product.id === productId && sameVariant(item.variantDetails, variantDetails)) {
-            const newQuantity = Math.min(MAX_QUANTITY_PER_LINE, Math.max(0, item.quantity + delta))
+            const newQuantity = Math.min(productQuantityLimit(item.product), Math.max(0, item.quantity + delta))
             return { ...item, quantity: newQuantity }
           }
           return item
@@ -117,7 +125,8 @@ export const useCartStore = create<CartStore>()(
               Number.isFinite(item.product.price) &&
               Number.isInteger(item.quantity) &&
               item.quantity > 0
-            ).map(item => ({ ...item, quantity: Math.min(MAX_QUANTITY_PER_LINE, item.quantity) })),
+            ).map(item => ({ ...item, quantity: Math.min(productQuantityLimit(item.product), item.quantity) }))
+              .filter(item => item.quantity > 0),
           ])
         )
         return { carts } as CartStore

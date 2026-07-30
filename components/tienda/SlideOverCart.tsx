@@ -1,233 +1,131 @@
 'use client'
 
-import React, { useEffect } from 'react'
-import { X, ShoppingBag, Plus, Minus, Store, ArrowRight } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import { useCartStore } from '@/store/useCartStore'
-import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import {
+  ChevronRightIcon as AnimatedChevron,
+  MinusIcon as AnimatedMinus,
+  PackageOpenIcon as AnimatedPackage,
+  PlusIcon as AnimatedPlus,
+  ShoppingCartIcon as AnimatedCart,
+  Trash2Icon as AnimatedTrash,
+  XIcon as AnimatedClose,
+} from '@animateicons/react/lucide'
+import { useCartStore } from '@/store/useCartStore'
+import { CartItem, ProductModifierGroup } from '@/types/tienda'
 
 interface Props {
-  storeId: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onCheckout?: () => void;
-  templateType?: string;
+  storeId: string
+  isOpen: boolean
+  onClose: () => void
+  onCheckout?: () => void
+  templateType?: string
+}
+
+function unitPrice(item: CartItem) {
+  let modifiers = 0
+  if (item.variantDetails?.options && item.product.variants) {
+    const groups = item.product.variants as ProductModifierGroup[]
+    Object.entries(item.variantDetails.options).forEach(([groupId, optionIds]) => {
+      const group = groups.find((candidate) => candidate.id === groupId)
+      optionIds.forEach((optionId) => { modifiers += group?.options.find((option) => option.id === optionId)?.price_modifier || 0 })
+    })
+  }
+  return item.product.price + modifiers
+}
+
+function VariantSummary({ item }: { item: CartItem }) {
+  if (!item.variantDetails) return null
+  const labels: string[] = []
+  if (item.variantDetails.talla) labels.push(`Talla ${item.variantDetails.talla}`)
+  if (item.variantDetails.color) labels.push(item.variantDetails.color)
+  if (item.variantDetails.options && item.product.variants) {
+    Object.entries(item.variantDetails.options).forEach(([groupId, optionIds]) => {
+      const group = (item.product.variants as ProductModifierGroup[]).find((candidate) => candidate.id === groupId)
+      const names = optionIds.map((optionId) => group?.options.find((option) => option.id === optionId)?.name).filter(Boolean)
+      if (group && names.length) labels.push(`${group.name}: ${names.join(', ')}`)
+    })
+  }
+  return labels.length ? <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-zinc-400">{labels.join(' · ')}</p> : null
 }
 
 export default function SlideOverCart({ storeId, isOpen, onClose, onCheckout, templateType }: Props) {
   const router = useRouter()
   const cartStore = useCartStore()
-  const isMinimalist = templateType === 'restaurante' || templateType === 'moda';
-  
-  // To prevent hydration errors, we ensure store binds correctly
   const cart = cartStore.carts[storeId] || []
-  const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0)
+  const totalItems = cart.reduce((total, item) => total + item.quantity, 0)
   const totalPrice = cartStore.getTotalPrice(storeId)
+  const isCommerce = templateType === 'comercio'
+  const isSoftTheme = isCommerce || templateType === 'restaurante' || templateType === 'moda'
 
-  // Prevent scrolling when cart is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
+    if (isOpen) document.body.style.overflow = 'hidden'
+    else document.body.style.overflow = 'unset'
     return () => { document.body.style.overflow = 'unset' }
   }, [isOpen])
 
-  const handleUpdateQuantity = (productId: string, variantDetails: any, delta: number) => {
-    cartStore.updateQuantity(storeId, productId, variantDetails, delta)
+  const update = (item: CartItem, delta: number) => {
+    if (delta > 0 && item.product.stock != null && item.quantity >= item.product.stock) {
+      toast.error(`Solo hay ${item.product.stock} unidades disponibles.`)
+      return
+    }
+    cartStore.updateQuantity(storeId, item.product.id, item.variantDetails, delta)
   }
 
-  const handleCheckout = () => {
-    onClose();
-    if (onCheckout) {
-      onCheckout()
-    } else {
-      router.push(`/tienda/${storeId}/checkout`)
-    }
+  const checkout = () => {
+    onClose()
+    if (onCheckout) onCheckout()
+    else router.push(`/tienda/${storeId}/checkout`)
   }
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-[#4f1e4b]/35 backdrop-blur-md z-[100] transition-opacity duration-300"
-          onClick={onClose}
-        />
-      )}
+      <button type="button" aria-label="Cerrar carrito" onClick={onClose} className={`fixed inset-0 z-[100] bg-black/45 backdrop-blur-sm transition-opacity duration-500 ${isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`} />
 
-      {/* Sliding Panel */}
-      <div 
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] ${isMinimalist ? 'bg-[#fff8ef] border-[#ead8df]' : 'bg-background border-outline'} border-l shadow-[-24px_0_70px_rgba(79,30,75,0.18)] z-[101] transform transition-transform duration-500 ease-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
-      >
-        {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b ${isMinimalist ? 'border-[#ead8df] bg-[#fff8ef]' : 'border-outline bg-surface-variant'}`}>
+      <aside aria-hidden={!isOpen} className={`fixed inset-y-0 right-0 z-[101] flex w-full max-w-[460px] flex-col border-l transition-transform duration-500 ease-out ${isSoftTheme ? 'border-zinc-200/80 bg-[#F7F7F4] text-[#181A19] shadow-[-30px_0_80px_rgba(0,0,0,0.15)]' : 'border-outline bg-background text-on-background'} ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <header className={`flex items-center justify-between border-b px-6 py-5 ${isSoftTheme ? 'border-zinc-900/10' : 'border-outline'}`}>
           <div className="flex items-center gap-3">
-             <ShoppingBag className={isMinimalist ? 'text-[#d93575]' : 'text-primary'} />
-             <h2 className={`font-headline font-semibold text-xl tracking-tight ${isMinimalist ? 'text-[#4f1e4b]' : 'text-on-background'}`}>Tu bolsa</h2>
+            <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${isCommerce ? 'bg-[#181A19] text-[#D7FF64]' : isSoftTheme ? 'bg-white text-zinc-900' : 'bg-surface-variant text-primary'}`}><AnimatedCart size={20} duration={0.5} /></span>
+            <div><h2 className="text-base font-semibold tracking-[-0.025em]">Tu carrito</h2><p className={`mt-0.5 text-[10px] ${isSoftTheme ? 'text-zinc-400' : 'text-on-surface-variant'}`}>{totalItems ? `${totalItems} ${totalItems === 1 ? 'producto' : 'productos'}` : 'Listo para tu próxima compra'}</p></div>
           </div>
-          <button 
-            onClick={onClose}
-            className={`p-2 rounded-full transition-colors group ${isMinimalist ? 'hover:bg-neutral-100' : 'hover:bg-black/10'}`}
-          >
-            <X className={`transition-colors ${isMinimalist ? 'text-neutral-500 group-hover:text-black' : 'text-on-surface-variant group-hover:text-primary'}`} />
-          </button>
-        </div>
+          <button type="button" onClick={onClose} aria-label="Cerrar" className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300 active:scale-95 ${isSoftTheme ? 'border border-zinc-900/10 bg-white text-zinc-500 hover:text-zinc-900' : 'bg-surface-variant text-on-surface-variant hover:text-primary'}`}><AnimatedClose size={18} duration={0.4} /></button>
+        </header>
 
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-70">
-              <ShoppingBag size={64} className={`mb-4 ${isMinimalist ? 'text-neutral-300' : 'text-outline-variant'}`} strokeWidth={1} />
-              <p className={`font-headline font-bold uppercase tracking-widest text-lg ${isMinimalist ? 'text-black' : 'text-on-surface-variant'}`}>Tu carrito está vacío</p>
-              <p className={`font-body text-sm mt-2 ${isMinimalist ? 'text-neutral-500' : 'text-on-surface-variant/70'}`}>Aprovecha nuestras ofertas y comienza a comprar.</p>
-              {isMinimalist ? (
-                <button onClick={onClose} className="mt-8 px-6 py-3 rounded-full border border-neutral-300 bg-white text-[#333] text-sm font-bold hover:bg-neutral-50 transition-colors">
-                  SEGUIR COMPRANDO
-                </button>
-              ) : (
-                <Button onClick={onClose} variant="outline" className="mt-8 rounded-none font-headline font-bold uppercase tracking-widest border-primary text-primary hover:bg-primary/10">
-                  SEGUIR COMPRANDO
-                </Button>
-              )}
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          {!cart.length ? (
+            <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+              <span className={`flex h-20 w-20 items-center justify-center rounded-3xl ${isCommerce ? 'bg-[#E9E9E3] text-zinc-400' : isSoftTheme ? 'bg-white text-zinc-300' : 'bg-surface-variant text-outline-variant'}`}><AnimatedPackage size={35} duration={0.7} /></span>
+              <h3 className="mt-6 text-xl font-semibold tracking-[-0.035em]">Tu carrito está vacío</h3>
+              <p className={`mt-2 max-w-xs text-xs leading-6 ${isSoftTheme ? 'text-zinc-500' : 'text-on-surface-variant'}`}>Explora el catálogo y agrega lo que necesitas. Solo toma un clic.</p>
+              <button type="button" onClick={onClose} className={`mt-7 rounded-xl px-5 py-3 text-xs font-semibold transition-all duration-300 active:scale-95 ${isCommerce ? 'bg-[#181A19] text-white hover:bg-[#303330]' : isSoftTheme ? 'border border-zinc-200 bg-white text-zinc-700' : 'bg-primary text-on-primary'}`}>Ver productos</button>
             </div>
           ) : (
-             cart.map((item, index) => (
-                <div key={`${item.product.id}-${index}`} className={`flex gap-4 p-3 relative group rounded-2xl transition-all duration-300 ${isMinimalist ? 'bg-white border border-[#f0dfe5] hover:-translate-y-0.5 hover:shadow-[0_12px_30px_rgba(121,40,93,0.1)]' : 'bg-surface-container-low border border-outline'}`}>
-                   <div className={`w-20 h-24 shrink-0 relative flex items-center justify-center overflow-hidden rounded-xl ${isMinimalist ? 'bg-[#f8dbe7]' : 'bg-black'}`}>
-                     {item.product.image_url ? (
-                        <Image src={item.product.image_url} alt={item.product.name} fill className="object-cover opacity-80" />
-                     ) : (
-                        <Store className="text-outline-variant" />
-                     )}
-                   </div>
-                   <div className="flex-1 flex flex-col justify-between min-w-0 py-1">
-                       <div>
-                        {item.product.brand && <p className={`text-[10px] font-headline font-black uppercase tracking-widest leading-none mb-1 truncate ${isMinimalist ? 'text-neutral-500' : 'text-on-surface-variant'}`}>{item.product.brand}</p>}
-                        <h4 className={`font-bold font-headline uppercase text-sm leading-tight line-clamp-2 pr-6 ${isMinimalist ? 'text-black' : 'text-on-background'}`}>{item.product.name}</h4>
-                        {item.variantDetails && (
-                          <div className="flex flex-col gap-1 mt-1 pb-1">
-                        {item.variantDetails.talla && <span className="bg-slate-200 w-fit text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Talla: {item.variantDetails.talla}</span>}
-                        {item.variantDetails.color && <span className="bg-slate-200 w-fit text-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">Color: {item.variantDetails.color}</span>}
-                        {item.variantDetails.options && item.product.variants && (
-                            <div className="flex flex-col gap-0.5 w-full text-[11px] text-neutral-500 mt-1">
-                               {Object.entries(item.variantDetails.options as Record<string, string[]>).map(([groupId, optIds]) => {
-                                  const group = (item.product.variants as any[]).find(g => g.id === groupId);
-                                  if (!group || optIds.length === 0) return null;
-                                  const selectedNames = optIds.map(optId => {
-                                      const opt = group.options.find((o: any) => o.id === optId);
-                                      if (!opt) return null;
-                                      return opt.price_modifier > 0 ? `${opt.name} (+S/ ${opt.price_modifier})` : opt.name;
-                                  }).filter(Boolean);
-                                  return (
-                                    <span key={groupId} className="leading-tight">
-                                       <strong className="text-neutral-700">{group.name}:</strong> {selectedNames.join(', ')}
-                                    </span>
-                                  )
-                               })}
-                            </div>
-                        )}
-                      </div>
-                    )}
+            <div className="space-y-3">
+              {cart.map((item, index) => (
+                <article key={`${item.product.id}-${index}`} className={`group grid grid-cols-[76px_1fr] gap-4 rounded-2xl border p-3 transition-all duration-300 ${isSoftTheme ? 'border-zinc-900/[0.07] bg-white hover:border-zinc-900/15 hover:shadow-[0_12px_35px_rgba(0,0,0,0.055)]' : 'border-outline bg-surface-container-low'}`}>
+                  <div className={`relative h-24 overflow-hidden rounded-xl ${isCommerce ? 'bg-[#ECECE7]' : isSoftTheme ? 'bg-zinc-100' : 'bg-black'}`}>
+                    {item.product.image_url ? <Image src={item.product.image_url} alt={item.product.name} fill className={isCommerce ? 'object-contain p-2' : 'object-cover'} sizes="76px" /> : <span className="flex h-full items-center justify-center text-zinc-300"><AnimatedPackage size={24} /></span>}
                   </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <span className={`font-black font-headline italic text-base md:text-lg ${isMinimalist ? 'text-black' : 'text-primary'}`}>
-                      S/ {(() => {
-                         let itemModifiersPrice = 0;
-                         if (item.variantDetails?.options && item.product.variants) {
-                            const groups = item.product.variants as any[];
-                            Object.entries(item.variantDetails.options as Record<string, string[]>).forEach(([groupId, optionIds]) => {
-                               const group = groups.find(g => g.id === groupId);
-                               if (group) {
-                                  optionIds.forEach(optId => {
-                                     const opt = group.options.find((o:any) => o.id === optId);
-                                     if (opt) itemModifiersPrice += opt.price_modifier;
-                                  });
-                               }
-                            });
-                         }
-                         return (item.product.price + itemModifiersPrice).toFixed(2);
-                      })()}
-                    </span>
-                        
-                        {/* Quantity Controller */}
-                        <div className={`flex items-center gap-2 px-2 py-1 ml-2 shrink-0 ${isMinimalist ? 'bg-neutral-100 rounded-full border-transparent' : 'bg-surface-variant border border-outline'}`}>
-                          <button onClick={() => handleUpdateQuantity(item.product.id, item.variantDetails, -1)} className={isMinimalist ? "text-neutral-500 hover:text-black" : "text-on-surface-variant hover:text-primary"}><Minus size={14} /></button>
-                          <span className={`font-bold text-sm w-4 text-center ${isMinimalist ? 'text-black' : 'text-on-background'}`}>{item.quantity}</span>
-                          <button onClick={() => handleUpdateQuantity(item.product.id, item.variantDetails, 1)} className={isMinimalist ? "text-neutral-500 hover:text-black" : "text-on-surface-variant hover:text-primary"}><Plus size={14} /></button>
-                        </div>
-                      </div>
-                   </div>
-                   <button 
-                     onClick={() => cartStore.removeFromCart(storeId, item.product.id, item.variantDetails)}
-                     className={`absolute top-2 right-2 p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-error hover:text-white ${isMinimalist ? 'bg-white border shadow-sm border-neutral-200 text-neutral-500' : 'bg-background border border-outline'}`}
-                   >
-                     <X size={12} />
-                   </button>
-                </div>
-             ))
+                  <div className="min-w-0 py-0.5">
+                    <div className="flex items-start gap-2"><div className="min-w-0 flex-1">{item.product.brand && <p className="mb-1 truncate text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-400">{item.product.brand}</p>}<h3 className="line-clamp-2 text-sm font-semibold leading-4 tracking-[-0.02em]">{item.product.name}</h3><VariantSummary item={item} /></div><button type="button" onClick={() => cartStore.removeFromCart(storeId, item.product.id, item.variantDetails)} aria-label="Eliminar producto" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-300 transition-all hover:bg-red-50 hover:text-red-500"><AnimatedTrash size={14} duration={0.45} /></button></div>
+                    <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold">S/ {unitPrice(item).toFixed(2)}</p><div className={`flex items-center gap-1 rounded-lg p-1 ${isSoftTheme ? 'bg-zinc-100' : 'bg-surface-variant'}`}><button type="button" onClick={() => update(item, -1)} className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-white hover:text-zinc-900"><AnimatedMinus size={13} duration={0.4} /></button><span className="w-6 text-center text-xs font-semibold">{item.quantity}</span><button type="button" onClick={() => update(item, 1)} disabled={item.product.stock != null && item.quantity >= item.product.stock} className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-white hover:text-zinc-900 disabled:opacity-25"><AnimatedPlus size={13} duration={0.4} /></button></div></div>
+                  </div>
+                </article>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Footer Checkout */}
         {cart.length > 0 && (
-          <div className={`p-6 ${isMinimalist ? 'border-t border-neutral-100 bg-white' : 'border-t border-primary/20 bg-surface-container-high'}`}>
-            {isMinimalist ? (
-               <div className="space-y-4">
-                  <div className="space-y-2 text-[14px] text-neutral-500 font-medium font-body">
-                     <div className="flex justify-between">
-                        <span>Productos:</span>
-                        <span>S/ {totalPrice.toFixed(2)}</span>
-                     </div>
-                     <div className="flex justify-between">
-                        <span>Envío:</span>
-                        <span>Se confirma al coordinar</span>
-                     </div>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-neutral-100">
-                     <span className="font-bold text-[#4f1e4b] text-lg">Productos:</span>
-                     <span className="font-bold text-[#4f1e4b] text-lg">S/ {totalPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="grid gap-3 pt-2">
-                     <Button 
-                        onClick={handleCheckout}
-                        className="w-full bg-gradient-to-r from-[#d93575] to-[#ef6e9b] hover:brightness-105 text-[#fffdf9] rounded-full h-13 font-medium transition-all duration-300 active:scale-[0.98] shadow-[0_10px_24px_rgba(217,53,117,0.24)]"
-                     >
-                        Continuar al pago
-                     </Button>
-                     <button 
-                        onClick={onClose}
-                        className="w-full border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-50 rounded-full h-12 font-medium text-sm transition-colors"
-                     >
-                        Seguir comprando
-                     </button>
-                  </div>
-               </div>
-            ) : (
-               <div className="space-y-4">
-                 <div className="flex justify-between font-body text-on-surface-variant">
-                    <span>SUBTOTAL ({totalItems} items)</span>
-                    <span>S/ {totalPrice.toFixed(2)}</span>
-                 </div>
-                 <div className="flex justify-between font-black font-headline text-2xl uppercase tracking-tighter italic text-on-background">
-                    <span>TOTAL</span>
-                    <span className="text-primary">S/ {totalPrice.toFixed(2)}</span>
-                 </div>
-                 <p className="text-[10px] uppercase font-label tracking-widest text-center pb-2 text-on-surface-variant">Gastos de envío calculados en el checkout</p>
-                 <Button 
-                    onClick={handleCheckout}
-                    className="w-full border-none text-white h-14 font-headline font-black text-lg tracking-widest uppercase flex items-center justify-between px-6 transition-transform active:scale-[0.98] bg-gradient-to-r from-primary to-secondary hover:brightness-110 rounded-none"
-                 >
-                    <span>PROCEDER AL PAGO</span>
-                    <ArrowRight />
-                 </Button>
-               </div>
-            )}
-          </div>
+          <footer className={`border-t p-6 ${isSoftTheme ? 'border-zinc-900/10 bg-white' : 'border-primary/20 bg-surface-container-high'}`}>
+            <div className="flex items-end justify-between"><div><p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${isSoftTheme ? 'text-zinc-400' : 'text-on-surface-variant'}`}>Subtotal</p><p className={`mt-1 text-[10px] ${isSoftTheme ? 'text-zinc-400' : 'text-on-surface-variant'}`}>Envío calculado al confirmar</p></div><p className="text-2xl font-semibold tracking-[-0.05em]">S/ {totalPrice.toFixed(2)}</p></div>
+            <button type="button" onClick={checkout} className={`group mt-5 flex h-14 w-full items-center justify-between rounded-xl px-5 text-sm font-semibold transition-all duration-300 active:scale-[0.98] ${isCommerce ? 'bg-[#181A19] text-white hover:bg-[#303330]' : isSoftTheme ? 'bg-zinc-900 text-white hover:bg-zinc-700' : 'bg-gradient-to-r from-primary to-secondary text-white'}`}><span>Continuar al pago</span><span className={`flex h-8 w-8 items-center justify-center rounded-lg ${isCommerce ? 'bg-[#D7FF64] text-[#181A19]' : 'bg-white/10'}`}><AnimatedChevron size={17} duration={0.45} className="transition-transform group-hover:translate-x-0.5" /></span></button>
+            <button type="button" onClick={onClose} className={`mt-2 h-11 w-full text-xs font-medium transition-colors ${isSoftTheme ? 'text-zinc-400 hover:text-zinc-900' : 'text-on-surface-variant hover:text-primary'}`}>Seguir comprando</button>
+          </footer>
         )}
-      </div>
+      </aside>
     </>
   )
 }

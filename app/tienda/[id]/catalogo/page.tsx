@@ -2,7 +2,6 @@ import React from 'react'
 import { supabase } from '@/lib/supabase'
 import { Profile, Product } from '@/types/tienda'
 import ClientCatalog from '@/components/tienda/ClientCatalog'
-import ProductGrid from '@/components/tienda/ProductGrid'
 import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
 import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
 
@@ -78,15 +77,8 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   const secondaryColor = perfil.secondary_color || '#9193ff';
 
   if (perfil.template_type === 'comercio') {
-    return (
-      <div className="min-h-screen bg-[#FCFCFC] text-zinc-900">
-        <StoreNavbarKinetic storeName={storeName} storeId={perfil.id} avatarUrl={perfil.avatar_url} />
-        <main className="pt-20">
-          <ProductGrid productos={productos} perfil={perfil} isReadOnly={!store.is_active} />
-        </main>
-        <StoreFooterKinetic storeName={storeName} socials={{ instagram: perfil.social_instagram, facebook: perfil.social_facebook, tiktok: perfil.social_tiktok }} />
-      </div>
-    )
+    const { redirect } = await import('next/navigation')
+    redirect(`/tienda/${params.id}#catalogo`)
   }
 
   return (
