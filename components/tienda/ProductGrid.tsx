@@ -1,9 +1,11 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   CheckIcon as AnimatedCheck,
+  ChevronLeftIcon as AnimatedChevronLeft,
+  ChevronRightIcon as AnimatedChevronRight,
   EyeIcon as AnimatedEye,
   MinusIcon as AnimatedMinus,
   PackageOpenIcon as AnimatedPackage,
@@ -25,6 +27,8 @@ export default function ProductGrid({ productos, perfil, isReadOnly = false }: P
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todos')
   const [tab, setTab] = useState<ProductTab>('new')
+  const [carouselPaused, setCarouselPaused] = useState(false)
+  const carouselRef = useRef<HTMLDivElement>(null)
   const carts = useCartStore((state) => state.carts)
   const cart = carts[storeId] || []
   const addToCart = useCartStore((state) => state.addToCart)
@@ -48,6 +52,28 @@ export default function ProductGrid({ productos, perfil, isReadOnly = false }: P
     }).sort((a, b) => tab === 'best' ? ((b.reviews_count || 0) - (a.reviews_count || 0)) || ((b.rating || 0) - (a.rating || 0)) : new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
   }, [category, productos, query, tab])
 
+  const moveCarousel = (direction: number) => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+    const distance = Math.max(240, carousel.clientWidth * 0.82) * direction
+    carousel.scrollBy({ left: distance, behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    carouselRef.current?.scrollTo({ left: 0, behavior: 'smooth' })
+  }, [category, query, tab])
+
+  useEffect(() => {
+    if (carouselPaused || visible.length < 3) return
+    const timer = window.setInterval(() => {
+      const carousel = carouselRef.current
+      if (!carousel) return
+      const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 12
+      carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + Math.max(240, carousel.clientWidth * 0.68), behavior: 'smooth' })
+    }, 4300)
+    return () => window.clearInterval(timer)
+  }, [carouselPaused, visible.length])
+
   const cartLine = (productId: string) => cart.find((item) => item.product.id === productId && !item.variantDetails)
   const add = (product: Product) => {
     const current = cartLine(product.id)?.quantity || 0
@@ -67,12 +93,12 @@ export default function ProductGrid({ productos, perfil, isReadOnly = false }: P
 
         <div className="flex gap-2 overflow-x-auto py-5 [scrollbar-width:none]">{categories.map((item) => <button key={item} type="button" onClick={() => setCategory(item)} className={`shrink-0 rounded-md border px-3 py-2 text-[10px] font-bold uppercase tracking-[0.05em] transition-all active:scale-95 ${category === item ? 'border-[#182331] bg-[#182331] text-white' : 'border-zinc-200 bg-white text-zinc-500 hover:border-[#66D8BB] hover:text-[#182331]'}`}>{item}</button>)}</div>
 
-        {visible.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">{visible.map((product) => {
+        {visible.length ? <div className="group/carousel relative" onMouseEnter={() => setCarouselPaused(true)} onMouseLeave={() => setCarouselPaused(false)}><div ref={carouselRef} data-product-carousel className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth pb-5 [scrollbar-width:none]">{visible.map((product) => {
           const line = cartLine(product.id)
           const outOfStock = product.stock != null && product.stock <= 0
           const limitReached = product.stock != null && (line?.quantity || 0) >= product.stock
           const discount = product.original_price && product.original_price > product.price ? Math.round((1 - product.price / product.original_price) * 100) : 0
-          return <article key={product.id} className="group relative flex min-w-0 flex-col border border-zinc-200 bg-white p-3 transition-all duration-300 hover:z-10 hover:-translate-y-1 hover:border-[#66D8BB] hover:shadow-[0_16px_38px_rgba(24,35,49,0.12)]">
+          return <article key={product.id} className="group relative flex w-[76vw] shrink-0 snap-start flex-col border border-zinc-200 bg-white p-3 transition-all duration-300 hover:z-10 hover:-translate-y-1 hover:border-[#66D8BB] hover:shadow-[0_16px_38px_rgba(24,35,49,0.12)] sm:w-[260px] lg:w-[calc((100%-36px)/4)]">
             <div className="relative aspect-square overflow-hidden bg-white">{product.image_url ? <Image src={product.image_url} alt={product.name} fill className="object-contain p-2 transition-transform duration-500 group-hover:scale-105" sizes="(max-width:640px) 50vw, 20vw" /> : <span className="flex h-full items-center justify-center text-zinc-200"><AnimatedPackage size={38} /></span>}<div className="absolute left-1 top-1 flex flex-col items-start gap-1">{product.created_at && <span className="bg-[#66D8BB] px-2 py-1 text-[8px] font-black uppercase tracking-[0.1em] text-[#182331]">Nuevo</span>}{discount > 0 && <span className="bg-red-500 px-2 py-1 text-[8px] font-black text-white">−{discount}%</span>}</div><button type="button" aria-label={`Vista rápida de ${product.name}`} className="absolute right-1 top-1 flex h-8 w-8 translate-y-1 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 opacity-0 shadow-sm transition-all group-hover:translate-y-0 group-hover:opacity-100"><AnimatedEye size={15} duration={0.45} /></button></div>
             <div className="mt-2 flex flex-1 flex-col"><p className="text-[8px] font-bold uppercase tracking-[0.12em] text-zinc-400">{product.brand || product.category || 'Producto'}</p><h3 className="mt-1.5 line-clamp-3 min-h-[48px] text-[11px] font-bold leading-4 text-[#244f7b] transition-colors group-hover:text-[#182331] sm:text-xs">{product.name}</h3><div className="mt-2 space-y-0.5 text-[9px] text-zinc-400"><p>Stock: <strong className={outOfStock ? 'text-red-500' : 'text-zinc-600'}>{product.stock == null ? 'Disponible' : `${product.stock} ${product.stock === 1 ? 'artículo' : 'artículos'}`}</strong></p>{product.brand && <p>Marca: <strong className="text-zinc-600">{product.brand}</strong></p>}</div><div className="mt-auto pt-3"><div className="flex flex-wrap items-baseline gap-x-2"><strong className="text-sm font-black text-[#182331] sm:text-base">{money(product.price)}</strong>{product.original_price && product.original_price > product.price && <span className="text-[9px] text-zinc-400 line-through">{money(product.original_price)}</span>}</div>
               {!isReadOnly && !outOfStock && !line && <button type="button" onClick={() => add(product)} className="mt-3 flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-[#182331] text-[9px] font-bold uppercase tracking-[0.05em] text-white transition-all hover:bg-[#45b99b] hover:text-[#182331] active:scale-[0.98]"><AnimatedCart size={14} duration={0.45} />Añadir al carrito</button>}
@@ -80,7 +106,7 @@ export default function ProductGrid({ productos, perfil, isReadOnly = false }: P
               {line && <div className="mt-3 flex h-9 items-center justify-between rounded-md bg-[#eef8f5] px-1"><span className="flex items-center gap-1 pl-1 text-[8px] font-bold uppercase text-[#26866d]"><AnimatedCheck size={12} />Carrito</span><div className="flex items-center"><button type="button" onClick={() => updateQuantity(storeId, product.id, undefined, -1)} className="flex h-7 w-7 items-center justify-center"><AnimatedMinus size={12} /></button><span className="w-5 text-center text-[10px] font-bold">{line.quantity}</span><button type="button" onClick={() => add(product)} disabled={limitReached} className="flex h-7 w-7 items-center justify-center disabled:opacity-25"><AnimatedPlus size={12} /></button></div></div>}
             </div></div>
           </article>
-        })}</div> : <div className="border border-dashed border-zinc-300 bg-white py-20 text-center"><AnimatedPackage size={38} className="mx-auto text-zinc-300" /><p className="mt-4 text-sm font-bold">No encontramos productos</p><p className="mt-1 text-xs text-zinc-400">Prueba otra búsqueda o categoría.</p></div>}
+        })}</div>{visible.length > 2 && <><button type="button" onClick={() => moveCarousel(-1)} aria-label="Productos anteriores" className="absolute -left-3 top-[42%] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-[#182331] opacity-100 shadow-[0_8px_24px_rgba(24,35,49,0.14)] transition-all hover:border-[#66D8BB] active:scale-95 lg:opacity-0 lg:group-hover/carousel:opacity-100"><AnimatedChevronLeft size={18} duration={0.45} /></button><button type="button" onClick={() => moveCarousel(1)} aria-label="Productos siguientes" className="absolute -right-3 top-[42%] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white text-[#182331] opacity-100 shadow-[0_8px_24px_rgba(24,35,49,0.14)] transition-all hover:border-[#66D8BB] active:scale-95 lg:opacity-0 lg:group-hover/carousel:opacity-100"><AnimatedChevronRight size={18} duration={0.45} /></button></>}</div> : <div className="border border-dashed border-zinc-300 bg-white py-20 text-center"><AnimatedPackage size={38} className="mx-auto text-zinc-300" /><p className="mt-4 text-sm font-bold">No encontramos productos</p><p className="mt-1 text-xs text-zinc-400">Prueba otra búsqueda o categoría.</p></div>}
       </div>
     </section>
   )

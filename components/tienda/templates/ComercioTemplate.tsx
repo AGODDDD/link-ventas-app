@@ -10,6 +10,7 @@ import {
 } from '@animateicons/react/lucide'
 import { Product, Profile } from '@/types/tienda'
 import ComercioNavbar from '@/components/tienda/ComercioNavbar'
+import ComercioHeroCarousel from '@/components/tienda/ComercioHeroCarousel'
 import ProductGrid from '@/components/tienda/ProductGrid'
 import PaymentTrustBadges from './PaymentTrustBadges'
 
@@ -24,24 +25,15 @@ export default function ComercioTemplate({ perfil, productos, isReadOnly = false
   const storeName = perfil.store_name || 'Tu tienda'
   const categories = Array.from(new Set(productos.map((product) => product.category).filter(Boolean) as string[]))
   const brands = Array.from(new Set(productos.map((product) => product.brand).filter(Boolean) as string[]))
-  const featured = productos.find((product) => product.stock == null || product.stock > 0) || productos[0]
-  const banner = perfil.banner_url || perfil.hero_image_url
 
   return (
     <div className="min-h-screen bg-[#f5f6f7] text-[#182331] selection:bg-[#66D8BB] selection:text-[#182331]">
       <ComercioNavbar storeId={perfil.id} storeName={storeName} avatarUrl={perfil.avatar_url} whatsappPhone={perfil.whatsapp_phone} categories={categories} />
 
       <main>
-        <section className="bg-white py-5">
-          <div className="mx-auto max-w-[1480px] px-4 sm:px-6">
-            <div className="relative overflow-hidden rounded-xl bg-[#0d1725] shadow-[0_14px_45px_rgba(24,35,49,0.12)]">
-              {banner ? <div className="relative aspect-[16/5] min-h-[230px] max-h-[470px]"><Image src={banner} alt={`Promociones de ${storeName}`} fill priority className="object-cover" sizes="100vw" /></div> : <div className="grid min-h-[340px] items-center lg:grid-cols-[1fr_0.9fr]"><div className="relative z-10 p-8 text-white sm:p-12 lg:p-16"><p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#66D8BB]">Tecnología y soluciones disponibles</p><h1 className="mt-5 max-w-2xl text-4xl font-black leading-[0.98] tracking-[-0.055em] sm:text-6xl">{perfil.description || 'Todo para tu negocio, en un solo lugar.'}</h1><a href="#catalogo" className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[#66D8BB] px-5 py-3 text-xs font-bold text-[#182331] transition-all hover:bg-white active:scale-95">Comprar ahora <AnimatedChevron size={16} duration={0.45} /></a></div><div className="relative min-h-[300px] self-stretch">{featured?.image_url ? <Image src={featured.image_url} alt={featured.name} fill priority className="object-contain p-8 drop-shadow-[0_25px_40px_rgba(0,0,0,0.4)]" sizes="50vw" /> : <span className="flex h-full items-center justify-center text-white/15"><AnimatedPackage size={90} /></span>}<div className="absolute inset-0 bg-gradient-to-r from-[#0d1725] via-transparent to-transparent" /></div></div>}
-              {isReadOnly && <div className="absolute inset-x-0 top-0 bg-amber-300 px-4 py-2 text-center text-[10px] font-bold uppercase tracking-[0.15em] text-amber-950">Tienda temporalmente en mantenimiento</div>}
-            </div>
-          </div>
-        </section>
+        <ComercioHeroCarousel perfil={perfil} productos={productos} isReadOnly={isReadOnly} />
 
-        {brands.length > 0 && <section className="border-y border-zinc-200 bg-white"><div className="mx-auto flex max-w-[1480px] items-center gap-8 overflow-hidden px-6 py-7"><p className="shrink-0 text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-400">Marcas disponibles</p><div className="flex min-w-0 flex-1 items-center justify-around gap-10 overflow-x-auto [scrollbar-width:none]">{brands.slice(0, 12).map((brand) => <span key={brand} className="shrink-0 text-lg font-black uppercase tracking-[-0.04em] text-zinc-300 transition-colors hover:text-[#182331]">{brand}</span>)}</div></div></section>}
+        {brands.length > 0 && <section className="border-y border-zinc-200 bg-white"><div className="mx-auto flex max-w-[1480px] items-center gap-8 overflow-hidden px-6 py-7"><p className="relative z-10 shrink-0 bg-white pr-4 text-[9px] font-bold uppercase tracking-[0.18em] text-zinc-400">Marcas disponibles</p><div className="commerce-marquee min-w-0 flex-1 overflow-hidden"><div className="commerce-marquee-track flex w-max items-center gap-14 pr-14">{[...brands, ...brands, ...brands].map((brand, index) => <span key={`${brand}-${index}`} className="shrink-0 text-lg font-black uppercase tracking-[-0.04em] text-zinc-300 transition-colors hover:text-[#182331]">{brand}</span>)}</div></div></div></section>}
 
         <section className="border-b border-zinc-200 bg-white"><div className="mx-auto grid max-w-[1480px] grid-cols-2 px-4 sm:px-6 lg:grid-cols-4">{[
           [AnimatedPackage, 'Despacho coordinado', 'Seguimiento de tu pedido'],

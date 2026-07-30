@@ -127,3 +127,23 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+@keyframes commerce-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-33.333%, 0, 0); }
+}
+
+.commerce-marquee-track {
+  animation: commerce-marquee 24s linear infinite;
+  will-change: transform;
+}
+
+.commerce-marquee:hover .commerce-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commerce-marquee-track {
+    animation: none;
+  }
+}
