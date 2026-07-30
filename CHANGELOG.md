@@ -4,6 +4,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+
+## [2026-07-30] — Premium UI & Moda Finalization
+
+### Added
+- **Diseño Premium Anti-IA**: Creada una nueva skill (`.agents/skills/diseno_premium/SKILL.md`) para estandarizar interfaces de alta gama.
+- **Iconografía Animada**: Migración global desde íconos estáticos de Lucide a íconos interactivos de `animateicons.in` (construidos sobre `motion/react`).
+- **Migración de Base de Datos**: Añadida la función `create_order_from_cart` (migración `20260000000009`) para validar tallas, colores y existencias directamente a nivel de base de datos durante el checkout.
+
+### Changed
+- **Landing Page (`/app/page.tsx`)**: Rediseño completo con paleta Off-White/Carbono, animaciones GSAP (ScrollTrigger), sección de historias y comparativa interactiva.
+- **Nicho de Moda (`ModaTemplate.tsx`, Checkout)**: Auditoría lógica y rediseño completo del flujo de selección de variantes, ahora respaldado por el total del servidor y la base de datos.
+- **Persistencia de Carrito**: Mejoras en `useCartStore.ts` para identidad estable por variante y saneamiento.
+
 ## [2026-07-30] — Debugging & Estabilidad de Pagos
 
 ### Fixed
