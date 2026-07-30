@@ -13,6 +13,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - **Migración de Base de Datos**: Añadida la función `create_order_from_cart` (migración `20260000000009`) para validar tallas, colores y existencias directamente a nivel de base de datos durante el checkout.
 
 ### Changed
+- **Nicho de Comercio General (`ComercioTemplate.tsx`)**: Implementado flujo de tienda sin variantes con estética Premium (Bento grid asimétrica, fondos off-white). Se integraron los íconos animados (`animateicons`) para acciones de carrito rápido con validación de inventario en tiempo real.
 - **Landing Page (`/app/page.tsx`)**: Rediseño completo con paleta Off-White/Carbono, animaciones GSAP (ScrollTrigger), sección de historias y comparativa interactiva.
 - **Nicho de Moda (`ModaTemplate.tsx`, Checkout)**: Auditoría lógica y rediseño completo del flujo de selección de variantes, ahora respaldado por el total del servidor y la base de datos.
 - **Persistencia de Carrito**: Mejoras en `useCartStore.ts` para identidad estable por variante y saneamiento.
