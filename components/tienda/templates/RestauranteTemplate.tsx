@@ -9,6 +9,7 @@ import RestauranteProductModal from './RestauranteProductModal'
 import RestauranteCheckoutModal from './RestauranteCheckoutModal'
 import AddressMapModal from './AddressMapModal'
 import OrderHistoryPanel from './OrderHistoryPanel'
+import PaymentTrustBadges from './PaymentTrustBadges'
 import SlideOverCart from '../SlideOverCart'
 import { isStoreClosed, getTodayScheduleText } from '@/lib/storeSchedule'
 
@@ -380,6 +381,11 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
             ))}
          </div>
       </main>
+
+      <footer className="md:ml-[320px] lg:ml-[350px] px-4 pb-28 pt-4 text-center text-neutral-500">
+        <PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto mb-6 text-neutral-800" />
+        <p className="text-xs">© {new Date().getFullYear()} {perfil.store_name || 'Restaurante'}. Todos los derechos reservados.</p>
+      </footer>
 
       {/* FLOATING CART BUBBLE BUTTON */}
       {!isReadOnly && (

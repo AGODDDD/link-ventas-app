@@ -10,6 +10,7 @@ import { useCustomerStore } from '@/store/useCustomerStore'
 import SlideOverCart from '@/components/tienda/SlideOverCart'
 import OrderHistoryPanel from '@/components/tienda/templates/OrderHistoryPanel'
 import AddressMapModal from '@/components/tienda/templates/AddressMapModal'
+import PaymentTrustBadges from './PaymentTrustBadges'
 import { Search, User, ClipboardList, ShoppingBag, Eye, Play, MapPin, X, ChevronDown, ChevronRight, Check, Menu } from 'lucide-react'
 
 interface Props {
@@ -946,6 +947,8 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
             )}
           </div>
           )}
+
+          <PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="moda-footer-payment-badges" />
 
           <p className="moda-footer-copy">© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
         </div>
@@ -2783,6 +2786,9 @@ const modaUrbanStyles = `
 .moda-urban-template .moda-footer-social-link svg {
   width: 24px;
   height: 24px;
+}
+.moda-urban-template .moda-footer-payment-badges {
+  color: #0a0a0a;
 }
 .moda-urban-template .moda-footer-copy {
   font-size: 0.75rem;
