@@ -1,401 +1,307 @@
 'use client'
-import { useEffect, useState, useMemo } from 'react'
+
+import { useEffect, useMemo, useState } from 'react'
+import { Calendar, Mail, MessageCircle, Phone, Search, ShoppingBag, Sparkles, Trash2, Users } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Search, Users, Mail, Phone, Tag, Calendar, ArrowUpDown, Trash2, MessageCircle } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 
-type SortKey = 'created_at' | 'name' | 'preference'
-type SortDir = 'asc' | 'desc'
+type View = 'customers' | 'opportunities'
 
-// Componente Skeleton (Pixel Perfect)
-const ClientesSkeleton = () => (
-    <div className="space-y-6 pb-12 relative w-full">
-        {/* Header Skeleton */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
-            <div className="space-y-3 w-full">
-                <div className="h-8 w-64 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                <div className="h-4 w-96 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-            </div>
-        </div>
+type Customer = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  ordersCount: number
+  totalSpent: number
+  lastOrderAt: string
+}
 
-        {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
-                    <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse mb-3"></div>
-                    <div className="flex items-baseline gap-2">
-                        <div className="h-8 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                        <div className="h-4 w-4 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                    </div>
-                </div>
-            ))}
-        </div>
+const VALID_CUSTOMER_STATUSES = new Set([
+  'pendiente',
+  'en_preparacion',
+  'alistando',
+  'en_camino',
+  'completado',
+  'paid',
+  'shipped',
+])
 
-        {/* Search & Filters Bar Skeleton */}
-        <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg flex-1 border border-zinc-200 dark:border-zinc-800/50 opacity-50">
-                <Search className="text-zinc-400 w-4 h-4 shrink-0" />
-                <div className="h-5 w-48 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-            </div>
-            <div className="bg-zinc-50 dark:bg-zinc-900 w-48 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800/50 opacity-50 h-10 flex items-center">
-                <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-            </div>
-        </div>
+function normalizePhone(value?: string) {
+  return String(value || '').replace(/\D/g, '')
+}
 
-        {/* Table Skeleton */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                        <tr className="bg-zinc-50 dark:bg-zinc-900">
-                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
-                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
-                            <th className="px-6 py-4"><div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
-                            <th className="px-6 py-4"><div className="h-3 w-16 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div></th>
-                            <th className="px-6 py-4"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-outline-variant/5">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                            <tr key={i}>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-lg bg-zinc-200 dark:bg-zinc-800 animate-pulse"></div>
-                                        <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="space-y-2">
-                                        <div className="h-3 w-40 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                                        <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="h-6 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full animate-pulse"></div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="space-y-2">
-                                        <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                                        <div className="h-2 w-12 bg-zinc-200 dark:bg-zinc-800 rounded animate-pulse"></div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4"></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+function customerKey(order: any) {
+  const email = String(order.customer_email || '').trim().toLowerCase()
+  const phone = normalizePhone(order.customer_phone)
+  if (email) return `email:${email}`
+  if (phone) return `phone:${phone}`
+  return `order:${order.id}`
+}
+
+function LoadingState() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-20 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
+      <div className="grid gap-4 sm:grid-cols-3">
+        {[1, 2, 3].map(item => <div key={item} className="h-28 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />)}
+      </div>
+      <div className="h-80 rounded-2xl bg-zinc-200 dark:bg-zinc-800" />
     </div>
-)
+  )
+}
 
 export default function ClientesPage() {
-    const { leads, cargarLeads, eliminarLeadLocal, leadsLastFetch } = useDashboardStore()
-    const [isInitialLoad, setIsInitialLoad] = useState(leadsLastFetch === 0)
-    const [searchTerm, setSearchTerm] = useState('')
-    const [filterPref, setFilterPref] = useState<string>('all')
-    const [sortKey, setSortKey] = useState<SortKey>('created_at')
-    const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const {
+    orders,
+    ordersLastFetch,
+    cargarOrders,
+    leads,
+    leadsLastFetch,
+    cargarLeads,
+    eliminarLeadLocal,
+  } = useDashboardStore()
+  const [view, setView] = useState<View>('customers')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [loading, setLoading] = useState(ordersLastFetch === 0 || leadsLastFetch === 0)
 
-    // Paginación UI (Performance Tweak)
-    const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 20;
-
-    useEffect(() => {
-        const load = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-                await cargarLeads(user.id)
-            }
-            setIsInitialLoad(false)
-        }
-        load()
-    }, [])
-
-    // Preferencias únicas para el filtro
-    const preferenciasUnicas = useMemo(() => {
-        const prefs = new Set(leads.map(l => l.preference).filter(Boolean))
-        return Array.from(prefs)
-    }, [leads])
-
-    // Filtrado y búsqueda
-    const leadsFiltrados = useMemo(() => {
-        let resultado = leads
-
-        // Búsqueda
-        if (searchTerm) {
-            const term = searchTerm.toLowerCase()
-            resultado = resultado.filter(l =>
-                l.name?.toLowerCase().includes(term) ||
-                l.email?.toLowerCase().includes(term) ||
-                l.phone?.includes(term)
-            )
-        }
-
-        // Filtro por preferencia
-        if (filterPref !== 'all') {
-            resultado = resultado.filter(l => l.preference === filterPref)
-        }
-
-        // Ordenamiento
-        resultado = [...resultado].sort((a, b) => {
-            let valA = a[sortKey] || ''
-            let valB = b[sortKey] || ''
-            if (sortKey === 'created_at') {
-                return sortDir === 'desc'
-                    ? new Date(valB).getTime() - new Date(valA).getTime()
-                    : new Date(valA).getTime() - new Date(valB).getTime()
-            }
-            return sortDir === 'desc'
-                ? valB.localeCompare(valA)
-                : valA.localeCompare(valB)
-        })
-
-        return resultado
-    }, [leads, searchTerm, filterPref, sortKey, sortDir])
-
-    const toggleSort = (key: SortKey) => {
-        setCurrentPage(1) // Reset página al ordenar
-        if (sortKey === key) {
-            setSortDir(prev => prev === 'desc' ? 'asc' : 'desc')
-        } else {
-            setSortKey(key)
-            setSortDir('desc')
-        }
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await Promise.all([cargarOrders(user.id), cargarLeads(user.id)])
+      }
+      setLoading(false)
     }
+    void load()
+  }, [cargarLeads, cargarOrders])
 
-    const eliminarLead = async (id: string) => {
-        if (!confirm('¿Eliminar este lead permanentemente?')) return
-        const { error } = await supabase.from('store_leads').delete().eq('id', id)
-        if (!error) eliminarLeadLocal(id)
-    }
+  const customers = useMemo(() => {
+    const grouped = new Map<string, Customer>()
 
-    // Stats
-    const leadsHoy = leads.filter(l => new Date(l.created_at).toDateString() === new Date().toDateString()).length
-    const leadsSemana = leads.filter(l => {
-        const diff = Date.now() - new Date(l.created_at).getTime()
-        return diff < 7 * 24 * 60 * 60 * 1000
-    }).length
+    orders
+      .filter(order => VALID_CUSTOMER_STATUSES.has(order.status))
+      .forEach(order => {
+        const id = customerKey(order)
+        const current = grouped.get(id)
+        const createdAt = String(order.created_at)
+        const total = Number(order.total || 0)
 
-    if (isInitialLoad) return <ClientesSkeleton />
+        if (!current) {
+          grouped.set(id, {
+            id,
+            name: order.customer_name || 'Cliente sin nombre',
+            email: order.customer_email || '',
+            phone: order.customer_phone || '',
+            ordersCount: 1,
+            totalSpent: total,
+            lastOrderAt: createdAt,
+          })
+          return
+        }
 
-    // Paginación (Computed Bounds)
-    const totalPages = Math.ceil(leadsFiltrados.length / ITEMS_PER_PAGE);
-    const paginatedLeads = leadsFiltrados.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+        current.ordersCount += 1
+        current.totalSpent += total
+        if (new Date(createdAt).getTime() > new Date(current.lastOrderAt).getTime()) {
+          current.lastOrderAt = createdAt
+          current.name = order.customer_name || current.name
+          current.email = order.customer_email || current.email
+          current.phone = order.customer_phone || current.phone
+        }
+      })
 
-    // Componente de Paginación Premium
-    const renderPagination = () => {
-        if (totalPages <= 1) return null;
-        return (
-            <div className="flex justify-center items-center gap-2 mt-6 pb-2">
-                <button 
-                    disabled={currentPage === 1}
-                    onClick={() => { setCurrentPage(prev => Math.max(1, prev - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                    className="p-2 rounded-xl text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/50 transition-colors disabled:opacity-30 shadow-sm"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                    <button
-                        key={page}
-                        onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                        className={`w-10 h-10 rounded-xl font-bold transition-all border ${currentPage === page ? 'bg-primary text-on-primary border-primary shadow-lg scale-105' : 'text-zinc-500 dark:text-zinc-400 border-transparent hover:bg-zinc-50 dark:bg-zinc-900'}`}
-                    >
-                        {page}
-                    </button>
-                ))}
-                
-                <button 
-                    disabled={currentPage === totalPages}
-                    onClick={() => { setCurrentPage(prev => Math.min(totalPages, prev + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                    className="p-2 rounded-xl text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800/50 transition-colors disabled:opacity-30 shadow-sm"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-            </div>
-        );
-    };
-
-    return (
-        <div className="space-y-6 pb-12 relative w-full">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Clientes & Leads</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400">Base de datos de prospectos interesados en tu marca.</p>
-                </div>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 animate-fade-in-up delay-100">
-                <div className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
-                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Total Leads</p>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">{leads.length}</span>
-                        <Users className="w-4 h-4 text-primary" />
-                    </div>
-                </div>
-                <div className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
-                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Nuevos Esta Semana</p>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold tracking-tighter text-zinc-900 dark:text-zinc-100">{leadsSemana}</span>
-                        <span className="text-secondary text-xs font-bold">↑ {leadsHoy} hoy</span>
-                    </div>
-                </div>
-                <div className="bg-zinc-50 dark:bg-zinc-900 p-5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50">
-                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-2">Preferencia Top</p>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold tracking-tighter text-zinc-900 dark:text-zinc-100 truncate">
-                            {preferenciasUnicas[0] || '—'}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Search & Filters Bar */}
-            <div className="flex flex-col sm:flex-row gap-3 animate-fade-in-up delay-200">
-                <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-900 px-4 py-2 rounded-lg flex-1 border border-zinc-200 dark:border-zinc-800/50">
-                    <Search className="text-zinc-500 dark:text-zinc-400 w-4 h-4 shrink-0" />
-                    <input
-                        className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-zinc-500 dark:text-zinc-400/50 w-full text-zinc-900 dark:text-zinc-100 outline-none"
-                        placeholder="Buscar por nombre, email o teléfono..."
-                        type="text"
-                        value={searchTerm}
-                        onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    />
-                </div>
-                <select
-                    value={filterPref}
-                    onChange={e => { setFilterPref(e.target.value); setCurrentPage(1); }}
-                    className="bg-zinc-50 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 text-sm px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800/50 outline-none cursor-pointer"
-                >
-                    <option value="all">Todas las preferencias</option>
-                    {preferenciasUnicas.map(p => (
-                        <option key={p} value={p}>{p}</option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl animate-fade-in-up delay-300">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse min-w-[700px]">
-                        <thead>
-                            <tr className="bg-zinc-50 dark:bg-zinc-900">
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                                    <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-primary transition-colors">
-                                        Cliente <ArrowUpDown className="w-3 h-3" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Contacto</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                                    <button onClick={() => toggleSort('preference')} className="flex items-center gap-1 hover:text-primary transition-colors">
-                                        Preferencia <ArrowUpDown className="w-3 h-3" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
-                                    <button onClick={() => toggleSort('created_at')} className="flex items-center gap-1 hover:text-primary transition-colors">
-                                        Fecha <ArrowUpDown className="w-3 h-3" />
-                                    </button>
-                                </th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-outline-variant/5">
-                            {paginatedLeads.length > 0 ? (
-                                paginatedLeads.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-zinc-50 dark:bg-zinc-900/50 transition-colors group">
-                                        {/* Avatar + Name */}
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center font-bold text-xs uppercase text-primary border border-primary/20">
-                                                    {lead.name ? lead.name.substring(0, 2) : '??'}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{lead.name}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        {/* Contact */}
-                                        <td className="px-6 py-4">
-                                            <div className="space-y-1">
-                                                <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                                                    <Mail className="w-3 h-3 shrink-0" /> {lead.email}
-                                                </p>
-                                                <p className="text-sm text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                                                    <Phone className="w-3 h-3 shrink-0" /> {lead.phone || '—'}
-                                                </p>
-                                            </div>
-                                        </td>
-                                        {/* Preference */}
-                                        <td className="px-6 py-4">
-                                            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-primary/10 text-primary border border-primary/20 whitespace-nowrap flex items-center gap-1 w-fit">
-                                                <Tag className="w-3 h-3" /> {lead.preference}
-                                            </span>
-                                        </td>
-                                        {/* Date */}
-                                        <td className="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5">
-                                                <Calendar className="w-3 h-3" />
-                                                {new Date(lead.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </div>
-                                            <p className="text-[10px] text-zinc-500 dark:text-zinc-400/50 mt-0.5">
-                                                {new Date(lead.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </td>
-                                        {/* Actions */}
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {lead.phone && (
-                                                    <a
-                                                        href={`https://wa.me/${lead.phone.replace(/\s/g, '')}?text=Hola%20${encodeURIComponent(lead.name)},%20te%20escribimos%20de%20nuestra%20tienda`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="p-2 rounded-lg hover:bg-[#25D366]/10 text-[#25D366] transition-colors"
-                                                        title="Contactar por WhatsApp"
-                                                    >
-                                                        <MessageCircle className="w-4 h-4" />
-                                                    </a>
-                                                )}
-                                                <button
-                                                    onClick={() => eliminarLead(lead.id)}
-                                                    className="p-2 rounded-lg hover:bg-error/10 text-error/60 hover:text-error transition-colors"
-                                                    title="Eliminar lead"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={5} className="px-8 py-16 text-center">
-                                        <Users className="w-12 h-12 text-zinc-500 dark:text-zinc-400/20 mx-auto mb-4" />
-                                        <p className="text-zinc-500 dark:text-zinc-400 text-lg font-bold">
-                                            {searchTerm || filterPref !== 'all' ? 'No se encontraron resultados' : 'Tu lista de clientes está vacía'}
-                                        </p>
-                                        <p className="text-zinc-500 dark:text-zinc-400/60 text-sm mt-1">
-                                            {searchTerm || filterPref !== 'all'
-                                                ? 'Intenta con otra búsqueda o filtro.'
-                                                : 'Comparte tu tienda para empezar a captar prospectos.'}
-                                        </p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                {renderPagination()}
-            </div>
-
-            {/* Footer count */}
-            {leadsFiltrados.length > 0 && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400/50 text-right mt-2">
-                    Mostrando {paginatedLeads.length} leads de un total de {leadsFiltrados.length} encontrados (Base total: {leads.length})
-                </p>
-            )}
-        </div>
+    return Array.from(grouped.values()).sort((a, b) =>
+      new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime()
     )
+  }, [orders])
+
+  const term = searchTerm.trim().toLowerCase()
+  const filteredCustomers = useMemo(
+    () => customers.filter(customer => !term || [
+      customer.name,
+      customer.email,
+      customer.phone,
+    ].some(value => value.toLowerCase().includes(term))),
+    [customers, term]
+  )
+  const filteredLeads = useMemo(
+    () => leads.filter(lead => !term || [
+      lead.name,
+      lead.email,
+      lead.phone,
+      lead.preference,
+    ].some(value => String(value || '').toLowerCase().includes(term))),
+    [leads, term]
+  )
+
+  const totalCustomerRevenue = customers.reduce((total, customer) => total + customer.totalSpent, 0)
+  const repeatCustomers = customers.filter(customer => customer.ordersCount > 1).length
+
+  const deleteOpportunity = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta oportunidad? Esta acción no se puede deshacer.')) return
+    const { error } = await supabase.from('store_leads').delete().eq('id', id)
+    if (!error) eliminarLeadLocal(id)
+  }
+
+  if (loading) return <LoadingState />
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-8 pb-12">
+      <header className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Relación comercial</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">Clientes</h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            Compradores reales y oportunidades captadas, sin mezclar sus métricas.
+          </p>
+        </div>
+        <label className="relative w-full lg:w-80">
+          <span className="sr-only">Buscar {view === 'customers' ? 'clientes' : 'oportunidades'}</span>
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input
+            value={searchTerm}
+            onChange={event => setSearchTerm(event.target.value)}
+            placeholder={view === 'customers' ? 'Nombre, email o teléfono' : 'Buscar oportunidades'}
+            className="h-11 w-full rounded-xl border border-zinc-200 bg-white/80 pl-10 pr-3 text-sm outline-none transition-all duration-300 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-zinc-700 dark:bg-zinc-900/70"
+          />
+        </label>
+      </header>
+
+      <nav className="inline-flex rounded-2xl border border-zinc-200 bg-white/80 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70" aria-label="Vistas de relación comercial">
+        <button
+          onClick={() => { setView('customers'); setSearchTerm('') }}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${view === 'customers' ? 'bg-zinc-950 text-white shadow-lg dark:bg-white dark:text-zinc-950' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+        >
+          Clientes <span className="ml-1 opacity-60">{customers.length}</span>
+        </button>
+        <button
+          onClick={() => { setView('opportunities'); setSearchTerm('') }}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${view === 'opportunities' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
+        >
+          Oportunidades <span className="ml-1 opacity-60">{leads.length}</span>
+        </button>
+      </nav>
+
+      {view === 'customers' ? (
+        <>
+          <section className="grid gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Clientes compradores', value: customers.length, icon: Users, tone: 'text-violet-500 bg-violet-500/10' },
+              { label: 'Clientes recurrentes', value: repeatCustomers, icon: ShoppingBag, tone: 'text-emerald-500 bg-emerald-500/10' },
+              { label: 'Valor acumulado', value: `S/ ${totalCustomerRevenue.toFixed(2)}`, icon: Sparkles, tone: 'text-amber-500 bg-amber-500/10' },
+            ].map(({ label, value, icon: Icon, tone }) => (
+              <article key={label} className="rounded-2xl border border-zinc-200/80 bg-white/75 p-5 shadow-[0_12px_40px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/65">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">{label}</p>
+                  <span className={`rounded-xl p-2 ${tone}`}><Icon size={17} /></span>
+                </div>
+                <p className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">{value}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[820px] text-left">
+                <thead className="bg-zinc-50/80 dark:bg-zinc-950/40">
+                  <tr className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                    <th className="px-6 py-4">Cliente</th>
+                    <th className="px-6 py-4">Contacto</th>
+                    <th className="px-6 py-4">Pedidos</th>
+                    <th className="px-6 py-4">Última compra</th>
+                    <th className="px-6 py-4 text-right">Valor total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                  {filteredCustomers.length > 0 ? filteredCustomers.map(customer => (
+                    <tr key={customer.id} className="transition-colors duration-300 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30">
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{customer.name}</p>
+                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                          {customer.ordersCount > 1 ? 'Cliente recurrente' : 'Primera compra'}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1 text-xs text-zinc-500">
+                          {customer.email && <p className="flex items-center gap-1.5"><Mail size={12} />{customer.email}</p>}
+                          {customer.phone && <p className="flex items-center gap-1.5"><Phone size={12} />{customer.phone}</p>}
+                          {!customer.email && !customer.phone && <span>Sin contacto registrado</span>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-zinc-900 dark:text-zinc-100">{customer.ordersCount}</td>
+                      <td className="px-6 py-4 text-sm text-zinc-500">
+                        {new Date(customer.lastOrderAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm font-bold text-emerald-600 dark:text-emerald-400">S/ {customer.totalSpent.toFixed(2)}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-16 text-center">
+                        <Users size={32} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
+                        <p className="font-semibold text-zinc-700 dark:text-zinc-300">{customers.length === 0 ? 'Aún no tienes compradores' : 'No encontramos clientes'}</p>
+                        <p className="mt-1 text-sm text-zinc-500">{customers.length === 0 ? 'Los clientes aparecerán al recibir su primer pedido válido.' : 'Prueba con otro nombre, email o teléfono.'}</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : (
+        <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="border-b border-zinc-200/70 p-6 dark:border-zinc-800">
+            <h2 className="text-lg font-semibold text-zinc-950 dark:text-white">Leads y carritos por recuperar</h2>
+            <p className="mt-1 text-sm text-zinc-500">Son personas interesadas; todavía no cuentan como clientes compradores.</p>
+          </div>
+          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {filteredLeads.length > 0 ? filteredLeads.map(lead => (
+              <article key={lead.id} className="flex flex-col gap-4 p-5 transition-colors duration-300 hover:bg-zinc-50/80 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-zinc-800/30">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                    {(lead.name || 'OP').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">{lead.name || 'Oportunidad sin nombre'}</p>
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
+                      {lead.email && <span className="flex items-center gap-1"><Mail size={12} />{lead.email}</span>}
+                      {lead.phone && <span className="flex items-center gap-1"><Phone size={12} />{lead.phone}</span>}
+                      <span className="flex items-center gap-1"><Calendar size={12} />{new Date(lead.created_at).toLocaleDateString('es-PE')}</span>
+                    </div>
+                    {lead.preference && <span className="mt-2 inline-flex rounded-full bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">{lead.preference}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {lead.phone && (
+                    <a
+                      href={`https://wa.me/${normalizePhone(lead.phone)}?text=${encodeURIComponent(`Hola ${lead.name || ''}, te escribimos de nuestra tienda.`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Contactar a ${lead.name || 'oportunidad'} por WhatsApp`}
+                      className="rounded-xl p-2.5 text-emerald-600 transition-all duration-300 hover:bg-emerald-500/10 active:scale-95"
+                    >
+                      <MessageCircle size={18} />
+                    </a>
+                  )}
+                  <button
+                    onClick={() => void deleteOpportunity(lead.id)}
+                    aria-label={`Eliminar oportunidad ${lead.name || ''}`}
+                    className="rounded-xl p-2.5 text-red-500 transition-all duration-300 hover:bg-red-500/10 active:scale-95"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </article>
+            )) : (
+              <div className="px-8 py-16 text-center">
+                <Sparkles size={32} className="mx-auto mb-3 text-zinc-300 dark:text-zinc-700" />
+                <p className="font-semibold text-zinc-700 dark:text-zinc-300">{leads.length === 0 ? 'No hay oportunidades pendientes' : 'No encontramos oportunidades'}</p>
+                <p className="mt-1 text-sm text-zinc-500">Los formularios y carritos por recuperar aparecerán aquí.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
+  )
 }

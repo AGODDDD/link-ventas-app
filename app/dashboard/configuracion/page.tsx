@@ -14,6 +14,7 @@ const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPick
 import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
 import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
 import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
+import { toast } from 'sonner'
 
 interface SettingsFormData {
   storeName: string;
@@ -43,6 +44,18 @@ interface SettingsFormData {
   faqs: { question: string; answer: string }[];
   promoTitle: string;
   promoDescription: string;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  deliveryRadiusKm: number;
+  minOrderAmount: number;
+  defaultPreparationTime: string;
+  acceptsOrdersAlways: boolean;
+  shippingMethods: string;
+  coverageArea: string;
+  dispatchTime: string;
+  sizeGuide: string;
+  returnsPolicy: string;
+  exchangeDays: number;
 }
 
 interface SystemData {
@@ -96,7 +109,7 @@ export default function ConfiguracionPage() {
       ])
 
       if (storeError || !store) {
-        alert('No se encontró la tienda principal. Ejecuta la migración de configuración Core.')
+        toast.error('No se encontró la tienda principal.')
         setLoading(false)
         return
       }
@@ -107,6 +120,7 @@ export default function ConfiguracionPage() {
       ])
 
       if (config) {
+        const operations = config.operations_config || {}
         setSystemData({
           userId: user.id,
           storeId: store.id,
@@ -143,6 +157,18 @@ export default function ConfiguracionPage() {
           faqs: config.faqs || [],
           promoTitle: config.promo_title || '',
           promoDescription: config.promo_description || '',
+          deliveryEnabled: operations.delivery_enabled ?? true,
+          pickupEnabled: operations.pickup_enabled ?? false,
+          deliveryRadiusKm: Number(operations.delivery_radius_km ?? 5),
+          minOrderAmount: Number(operations.min_order_amount ?? 0),
+          defaultPreparationTime: operations.default_preparation_time || '30-45 min',
+          acceptsOrdersAlways: operations.accepts_orders_always ?? true,
+          shippingMethods: operations.shipping_methods || '',
+          coverageArea: operations.coverage_area || '',
+          dispatchTime: operations.dispatch_time || '1-2 días hábiles',
+          sizeGuide: operations.size_guide || '',
+          returnsPolicy: operations.returns_policy || '',
+          exchangeDays: Number(operations.exchange_days ?? 7),
         }
         setInitialData(fetchedData)
         setFormData(JSON.parse(JSON.stringify(fetchedData)))
@@ -166,7 +192,7 @@ export default function ConfiguracionPage() {
 
       const file = e.target.files[0]
       if (!file.type.startsWith('image/')) {
-        alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, etc).')
+        toast.error('Selecciona una imagen válida (JPG, PNG o WEBP).')
         return
       }
 
@@ -185,7 +211,7 @@ export default function ConfiguracionPage() {
 
       updateForm(key, publicUrl)
     } catch (error: any) {
-      alert('Error subiendo imagen: ' + error.message)
+      toast.error('No se pudo subir la imagen: ' + error.message)
     } finally {
       setUploading(false)
     }
@@ -240,6 +266,20 @@ export default function ConfiguracionPage() {
           store_lat: formData.storeLat,
           store_lng: formData.storeLng,
           store_schedule: formData.storeSchedule,
+          operations_config: {
+            delivery_enabled: formData.deliveryEnabled,
+            pickup_enabled: formData.pickupEnabled,
+            delivery_radius_km: formData.deliveryRadiusKm,
+            min_order_amount: formData.minOrderAmount,
+            default_preparation_time: formData.defaultPreparationTime,
+            accepts_orders_always: formData.acceptsOrdersAlways,
+            shipping_methods: formData.shippingMethods,
+            coverage_area: formData.coverageArea,
+            dispatch_time: formData.dispatchTime,
+            size_guide: formData.sizeGuide,
+            returns_policy: formData.returnsPolicy,
+            exchange_days: formData.exchangeDays,
+          },
           updated_at: new Date().toISOString(),
         }, { onConflict: 'store_id' })
 
@@ -256,7 +296,7 @@ export default function ConfiguracionPage() {
           .upsert({
             store_id: systemData.storeId,
             base_delivery_fee: fee,
-            delivery_active: true,
+            delivery_active: formData.deliveryEnabled,
             updated_at: new Date().toISOString(),
           }, { onConflict: 'store_id' })
 
@@ -295,13 +335,13 @@ export default function ConfiguracionPage() {
       setInitialData(newInitialData)
       setFormData(JSON.parse(JSON.stringify(newInitialData)))
       setPendingTemplate(null)
-      alert('Cambios guardados correctamente.')
+      toast.success('Cambios guardados')
 
     } catch (error: any) {
       if (error.code === '23505') {
-        alert('Ese enlace ya está en uso por otra tienda. Por favor elige otro.')
+        toast.error('Ese enlace ya está en uso. Elige otro.')
       } else {
-        alert('Error guardando: ' + error.message)
+        toast.error('No se pudo guardar: ' + error.message)
       }
     } finally {
       setSaving(false)
@@ -323,9 +363,9 @@ export default function ConfiguracionPage() {
         setFormData({ ...formData, templateType: pendingTemplate })
       }
       setPendingTemplate(null)
-      alert('Plantilla cambiada correctamente.')
+      toast.success('Plantilla cambiada')
     } catch (error: any) {
-      alert('Error cambiando plantilla: ' + error.message)
+      toast.error('No se pudo cambiar la plantilla: ' + error.message)
     } finally {
       setSavingTemplate(false)
     }
@@ -708,59 +748,111 @@ export default function ConfiguracionPage() {
           {/* 5. LOGÍSTICA & HORARIOS */}
           {activeTab === 'logistica' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              
-              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
-                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                  <CardTitle className="text-lg">Ubicación del Local</CardTitle>
-                  <CardDescription>Dirección para envíos o recojo en tienda.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-4">
-                  <div className="space-y-2">
-                    <Label>Dirección Física</Label>
-                    <Input value={formData.storeAddress} onChange={e => updateForm('storeAddress', e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Punto en el Mapa</Label>
-                    <StoreMapPicker
-                      initialLat={formData.storeLat}
-                      initialLng={formData.storeLng}
-                      onPick={(lat, lng) => { updateForm('storeLat', lat); updateForm('storeLng', lng) }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Operación {formData.templateType}</p>
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  {formData.templateType === 'restaurante' && 'Configura preparación, delivery, recojo y horarios de atención.'}
+                  {formData.templateType === 'comercio' && 'Define cómo despachas productos y dónde pueden recibirlos tus clientes.'}
+                  {formData.templateType === 'moda' && 'Centraliza envíos, recojo, tallaje y políticas de cambio.'}
+                </p>
+              </div>
 
               {formData.templateType === 'restaurante' && (
-                <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
-                  <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                    <CardTitle className="text-lg">Tarifa de Delivery</CardTitle>
-                    <CardDescription>Se calcula en el servidor al crear cada pedido.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="space-y-2 max-w-xs">
-                      <Label htmlFor="delivery-fee">Tarifa base (S/)</Label>
-                      <Input
-                        id="delivery-fee"
-                        type="number"
-                        min="0"
-                        step="0.50"
-                        value={formData.deliveryFee}
-                        onChange={(e) => updateForm('deliveryFee', Number(e.target.value))}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <>
+                  <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                    <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50">
+                      <CardTitle className="text-lg">Modalidades del pedido</CardTitle>
+                      <CardDescription>Activa solo las opciones que tu equipo puede atender.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 pt-6 sm:grid-cols-2">
+                      <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 p-4 transition-all duration-300 hover:border-primary/30 dark:border-zinc-700">
+                        <div><p className="text-sm font-semibold">Delivery</p><p className="mt-1 text-xs text-zinc-500">Entrega a domicilio</p></div>
+                        <input type="checkbox" checked={formData.deliveryEnabled} onChange={event => updateForm('deliveryEnabled', event.target.checked)} className="h-5 w-5 accent-primary" />
+                      </label>
+                      <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 p-4 transition-all duration-300 hover:border-primary/30 dark:border-zinc-700">
+                        <div><p className="text-sm font-semibold">Recojo en local</p><p className="mt-1 text-xs text-zinc-500">El cliente recoge su pedido</p></div>
+                        <input type="checkbox" checked={formData.pickupEnabled} onChange={event => updateForm('pickupEnabled', event.target.checked)} className="h-5 w-5 accent-primary" />
+                      </label>
+                    </CardContent>
+                  </Card>
+
+                  {(formData.deliveryEnabled || formData.pickupEnabled) && (
+                    <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                      <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50">
+                        <CardTitle className="text-lg">Local y cobertura</CardTitle>
+                        <CardDescription>La ubicación permite calcular entregas y orientar el recojo.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-5 pt-6">
+                        <div className="space-y-2"><Label htmlFor="restaurant-address">Dirección del local</Label><Input id="restaurant-address" value={formData.storeAddress} onChange={event => updateForm('storeAddress', event.target.value)} /></div>
+                        {formData.deliveryEnabled && (
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="space-y-2"><Label htmlFor="delivery-fee">Tarifa base (S/)</Label><Input id="delivery-fee" type="number" min="0" step="0.50" value={formData.deliveryFee} onChange={event => updateForm('deliveryFee', Number(event.target.value))} /></div>
+                            <div className="space-y-2"><Label htmlFor="delivery-radius">Radio de cobertura (km)</Label><Input id="delivery-radius" type="number" min="1" value={formData.deliveryRadiusKm} onChange={event => updateForm('deliveryRadiusKm', Number(event.target.value))} /></div>
+                            <div className="space-y-2"><Label htmlFor="minimum-order">Pedido mínimo (S/)</Label><Input id="minimum-order" type="number" min="0" step="0.50" value={formData.minOrderAmount} onChange={event => updateForm('minOrderAmount', Number(event.target.value))} /></div>
+                          </div>
+                        )}
+                        <div className="space-y-2"><Label>Punto en el mapa</Label><StoreMapPicker initialLat={formData.storeLat} initialLng={formData.storeLng} onPick={(lat, lng) => { updateForm('storeLat', lat); updateForm('storeLng', lng) }} /></div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                    <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50">
+                      <CardTitle className="text-lg">Preparación y horarios</CardTitle>
+                      <CardDescription>Promesa operativa mostrada al cliente antes de ordenar.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6 pt-6">
+                      <div className="max-w-sm space-y-2"><Label htmlFor="default-preparation">Tiempo de preparación por defecto</Label><Input id="default-preparation" placeholder="Ej: 30-45 min" value={formData.defaultPreparationTime} onChange={event => updateForm('defaultPreparationTime', event.target.value)} /></div>
+                      <ScheduleEditor value={formData.storeSchedule} onChange={schedule => updateForm('storeSchedule', schedule)} />
+                    </CardContent>
+                  </Card>
+                </>
               )}
 
-              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
-                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                  <CardTitle className="text-lg">Estrategia Horaria</CardTitle>
-                  <CardDescription>Bloquea pedidos fuera del horario de atención.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <ScheduleEditor value={formData.storeSchedule} onChange={(sch) => updateForm('storeSchedule', sch)} />
-                </CardContent>
-              </Card>
+              {formData.templateType === 'comercio' && (
+                <>
+                  <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                    <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50"><CardTitle className="text-lg">Despacho y cobertura</CardTitle><CardDescription>Indica cómo entregas tus productos y cuánto demora el despacho.</CardDescription></CardHeader>
+                    <CardContent className="space-y-5 pt-6">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2"><Label htmlFor="commerce-shipping">Métodos de envío</Label><Input id="commerce-shipping" placeholder="Ej: Olva, Shalom, motorizado propio" value={formData.shippingMethods} onChange={event => updateForm('shippingMethods', event.target.value)} /></div>
+                        <div className="space-y-2"><Label htmlFor="commerce-dispatch">Tiempo de despacho</Label><Input id="commerce-dispatch" placeholder="Ej: 1-2 días hábiles" value={formData.dispatchTime} onChange={event => updateForm('dispatchTime', event.target.value)} /></div>
+                      </div>
+                      <div className="space-y-2"><Label htmlFor="commerce-coverage">Cobertura</Label><Input id="commerce-coverage" placeholder="Ej: Lima Metropolitana y envíos a todo el Perú" value={formData.coverageArea} onChange={event => updateForm('coverageArea', event.target.value)} /></div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 p-4 dark:border-zinc-700"><div><p className="text-sm font-semibold">Aceptar pedidos 24/7</p><p className="mt-1 text-xs text-zinc-500">No bloquea el checkout por horario</p></div><input type="checkbox" checked={formData.acceptsOrdersAlways} onChange={event => updateForm('acceptsOrdersAlways', event.target.checked)} className="h-5 w-5 accent-primary" /></label>
+                        <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 p-4 dark:border-zinc-700"><div><p className="text-sm font-semibold">Recojo en tienda</p><p className="mt-1 text-xs text-zinc-500">Ofrece retiro en un local</p></div><input type="checkbox" checked={formData.pickupEnabled} onChange={event => updateForm('pickupEnabled', event.target.checked)} className="h-5 w-5 accent-primary" /></label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  {formData.pickupEnabled && <Card className="rounded-2xl border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"><CardHeader><CardTitle className="text-lg">Punto de recojo</CardTitle></CardHeader><CardContent className="space-y-2"><Label htmlFor="commerce-address">Dirección</Label><Input id="commerce-address" value={formData.storeAddress} onChange={event => updateForm('storeAddress', event.target.value)} /></CardContent></Card>}
+                  {!formData.acceptsOrdersAlways && <Card className="rounded-2xl border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"><CardHeader><CardTitle className="text-lg">Horario para recibir pedidos</CardTitle><CardDescription>Fuera de este horario el checkout se bloqueará.</CardDescription></CardHeader><CardContent><ScheduleEditor value={formData.storeSchedule} onChange={schedule => updateForm('storeSchedule', schedule)} /></CardContent></Card>}
+                </>
+              )}
+
+              {formData.templateType === 'moda' && (
+                <>
+                  <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                    <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50"><CardTitle className="text-lg">Envíos y recojo</CardTitle><CardDescription>Comunica una promesa de entrega clara para reducir consultas.</CardDescription></CardHeader>
+                    <CardContent className="space-y-5 pt-6">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2"><Label htmlFor="fashion-shipping">Métodos de envío</Label><Input id="fashion-shipping" placeholder="Ej: Courier Lima y envíos nacionales" value={formData.shippingMethods} onChange={event => updateForm('shippingMethods', event.target.value)} /></div>
+                        <div className="space-y-2"><Label htmlFor="fashion-dispatch">Tiempo de despacho</Label><Input id="fashion-dispatch" value={formData.dispatchTime} onChange={event => updateForm('dispatchTime', event.target.value)} /></div>
+                      </div>
+                      <label className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 p-4 dark:border-zinc-700"><div><p className="text-sm font-semibold">Recojo en showroom o tienda</p><p className="mt-1 text-xs text-zinc-500">Muestra una dirección de retiro</p></div><input type="checkbox" checked={formData.pickupEnabled} onChange={event => updateForm('pickupEnabled', event.target.checked)} className="h-5 w-5 accent-primary" /></label>
+                      {formData.pickupEnabled && <div className="space-y-2"><Label htmlFor="fashion-address">Dirección de recojo</Label><Input id="fashion-address" value={formData.storeAddress} onChange={event => updateForm('storeAddress', event.target.value)} /></div>}
+                    </CardContent>
+                  </Card>
+                  <Card className="rounded-2xl border-zinc-200 bg-white shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-zinc-800 dark:bg-zinc-900">
+                    <CardHeader className="border-b border-zinc-100 pb-4 dark:border-zinc-800/50"><CardTitle className="text-lg">Tallaje, cambios y devoluciones</CardTitle><CardDescription>La información que más reduce fricción antes y después de comprar.</CardDescription></CardHeader>
+                    <CardContent className="space-y-5 pt-6">
+                      <div className="space-y-2"><Label htmlFor="size-guide">Guía de tallas</Label><textarea id="size-guide" rows={5} placeholder="Ej: S: busto 84-88 cm · cintura 64-68 cm..." value={formData.sizeGuide} onChange={event => updateForm('sizeGuide', event.target.value)} className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700" /></div>
+                      <div className="max-w-xs space-y-2"><Label htmlFor="exchange-days">Días para solicitar un cambio</Label><Input id="exchange-days" type="number" min="0" value={formData.exchangeDays} onChange={event => updateForm('exchangeDays', Number(event.target.value))} /></div>
+                      <div className="space-y-2"><Label htmlFor="returns-policy">Política de cambios y devoluciones</Label><textarea id="returns-policy" rows={5} placeholder="Explica condiciones, prendas excluidas y proceso de solicitud." value={formData.returnsPolicy} onChange={event => updateForm('returnsPolicy', event.target.value)} className="w-full rounded-xl border border-zinc-200 bg-transparent p-3 text-sm outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700" /></div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
 
             </div>
           )}

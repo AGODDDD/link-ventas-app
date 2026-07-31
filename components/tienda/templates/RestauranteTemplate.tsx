@@ -45,6 +45,9 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const [mounted, setMounted] = useState(false)
   const configuredDeliveryFee = Number(extensionData?.deliverySettings?.base_delivery_fee)
   const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0
+  const storeIsClosed = perfil.operations_config?.acceptsOrdersAlways
+    ? false
+    : isStoreClosed(perfil.store_schedule ?? null)
 
   useEffect(() => {
     setMounted(true)
@@ -228,7 +231,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </div>
 
           {/* ── Aviso CERRADO — debajo de la tarjeta, limpio y centrado ── */}
-          {isStoreClosed((perfil as any).store_schedule ?? null) && (
+          {storeIsClosed && (
             <div className="mx-4 mt-4">
               <div className="bg-white border border-red-200 rounded-2xl px-5 py-4 text-center shadow-sm">
                 <p className="text-[22px] mb-1">🔒</p>
@@ -236,9 +239,9 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                   Lo sentimos, nuestra tienda se encuentra cerrada.
                 </p>
                 <p className="text-sm text-neutral-500 mt-1">
-                  {getTodayScheduleText((perfil as any).store_schedule ?? null) === 'Cerrado hoy'
+                  {getTodayScheduleText(perfil.store_schedule ?? null) === 'Cerrado hoy'
                     ? 'Hoy no tenemos servicio de delivery.'
-                    : `Nuestro horario de hoy es de ${getTodayScheduleText((perfil as any).store_schedule ?? null).replace(' - ', ' a ')}.`
+                    : `Nuestro horario de hoy es de ${getTodayScheduleText(perfil.store_schedule ?? null).replace(' - ', ' a ')}.`
                   }
                 </p>
               </div>

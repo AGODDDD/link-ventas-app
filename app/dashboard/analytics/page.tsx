@@ -125,8 +125,15 @@ export default function AnalyticsPage() {
         ['paid', 'shipped', 'completado'].includes(o.status)
     ).length
 
-    const tasaConversion = leads.length > 0
-        ? Math.round((ordersFiltradas.length / leads.length) * 100)
+    const leadsFiltrados = useMemo(() => {
+        if (periodo === 'all') return leads
+        const dias = periodo === '7d' ? 7 : 30
+        const limite = Date.now() - dias * 24 * 60 * 60 * 1000
+        return leads.filter(lead => new Date(lead.created_at).getTime() >= limite)
+    }, [leads, periodo])
+
+    const tasaConversion = leadsFiltrados.length > 0
+        ? Math.min(100, Math.round((ordersFiltradas.length / leadsFiltrados.length) * 100))
         : 0
 
     // === VENTAS POR DÍA (Área Interactiva) ===
@@ -167,10 +174,13 @@ export default function AnalyticsPage() {
     const topClientes = useMemo(() => {
         const map = new Map<string, { name: string; total: number; count: number }>()
         ordersConVenta.forEach(o => {
-            const existing = map.get(o.customer_name) || { name: o.customer_name, total: 0, count: 0 }
+            const email = String(o.customer_email || '').trim().toLowerCase()
+            const phone = String(o.customer_phone || '').replace(/\D/g, '')
+            const key = email || phone || o.id
+            const existing = map.get(key) || { name: o.customer_name || 'Cliente sin nombre', total: 0, count: 0 }
             existing.total += parseFloat(o.total || '0')
             existing.count += 1
-            map.set(o.customer_name, existing)
+            map.set(key, existing)
         })
         return Array.from(map.values())
             .sort((a, b) => b.total - a.total)
@@ -225,84 +235,47 @@ export default function AnalyticsPage() {
 
     if (isInitialLoad) return <AnalyticsSkeleton />
 
-    return (
-        <div className="space-y-8 pb-12 relative w-full">
-
-            {/* ── PAYWALL OVERLAY para plan free ─────────────────────────────────── */}
-            {planStatus === 'free' && (
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    zIndex: 40,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'center',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    background: 'rgba(10, 10, 20, 0.4)',
-                    padding: '24px',
-                    paddingTop: '100px',
-                    borderRadius: '24px',
-                }}>
-                    <div style={{
-                        maxWidth: '400px',
-                        width: '100%',
-                        background: 'rgba(19,19,26,0.95)',
-                        border: '1px solid rgba(139,92,246,0.3)',
-                        borderRadius: '24px',
-                        padding: '40px 32px',
-                        textAlign: 'center',
-                        boxShadow: '0 40px 80px rgba(0,0,0,0.7)',
-                    }} className="animate-in slide-in-from-bottom-4 fade-in duration-700">
-                        <div style={{
-                            width: '64px', height: '64px',
-                            background: 'rgba(124,58,237,0.15)',
-                            border: '1px solid rgba(139,92,246,0.4)',
-                            borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            margin: '0 auto 20px',
-                        }}>
-                            <BarChart3 size={28} style={{ color: '#a78bfa' }} />
-                        </div>
-                        <p style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
-                            Analíticas Avanzadas Pro
+    if (planStatus === 'free') {
+        return (
+            <section className="mx-auto flex min-h-[65vh] max-w-5xl items-center justify-center py-10">
+                <div className="w-full overflow-hidden rounded-[28px] border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-white to-white p-8 shadow-[0_32px_90px_rgb(76,29,149,0.12)] dark:via-zinc-950 dark:to-zinc-950 sm:p-12">
+                    <div className="mx-auto max-w-2xl text-center">
+                        <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-500/10 text-violet-500">
+                            <BarChart3 size={28} />
+                        </span>
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-violet-500">Plan Pro</p>
+                        <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">Decisiones respaldadas por tus ventas</h1>
+                        <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-zinc-500 dark:text-zinc-400">
+                            Analiza ingresos por periodo, productos más vendidos, clientes recurrentes y métodos de pago sin hojas de cálculo.
                         </p>
-                        <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '28px' }}>
-                            Desbloquea métricas de ventas en tiempo real, gráficos históricos interactivos, ranking de productos y exportación CSV.
-                        </p>
-                        <div style={{ display: 'grid', gap: '10px', marginBottom: '24px', textAlign: 'left' }}>
+                        <div className="my-8 grid gap-3 text-left sm:grid-cols-2">
                             {[
-                                'Exportación de datos a Excel/CSV',
-                                'Gráficos interactivos de ingresos',
-                                'Ranking de los 5 productos más vendidos',
-                                'Top clientes y retención',
-                                'Distribución de métodos de pago',
-                            ].map((f, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-                                    <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                'Exportación CSV lista para Excel',
+                                'Ingresos y ticket promedio por periodo',
+                                'Ranking de productos y compradores',
+                                'Distribución real de métodos de pago',
+                            ].map(feature => (
+                                <div key={feature} className="flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white/70 p-4 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300">
+                                    <CheckCircle2 size={17} className="shrink-0 text-violet-500" />
+                                    {feature}
                                 </div>
                             ))}
                         </div>
                         <a
-                            href={`/pendiente`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                width: '100%', padding: '14px',
-                                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                                borderRadius: '12px',
-                                fontSize: '14px', fontWeight: 700, color: '#fff',
-                                textDecoration: 'none',
-                                boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
-                            }}
+                            href="/pendiente"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 px-6 py-3.5 text-sm font-bold text-white shadow-[0_14px_35px_rgb(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
                         >
                             <Zap size={16} />
                             Activar Plan Pro — S/ 25/mes
                         </a>
                     </div>
                 </div>
-            )}
+            </section>
+        )
+    }
+
+    return (
+        <div className="space-y-8 pb-12 relative w-full">
             
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-fade-in-up">
@@ -409,7 +382,7 @@ export default function AnalyticsPage() {
                         <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Conversión</p>
                     </div>
                     <p className="text-3xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 relative z-10">{tasaConversion}%</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium relative z-10">{leads.length} leads generados</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2 font-medium relative z-10">{leadsFiltrados.length} leads en el periodo</p>
                 </div>
 
                 <div className="bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-900/50 dark:to-zinc-900/10 p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-xl group hover:border-blue-500/30 transition-all duration-300 relative overflow-hidden">
@@ -496,7 +469,7 @@ export default function AnalyticsPage() {
                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                                     <span className="text-zinc-600 dark:text-zinc-300">{m.name}</span>
                                 </div>
-                                <span className="text-zinc-900 dark:text-zinc-100">{Math.round((m.value / ordersFiltradas.length) * 100)}%</span>
+                                <span className="text-zinc-900 dark:text-zinc-100">{ordersConVenta.length > 0 ? Math.round((m.value / ordersConVenta.length) * 100) : 0}%</span>
                             </div>
                         ))}
                     </div>

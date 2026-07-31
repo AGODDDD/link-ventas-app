@@ -1,3 +1,5 @@
+import type { StoreSchedule } from '@/lib/storeSchedule'
+
 export interface Profile {
   id: string;
   slug?: string;
@@ -38,7 +40,21 @@ export interface Profile {
   store_address?: string;
 
   // Estrategia Horaria
-  store_schedule?: Record<string, { active: boolean; open: string; close: string }>;
+  store_schedule?: StoreSchedule;
+  operations_config?: {
+    deliveryEnabled?: boolean;
+    pickupEnabled?: boolean;
+    deliveryRadiusKm?: number;
+    minOrderAmount?: number;
+    defaultPreparationTime?: string;
+    acceptsOrdersAlways?: boolean;
+    shippingMethods?: string;
+    coverageArea?: string;
+    dispatchTime?: string;
+    sizeGuide?: string;
+    returnsPolicy?: string;
+    exchangeDays?: number;
+  };
 
   // Pasarela de Pagos (Mercado Pago)
   mercadopago_active?: boolean;
@@ -64,6 +80,7 @@ export interface ModaVariant {
   talla?: string;
   color?: string;
   image_url?: string;
+  stock?: number | null;
 }
 
 export interface ProductMedia {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Trash2, Edit3, Image as ImageIcon, PlusCircle, Search, FileSpreadsheet } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import ImportProductsModal from '@/components/dashboard/ImportProductsModal'
+import { toast } from 'sonner'
 
 
 const ProductosSkeleton = () => (
@@ -85,7 +86,7 @@ export default function ProductosPage() {
     }, [cargarProductos, router])
 
     const borrarProducto = async (id: string, imageUrl: string) => {
-        const confirmar = confirm('¿Borrar producto de la Bodega para siempre? ESTA ACCIÓN NO SE PUEDE DESHACER.')
+        const confirmar = confirm('¿Eliminar este producto? Esta acción no se puede deshacer.')
         if (!confirmar) return
 
         try {
@@ -103,9 +104,10 @@ export default function ProductosPage() {
 
             if (error) throw error
             eliminarProductoLocal(id)
+            toast.success('Producto eliminado')
 
         } catch (error: any) {
-            alert('Error al borrar: ' + error.message)
+            toast.error('No se pudo eliminar: ' + error.message)
         }
     }
 
@@ -117,8 +119,8 @@ export default function ProductosPage() {
         <div className="space-y-6 pb-12 relative w-full">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Bodega General</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400">Lista de inventario global. Activa estos productos en el Catálogo desde <b>Ajustes</b>.</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Productos</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400">Administra lo que vendes, su visibilidad y stock.</p>
                 </div>
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 md:w-64">
@@ -127,7 +129,8 @@ export default function ProductosPage() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-zinc-500 dark:text-zinc-400/50 w-full text-zinc-900 dark:text-zinc-100 outline-none" 
-                            placeholder="Buscar en bodega..." 
+                            placeholder="Buscar productos…"
+                            aria-label="Buscar productos"
                             type="text"
                         />
                     </div>
@@ -141,7 +144,7 @@ export default function ProductosPage() {
                         onClick={() => router.push('/dashboard/crear')}
                         className="bg-primary text-on-primary px-5 py-2 rounded-lg text-sm font-bold shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
                     >
-                        <PlusCircle size={18} /> Nuevo SKU
+                        <PlusCircle size={18} /> Nuevo producto
                     </button>
                 </div>
             </div>
@@ -164,7 +167,7 @@ export default function ProductosPage() {
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest w-16">Foto</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Nombre del Producto</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">Precio Base</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center">Estado (Vitrina)</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center">Visibilidad</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-center">Existencia</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest text-right">Acciones</th>
                             </tr>
@@ -194,9 +197,9 @@ export default function ProductosPage() {
                                         </td>
                                         <td className="px-6 py-3 text-center">
                                             {prod.is_active !== false ? (
-                                                <span className="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold uppercase tracking-widest">En Catálogo</span>
+                                                <span className="px-3 py-1 bg-secondary/10 text-secondary border border-secondary/20 rounded-full text-[10px] font-bold uppercase tracking-widest">Visible</span>
                                             ) : (
-                                                <span className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-full text-[10px] font-bold uppercase tracking-widest">Solo Bodega</span>
+                                                <span className="px-3 py-1 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-full text-[10px] font-bold uppercase tracking-widest">Oculto</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-3 text-center">
@@ -216,13 +219,15 @@ export default function ProductosPage() {
                                                     className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                                     onClick={() => router.push(`/dashboard/editar/${prod.id}`)}
                                                     title="Editar Datos Base"
+                                                    aria-label={`Editar ${prod.name}`}
                                                 >
                                                     <Edit3 size={18} />
                                                 </button>
                                                 <button 
                                                     className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-error hover:bg-error/10 rounded-lg transition-colors"
                                                     onClick={() => borrarProducto(prod.id, prod.image_url)}
-                                                    title="Destruir de la Bodega"
+                                                    title="Eliminar producto"
+                                                    aria-label={`Eliminar ${prod.name}`}
                                                 >
                                                     <Trash2 size={18} />
                                                 </button>
@@ -233,7 +238,7 @@ export default function ProductosPage() {
                             ) : (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-16 text-center text-zinc-500 dark:text-zinc-400 text-sm border-2 border-dashed border-zinc-200 dark:border-zinc-800/50 rounded-b-2xl">
-                                        Bodega vacía. Añade nuevos SKUs para empezar tu inventario.
+                                        Aún no hay productos. Agrega el primero para comenzar.
                                     </td>
                                 </tr>
                             )}

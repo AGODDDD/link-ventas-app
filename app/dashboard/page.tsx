@@ -1,288 +1,297 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { ArrowRight, Download, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
-import { useCustomerStore } from '@/store/useCustomerStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 
 const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
+const ATTENTION_STATUSES = new Set(['pendiente', 'pendiente_pago', 'pendiente_verificacion'])
+const ITEMS_PER_PAGE = 10
+
+const STATUS_LABELS: Record<string, string> = {
+  pendiente_pago: 'Pendiente de pago',
+  pendiente_verificacion: 'Verificar pago',
+  pendiente: 'Nuevo',
+  en_preparacion: 'En preparación',
+  alistando: 'Alistando',
+  en_camino: 'En camino',
+  completado: 'Completado',
+  cancelado: 'Cancelado',
+}
+
+function orderReference(order: any) {
+  return order.legacy_id || order.id?.slice(0, 8).toUpperCase() || '—'
+}
+
+function paymentLabel(order: any) {
+  if (order.metodo_pago === 'mercadopago' || order.metodo_pago === 'tarjeta_mercadopago') return 'Mercado Pago'
+  if (order.metodo_pago === 'contra_entrega' || order.payment_proof_url === 'CONTRA_ENTREGA') return 'Contra entrega'
+  if (order.metodo_pago === 'whatsapp') return 'WhatsApp'
+  return order.metodo_pago ? order.metodo_pago.replaceAll('_', ' ') : 'Por confirmar'
+}
 
 export default function DashboardPage() {
-  const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
-  const customerStore = useCustomerStore()
-  const [leadsNuevos, setLeadsNuevos] = useState(0)
-  const [userId, setUserId] = useState<string | null>(null)
-
-
-  // Estadísticas calculadas reactivamente desde el cerebro Zustand
-  const ingresosTotales = useMemo(() => {
-    return orders
-      .filter(obj => INGRESO_STATUSES.has(obj.status))
-      .reduce((acc, obj) => acc + parseFloat(obj.total || 0), 0)
-  }, [orders])
-
-  const pedidosTotales = orders.length
-  
-  // Paginación UI (Performance Tweak)
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-  const totalPages = Math.ceil(orders.length / ITEMS_PER_PAGE);
-  const ordenesRecientes = orders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  // Componente de Paginación Premium
-  const renderPagination = () => {
-        if (totalPages <= 1) return null;
-        // Limitamos visualmente para no saturar si hay cientos de páginas
-        const pageList = Array.from({ length: Math.min(10, totalPages) }, (_, i) => i + 1);
-        
-        return (
-            <div className="flex justify-center items-center gap-2 pb-6 border-t border-zinc-200 dark:border-zinc-800 pt-4 bg-white dark:bg-zinc-900/30">
-                <button 
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    className="p-2 rounded-xl text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-colors disabled:opacity-30 shadow-sm"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                
-                {pageList.map(page => (
-                    <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 rounded-xl font-bold transition-all border ${currentPage === page ? 'bg-primary text-on-primary border-primary shadow-lg scale-105' : 'text-zinc-600 dark:text-zinc-400 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
-                    >
-                        {page}
-                    </button>
-                ))}
-                
-                {totalPages > 10 && <span className="text-zinc-500 dark:text-zinc-400 font-bold">...</span>}
-
-                <button 
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    className="p-2 rounded-xl text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 transition-colors disabled:opacity-30 shadow-sm"
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-            </div>
-        );
-  };
-
-  // KPIs dinámicos reales
-  const pedidosHoy = useMemo(() => {
-    const hoy = new Date().toDateString()
-    return orders.filter(o => new Date(o.created_at).toDateString() === hoy).length
-  }, [orders])
-
-  const crecimiento = useMemo(() => {
-    const ahora = Date.now()
-    const hace7dias = ahora - 7 * 24 * 60 * 60 * 1000
-    const hace14dias = ahora - 14 * 24 * 60 * 60 * 1000
-    const ventasSemanaActual = orders.filter(o => INGRESO_STATUSES.has(o.status) && new Date(o.created_at).getTime() >= hace7dias)
-      .reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
-    const ventasSemanaPasada = orders.filter(o => {
-      const t = new Date(o.created_at).getTime()
-      return INGRESO_STATUSES.has(o.status) && t >= hace14dias && t < hace7dias
-    }).reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
-    if (ventasSemanaPasada === 0) return ventasSemanaActual > 0 ? 100 : 0
-    return Math.round(((ventasSemanaActual - ventasSemanaPasada) / ventasSemanaPasada) * 100)
-  }, [orders])
-
-  const handleExportOrders = () => {
-    if (orders.length === 0) return;
-    
-    // Mapeo amigable para Excel
-    const dataToExport = orders.map(o => ({
-      "ID Pedido": (o.legacy_id || o.id).split('-')[0].toUpperCase(),
-      "Cliente": o.customer_name || "Anónimo",
-      "Monto": `S/ ${parseFloat(o.total).toFixed(2)}`,
-      "Fecha": new Date(o.created_at).toLocaleDateString(),
-      "Hora": new Date(o.created_at).toLocaleTimeString(),
-      "Metodo": o.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'QR/Voucher',
-      "Estado": o.status
-    }));
-
-    const csv = jsonToCSV(dataToExport);
-    downloadFile(csv, `Ventas_${new Date().toISOString().split('T')[0]}.csv`);
-  }
+  const { orders, cargarOrders } = useDashboardStore()
+  const [leadsCount, setLeadsCount] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      setUserId(user.id)
+
       const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
       if (!store) return
 
-      // Cargar Orders al cerebro Zustand (0ms si ya están en caché)
       await cargarOrders(user.id)
-
-      // Cargar Leads (independiente)
-      const { data: leads } = await supabase
+      const { count } = await supabase
         .from('store_leads')
-        .select('id')
+        .select('id', { count: 'exact', head: true })
         .eq('store_id', store.id)
 
-      if (leads) setLeadsNuevos(leads.length)
+      setLeadsCount(count ?? 0)
     }
-    
-    loadStats()
+
+    void loadStats()
   }, [cargarOrders])
 
+  const ingresosTotales = useMemo(
+    () => orders
+      .filter(order => INGRESO_STATUSES.has(order.status))
+      .reduce((total, order) => total + Number(order.total || 0), 0),
+    [orders]
+  )
+
+  const pedidosHoy = useMemo(() => {
+    const today = new Date().toDateString()
+    return orders.filter(order => new Date(order.created_at).toDateString() === today).length
+  }, [orders])
+
+  const pedidosPorAtender = useMemo(
+    () => orders.filter(order => ATTENTION_STATUSES.has(order.status)).length,
+    [orders]
+  )
+
+  const ordersFiltered = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    return orders.filter(order => {
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter
+      const matchesSearch = !term || [
+        orderReference(order),
+        order.customer_name,
+        order.customer_phone,
+      ].some(value => String(value || '').toLowerCase().includes(term))
+      return matchesStatus && matchesSearch
+    })
+  }, [orders, searchTerm, statusFilter])
+
+  const totalPages = Math.max(1, Math.ceil(ordersFiltered.length / ITEMS_PER_PAGE))
+  const ordersVisible = ordersFiltered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, statusFilter])
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages)
+  }, [currentPage, totalPages])
+
+  const handleExportOrders = () => {
+    if (ordersFiltered.length === 0) {
+      toast.info('No hay pedidos para exportar con estos filtros.')
+      return
+    }
+
+    const rows = ordersFiltered.map(order => ({
+      'ID Pedido': orderReference(order),
+      Cliente: order.customer_name || 'Sin nombre',
+      Teléfono: order.customer_phone || '',
+      Monto: Number(order.total || 0).toFixed(2),
+      Fecha: new Date(order.created_at).toLocaleDateString('es-PE'),
+      Hora: new Date(order.created_at).toLocaleTimeString('es-PE'),
+      Método: paymentLabel(order),
+      Estado: STATUS_LABELS[order.status] || order.status,
+    }))
+
+    downloadFile(jsonToCSV(rows), `pedidos_${new Date().toISOString().split('T')[0]}.csv`)
+    toast.success(`${ordersFiltered.length} pedidos exportados.`)
+  }
+
+  const metrics = [
+    {
+      label: 'Ingresos confirmados',
+      value: `S/ ${ingresosTotales.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      detail: 'Histórico de pedidos cobrados',
+      index: '01',
+    },
+    {
+      label: 'Pedidos',
+      value: String(orders.length),
+      detail: `${pedidosHoy} recibidos hoy`,
+      index: '02',
+    },
+    {
+      label: 'Por atender',
+      value: String(pedidosPorAtender),
+      detail: pedidosPorAtender === 0 ? 'Tu bandeja está al día' : 'Requieren una acción',
+      index: '03',
+    },
+    {
+      label: 'Oportunidades',
+      value: String(leadsCount),
+      detail: 'Leads captados por la tienda',
+      index: '04',
+    },
+  ]
+
   return (
-    <div className="space-y-10">
-      {/* BEGIN: Dashboard Header */}
-      <div className="flex justify-between items-end animate-fade-in-up">
+    <div className="mx-auto max-w-7xl space-y-8 pb-10">
+      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <h2 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Resumen General</h2>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">Control centralizado de transacciones y estados logísticos.</p>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Operación de hoy</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">Resumen del negocio</h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Pedidos, ingresos y tareas pendientes con datos reales.</p>
         </div>
+        <Link
+          href="/dashboard/pedidos"
+          className="group inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/30 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100"
+        >
+          Gestionar pedidos
+          <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+        </Link>
       </div>
-      {/* END: Dashboard Header */}
 
-      {/* BEGIN: Stats Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Card: Total Ingresos */}
-        <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 animate-fade-in-up delay-100">
-          <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Total de Ingresos</p>
-          <div className="flex items-baseline space-x-2">
-            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">S/ {ingresosTotales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-            <span className={`text-xs font-medium ${crecimiento >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-              {crecimiento >= 0 ? '+' : ''}{crecimiento}%
-            </span>
-          </div>
-          <div className="mt-4 h-1 w-32 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-            <div className="h-full w-[75%] gradient-accent"></div>
-          </div>
-        </div>
-
-        {/* Card: Pedidos Totales */}
-        <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 relative overflow-hidden animate-fade-in-up delay-200">
-          <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Pedidos Totales</p>
-          <div className="flex items-baseline space-x-2">
-            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">{pedidosTotales}</h3>
-            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">↑ {pedidosHoy} hoy</span>
-          </div>
-          {/* Tiny Bar Chart */}
-          <div className="mt-4 flex items-end space-x-1 h-10">
-            <div className="w-1 bg-zinc-100 dark:bg-zinc-800 h-4 rounded-full transition-all duration-500 hover:h-8 hover:bg-indigo-500"></div>
-            <div className="w-1 bg-zinc-100 dark:bg-zinc-800 h-6 rounded-full transition-all duration-500 hover:h-10 hover:bg-indigo-500"></div>
-            <div className="w-1 bg-zinc-200 dark:bg-zinc-700 h-8 rounded-full transition-all duration-500 hover:h-12 hover:bg-indigo-500"></div>
-            <div className="w-1 bg-zinc-300 dark:bg-zinc-500 h-10 rounded-full transition-all duration-500 hover:h-14 hover:bg-indigo-500"></div>
-            <div className="w-1 bg-zinc-200 dark:bg-zinc-700 h-6 rounded-full transition-all duration-500 hover:h-10 hover:bg-indigo-500"></div>
-            <div className="w-1 bg-zinc-100 dark:bg-zinc-800 h-4 rounded-full transition-all duration-500 hover:h-8 hover:bg-indigo-500"></div>
-          </div>
-        </div>
-
-        {/* Card: Nuevos Leads */}
-        <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 animate-fade-in-up delay-300">
-          <p className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">Nuevos Leads</p>
-          <div className="flex items-baseline space-x-2">
-            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">{leadsNuevos}</h3>
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Potencial</span>
-          </div>
-          <div className="mt-4 flex -space-x-2">
-            <div className="w-6 h-6 rounded-full bg-zinc-200 dark:bg-zinc-700 border border-white dark:border-zinc-800 flex items-center justify-center text-[8px] text-zinc-700 dark:text-white transition-transform hover:z-10 hover:scale-125">ID</div>
-            <div className="w-6 h-6 rounded-full bg-zinc-300 dark:bg-zinc-600 border border-white dark:border-zinc-800 flex items-center justify-center text-[8px] text-zinc-700 dark:text-white transition-transform hover:z-10 hover:scale-125">OF</div>
-            <div className="w-6 h-6 rounded-full bg-zinc-100 dark:bg-zinc-800 border border-white dark:border-zinc-800 flex items-center justify-center text-[8px] text-zinc-400 transition-transform hover:z-10 hover:scale-125">{leadsNuevos > 2 ? `+${leadsNuevos - 2}` : '+0'}</div>
-          </div>
-        </div>
-
-        {/* Card: Alertas */}
-        <div className="metric-card card-bg p-6 rounded-xl border border-zinc-200 dark:border-zinc-800/50 animate-fade-in-up delay-400">
-          <p className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase tracking-widest mb-4">Alertas</p>
-          <div className="flex items-baseline space-x-2 mb-2">
-            <h3 className="text-3xl font-bold text-zinc-900 dark:text-white">0</h3>
-            <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500">Temas críticos</span>
-          </div>
-          <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
-            <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
-            <span className="text-xs font-medium">Todo operando normal</span>
-          </div>
-        </div>
-      </div>
-      {/* END: Stats Overview Cards */}
-
-      {/* BEGIN: Orders Table Section */}
-      <section className="card-bg rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden animate-fade-in-up delay-500">
-        {/* Header with Search and Filters */}
-        <div className="p-6 border-b border-zinc-100 dark:border-zinc-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-4 flex-1">
-            <h3 className="text-xl font-bold text-zinc-900 dark:text-white whitespace-nowrap">Últimos Pedidos</h3>
-            <div className="relative flex-1 max-w-md group">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-zinc-400 dark:text-zinc-500 group-focus-within:text-indigo-500 dark:group-focus-within:text-indigo-400 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              </span>
-              <input
-                className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-400 text-sm rounded-lg focus:ring-1 focus:ring-zinc-300 dark:focus:ring-zinc-700 focus:border-zinc-300 dark:focus:border-zinc-700 block w-full pl-10 py-2 transition-all outline-none"
-                placeholder="Buscar pedidos..."
-                type="text"
-              />
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(({ label, value, detail, index }) => (
+          <article
+            key={label}
+            className="rounded-2xl border border-zinc-200/80 bg-white/75 p-6 shadow-[0_12px_40px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/20 dark:border-zinc-800/80 dark:bg-zinc-900/65"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+              <span className="font-mono text-[10px] font-semibold tracking-[0.18em] text-zinc-400 dark:text-zinc-500">{index}</span>
             </div>
+            <p className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">{value}</p>
+            <p className="mt-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">{detail}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70">
+        <div className="flex flex-col gap-4 border-b border-zinc-200/70 p-5 lg:flex-row lg:items-center lg:justify-between dark:border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-white">Pedidos recientes</h2>
+            <p className="mt-1 text-xs text-zinc-500">Busca por ID, cliente o teléfono.</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button className="magnetic-btn flex items-center px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md text-sm font-medium text-zinc-700 dark:text-white hover:bg-zinc-50 dark:hover:bg-zinc-800 transition">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-              Filtrar por Estado
-            </button>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="relative min-w-0 sm:w-72">
+              <span className="sr-only">Buscar pedidos</span>
+              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+                placeholder="ID, cliente o teléfono"
+                className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-3 text-sm text-zinc-900 outline-none transition-all duration-300 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-100"
+              />
+            </label>
+            <label>
+              <span className="sr-only">Filtrar pedidos por estado</span>
+              <select
+                value={statusFilter}
+                onChange={event => setStatusFilter(event.target.value)}
+                className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium text-zinc-700 outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-200"
+              >
+                <option value="all">Todos los estados</option>
+                {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
             <button
               onClick={handleExportOrders}
-              className="magnetic-btn flex items-center px-5 py-2 bg-emerald-600 dark:bg-emerald-500/10 text-white dark:text-emerald-500 rounded-md text-sm font-bold hover:bg-emerald-700 dark:hover:bg-emerald-500/20 transition border border-transparent dark:border-emerald-500/20 shadow-sm dark:shadow-none"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-sm font-semibold text-white transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              <Download size={15} />
               Exportar
             </button>
           </div>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
-            <thead className="bg-zinc-50 table-header-bg">
-              <tr>
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">ID del Pedido</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Cliente</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Fecha</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest text-right">Total</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Método</th>
+          <table className="w-full min-w-[760px] text-left">
+            <thead className="bg-zinc-50/80 dark:bg-zinc-950/40">
+              <tr className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">
+                <th className="px-6 py-4">Pedido</th>
+                <th className="px-6 py-4">Cliente</th>
+                <th className="px-6 py-4">Fecha</th>
+                <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4">Método</th>
+                <th className="px-6 py-4 text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
-              {ordenesRecientes.length > 0 ? (
-                ordenesRecientes.map((order) => (
-                    <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors group cursor-default">
-                        <td className="px-6 py-5 text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 truncate max-w-[150px]">#{(order.legacy_id || order.id).split('-')[0].toUpperCase()}</td>
-                        <td className="px-6 py-5">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 rounded-md bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-500 dark:text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 transition-colors uppercase">
-                                    {order.customer_name ? order.customer_name.substring(0,2) : '--'}
-                                </div>
-                                <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{order.customer_name}</span>
-                            </div>
-                        </td>
-                        <td className="px-6 py-5 text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 whitespace-nowrap">
-                            {new Date(order.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td className="px-6 py-5">
-                            <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight group-hover:border-emerald-500/40 transition-all uppercase whitespace-nowrap">
-                                {order.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'Con QR'}
-                            </span>
-                        </td>
-                    </tr>
-                ))
-              ) : (
-                  <tr>
-                      <td colSpan={5} className="px-8 py-10 text-center text-zinc-400 dark:text-zinc-500 text-sm">
-                          Sin órdenes recientes. ¡Sal a vender! 💸
-                      </td>
-                  </tr>
+            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+              {ordersVisible.length > 0 ? ordersVisible.map(order => (
+                <tr key={order.id} className="transition-colors duration-300 hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30">
+                  <td className="px-6 py-4 font-mono text-xs font-bold text-primary">#{orderReference(order)}</td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{order.customer_name || 'Sin nombre'}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">{order.customer_phone || 'Sin teléfono'}</p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-zinc-500">
+                    {new Date(order.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex rounded-full bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-300">
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm capitalize text-zinc-500">{paymentLabel(order)}</td>
+                  <td className="px-6 py-4 text-right text-sm font-bold text-zinc-950 dark:text-white">
+                    S/ {Number(order.total || 0).toFixed(2)}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={6} className="px-8 py-16 text-center">
+                    <span className="mx-auto mb-4 block h-px w-10 bg-zinc-300 dark:bg-zinc-700" />
+                    <p className="font-semibold text-zinc-700 dark:text-zinc-300">
+                      {orders.length === 0 ? 'Aún no recibes pedidos' : 'No hay resultados con estos filtros'}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {orders.length === 0 ? 'Comparte tu tienda para comenzar a vender.' : 'Prueba con otro ID, cliente o estado.'}
+                    </p>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
-        {renderPagination()}
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-zinc-200/70 px-6 py-4 text-xs text-zinc-500 dark:border-zinc-800">
+            <span>Página {currentPage} de {totalPages}</span>
+            <div className="flex gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(page => page - 1)}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 font-semibold transition-all hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Anterior
+              </button>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(page => page + 1)}
+                className="rounded-lg border border-zinc-200 px-3 py-1.5 font-semibold transition-all hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   )

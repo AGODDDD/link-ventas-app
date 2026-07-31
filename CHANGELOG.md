@@ -5,13 +5,19 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ## [Unreleased]
 
 ### Changed
-  - Refactor masivo de APIs de órdenes y checkouts, webhooks y optimización de base de datos.
+- Refactor masivo de APIs de órdenes y checkouts, webhooks y optimización de base de datos.
 - Consolidado el contrato de pedidos: una tienda por cuenta, estados validados por RPC, reservas de inventario y stock por combinación de Moda.
 - Mercado Pago ahora se concilia por webhook; el checkout y la suscripción Pro no confirman pagos por respuesta síncrona.
 - Renombrado el punto de entrada Edge a `middleware.ts`, alineado el plan Pro a S/ 25 y eliminado el CTA de WhatsApp ficticio.
+- Documentada la auditoría UX integral del dashboard, incluyendo pruebas interactivas, capturas y brechas de Configuración/Catálogo para Restaurante, Comercio y Moda.
+- Reorganizado el dashboard alrededor de datos reales: búsqueda/filtros de pedidos, compradores derivados de órdenes, oportunidades separadas y lenguaje comercial consistente.
+- Especializada la operación por plantilla y conectada al storefront: delivery/recojo y pedido mínimo en Restaurante; envíos y despacho en Comercio; guía de tallas y cambios en Moda.
+- Catálogo Moda ahora exige talla y color, muestra una matriz de stock por combinación y evita replicar el stock base en cada variante.
 
 ### Added
-  - Consolidación del modelo de negocio (`contract_cleanup.sql`) integrando validaciones de stock, unificación de middleware y limpieza general de APIs obsoletas.
+- Consolidación del modelo de negocio (`contract_cleanup.sql`) integrando validaciones de stock, unificación de middleware y limpieza general de APIs obsoletas.
+- `AUDITORIA_UX_DASHBOARD_2026-07-30.md` y su set de capturas reproducibles.
+- Migración `20260731050909_template_operations_config.sql` para persistir configuración operativa específica por plantilla.
 - **Auditoría Forense Ultra-Profunda del Modelo de Negocio y Base de Datos**:
   - Análisis de segundo nivel sobre Supabase, Zustand, KPIs financieros, tickets térmicos PDF y flujos de Mercado Pago.
   - Hallazgos confirmados:
@@ -19,6 +25,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
     2. Fallo SQL en carritos abandonados por descalce de columnas (`abandoned_carts.last_updated`, `cart_json`, `updated_at`).
     3. Error en ticket térmico PDF por referencia a `order.total_price` que imprime totales en S/ 0.00.
     4. Inactividad del middleware Edge por denominarse `proxy.ts`.
+
+### Fixed
+- Eliminadas del Resumen las señales operativas ficticias, los avatares decorativos y los controles sin acción.
+- Pedidos ya no abre la vista de restaurante para tiendas Comercio o Moda y ahora permite buscar, filtrar y actualizar.
+- Analytics calcula conversión con el mismo periodo, no fusiona homónimos y no expone controles bloqueados detrás del paywall.
+- Plan Pro explica explícitamente cuándo Mercado Pago no está configurado.
+- Corregido el mismatch esperado de hidratación de tema y añadidos nombres accesibles a controles globales y campos principales de producto.
+- Separadas las paletas semánticas de día y noche, con contraste legible en textos auxiliares, botones, formularios y banners.
+- Sustituidos iconos decorativos y emojis genéricos del dashboard por navegación editorial, etiquetas tipográficas y controles funcionales.
 
 
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { isStoreClosed } from '@/lib/storeSchedule'
 
 type CartLine = {
   product_id?: unknown
@@ -50,9 +51,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El carrito contiene productos invalidos.' }, { status: 400 })
     }
 
+    const supabase = getSupabaseServiceClient()
+    const [{ data: store }, { data: storeConfig }] = await Promise.all([
+      supabase.from('stores').select('id, template_type, is_active').eq('id', storeId).maybeSingle(),
+      supabase.from('store_config').select('operations_config, store_schedule').eq('store_id', storeId).maybeSingle(),
+    ])
+
+    if (!store?.is_active) {
+      return NextResponse.json({ error: 'La tienda no está recibiendo pedidos.' }, { status: 409 })
+    }
+
+    const operations = (storeConfig?.operations_config || {}) as Record<string, unknown>
+    if (store.template_type === 'restaurante') {
+      if (orderType === 'delivery' && operations.delivery_enabled === false) {
+        return NextResponse.json({ error: 'El delivery no está disponible.' }, { status: 409 })
+      }
+      if (orderType === 'pickup' && operations.pickup_enabled !== true) {
+        return NextResponse.json({ error: 'El recojo no está disponible.' }, { status: 409 })
+      }
+    }
+
+    if (operations.accepts_orders_always !== true && isStoreClosed(storeConfig?.store_schedule)) {
+      return NextResponse.json({ error: 'La tienda está cerrada en este momento.' }, { status: 409 })
+    }
+
     const latitude = typeof body.lat === 'number' && Number.isFinite(body.lat) ? body.lat : null
     const longitude = typeof body.lng === 'number' && Number.isFinite(body.lng) ? body.lng : null
-    const supabase = getSupabaseServiceClient()
     const { data, error } = await supabase.rpc('create_order_from_cart', {
       p_store_id: storeId,
       p_order_type: orderType,

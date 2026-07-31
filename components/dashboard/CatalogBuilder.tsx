@@ -85,7 +85,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                         <CardTitle className="text-xl flex items-center gap-2 text-on-surface">
                             <Store className="text-primary" /> Constructor de Vitrina
                         </CardTitle>
-                        <CardDescription className="text-on-surface-variant mt-1">Busca en tu Bodega y decide qué vender hoy.</CardDescription>
+                        <CardDescription className="text-on-surface-variant mt-1">Elige qué productos estarán visibles en tu tienda.</CardDescription>
                    </div>
                    <div className="text-center px-4 py-2 bg-primary/10 rounded-lg border border-primary/20">
                         <p className="text-xs font-bold text-primary tracking-widest uppercase">En Vitrina</p>
@@ -116,7 +116,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                         {filtered.length === 0 ? (
                            <div className="text-center py-10 text-on-surface-variant flex flex-col items-center">
                                 <PackageOpen size={40} className="mb-3 opacity-50" />
-                                <p>No hay SKUs en bodega.</p>
+                                <p>Aún no hay productos.</p>
                            </div>
                         ) : (
                             filtered.map(prod => (
@@ -146,7 +146,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                                                 : 'bg-surface-bright text-on-surface-variant border-outline-variant/30 hover:bg-primary hover:text-on-primary hover:border-transparent'
                                             }`}
                                         >
-                                            {prod.is_active !== false ? '✅ En Tienda' : 'Subir a Vitrina'}
+                                            {prod.is_active !== false ? 'Visible' : 'Mostrar en tienda'}
                                         </button>
                                     </div>
                                 </div>

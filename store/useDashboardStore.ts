@@ -169,6 +169,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                     created_at: o.created_at,
                     customer_name: o.customer_name || 'Sin nombre',
                     customer_phone: o.customer_phone || '-',
+                    customer_email: o.customer_email || '',
                     direccion: o.direccion || 'Sin dirección',
                     referencia: o.referencia || '',
                     total: Number(o.total || 0),

@@ -119,15 +119,27 @@
 
 /* DASHBOARD — MODO OSCURO (Stitch design) */
 .dark .dashboard-theme {
+  --primary: #a5b4fc;
+  --on-primary: #17143f;
+  --secondary: #5ee0b0;
+  --on-secondary: #07271c;
+  --background: #0f0f11;
+  --on-background: #f4f4f5;
+  --surface: #0f0f11;
+  --on-surface: #f4f4f5;
+  --surface-variant: #25252d;
+  --on-surface-variant: #a1a1aa;
+  --outline: #71717a;
+  --outline-variant: #3f3f46;
   --dash-bg: #0f0f11;
   --dash-surface: #18181b;
   --dash-surface-2: #1d1d21;
   --dash-sidebar: #121216;
   --dash-border: rgba(255,255,255,0.08);
   --dash-text-primary: #ffffff;
-  --dash-text-muted: #71717a;
-  --dash-accent: #6366f1;
-  --dash-accent-hover: #4f46e5;
+  --dash-text-muted: #a1a1aa;
+  --dash-accent: #a5b4fc;
+  --dash-accent-hover: #c7d2fe;
   --dash-success: #10b981;
   --dash-success-soft: rgba(16,185,129,0.1);
   --dash-gradient: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
@@ -135,15 +147,40 @@
 
 /* DASHBOARD — MODO CLARO (LinkVentas oficial) */
 .light .dashboard-theme {
+  --primary: #245da8;
+  --on-primary: #ffffff;
+  --primary-container: #dce9fa;
+  --on-primary-container: #173e74;
+  --secondary: #087a58;
+  --on-secondary: #ffffff;
+  --secondary-container: #d7f3e8;
+  --on-secondary-container: #07533d;
+  --tertiary: #9b5800;
+  --on-tertiary: #ffffff;
+  --background: #fcf9f8;
+  --on-background: #0f172a;
+  --surface: #fcf9f8;
+  --on-surface: #0f172a;
+  --surface-variant: #f0f0ef;
+  --on-surface-variant: #5b6472;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #fafaf9;
+  --surface-container: #f5f5f4;
+  --surface-container-high: #ffffff;
+  --surface-container-highest: #f0f0ef;
+  --outline: #6b7280;
+  --outline-variant: #d4d4d0;
+  --error: #b4233c;
+  --on-error: #ffffff;
   --dash-bg: #fcf9f8;
   --dash-surface: #ffffff;
   --dash-surface-2: #f5f5f5;
   --dash-sidebar: #ffffff;
   --dash-border: rgba(0,0,0,0.08);
   --dash-text-primary: #0f172a;
-  --dash-text-muted: #6B7280;
-  --dash-accent: #2F7EDA;
-  --dash-accent-hover: #4648d4;
+  --dash-text-muted: #5b6472;
+  --dash-accent: #245da8;
+  --dash-accent-hover: #1e4d8c;
   --dash-success: #10b981;
   --dash-success-soft: rgba(16,185,129,0.1);
   --dash-gradient: linear-gradient(90deg, #2F7EDA 0%, #4648d4 100%);
@@ -261,6 +298,29 @@
 .light .dashboard-theme .text-on-surface-variant { color: var(--dash-text-muted) !important; }
 .light .dashboard-theme .border-outline-variant { border-color: var(--dash-border) !important; }
 .light .dashboard-theme .text-primary { color: var(--dash-accent) !important; }
+
+/* Los tokens de texto de Tailwind son estáticos; se corrigen por tema para
+   mantener contraste AA sobre acciones primarias y secundarias. */
+.dark .dashboard-theme .text-on-primary { color: #17143f !important; }
+.light .dashboard-theme .text-on-primary { color: #ffffff !important; }
+.dark .dashboard-theme .text-on-secondary { color: #07271c !important; }
+.light .dashboard-theme .text-on-secondary { color: #ffffff !important; }
+.dark .dashboard-theme .text-on-primary-container { color: #e7e7ff !important; }
+.light .dashboard-theme .text-on-primary-container { color: #132f57 !important; }
+.dark .dashboard-theme .text-on-secondary-container { color: #d7ffed !important; }
+.light .dashboard-theme .text-on-secondary-container { color: #064e3b !important; }
+.dark .dashboard-theme .text-on-error,
+.light .dashboard-theme .text-on-error { color: #ffffff !important; }
+
+/* Contraste mínimo para metadatos y ayudas en tamaños pequeños. */
+.dark .dashboard-theme .text-zinc-500,
+.dark .dashboard-theme .text-zinc-400 {
+  color: #a1a1aa !important;
+}
+.light .dashboard-theme .text-zinc-500,
+.light .dashboard-theme .text-zinc-400 {
+  color: #5b6472 !important;
+}
 
 /* ── CLASES STITCH — MODO OSCURO ── */
 .dark .dashboard-theme .card-bg {

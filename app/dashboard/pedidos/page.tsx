@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText, Lock, Zap } from 'lucide-react'
+import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText, Lock, Zap, Search, RefreshCw } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
@@ -85,8 +85,11 @@ export default function PedidosPage() {
     const [selectedProof, setSelectedProof] = useState<string | null>(null)
     const [proofLoading, setProofLoading] = useState(false)
 
-    // Estado para Rescates (Leads Mágicos)
-    const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'delivery'>('delivery')
+    // Vista secundaria de oportunidades captadas
+    const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'delivery'>('orders')
+    const [templateType, setTemplateType] = useState<'restaurante' | 'comercio' | 'moda'>('comercio')
+    const [searchTerm, setSearchTerm] = useState('')
+    const [statusFilter, setStatusFilter] = useState('all')
 
     // Referencias para Motor Térmico (html2canvas)
     const [imprimiendoId, setImprimiendoId] = useState<string | null>(null)
@@ -109,10 +112,18 @@ export default function PedidosPage() {
         const load = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-                const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).single()
+                const [{ data: profile }, { data: store }] = await Promise.all([
+                    supabase.from('profiles').select('plan').eq('id', user.id).single(),
+                    supabase.from('stores').select('template_type').eq('owner_id', user.id).single(),
+                ])
                 if (profile) {
                     setPerfil(profile)
                     setPlanStatus(profile.plan ?? null)
+                }
+                if (store?.template_type) {
+                    const currentTemplate = store.template_type as 'restaurante' | 'comercio' | 'moda'
+                    setTemplateType(currentTemplate)
+                    setActiveTab(currentTemplate === 'restaurante' ? 'delivery' : 'orders')
                 }
 
                 await Promise.all([
@@ -120,9 +131,6 @@ export default function PedidosPage() {
                     cargarLeads(user.id)
                 ])
 
-                if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-                    Notification.requestPermission()
-                }
             }
             setIsInitialLoad(false)
         }
@@ -242,7 +250,7 @@ export default function PedidosPage() {
     // Función Mágica the Ticket The de Térmico (Descarga the PNG Directa)
     const generarTicketTermico = async (order: any) => {
         setImprimiendoId(order.id)
-        toast.loading('Generando ticket clásico 🖨️...', { id: 'thermal-toast' })
+        toast.loading('Generando ticket clásico...', { id: 'thermal-toast' })
 
         try {
             const element = receiptRefs.current[order.id]
@@ -279,7 +287,7 @@ export default function PedidosPage() {
             toast.error("Motor térmico no inicializado", { id: 'thermal-toast' })
             return
         }
-        toast.success('Abriendo panel de impresión nativa... 🖨️', { id: 'thermal-toast' })
+        toast.success('Abriendo panel de impresión nativa...', { id: 'thermal-toast' })
         printThermalTicket(element)
     }
 
@@ -376,11 +384,20 @@ export default function PedidosPage() {
     if (isInitialLoad) return <PedidosSkeleton />
 
     // UI Pagination Bounds computation
-    const filteredDelivery = orders.filter(o => o.order_type === 'delivery');
+    const matchesFilters = (order: any) => {
+        const term = searchTerm.trim().toLowerCase()
+        const reference = order.legacy_id || order.id
+        const matchesSearch = !term || [reference, order.customer_name, order.customer_phone]
+            .some(value => String(value || '').toLowerCase().includes(term))
+        const matchesStatus = statusFilter === 'all' || order.status === statusFilter
+        return matchesSearch && matchesStatus
+    }
+
+    const filteredDelivery = orders.filter(o => o.order_type === 'delivery' && matchesFilters(o));
     const totalDeliveryPages = Math.ceil(filteredDelivery.length / ITEMS_PER_PAGE);
     const paginatedDelivery = filteredDelivery.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    const filteredStandard = orders.filter(o => o.order_type !== 'delivery');
+    const filteredStandard = orders.filter(o => o.order_type !== 'delivery' && matchesFilters(o));
     const totalStandardPages = Math.ceil(filteredStandard.length / ITEMS_PER_PAGE);
     const paginatedStandard = filteredStandard.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
@@ -524,35 +541,63 @@ export default function PedidosPage() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Central Logística</h1>
-                    <p className="text-zinc-500 dark:text-zinc-400">Gestión de órdenes y radar de rescates de carritos.</p>
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Operación</p>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Pedidos</h1>
+                    <p className="text-zinc-500 dark:text-zinc-400">Gestiona ventas, entregas y estados desde una sola bandeja.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={forceRefresh} className="px-6 py-2 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:bg-zinc-900 transition-colors font-semibold text-sm">
-                        Actualizar Sistema
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <label className="relative sm:w-72">
+                        <span className="sr-only">Buscar pedidos</span>
+                        <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                        <input
+                            value={searchTerm}
+                            onChange={event => { setSearchTerm(event.target.value); setCurrentPage(1) }}
+                            placeholder="ID, cliente o teléfono"
+                            className="h-10 w-full rounded-xl border border-zinc-200 bg-white pl-10 pr-3 text-sm outline-none transition-all duration-300 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 dark:border-zinc-700 dark:bg-zinc-900"
+                        />
+                    </label>
+                    <label>
+                        <span className="sr-only">Filtrar por estado</span>
+                        <select
+                            value={statusFilter}
+                            onChange={event => { setStatusFilter(event.target.value); setCurrentPage(1) }}
+                            className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700 dark:bg-zinc-900"
+                        >
+                            <option value="all">Todos los estados</option>
+                            {Object.entries(DELIVERY_LABELS).filter(([value]) => !['pending', 'paid'].includes(value)).map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                    </label>
+                    <button onClick={forceRefresh} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-900 transition-all duration-300 hover:-translate-y-0.5 hover:bg-zinc-50 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800">
+                        <RefreshCw size={15} />
+                        Actualizar
                     </button>
                 </div>
             </div>
 
             {/* TAB NAVIGATOR */}
             <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar animate-fade-in-up delay-100">
-                <button 
-                    onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
-                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
-                >
-                    🛵 Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => o.order_type === 'delivery' && o.status !== 'completado').length}</span>
-                </button>
+                {templateType === 'restaurante' && (
+                    <button
+                        onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
+                        className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
+                    >
+                        Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => o.order_type === 'delivery' && o.status !== 'completado').length}</span>
+                    </button>
+                )}
                 <button 
                     onClick={() => { setActiveTab('orders'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
-                    Standard / Legacy ({orders.filter(o => o.order_type !== 'delivery').length})
+                    {templateType === 'restaurante' ? 'Recojo y otros' : 'Todos los pedidos'} ({orders.filter(o => o.order_type !== 'delivery').length})
                 </button>
                 <button 
                     onClick={() => { setActiveTab('leads'); setCurrentPage(1); }}
                     className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'leads' ? 'border-tertiary text-tertiary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
-                    Rescates WhatsApp <span className="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px]">{leads.length}</span>
+                    Oportunidades <span className="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px]">{leads.length}</span>
                 </button>
             </div>
 
@@ -563,8 +608,8 @@ export default function PedidosPage() {
                     <>
                         {filteredDelivery.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#131317]">
-                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Sin pedidos delivery aún</p>
-                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Los pedidos del restaurante aparecerán aquí en tiempo real.</p>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Aún no hay pedidos con delivery</p>
+                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Cuando un cliente pida entrega a domicilio aparecerá aquí.</p>
                             </div>
                         ) : (
                             <>
@@ -664,7 +709,7 @@ export default function PedidosPage() {
                                                                 ))}
                                                                 {itemNotes && (
                                                                     <div className="flex items-start gap-1 text-[11px] text-amber-500 pl-9 italic">
-                                                                        <span>📝</span>
+                                                                        <span className="font-semibold">Nota:</span>
                                                                         <span>{itemNotes}</span>
                                                                     </div>
                                                                 )}
@@ -748,7 +793,7 @@ export default function PedidosPage() {
                                                 ) : (
                                                     <>
                                                         <div className="w-full text-center px-4 py-3 bg-neutral-100 text-neutral-500 text-xs font-bold rounded-xl border border-neutral-200 uppercase tracking-widest">
-                                                            ✅ Entregado
+                                                            Entregado
                                                         </div>
                                                         {/* BOTONES IMPRIMIR Y COMPARTIR TICKET */}
                                                         <div className="grid grid-cols-2 gap-2 mt-2 w-full">
@@ -789,8 +834,8 @@ export default function PedidosPage() {
                     <>
                         {filteredStandard.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#131317]">
-                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Aún no tienes pedidos.</p>
-                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Empieza a compartir tu catálogo para recibir órdenes aquí.</p>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Aún no hay pedidos en esta vista.</p>
+                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Comparte tu tienda para comenzar a recibir ventas.</p>
                             </div>
                         ) : (
                             <>
@@ -832,7 +877,7 @@ export default function PedidosPage() {
                                             <div>
                                                 <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1 mt-4">Dirección de Entrega</p>
                                                 <div className="bg-white dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800/50 flex items-start gap-2">
-                                                    <span className="text-zinc-500 dark:text-zinc-400 pt-0.5">📍</span>
+                                                    <span className="text-zinc-500 dark:text-zinc-400 pt-0.5" aria-hidden="true">—</span>
                                                     <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium capitalize">{order.direccion || 'Sin dirección proporcionada'}</p>
                                                 </div>
                                             </div>
@@ -942,8 +987,8 @@ export default function PedidosPage() {
                     <>
                         {filteredLeads.length === 0 ? (
                             <div className="text-center py-20 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl bg-zinc-50 dark:bg-[#131317]">
-                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">Sin actividad fantasma.</p>
-                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Los clientes están cerrando todas sus cuentas correctamente.</p>
+                                <p className="text-zinc-500 dark:text-zinc-400 text-xl font-bold">No hay oportunidades pendientes.</p>
+                                <p className="text-zinc-500 dark:text-zinc-400/70 text-sm mt-2">Los leads y carritos por recuperar aparecerán en esta sección.</p>
                             </div>
                         ) : (
                             <>
@@ -1069,12 +1114,10 @@ export default function PedidosPage() {
 
                             {/* INFO */}
                             <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 space-y-1.5">
-                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
-                                    <span className="shrink-0 mt-0.5">📄</span>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
                                     <span><strong className="text-zinc-600 dark:text-zinc-400">PDF</strong> — Formato térmico 80mm, listo para ticketera o imprimir.</span>
                                 </p>
-                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 flex items-start gap-1.5">
-                                    <span className="shrink-0 mt-0.5">🖼️</span>
+                                <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
                                     <span><strong className="text-zinc-600 dark:text-zinc-400">PNG</strong> — Imagen del ticket, ideal para enviar por WhatsApp al cliente.</span>
                                 </p>
                             </div>

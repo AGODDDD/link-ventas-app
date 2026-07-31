@@ -34,6 +34,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   const [metodoPago, setMetodoPago] = useState<'mercadopago' | 'whatsapp'>(perfil.mercadopago_active && perfil.mercadopago_public_key ? 'mercadopago' : 'whatsapp')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string; total: number } | null>(null)
+  const operations = perfil.operations_config || {}
+  const deliveryEnabled = operations.deliveryEnabled !== false
+  const pickupEnabled = operations.pickupEnabled !== false
+  const [orderType, setOrderType] = useState<'delivery' | 'pickup'>(deliveryEnabled ? 'delivery' : 'pickup')
 
   // Sync data back to parent when closing
   const handleClose = () => {
@@ -44,7 +48,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   }
   
   // Derived amounts
-  const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0;
+  const deliveryFee = orderType === 'delivery' && Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0;
   const subtotal = cartStore.getTotalPrice(perfil.id)
   const total = subtotal + deliveryFee
 
@@ -56,13 +60,21 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   }, [isOpen])
 
   // Estrategia Horaria: bloquear checkout si la tienda está cerrada
-  const isStoreClosed = checkStoreClosed((perfil as any).store_schedule ?? null)
+  const isStoreClosed = operations.acceptsOrdersAlways ? false : checkStoreClosed(perfil.store_schedule ?? null)
 
   if (!isOpen) return null;
 
   const handlePagar = async () => {
-     if (!nombre || !telefono || !direccion || !acceptedTerms) {
-        alert("Por favor completa los campos requeridos y acepta los términos.");
+     if (!deliveryEnabled && !pickupEnabled) {
+        toast.error('El restaurante no está recibiendo pedidos en este momento.')
+        return
+     }
+     if (!nombre || !telefono || (orderType === 'delivery' && !direccion) || !acceptedTerms) {
+        toast.error('Completa los campos requeridos y acepta los términos.')
+        return;
+     }
+     if (operations.minOrderAmount && subtotal < operations.minOrderAmount) {
+        toast.error(`El pedido mínimo es S/ ${operations.minOrderAmount.toFixed(2)}.`)
         return;
      }
      if (metodoPago === 'mercadopago' && !/^\S+@\S+\.\S+$/.test(correo.trim())) {
@@ -110,12 +122,12 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify({
          store_id: perfil.id,
-         order_type: 'delivery',
+         order_type: orderType,
          payment_method: metodoPago,
          customer_name: nombre,
          customer_phone: telefono,
          customer_email: correo,
-         address: direccion,
+         address: orderType === 'delivery' ? direccion : perfil.store_address || 'Recojo en tienda',
          reference: savedAddress?.referencia || null,
          lat: savedAddress?.lat || null,
          lng: savedAddress?.lng || null,
@@ -149,7 +161,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
        subtotal: Number(persistedOrder.subtotal),
        deliveryFee: Number(persistedOrder.delivery_fee),
        total: Number(persistedOrder.total),
-       direccion,
+       direccion: orderType === 'delivery' ? direccion : perfil.store_address || 'Recojo en tienda',
        referencia: savedAddress?.referencia,
        lat: savedAddress?.lat,
        lng: savedAddress?.lng,
@@ -180,7 +192,9 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         text += `*ID:* ${persistedOrder.legacy_id}%0A%0A`
         text += `*Cliente:* ${nombre}%0A`
         text += `*Teléfono:* ${telefono}%0A`
-        text += `*Dirección:* ${direccion}%0A%0A`
+        text += orderType === 'delivery'
+          ? `*Dirección:* ${direccion}%0A%0A`
+          : `*Modalidad:* Recojo en tienda%0A%0A`
         
         cart.forEach(item => {
           let itemModifiersPrice = 0;
@@ -241,7 +255,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         {/* Header */}
         <div className="flex items-center justify-center relative py-5 border-b border-neutral-200 bg-white rounded-t-xl">
           <h2 className="font-bold text-lg text-[#333]">Detalles del pedido</h2>
-          <button onClick={handleClose} className="absolute right-4 text-neutral-400 hover:text-black hover:bg-neutral-100 p-2 rounded-full transition-colors">
+          <button onClick={handleClose} aria-label="Cerrar checkout" className="absolute right-4 text-neutral-400 hover:text-black hover:bg-neutral-100 p-2 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -251,9 +265,24 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
           
           {/* LEFT COLUMN */}
           <div className="space-y-6">
+            <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
+              <h3 className="font-bold text-[14px] text-[#333] mb-3">¿Cómo recibirás tu pedido?</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {deliveryEnabled && (
+                  <button type="button" onClick={() => setOrderType('delivery')} className={`rounded-lg border p-3 text-sm font-bold ${orderType === 'delivery' ? 'border-black bg-black text-white' : 'border-neutral-200 text-neutral-700'}`}>
+                    Delivery
+                  </button>
+                )}
+                {pickupEnabled && (
+                  <button type="button" onClick={() => setOrderType('pickup')} className={`rounded-lg border p-3 text-sm font-bold ${orderType === 'pickup' ? 'border-black bg-black text-white' : 'border-neutral-200 text-neutral-700'}`}>
+                    Recojo
+                  </button>
+                )}
+              </div>
+            </div>
             
             {/* DIRECCIÓN */}
-            <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
+            {orderType === 'delivery' && <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm">
                <h3 className="font-bold text-[14px] text-[#333] mb-3">Dirección de entrega</h3>
                <div className="relative">
                  <div className="absolute left-3 top-0 bottom-0 flex items-center justify-center text-neutral-400">
@@ -267,7 +296,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                    placeholder="Ej. Av. Javier Prado 1234, San Isidro"
                  />
                </div>
-            </div>
+            </div>}
 
             {/* HORARIO */}
             <div className="bg-white rounded-lg p-5 border border-neutral-200 shadow-sm relative overflow-hidden">
@@ -424,7 +453,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                     <span>S/ {subtotal.toFixed(2)}</span>
                  </div>
                  <div className="flex justify-between">
-                    <span>Envío</span>
+                    <span>{orderType === 'delivery' ? 'Envío' : 'Recojo'}</span>
                     <span>S/ {deliveryFee.toFixed(2)}</span>
                  </div>
                </div>

@@ -4,9 +4,10 @@ import { supabase } from '@/lib/supabase'
 import { getProductMediaThumbnail, serializeProductMedia, uploadProductMediaFiles } from '@/lib/productMedia'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Save, ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play, Upload } from 'lucide-react'
+import { ArrowLeft, Image as ImageIcon, Plus, Trash2, Settings2, Play, Upload } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { useEffect } from 'react'
+import ModaVariantMatrix, { getModaVariantKey } from '@/components/dashboard/ModaVariantMatrix'
 
 const COLOR_MAP: Record<string, string> = {
   negro: '#1a1a1a', black: '#1a1a1a', blanco: '#f5f5f0', white: '#f5f5f0',
@@ -32,6 +33,7 @@ function getColorHex(color: string, index = 0) {
 export default function CrearProducto() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [templateLoading, setTemplateLoading] = useState(true)
 
   // Form Fields
   const [nombre, setNombre] = useState('')
@@ -53,6 +55,7 @@ export default function CrearProducto() {
   const [colorInputTemp, setColorInputTemp] = useState('')
   const [uploadingColor, setUploadingColor] = useState<string | null>(null)
   const [modifiers, setModifiers] = useState<any[]>([])
+  const [variantStocks, setVariantStocks] = useState<Record<string, string>>({})
   
   // Media handling
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
@@ -102,8 +105,9 @@ export default function CrearProducto() {
 
   useEffect(() => {
     async function loadStoreAndExtensions() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
         // 1. Cargar Identidad del Core
         const { data: store } = await supabase.from('stores').select('id, template_type').eq('owner_id', user.id).single()
         if (store) {
@@ -117,6 +121,9 @@ export default function CrearProducto() {
         } else {
           toast.error('No se encontró la tienda Core. Ejecuta la migración de configuración.')
         }
+        }
+      } finally {
+        setTemplateLoading(false)
       }
     }
     loadStoreAndExtensions()
@@ -152,19 +159,18 @@ export default function CrearProducto() {
       let variants: any[] = []
       if (templateType === 'moda') {
         const tList = tallasInput.split(',').map(s => s.trim()).filter(Boolean)
-        
-        const tallasFinal = tList.length > 0 ? tList : [null]
-        const coloresFinal = coloresList.length > 0 ? coloresList : [{ color: null }]
+        if (tList.length === 0) throw new Error('Agrega al menos una talla para publicar un producto de Moda.')
+        if (coloresList.length === 0) throw new Error('Agrega al menos un color para publicar un producto de Moda.')
 
-        for (const t of tallasFinal) {
-          for (const c of coloresFinal) {
-            const variant: any = {}
-            if (t) variant.talla = t
-            if (c.color) {
-              variant.color = c.color
-              if (c.image_url) variant.image_url = c.image_url
-            }
-            variants.push(variant)
+        for (const talla of tList) {
+          for (const color of coloresList) {
+            const stockValue = variantStocks[getModaVariantKey(talla, color.color)]
+            variants.push({
+              talla,
+              color: color.color,
+              ...(color.image_url ? { image_url: color.image_url } : {}),
+              stock: stockValue === '' || stockValue === undefined ? null : Number.parseInt(stockValue, 10),
+            })
           }
         }
       } else if (templateType === 'restaurante') {
@@ -185,7 +191,9 @@ export default function CrearProducto() {
           brand: brand.toUpperCase() || null,
           category: category || null,
           original_price: oldPrice,
-          stock: stock ? parseInt(stock) : null,
+          stock: templateType === 'moda'
+            ? variants.reduce((sum, variant) => sum + (variant.stock ?? 0), 0)
+            : (stock ? parseInt(stock) : null),
           is_free_shipping: isFreeShipping,
           shipping_today: shippingToday,
           is_active: false,
@@ -210,15 +218,15 @@ export default function CrearProducto() {
             talla: v.talla || null,
             color: v.color || null,
             combination_key: [v.talla, v.color].filter(Boolean).join('|').toLowerCase() || null,
-            stock: stock ? parseInt(stock) : null,
+            stock: v.stock,
         }))
         await supabase.from('product_variants').insert(relVariants)
       }
 
-      // Invalidar caché para que la tabla de Bodega se refresque
+      // Invalidar caché para refrescar la lista de productos.
       await useDashboardStore.getState().cargarProductos(user.id, true)
 
-      toast.success('¡Guardado en Bodega! 📦')
+      toast.success('Producto guardado')
       router.push('/dashboard/productos')
 
     } catch (error: any) {
@@ -228,15 +236,21 @@ export default function CrearProducto() {
     }
   }
 
+  if (templateLoading) {
+    return <div className="p-8 text-center font-bold text-on-surface-variant animate-pulse">Preparando el catálogo para tu negocio…</div>
+  }
+
+  const modaSizes = tallasInput.split(',').map((size) => size.trim()).filter(Boolean)
+
   return (
     <div className="space-y-6 pb-12 relative w-full max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
         <div>
           <button onClick={() => router.back()} className="text-primary flex items-center gap-2 mb-4 hover:brightness-125 transition-all text-sm font-bold uppercase tracking-widest">
-             <ArrowLeft size={16} /> Volver a Inventario
+             <ArrowLeft size={16} /> Volver a Productos
           </button>
-          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Nuevo SKU</h1>
-          <p className="text-on-surface-variant">Agrega un nuevo producto a tu Bodega Maestra.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-on-surface mb-2">Nuevo producto</h1>
+          <p className="text-on-surface-variant">Completa la información que verá tu cliente.</p>
         </div>
       </div>
 
@@ -248,18 +262,19 @@ export default function CrearProducto() {
               <h3 className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-4">Información Principal</h3>
               
               <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nombre del Producto</label>
-                <input required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" />
+                <label htmlFor="product-name" className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Nombre del Producto</label>
+                <input id="product-name" required value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Marca (Badge) / Opcional</label>
-                <input value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all uppercase" />
+                <label htmlFor="product-brand" className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Marca / Opcional</label>
+                <input id="product-brand" value={brand} onChange={(e) => setBrand(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all uppercase" />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Categoría (Libre)</label>
+                <label htmlFor="product-category" className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Categoría</label>
                 <input 
+                   id="product-category"
                    value={category} 
                    onChange={(e) => setCategory(e.target.value)} 
                    placeholder="Ej: Combos, Bebidas, Casacas..."
@@ -268,9 +283,11 @@ export default function CrearProducto() {
                 <div className="flex flex-wrap gap-2 mt-2">
                   {(availableCategories.length > 0 
                      ? availableCategories.map(c => c.name)
-                     : (templateType === 'restaurante' 
+                     : (templateType === 'restaurante'
                         ? ["Promociones", "Platos", "Bebidas", "Postres"]
-                        : ["Ropa", "Zapatos", "Accesorios"])
+                        : templateType === 'moda'
+                          ? ["Ropa", "Calzado", "Accesorios"]
+                          : ["Destacados", "Novedades", "Hogar", "Tecnología"])
                   ).map(cat => (
                      <button 
                         key={cat} 
@@ -285,8 +302,8 @@ export default function CrearProducto() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Descripción Pública</label>
-                <textarea required value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all min-h-[120px] resize-y" />
+                <label htmlFor="product-description" className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Descripción Pública</label>
+                <textarea id="product-description" required value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all min-h-[120px] resize-y" />
               </div>
             </div>
 
@@ -295,23 +312,23 @@ export default function CrearProducto() {
                
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-secondary uppercase tracking-widest">Precio Final (S/)</label>
-                    <input type="number" step="0.01" required value={precio} onChange={(e) => setPrecio(e.target.value)} className="w-full bg-surface-container-highest border border-secondary/30 rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary text-secondary font-bold p-3 transition-all text-xl" />
+                    <label htmlFor="product-price" className="text-xs font-bold text-secondary uppercase tracking-widest">Precio Final (S/)</label>
+                    <input id="product-price" type="number" step="0.01" min="0" required value={precio} onChange={(e) => setPrecio(e.target.value)} className="w-full bg-surface-container-highest border border-secondary/30 rounded-lg focus:border-secondary focus:ring-1 focus:ring-secondary text-secondary font-bold p-3 transition-all text-xl" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Precio Tacha (S/)</label>
-                    <input type="number" step="0.01" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface-variant line-through p-3 transition-all text-xl" />
+                    <label htmlFor="product-original-price" className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Precio anterior (S/)</label>
+                    <input id="product-original-price" type="number" step="0.01" min="0" value={originalPrice} onChange={(e) => setOriginalPrice(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface-variant line-through p-3 transition-all text-xl" />
                   </div>
                </div>
 
                <div className="space-y-2 pt-4">
-                    <label className="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
+                    <label htmlFor="product-stock" className="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
                         Inventario Base (Unidades) <span className="bg-surface-container-highest px-2 py-0.5 rounded text-[9px]">Opcional</span>
                     </label>
-                    <input type="number" min="0" placeholder="Ej: 50 o vacío para ilimitado" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all font-mono" />
+                    <input id="product-stock" type="number" min="0" placeholder="Ej: 50 o vacío para ilimitado" value={stock} onChange={(e) => setStock(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-on-surface p-3 transition-all font-mono" />
                 </div>
 
-               <div className="space-y-4 pt-4">
+               {templateType !== 'restaurante' && <div className="space-y-4 pt-4">
                   <label className="flex items-center justify-between p-4 border border-outline-variant/20 rounded-xl bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors group">
                     <div>
                       <p className="font-bold text-on-surface">Ofrecer Envío Gratis</p>
@@ -322,23 +339,23 @@ export default function CrearProducto() {
 
                   <label className="flex items-center justify-between p-4 border border-secondary/20 rounded-xl bg-secondary/5 cursor-pointer hover:bg-secondary/10 transition-colors group">
                     <div>
-                      <p className="font-bold text-secondary">Entrega Inmediata</p>
-                      <p className="text-[10px] text-secondary/60 uppercase tracking-widest mt-1">Etiqueta verde de emergencia</p>
+                      <p className="font-bold text-secondary">Despacho hoy</p>
+                      <p className="text-[10px] text-secondary/60 uppercase tracking-widest mt-1">Muestra esta disponibilidad en el catálogo</p>
                     </div>
                     <input type="checkbox" checked={shippingToday} onChange={(e) => setShippingToday(e.target.checked)} className="w-5 h-5 accent-secondary" />
                   </label>
-               </div>
+               </div>}
             </div>
           </div>
 
           {/* Nicho: Restaurantes */}
           {templateType === 'restaurante' && (
             <div className="border-t border-outline-variant/10 pt-8 mt-8">
-              <h3 className="text-[10px] font-bold text-[#d78a33] uppercase tracking-widest mb-4">🍽️ Ajustes de Restaurante</h3>
+              <h3 className="text-[10px] font-bold text-[#9b5800] dark:text-[#f4b76a] uppercase tracking-widest mb-4">Ajustes de restaurante</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Tiempo Estimado de Preparación</label>
-                  <input placeholder="Ej: 15-20 min" value={preparationTime} onChange={(e) => setPreparationTime(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                  <label htmlFor="preparation-time" className="text-xs font-bold text-on-surface uppercase tracking-widest">Tiempo Estimado de Preparación</label>
+                  <input id="preparation-time" placeholder="Ej: 15-20 min" value={preparationTime} onChange={(e) => setPreparationTime(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
                 </div>
                 <div className="space-y-2">
                   <label className="flex items-center justify-between p-4 border border-[#d78a33]/20 rounded-xl bg-[#d78a33]/5 cursor-pointer hover:bg-[#d78a33]/10 transition-colors">
@@ -451,17 +468,18 @@ export default function CrearProducto() {
           {/* Nicho: Moda */}
           {templateType === 'moda' && (
             <div className="border-t border-outline-variant/10 pt-8 mt-8">
-              <h3 className="text-[10px] font-bold text-neutral-800 uppercase tracking-widest mb-4">👗 Variaciones y Atributos</h3>
+              <h3 className="text-[10px] font-bold text-on-surface uppercase tracking-widest mb-4">Variaciones y atributos</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Tallas Disponibles</label>
+                  <label htmlFor="moda-sizes" className="text-xs font-bold text-on-surface uppercase tracking-widest">Tallas Disponibles</label>
                   <p className="text-[10px] text-on-surface-variant">Separadas por comas (Ej: S, M, L, XL)</p>
-                  <input value={tallasInput} onChange={(e) => setTallasInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
+                  <input id="moda-sizes" value={tallasInput} onChange={(e) => setTallasInput(e.target.value)} className="w-full bg-surface-container-highest border border-outline-variant/30 rounded-lg text-on-surface p-3" />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-on-surface uppercase tracking-widest">Colores Disponibles</label>
+                  <label htmlFor="moda-color" className="text-xs font-bold text-on-surface uppercase tracking-widest">Colores Disponibles</label>
                   <div className="flex gap-2">
-                    <input 
+                    <input
+                      id="moda-color"
                       value={colorInputTemp} 
                       onChange={(e) => setColorInputTemp(e.target.value)}
                       onKeyDown={(e) => {
@@ -537,6 +555,14 @@ export default function CrearProducto() {
                   )}
                 </div>
               </div>
+              <div className="mt-6">
+                <ModaVariantMatrix
+                  sizes={modaSizes}
+                  colors={coloresList.map((item) => item.color)}
+                  stocks={variantStocks}
+                  onStockChange={(key, value) => setVariantStocks((current) => ({ ...current, [key]: value }))}
+                />
+              </div>
             </div>
           )}
 
@@ -560,6 +586,7 @@ export default function CrearProducto() {
                    Sube fotos o clips. Fotos: WebP hasta 1400px. Videos: max 8s, sin audio, 720p y ~1.8 Mbps cuando el navegador permite comprimir.
                  </p>
                  <input
+                    aria-label="Fotos y videos del producto"
                     type="file"
                     accept="image/*,video/mp4,video/webm,video/quicktime"
                     multiple
@@ -586,7 +613,7 @@ export default function CrearProducto() {
               Descartar
             </button>
             <button type="submit" disabled={loading} className="px-8 py-3 bg-primary text-on-primary hover:brightness-110 font-bold rounded-xl shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center gap-2">
-              {loading ? 'Enviando a Bodega...' : <><Save size={18} /> Guardar en Bodega</>}
+              {loading ? 'Guardando…' : 'Guardar producto'}
             </button>
           </div>
         </form>

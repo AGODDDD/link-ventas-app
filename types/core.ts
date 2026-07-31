@@ -47,6 +47,20 @@ export interface StoreConfig {
   fomo_enabled?: boolean;
   mercadopago_active?: boolean;
   mercadopago_public_key?: string;
+  operations_config?: {
+    delivery_enabled?: boolean;
+    pickup_enabled?: boolean;
+    delivery_radius_km?: number;
+    min_order_amount?: number;
+    default_preparation_time?: string;
+    accepts_orders_always?: boolean;
+    shipping_methods?: string;
+    coverage_area?: string;
+    dispatch_time?: string;
+    size_guide?: string;
+    returns_policy?: string;
+    exchange_days?: number;
+  };
   created_at?: string;
   updated_at: string;
 }

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Search, Bell, PlusCircle, UserCircle, ShoppingBag, Check } from 'lucide-react'
+import { Bell, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -154,10 +154,10 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             return;
                         }
 
-                        toast.success(`🛍️ NUEVA VENTA — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
+                        toast.success(`NUEVA VENTA — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
                             description: `${nuevaOrden.customer_name} acaba de pagar`,
                             duration: 6000,
-                            icon: <ShoppingBag className="text-secondary" />,
+                            icon: <span className="text-[10px] font-black tracking-[0.14em] text-secondary">NV</span>,
                             action: {
                                 label: 'Ver pedido',
                                 onClick: () => window.location.href = '/dashboard/pedidos',
@@ -200,7 +200,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         // Reproducir alerta sonora y notificación push nativa
                         playNotificationSound();
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                            new Notification('🛍️ Nueva Venta Recibida', { 
+                            new Notification('Nueva Venta Recibida', {
                                 body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
                                 icon: '/favicon.ico' 
                             })
@@ -222,10 +222,10 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             
                             store.agregarOrderLocal({ ...nuevaOrden, total: Number(nuevaOrden.total || 0) });
                             
-                            toast.success(`💳 PAGO MERCADO PAGO — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
+                            toast.success(`PAGO MERCADO PAGO — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
                                 description: `${nuevaOrden.customer_name} pagó con tarjeta exitosamente`,
                                 duration: 6000,
-                                icon: <ShoppingBag className="text-secondary" />,
+                                icon: <span className="text-[10px] font-black tracking-[0.14em] text-secondary">MP</span>,
                                 action: {
                                     label: 'Ver pedido',
                                     onClick: () => window.location.href = '/dashboard/pedidos',
@@ -240,7 +240,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             }, ...prev])
                             playNotificationSound();
                             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                                new Notification('🛍️ Nueva Venta Pagada (Mercado Pago)', {
+                                new Notification('Nueva Venta Pagada (Mercado Pago)', {
                                     body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
                                     icon: '/favicon.ico' 
                                 })
@@ -282,14 +282,17 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                        border-b border-zinc-200 dark:border-zinc-800"
         >
             
-            {/* Buscador falso / Decorativo para rellenar */}
-            <div className="flex items-center gap-4 bg-zinc-50 dark:bg-[var(--dash-surface-2)] px-4 py-2 rounded-lg w-full max-w-sm ml-12 md:ml-0 border border-zinc-200 dark:border-[var(--dash-border)]">
-                <Search className="text-zinc-400 dark:text-[var(--dash-text-muted)] w-4 h-4" />
-                <input 
-                    className="bg-transparent border-none text-sm focus:ring-0 placeholder:text-zinc-400/70 dark:placeholder:text-[var(--dash-text-muted)]/50 w-full text-zinc-700 dark:text-[var(--dash-text-primary)] outline-none" 
-                    placeholder="Comandos rápidos..." 
-                    type="text"
-                />
+            <div className="ml-12 flex min-w-0 items-center gap-4 md:ml-0">
+                <div className="hidden sm:block">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-[var(--dash-text-muted)]">LinkVentas</p>
+                    <p className="truncate text-sm font-semibold text-zinc-800 dark:text-[var(--dash-text-primary)]">Tu operación, en un solo lugar</p>
+                </div>
+                <Link
+                    href="/dashboard/crear"
+                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 text-xs font-semibold text-zinc-700 shadow-[0_8px_24px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 active:scale-95 dark:border-[var(--dash-border)] dark:bg-[var(--dash-surface-2)] dark:text-[var(--dash-text-primary)]"
+                >
+                    Nuevo producto
+                </Link>
             </div>
 
             <div className="flex items-center gap-4 md:gap-6 ml-4">
@@ -298,6 +301,8 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 <div className="relative" ref={menuRef}>
                     <button 
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
+                        aria-expanded={isMenuOpen}
                         className={`relative p-2 rounded-full transition-colors ${unreadCount > 0 ? 'text-[var(--dash-text-primary)] hover:bg-zinc-100 dark:hover:bg-[var(--dash-surface-2)]' : 'text-zinc-400 dark:text-[var(--dash-text-muted)] hover:text-zinc-700 dark:hover:text-[var(--dash-text-primary)]'}`}
                     >
                         <Bell className="w-6 h-6" />
@@ -312,7 +317,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     {isMenuOpen && (
                         <div className="absolute top-12 right-0 w-80 bg-white dark:bg-[var(--dash-surface-2)] border border-zinc-200 dark:border-[var(--dash-border)] shadow-2xl rounded-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 fade-in">
                             <div className="flex items-center justify-between p-4 border-b border-zinc-100 dark:border-[var(--dash-border)] bg-zinc-50 dark:bg-[var(--dash-surface)]">
-                                <h3 className="font-bold text-zinc-900 dark:text-[var(--dash-text-primary)] text-sm">Registro Radar</h3>
+                                <h3 className="font-bold text-zinc-900 dark:text-[var(--dash-text-primary)] text-sm">Notificaciones</h3>
                                 {unreadCount > 0 && (
                                     <button 
                                         onClick={marcarTodasLeidas} 
@@ -326,8 +331,8 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             <div className="max-h-80 overflow-y-auto">
                                 {notificaciones.length === 0 ? (
                                     <div className="p-8 text-center text-zinc-400 dark:text-[var(--dash-text-muted)] flex flex-col items-center">
-                                        <Bell size={24} className="mb-2 opacity-20" />
-                                        <p className="text-xs">El radar está en silencio.</p>
+                                        <span className="mb-3 block h-px w-8 bg-current opacity-30" />
+                                        <p className="text-xs">No hay notificaciones nuevas.</p>
                                     </div>
                                 ) : (
                                     notificaciones.map(n => (
@@ -341,7 +346,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                                             className={`block p-4 border-b border-zinc-100 dark:border-[var(--dash-border)] flex items-start gap-3 transition-colors ${!n.leida ? 'bg-[var(--dash-accent)]/5' : 'hover:bg-zinc-50 dark:hover:bg-[var(--dash-surface-2)]'}`}
                                         >
                                             <div className="w-8 h-8 rounded-full bg-[var(--dash-success-soft)] flex items-center justify-center shrink-0">
-                                                <ShoppingBag className="w-4 h-4 text-[var(--dash-success)]" />
+                                                <span className="font-mono text-[10px] font-bold text-[var(--dash-success)]">NV</span>
                                             </div>
                                             <div className="flex-1 min-w-0 text-left">
                                                 <p className={`text-sm truncate ${!n.leida ? 'font-bold text-zinc-900 dark:text-[var(--dash-text-primary)]' : 'text-zinc-500 dark:text-[var(--dash-text-muted)]'}`}>{n.mensaje}</p>
@@ -362,11 +367,12 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
 
                 <ThemeToggle />
 
-                <Link href="/dashboard/crear" className="hidden sm:block">
-                    <PlusCircle className="cursor-pointer text-zinc-400 dark:text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] transition-colors w-6 h-6" />
-                </Link>
-                <Link href="/dashboard/configuracion">
-                    <UserCircle className="cursor-pointer text-zinc-400 dark:text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] transition-colors w-7 h-7" />
+                <Link
+                    href="/dashboard/configuracion"
+                    aria-label="Abrir ajustes de tienda"
+                    className="rounded-full border border-zinc-200 px-2.5 py-1.5 font-mono text-[10px] font-semibold tracking-wider text-zinc-600 transition-colors hover:border-[var(--dash-accent)] hover:text-[var(--dash-accent)] dark:border-[var(--dash-border)] dark:text-[var(--dash-text-muted)]"
+                >
+                    CUENTA
                 </Link>
 
             </div>

@@ -23,16 +23,18 @@ export default function ScheduleEditor({ value, onChange }: Props) {
             key={day}
             className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
               conf.active
-                ? 'border-neutral-200 bg-white'
-                : 'border-neutral-100 bg-neutral-50 opacity-60'
+                ? 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900'
+                : 'border-zinc-200 bg-zinc-50 opacity-70 dark:border-zinc-800 dark:bg-zinc-950'
             }`}
           >
             {/* Toggle día activo */}
             <button
               type="button"
               onClick={() => update(day, 'active', !conf.active)}
+              aria-label={`${conf.active ? 'Desactivar' : 'Activar'} horario del ${DAY_LABELS[day]}`}
+              aria-pressed={conf.active}
               className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors ${
-                conf.active ? 'bg-black' : 'bg-neutral-300'
+                conf.active ? 'bg-zinc-900 dark:bg-indigo-300' : 'bg-zinc-300 dark:bg-zinc-700'
               }`}
             >
               <span
@@ -43,7 +45,7 @@ export default function ScheduleEditor({ value, onChange }: Props) {
             </button>
 
             {/* Nombre del día */}
-            <span className={`w-20 text-sm font-semibold ${conf.active ? 'text-[#111]' : 'text-neutral-400'}`}>
+            <span className={`w-20 text-sm font-semibold ${conf.active ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400'}`}>
               {DAY_LABELS[day]}
             </span>
 
@@ -54,25 +56,27 @@ export default function ScheduleEditor({ value, onChange }: Props) {
                   type="time"
                   value={conf.open}
                   onChange={e => update(day, 'open', e.target.value)}
-                  className="border border-neutral-200 rounded-lg px-2 py-1 text-sm text-[#333] focus:outline-none focus:border-black w-[100px]"
+                  aria-label={`Hora de apertura del ${DAY_LABELS[day]}`}
+                  className="w-[100px] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-zinc-800 focus:border-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
                 />
-                <span className="text-neutral-400 text-sm">–</span>
+                <span className="text-zinc-500 text-sm">–</span>
                 <input
                   type="time"
                   value={conf.close}
                   onChange={e => update(day, 'close', e.target.value)}
-                  className="border border-neutral-200 rounded-lg px-2 py-1 text-sm text-[#333] focus:outline-none focus:border-black w-[100px]"
+                  aria-label={`Hora de cierre del ${DAY_LABELS[day]}`}
+                  className="w-[100px] rounded-lg border border-zinc-200 bg-white px-2 py-1 text-sm text-zinc-800 focus:border-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
                 />
               </div>
             ) : (
-              <span className="flex-1 text-xs text-neutral-400 italic">Cerrado</span>
+              <span className="flex-1 text-xs text-zinc-500 dark:text-zinc-400 italic">Cerrado</span>
             )}
           </div>
         )
       })}
 
-      <p className="text-xs text-neutral-400 pt-1">
-        💡 Los horarios son en hora local del vendedor. El checkout se bloquea automáticamente fuera de horario.
+      <p className="pt-1 text-xs text-zinc-600 dark:text-zinc-400">
+        Los horarios usan la hora local del vendedor. El checkout se bloquea automáticamente fuera de horario.
       </p>
     </div>
   )

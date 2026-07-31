@@ -34,6 +34,7 @@ interface Props {
 type ModaVariant = {
   talla?: string;
   color?: string;
+  stock?: number | null;
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -84,6 +85,7 @@ function isAvailableCombination(product: Product, talla?: string, color?: string
   const variants = getVariants(product)
   if (variants.length === 0) return true
   return variants.some(variant =>
+    variant.stock !== 0 &&
     (!talla || normalize(variant.talla || '') === normalize(talla)) &&
     (!color || normalize(variant.color || '') === normalize(color))
   )
@@ -916,6 +918,26 @@ export default function ModaTemplate({ perfil, productos, isReadOnly }: Props) {
          storeLng={(perfil as any).store_lng ?? null}
          whatsappPhone={(perfil as any).whatsapp_phone ?? null}
       />
+
+      {(perfil.operations_config?.sizeGuide || perfil.operations_config?.returnsPolicy) && (
+        <section className="mx-auto grid max-w-[1300px] gap-4 px-6 py-10 md:grid-cols-2" aria-label="Información de compra">
+          {perfil.operations_config.sizeGuide && (
+            <article className="rounded-2xl border border-black/10 bg-white/70 p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-black/50">Guía de tallas</p>
+              <p className="mt-3 whitespace-pre-line text-sm leading-6 text-black/75">{perfil.operations_config.sizeGuide}</p>
+            </article>
+          )}
+          {perfil.operations_config.returnsPolicy && (
+            <article className="rounded-2xl border border-black/10 bg-white/70 p-6">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-black/50">Cambios y devoluciones</p>
+              <p className="mt-3 whitespace-pre-line text-sm leading-6 text-black/75">{perfil.operations_config.returnsPolicy}</p>
+              {perfil.operations_config.exchangeDays ? (
+                <p className="mt-3 text-xs font-bold text-black/55">Plazo: {perfil.operations_config.exchangeDays} días</p>
+              ) : null}
+            </article>
+          )}
+        </section>
+      )}
 
       <footer className="moda-footer">
         <div className="moda-footer-inner">

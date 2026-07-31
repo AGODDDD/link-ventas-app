@@ -3,7 +3,7 @@
 import DashboardSidebar from '@/components/DashboardSidebar'
 import DashboardTopBar from '@/components/dashboard/DashboardTopBar'
 import { useState, useEffect } from 'react'
-import { Menu, Zap, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from '@/components/dashboard/ThemeProvider'
@@ -94,15 +94,15 @@ export default function DashboardLayout({
 
         {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
       {mostrarBanner && (
-        <div id="global-plan-banner" className={`sticky top-0 z-[60] flex w-full items-center justify-between gap-4 border-b px-4 py-2.5 backdrop-blur ${planStatus === 'trial' ? (trialUrgent ? 'border-red-400/25 bg-red-500/15' : 'border-violet-400/25 bg-violet-500/15') : 'border-blue-400/25 bg-blue-500/15'}`}>
+        <div id="global-plan-banner" className={`sticky top-0 z-[60] flex w-full items-center justify-between gap-4 border-b px-4 py-2.5 backdrop-blur ${planStatus === 'trial' ? (trialUrgent ? 'border-red-700/20 bg-[#fdecec] dark:border-red-400/25 dark:bg-red-500/15' : 'border-violet-700/20 bg-[#f0eafa] dark:border-violet-400/25 dark:bg-violet-500/15') : 'border-blue-700/20 bg-[#e8f0fb] dark:border-blue-400/25 dark:bg-blue-500/15'}`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Zap size={14} className={`shrink-0 ${planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'}`} />
-            <p className={`truncate text-xs font-semibold ${planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'}`}>
+            <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold tracking-[0.16em] ${planStatus === 'trial' ? (trialUrgent ? 'border-red-700/35 text-[#9f2638] dark:border-red-400/40 dark:text-red-300' : 'border-violet-700/35 text-[#5b2b91] dark:border-violet-400/40 dark:text-violet-200') : 'border-blue-700/35 text-[#234f8c] dark:border-blue-400/40 dark:text-blue-200'}`}>PRO</span>
+            <p className={`truncate text-xs font-semibold ${planStatus === 'trial' ? (trialUrgent ? 'text-[#9f2638] dark:text-red-400' : 'text-[#5b2b91] dark:text-violet-300') : 'text-[#234f8c] dark:text-blue-300'}`}>
               {planStatus === 'trial'
                 ? (diasRestantes === 0
-                  ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
-                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 25/mes para no perder funciones avanzadas.`)
-                : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro para desbloquear Mercado Pago, analíticas y más.'
+                  ? 'Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
+                  : `Prueba Pro — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por S/ 25/mes para mantener las funciones avanzadas.`)
+                : 'Plan Emprendedor activo. Actualiza a Pro para desbloquear Mercado Pago y analíticas.'
               }
             </p>
           </div>
@@ -111,7 +111,7 @@ export default function DashboardLayout({
               Activar Pro
             </a>
             <button onClick={() => setBannerVisible(false)} className="rounded-full p-1 transition-colors hover:bg-white/10" aria-label="Cerrar banner">
-              <X size={13} className={planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'} />
+              <X size={13} className={planStatus === 'trial' ? (trialUrgent ? 'text-[#9f2638] dark:text-red-400' : 'text-[#5b2b91] dark:text-violet-300') : 'text-[#234f8c] dark:text-blue-300'} />
             </button>
           </div>
         </div>

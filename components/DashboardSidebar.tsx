@@ -5,17 +5,7 @@ import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import {
-  DashboardIcon as AnimatedDashboard,
-  HouseIcon as AnimatedHouse,
-  LayoutGridIcon as AnimatedOrders,
-  SettingsIcon as AnimatedSettings,
-  ShoppingBagIcon as AnimatedProducts,
-  TrendingUpIcon as AnimatedAnalytics,
-  UserIcon as AnimatedClients,
-  LogoutIcon as AnimatedLogout,
-  XIcon as AnimatedX,
-} from '@animateicons/react/lucide'
+import { XIcon as AnimatedX } from '@animateicons/react/lucide'
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -23,53 +13,30 @@ interface SidebarProps {
   hasBanner?: boolean;
 }
 
-// SVG paths extraídos directamente del diseño Stitch (stitch_animated.html)
 const menuItems = [
   {
     name: 'Dashboard',
     href: '/dashboard',
-    icon: AnimatedDashboard,
-    svgPaths: [
-      'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
-    ],
   },
   {
     name: 'Órdenes',
     href: '/dashboard/pedidos',
-    icon: AnimatedOrders,
-    svgPaths: ['M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'],
   },
   {
-    name: 'Clientes (Leads)',
+    name: 'Clientes',
     href: '/dashboard/clientes',
-    icon: AnimatedClients,
-    svgPaths: [
-      'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-    ],
   },
   {
     name: 'Productos',
     href: '/dashboard/productos',
-    icon: AnimatedProducts,
-    svgPaths: ['M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'],
   },
   {
     name: 'Analytics',
     href: '/dashboard/analytics',
-    icon: AnimatedAnalytics,
-    svgPaths: [
-      'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-    ],
   },
   {
     name: 'Ajustes Tienda',
     href: '/dashboard/configuracion',
-    icon: AnimatedSettings,
-    // Dos paths: engranaje exterior + círculo interior
-    svgPaths: [
-      'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
-      'M15 12a3 3 0 11-6 0 3 3 0 016 0z',
-    ],
   },
 ]
 
@@ -150,13 +117,14 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
 
         {/* MENÚ */}
         <nav className="flex-1 space-y-1">
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
+                aria-current={isActive ? 'page' : undefined}
                 className={`
                   flex items-center py-2.5 px-4 group
                   ${isActive 
@@ -164,7 +132,9 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                     : 'nav-item font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'}
                 `}
               >
-                <item.icon size={20} duration={0.7} className="mr-3 shrink-0" />
+                <span className="mr-3 w-5 shrink-0 font-mono text-[10px] font-semibold tracking-wider opacity-60">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <span className="text-sm">{item.name}</span>
               </Link>
             )
@@ -173,23 +143,21 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
 
         {/* FOOTER - USER PROFILE */}
         <div className="px-6 mt-auto">
-          {/* Ver Tienda Pública — SVG inline (casa) de Stitch */}
           <Link
             href={storeLink ? `/tienda/${storeLink}` : '#'}
             target="_blank"
             className={`text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] flex items-center py-2.5 transition-colors ${!storeLink && 'opacity-50 pointer-events-none'}`}
           >
-            <AnimatedHouse size={20} duration={0.7} className="mr-3 shrink-0" />
-            <span className="text-sm font-medium">Ver Tienda Pública</span>
+            <span className="mr-3 w-5 shrink-0 font-mono text-xs" aria-hidden="true">↗</span>
+            <span className="text-sm font-medium">Ver tienda pública</span>
           </Link>
           
-          {/* Cerrar Sesión — SVG inline (logout) de Stitch */}
           <button
             onClick={handleLogout}
             className="w-full text-red-400 dark:text-red-400 hover:text-red-300 dark:hover:text-red-300 flex items-center py-2.5 transition-colors mt-2"
           >
-            <AnimatedLogout size={20} duration={0.7} className="mr-3 shrink-0" />
-            <span className="text-sm font-medium">Cerrar Sesión</span>
+            <span className="mr-3 w-5 shrink-0 font-mono text-xs" aria-hidden="true">→</span>
+            <span className="text-sm font-medium">Cerrar sesión</span>
           </button>
 
           {/* User Profile Card */}
