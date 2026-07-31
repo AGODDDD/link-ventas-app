@@ -4,6 +4,11 @@ import { supabase } from '@/lib/supabase'
 import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText, Lock, Zap, Search, RefreshCw } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { getOrderStatusBadgeStyle, getOrderStatusLabel } from '@/lib/orderStatus'
+import {
+    INITIAL_DASHBOARD_TEMPLATE_STATE,
+    resolveDashboardTemplate,
+    type DashboardTemplateState,
+} from '@/lib/dashboardTemplate'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
 import { ThermalReceipt } from '@/components/dashboard/ThermalReceipt'
@@ -88,7 +93,7 @@ export default function PedidosPage() {
 
     // Vista secundaria de oportunidades captadas
     const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'delivery'>('orders')
-    const [templateType, setTemplateType] = useState<'restaurante' | 'comercio' | 'moda'>('comercio')
+    const [templateState, setTemplateState] = useState<DashboardTemplateState>(INITIAL_DASHBOARD_TEMPLATE_STATE)
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
 
@@ -110,20 +115,30 @@ export default function PedidosPage() {
     const ITEMS_PER_PAGE = 20;
 
     useEffect(() => {
+        let isMounted = true
+
         const load = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-                const [{ data: profile }, { data: store }] = await Promise.all([
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser()
+                if (userError) throw userError
+                if (!user) throw new Error('Tu sesión ya no está disponible.')
+
+                const [
+                    { data: profile },
+                    { data: store, error: storeError },
+                ] = await Promise.all([
                     supabase.from('profiles').select('plan').eq('id', user.id).single(),
                     supabase.from('stores').select('template_type').eq('owner_id', user.id).single(),
                 ])
-                if (profile) {
+
+                if (storeError) throw storeError
+
+                const currentTemplate = resolveDashboardTemplate(store?.template_type)
+
+                if (isMounted) {
                     setPerfil(profile)
-                    setPlanStatus(profile.plan ?? null)
-                }
-                if (store?.template_type) {
-                    const currentTemplate = store.template_type as 'restaurante' | 'comercio' | 'moda'
-                    setTemplateType(currentTemplate)
+                    setPlanStatus(profile?.plan ?? null)
+                    setTemplateState({ status: 'ready', value: currentTemplate })
                     setActiveTab(currentTemplate === 'restaurante' ? 'delivery' : 'orders')
                 }
 
@@ -131,11 +146,24 @@ export default function PedidosPage() {
                     cargarOrders(user.id),
                     cargarLeads(user.id)
                 ])
-
+            } catch (error) {
+                console.error('No se pudo preparar la bandeja de pedidos:', error)
+                if (isMounted) {
+                    setTemplateState({
+                        status: 'error',
+                        message: 'No pudimos identificar la plantilla de tu tienda.',
+                    })
+                }
+            } finally {
+                if (isMounted) setIsInitialLoad(false)
             }
-            setIsInitialLoad(false)
         }
+
         load()
+
+        return () => {
+            isMounted = false
+        }
     }, [cargarOrders, cargarLeads])
 
     const forceRefresh = async () => {
@@ -349,7 +377,28 @@ export default function PedidosPage() {
         }
     }
 
-    if (isInitialLoad) return <PedidosSkeleton />
+    if (isInitialLoad || templateState.status === 'loading') return <PedidosSkeleton />
+
+    if (templateState.status === 'error') {
+        return (
+            <div className="flex min-h-[55vh] items-center justify-center">
+                <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">No pudimos cargar tus pedidos</p>
+                    <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{templateState.message}</p>
+                    <button
+                        type="button"
+                        onClick={() => window.location.reload()}
+                        className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
+                    >
+                        <RefreshCw size={15} />
+                        Intentar de nuevo
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    const templateType = templateState.value
 
     // UI Pagination Bounds computation
     const matchesFilters = (order: any) => {
