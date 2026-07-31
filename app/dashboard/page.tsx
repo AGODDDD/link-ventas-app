@@ -7,21 +7,11 @@ import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
+import { getOrderStatusBadgeStyle, getOrderStatusLabel, ORDER_STATUS_LABELS } from '@/lib/orderStatus'
 
 const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
 const ATTENTION_STATUSES = new Set(['pendiente', 'pendiente_pago', 'pendiente_verificacion'])
 const ITEMS_PER_PAGE = 10
-
-const STATUS_LABELS: Record<string, string> = {
-  pendiente_pago: 'Pendiente de pago',
-  pendiente_verificacion: 'Verificar pago',
-  pendiente: 'Nuevo',
-  en_preparacion: 'En preparación',
-  alistando: 'Alistando',
-  en_camino: 'En camino',
-  completado: 'Completado',
-  cancelado: 'Cancelado',
-}
 
 function orderReference(order: any) {
   return order.legacy_id || order.id?.slice(0, 8).toUpperCase() || '—'
@@ -122,7 +112,7 @@ export default function DashboardPage() {
       Fecha: new Date(order.created_at).toLocaleDateString('es-PE'),
       Hora: new Date(order.created_at).toLocaleTimeString('es-PE'),
       Método: paymentLabel(order),
-      Estado: STATUS_LABELS[order.status] || order.status,
+      Estado: getOrderStatusLabel(order.status),
     }))
 
     downloadFile(jsonToCSV(rows), `pedidos_${new Date().toISOString().split('T')[0]}.csv`)
@@ -165,13 +155,21 @@ export default function DashboardPage() {
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aquí tienes el resumen de tu operación.</p>
         </div>
-        <Link
-          href="/dashboard/pedidos"
-          className="group inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/30 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100"
-        >
-          Gestionar pedidos
-          <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
-        </Link>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link
+            href="/dashboard/crear"
+            className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
+          >
+            Nuevo producto
+          </Link>
+          <Link
+            href="/dashboard/pedidos"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-4 py-2.5 text-sm font-semibold text-zinc-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-primary/30 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-100"
+          >
+            Gestionar pedidos
+            <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -215,7 +213,9 @@ export default function DashboardPage() {
                 className="h-10 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-medium text-zinc-700 outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700 dark:bg-zinc-950/60 dark:text-zinc-200"
               >
                 <option value="all">Todos los estados</option>
-                {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                {Object.entries(ORDER_STATUS_LABELS)
+                  .filter(([value]) => !['pending', 'paid', 'shipped', 'cancelled'].includes(value))
+                  .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <button
@@ -252,8 +252,8 @@ export default function DashboardPage() {
                     {new Date(order.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex rounded-full bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-300">
-                      {STATUS_LABELS[order.status] || order.status}
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${getOrderStatusBadgeStyle(order.status)}`}>
+                      {getOrderStatusLabel(order.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm capitalize text-zinc-500">{paymentLabel(order)}</td>

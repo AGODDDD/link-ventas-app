@@ -292,24 +292,10 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
             style={{ top: hasBanner ? '45px' : '0' }}
             className="hidden md:flex fixed right-0 w-full md:w-[calc(100%-14rem)] h-16 z-40
                        bg-white/80 dark:bg-[#0f0f11]/80
-                       backdrop-blur-xl justify-between items-center px-4 md:px-8
+                       backdrop-blur-xl justify-end items-center px-4 md:px-8
                        border-b border-zinc-200 dark:border-zinc-800"
         >
-            
-            <div className="ml-12 flex min-w-0 items-center gap-4 md:ml-0">
-                <div className="hidden sm:block">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-[var(--dash-text-muted)]">LinkVentas</p>
-                    <p className="truncate text-sm font-semibold text-zinc-800 dark:text-[var(--dash-text-primary)]">Tu operación, en un solo lugar</p>
-                </div>
-                <Link
-                    href="/dashboard/crear"
-                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/80 px-3 py-2 text-xs font-semibold text-zinc-700 shadow-[0_8px_24px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 active:scale-95 dark:border-[var(--dash-border)] dark:bg-[var(--dash-surface-2)] dark:text-[var(--dash-text-primary)]"
-                >
-                    Nuevo producto
-                </Link>
-            </div>
-
-            <div className="ml-4 flex items-center gap-3 md:gap-5">
+            <div className="flex items-center gap-3 md:gap-5">
                 <div className="hidden items-center gap-3 border-r border-zinc-200 pr-5 text-xs dark:border-zinc-800 lg:flex">
                     <time className="font-medium text-zinc-500 dark:text-zinc-400">{todayLabel}</time>
                     <span className="inline-flex items-center gap-2 font-semibold text-zinc-700 dark:text-zinc-200">

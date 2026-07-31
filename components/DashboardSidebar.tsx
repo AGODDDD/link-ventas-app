@@ -101,16 +101,13 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
         md:translate-x-0 
       `}>
 
-        {/* CABECERA CON LOGO */}
-        <div className="px-6 mb-10 flex justify-between items-center">
-            <div>
-                {/* tracking-tight + uppercase tal como en Stitch */}
-                <h1 className="text-xl font-bold tracking-tight text-[var(--dash-text-primary)] uppercase">LINKVENTAS</h1>
-                {/* font-medium + tracking-widest tal como en Stitch */}
-                <p className="text-[10px] text-[var(--dash-text-muted)] font-medium tracking-widest uppercase mt-1">Panel de Control</p>
-            </div>
-            {/* Botón X solo visible en móvil — SVG inline (consistencia con Stitch) */}
-            <button onClick={onClose} className="md:hidden text-[var(--dash-text-muted)] hover:text-[var(--dash-text-primary)]">
+        <div className="mb-8 flex items-center justify-between px-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--dash-text-muted)]">Workspace</p>
+            <button
+              onClick={onClose}
+              aria-label="Cerrar navegación"
+              className="text-[var(--dash-text-muted)] transition-colors duration-300 hover:text-[var(--dash-text-primary)] md:hidden"
+            >
               <AnimatedX size={24} duration={0.7} />
             </button>
         </div>

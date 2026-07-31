@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Eye, CheckCircle, Clock, X, Truck, Ban, ChevronRight, MapPin, Phone, User, Printer, Download, Share2, Mail, Copy, FileText, Lock, Zap, Search, RefreshCw } from 'lucide-react'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { getOrderStatusBadgeStyle, getOrderStatusLabel } from '@/lib/orderStatus'
 import { toast } from 'sonner'
 import html2canvas from 'html2canvas'
 import { ThermalReceipt } from '@/components/dashboard/ThermalReceipt'
@@ -160,19 +161,6 @@ export default function PedidosPage() {
         en_camino: 'En camino',
         completado: 'Completado',
     }
-    const DELIVERY_COLORS: Record<string, string> = {
-        pendiente_pago: 'bg-red-100 text-red-700 border-red-200',
-        pendiente_verificacion: 'bg-orange-100 text-orange-700 border-orange-200',
-        pending: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-        paid: 'bg-green-100 text-green-700 border-green-200',
-        pendiente: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-        en_preparacion: 'bg-blue-100 text-blue-700 border-blue-200',
-        alistando: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-        en_camino: 'bg-green-100 text-green-700 border-green-200',
-        completado: 'bg-neutral-100 text-neutral-600 border-neutral-200',
-        cancelado: 'bg-red-200 text-red-800 border-red-300',
-    }
-
     const avanzarEstadoDelivery = async (order: any) => {
         const orderId = order.id
         const currentStatus = order.status
@@ -358,26 +346,6 @@ export default function PedidosPage() {
             } catch (err: any) {
                 toast.error('Falló la descarga del PNG: ' + err.message, { id: 'modal-download' })
             }
-        }
-    }
-
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'pending': return "bg-tertiary-container/10 text-tertiary border-tertiary/20"
-            case 'paid': return "bg-secondary-container/40 text-secondary border-secondary/20"
-            case 'shipped': return "bg-primary-container/40 text-primary border-primary/20"
-            case 'cancelled': return "bg-error-container/40 text-error border-error/20"
-            default: return "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-        }
-    }
-
-    const getStatusName = (status: string) => {
-        switch (status) {
-            case 'pending': return "Pendiente"
-            case 'paid': return "Pagado"
-            case 'shipped': return "Enviado"
-            case 'cancelled': return "Cancelado"
-            default: return status
         }
     }
 
@@ -627,8 +595,8 @@ export default function PedidosPage() {
                                                 <span className="font-mono text-xs font-bold text-green-600 tracking-widest px-3 py-1 bg-green-50 rounded-md border border-green-200">
                                                     {order.legacy_id || order.id}
                                                 </span>
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${DELIVERY_COLORS[order.status] || 'bg-neutral-100 text-neutral-500'}`}>
-                                                    {DELIVERY_LABELS[order.status] || order.status}
+                                                <span className={`rounded-full border px-3 py-1 text-[10px] font-bold ${getOrderStatusBadgeStyle(order.status)}`}>
+                                                    {getOrderStatusLabel(order.status)}
                                                 </span>
                                                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
                                                     {new Date(order.created_at).toLocaleString()}
@@ -848,8 +816,8 @@ export default function PedidosPage() {
                                             <span className="font-mono text-xs font-bold text-primary tracking-widest px-3 py-1 bg-primary/10 rounded-md">
                                                 #{order.id.split('-')[0].toUpperCase()}
                                             </span>
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1 ${getStatusStyle(order.status)}`}>
-                                                {getStatusName(order.status)}
+                                            <span className={`flex items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold uppercase ${getOrderStatusBadgeStyle(order.status)}`}>
+                                                {getOrderStatusLabel(order.status)}
                                             </span>
                                             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                                 {new Date(order.created_at).toLocaleString()}
