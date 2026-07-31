@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
 /**
- * LINKVENTAS EDGE MIDDLEWARE
+ * LINKVENTAS REQUEST PROXY
  * ─────────────────────────────────────────────────────────────────────────────
  * Ultra rápido: lee SOLO cookies, CERO consultas a la base de datos.
- * Compatible 100% con Edge Runtime de Vercel.
+ * En Next.js 16, Proxy usa el runtime Node.js por defecto.
  *
  * Cookie `sb-plan-status` tiene el formato:
  *   - "trial|2026-06-03T15:00:00.000Z"  → trial activo con fecha de vencimiento
@@ -17,7 +17,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * la inicializa, asigna el trial y gestiona la redirección si es necesario.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Rutas siempre públicas ────────────────────────────────────────────────
@@ -42,7 +42,8 @@ export function middleware(request: NextRequest) {
 
   if (!sessionToken) {
     // Sin sesión → redirigir al login
-    return NextResponse.redirect(new URL('/login', request.url))
+    const response = NextResponse.redirect(new URL('/login', request.url))
+    return response
   }
 
   // ── Admin siempre pasa sin restricciones ──────────────────────────────────

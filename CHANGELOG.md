@@ -12,9 +12,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ### Added
   - Consolidación del modelo de negocio (`contract_cleanup.sql`) integrando validaciones de stock, unificación de middleware y limpieza general de APIs obsoletas.
-- **Auditoría Profunda de Modelo de Negocio y Arquitectura**:
-  - Evaluación completa de los 4 pilares (Visión y Modelo SaaS, Arquitectura Serverless, Seguridad/Errores Críticos y Cumplimiento de `AGENTS.md`).
-  - Reporte de evidencia detallado generado en `auditoria_modelo_negocio.md` identificando la inactividad del middleware Edge (`proxy.ts`), desincronizaciones de precios (S/ 25 vs S/ 29) y desactualización de documentos maestros sobre Mercado Pago vs Mercado Pago.
+- **Auditoría Forense Ultra-Profunda del Modelo de Negocio y Base de Datos**:
+  - Análisis de segundo nivel sobre Supabase, Zustand, KPIs financieros, tickets térmicos PDF y flujos de Mercado Pago.
+  - Hallazgos confirmados:
+    1. Inflación falsa de ingresos totales en Dashboard y Analíticas (suma de órdenes canceladas y no pagadas).
+    2. Fallo SQL en carritos abandonados por descalce de columnas (`abandoned_carts.last_updated`, `cart_json`, `updated_at`).
+    3. Error en ticket térmico PDF por referencia a `order.total_price` que imprime totales en S/ 0.00.
+    4. Inactividad del middleware Edge por denominarse `proxy.ts`.
+
 
 
 ## [2026-07-30] — Premium UI & Moda Finalization

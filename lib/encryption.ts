@@ -40,9 +40,7 @@ export function decryptText(encryptedPayload: string): string {
     
     const parts = encryptedPayload.split(':');
     if (parts.length !== 3) {
-        // En caso de que haya una llave plana sucia de pruebas previas (Graceful degrade/Warning)
-        console.warn('Attempted to decrypt invalid format payload. Returning raw text as fallback for backwards compatibility.');
-        return encryptedPayload;
+        throw new Error('Encrypted payload has an invalid format. Refusing to use it as plaintext.');
     }
 
     const [ivHex, authTagHex, encryptedHex] = parts;

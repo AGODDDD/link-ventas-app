@@ -9,6 +9,8 @@ import {
 } from 'recharts'
 import { generateInsights, Insight } from '@/lib/analyticsEngine'
 
+const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
+
 type Order = {
     id: string
     created_at: string
@@ -104,12 +106,17 @@ export default function AnalyticsPage() {
         return orders.filter(o => new Date(o.created_at).getTime() >= limite)
     }, [orders, periodo])
 
+    const ordersConVenta = useMemo(
+        () => ordersFiltradas.filter(o => INGRESO_STATUSES.has(o.status)),
+        [ordersFiltradas]
+    )
+
     // === MÉTRICAS PRINCIPALES ===
     const ingresoTotal = useMemo(() =>
-        ordersFiltradas.reduce((acc, o) => acc + parseFloat(o.total || '0'), 0)
-    , [ordersFiltradas])
+        ordersConVenta.reduce((acc, o) => acc + parseFloat(o.total || '0'), 0)
+    , [ordersConVenta])
 
-    const ticketPromedio = ordersFiltradas.length > 0 ? ingresoTotal / ordersFiltradas.length : 0
+    const ticketPromedio = ordersConVenta.length > 0 ? ingresoTotal / ordersConVenta.length : 0
 
     const pedidosPendientes = ordersFiltradas.filter(o => 
         ['pending', 'pendiente', 'pendiente_pago', 'pendiente_verificacion'].includes(o.status)
@@ -132,7 +139,7 @@ export default function AnalyticsPage() {
             const key = fecha.toISOString().split('T')[0]
             const label = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
             
-            const ordenesDia = orders.filter(o => o.created_at.split('T')[0] === key)
+            const ordenesDia = ordersConVenta.filter(o => o.created_at.split('T')[0] === key)
             dias.push({
                 date: key,
                 label,
@@ -141,25 +148,25 @@ export default function AnalyticsPage() {
             })
         }
         return dias
-    }, [orders, periodo])
+    }, [ordersConVenta, periodo])
 
     // === MÉTODO DE PAGO ===
     const metodosPagoData = useMemo(() => {
-        const efectivo = ordersFiltradas.filter(o => o.payment_proof_url === 'CONTRA_ENTREGA' || o.metodo_pago === 'contra_entrega').length
-        const transferencia = ordersFiltradas.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'mercadopago' && o.metodo_pago !== 'contra_entrega').length
-        const mercadopago = ordersFiltradas.filter(o => o.metodo_pago === 'mercadopago').length
+        const efectivo = ordersConVenta.filter(o => o.payment_proof_url === 'CONTRA_ENTREGA' || o.metodo_pago === 'contra_entrega').length
+        const transferencia = ordersConVenta.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'mercadopago' && o.metodo_pago !== 'contra_entrega').length
+        const mercadopago = ordersConVenta.filter(o => o.metodo_pago === 'mercadopago').length
         
         return [
             { name: 'Transferencia/Yape', value: transferencia },
             { name: 'Contra Entrega', value: efectivo },
             { name: 'Tarjeta (Mercado Pago)', value: mercadopago },
         ].filter(m => m.value > 0)
-    }, [ordersFiltradas])
+    }, [ordersConVenta])
 
     // === TOP CLIENTES ===
     const topClientes = useMemo(() => {
         const map = new Map<string, { name: string; total: number; count: number }>()
-        ordersFiltradas.forEach(o => {
+        ordersConVenta.forEach(o => {
             const existing = map.get(o.customer_name) || { name: o.customer_name, total: 0, count: 0 }
             existing.total += parseFloat(o.total || '0')
             existing.count += 1
@@ -168,12 +175,12 @@ export default function AnalyticsPage() {
         return Array.from(map.values())
             .sort((a, b) => b.total - a.total)
             .slice(0, 5)
-    }, [ordersFiltradas])
+    }, [ordersConVenta])
 
     // === TOP PRODUCTOS ===
     const topProductos = useMemo(() => {
         const map = new Map<string, { name: string; total: number; count: number }>()
-        ordersFiltradas.forEach(o => {
+        ordersConVenta.forEach(o => {
             if (o.order_items) {
                 o.order_items.forEach((item: any) => {
                     const existing = map.get(item.name) || { name: item.name, total: 0, count: 0 }
@@ -186,7 +193,7 @@ export default function AnalyticsPage() {
         return Array.from(map.values())
             .sort((a, b) => b.count - a.count)
             .slice(0, 5)
-    }, [ordersFiltradas])
+    }, [ordersConVenta])
 
     // === EXPORTAR CSV ===
     const exportarCSV = () => {

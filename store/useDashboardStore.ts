@@ -32,7 +32,7 @@ export interface AbandonedCart {
     customer_phone?: string;
     cart_items: any;
     total: number;
-    last_updated: string;
+    created_at: string;
     [key: string]: any;
 }
 
@@ -268,7 +268,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .from('abandoned_carts')
             .select('*')
             .eq('store_id', storeId)
-            .order('last_updated', { ascending: false });
+            .order('created_at', { ascending: false });
 
         set({ 
             abandonedCarts: data || [], 

@@ -6,6 +6,8 @@ import { useDashboardStore } from '@/store/useDashboardStore'
 import { useCustomerStore } from '@/store/useCustomerStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 
+const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
+
 export default function DashboardPage() {
   const { orders, ordersCargadas, cargarOrders } = useDashboardStore()
   const customerStore = useCustomerStore()
@@ -15,7 +17,9 @@ export default function DashboardPage() {
 
   // Estadísticas calculadas reactivamente desde el cerebro Zustand
   const ingresosTotales = useMemo(() => {
-    return orders.reduce((acc, obj) => acc + parseFloat(obj.total || 0), 0)
+    return orders
+      .filter(obj => INGRESO_STATUSES.has(obj.status))
+      .reduce((acc, obj) => acc + parseFloat(obj.total || 0), 0)
   }, [orders])
 
   const pedidosTotales = orders.length
@@ -75,11 +79,11 @@ export default function DashboardPage() {
     const ahora = Date.now()
     const hace7dias = ahora - 7 * 24 * 60 * 60 * 1000
     const hace14dias = ahora - 14 * 24 * 60 * 60 * 1000
-    const ventasSemanaActual = orders.filter(o => new Date(o.created_at).getTime() >= hace7dias)
+    const ventasSemanaActual = orders.filter(o => INGRESO_STATUSES.has(o.status) && new Date(o.created_at).getTime() >= hace7dias)
       .reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
     const ventasSemanaPasada = orders.filter(o => {
       const t = new Date(o.created_at).getTime()
-      return t >= hace14dias && t < hace7dias
+      return INGRESO_STATUSES.has(o.status) && t >= hace14dias && t < hace7dias
     }).reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
     if (ventasSemanaPasada === 0) return ventasSemanaActual > 0 ? 100 : 0
     return Math.round(((ventasSemanaActual - ventasSemanaPasada) / ventasSemanaPasada) * 100)

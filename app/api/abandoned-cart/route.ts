@@ -1,22 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { createHash } from 'crypto'
 
-const attempts = new Map<string, { count: number; resetAt: number }>()
-const WINDOW_MS = 60_000
 const MAX_ATTEMPTS = 8
-
-function allowRequest(request: Request) {
-  const key = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
-  const now = Date.now()
-  const entry = attempts.get(key)
-  if (!entry || entry.resetAt <= now) {
-    attempts.set(key, { count: 1, resetAt: now + WINDOW_MS })
-    return true
-  }
-  if (entry.count >= MAX_ATTEMPTS) return false
-  entry.count += 1
-  return true
-}
 
 function text(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
@@ -24,7 +10,16 @@ function text(value: unknown, maxLength: number) {
 
 export async function POST(request: Request) {
   try {
-    if (!allowRequest(request)) return NextResponse.json({ error: 'Demasiadas solicitudes.' }, { status: 429 })
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip')?.trim() || 'unknown'
+    const clientKey = createHash('sha256').update(clientIp).digest('hex')
+    const supabase = getSupabaseServiceClient()
+    const { data: allowed, error: rateLimitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {
+      p_client_key: clientKey,
+      p_limit: MAX_ATTEMPTS,
+      p_window_seconds: 60,
+    })
+    if (rateLimitError) throw rateLimitError
+    if (!allowed) return NextResponse.json({ error: 'Demasiadas solicitudes.' }, { status: 429 })
     const payload = await request.json()
     const { storeId, customerName, customerPhone, cart, existingLeadId } = payload
 
@@ -33,7 +28,6 @@ export async function POST(request: Request) {
     }
     const safeCart = cart.map((item: unknown) => item && typeof item === 'object' ? item : null).filter(Boolean).slice(0, 100)
     if (!safeCart.length) return NextResponse.json({ error: 'Carrito inválido' }, { status: 400 })
-    const supabase = getSupabaseServiceClient()
 
     // Upsert mechanism: Si ya mandamos el lead en este intento (tienen existingLeadId), lo actualizamos. 
     // Si no, creamos uno nuevo.
@@ -43,8 +37,7 @@ export async function POST(request: Request) {
         .update({
           customer_name: text(customerName, 160),
           customer_phone: text(customerPhone, 40).replace(/\s/g, ''),
-          cart_json: safeCart,
-          updated_at: new Date().toISOString()
+          cart_items: safeCart
         })
         .eq('id', existingLeadId)
         .eq('store_id', storeId)
@@ -60,7 +53,7 @@ export async function POST(request: Request) {
           store_id: storeId,
           customer_name: text(customerName, 160),
           customer_phone: text(customerPhone, 40).replace(/\s/g, ''),
-          cart_json: safeCart
+          cart_items: safeCart
         })
         .select('id')
         .single()
