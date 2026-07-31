@@ -210,6 +210,8 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuario no autenticado')
+      const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
+      if (!store) throw new Error('No se encontró la tienda del usuario')
 
       const { error: dbError } = await supabase
         .from('products')
@@ -229,7 +231,7 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
           variants: templateType === 'moda' ? variants : (templateType === 'restaurante' ? variants : []),
           preparation_time: preparationTime || null,
           is_available: isAvailable,
-          user_id: user.id   // Mantener compatibilidad Legacy
+          user_id: store.id
         })
         .eq('id', params.id)
 
@@ -239,18 +241,22 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
         const { error: deleteVariantsError } = await supabase
           .from('product_variants')
           .delete()
-          .eq('store_id', user.id)
+          .eq('store_id', store.id)
           .eq('product_id', params.id)
 
         if (deleteVariantsError) throw deleteVariantsError
 
         if (variants.length > 0) {
           const relVariants = variants.map((v: any) => ({
-            store_id: user.id,
+            store_id: store.id,
             product_id: params.id,
             name: v.talla ? (v.color ? `${v.talla} / ${v.color}` : v.talla) : v.color,
             value: v.talla || v.color,
-            price_delta: 0
+            price_delta: 0,
+            talla: v.talla || null,
+            color: v.color || null,
+            combination_key: [v.talla, v.color].filter(Boolean).join('|').toLowerCase() || null,
+            stock: stock ? parseInt(stock) : null,
           }))
 
           const { error: variantsError } = await supabase

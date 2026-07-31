@@ -28,12 +28,12 @@
 - **Razón**: (Inferido) Menor fricción de implementación inicial en un mercado latinoamericano.
 - **Consecuencias**: Cuellos de botella operativos para habilitar cuentas. No automatizable masivamente.
 
-### [INICIAL] Validación Zero-Trust Webhook Culqi
+### [INICIAL] Validación Zero-Trust Webhook Mercado Pago
 - **Contexto**: Recepción de confirmación de pagos de tarjetas.
 - **Opciones evaluadas**: Confiar en payload POST vs Consultar API fuente.
-- **Decisión**: Consultar directamente a la API de Culqi con el `charge_id`.
+- **Decisión**: Consultar directamente a la API de Mercado Pago con el `charge_id`.
 - **Razón**: Prevenir manipulación de payloads webhooks por actores maliciosos que falsifiquen IPs.
-- **Consecuencias**: Requiere desencriptar en el servidor el `culqi_secret_key` del merchant en cada llamada de webhook entrante.
+- **Consecuencias**: Requiere desencriptar en el servidor el `mercadopago_secret_key` del merchant en cada llamada de webhook entrante.
 
 ### [RESUELTO] Modelo Canónico de Identidad y Plantillas (SaaS)
 

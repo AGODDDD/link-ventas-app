@@ -50,6 +50,8 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Prop
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error("No autenticado")
+      const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
+      if (!store) throw new Error('No se encontró la tienda del usuario')
 
       const text = await file.text()
       const rawData = csvToJSON(text)
@@ -63,7 +65,7 @@ export default function ImportProductsModal({ isOpen, onClose, onSuccess }: Prop
         if (!name || isNaN(price)) return null;
 
         return {
-          user_id: user.id,
+          user_id: store.id,
           name: name.toUpperCase(),
           price: price,
           brand: (row.marca || row.brand || "").toUpperCase(),

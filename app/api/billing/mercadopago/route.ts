@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { getAuthenticatedUser } from '@/lib/supabaseServer'
 
 const PRO_AMOUNT = 25
 
@@ -40,18 +40,11 @@ export async function POST(request: Request) {
       }),
     })
     const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string } = await paymentResponse.json()
-    if (!paymentResponse.ok || payment.status !== 'approved' || Number(payment.transaction_amount) !== PRO_AMOUNT || payment.currency_id !== 'PEN' || !payment.id) {
-      return NextResponse.json({ error: payment.status_detail || 'Pago no aprobado.' }, { status: 400 })
+    if (!paymentResponse.ok || Number(payment.transaction_amount) !== PRO_AMOUNT || payment.currency_id !== 'PEN' || !payment.id) {
+      return NextResponse.json({ error: payment.status_detail || 'Pago no pudo ser procesado.' }, { status: 400 })
     }
-
-    const { data, error } = await getSupabaseServiceClient().rpc('activate_platform_pro_subscription', {
-      p_user_id: user.id,
-      p_payment_id: String(payment.id),
-      p_amount: PRO_AMOUNT,
-      p_currency: 'PEN',
-    })
-    if (error || !data?.[0]) return NextResponse.json({ error: 'Pago aprobado; no se pudo activar el plan.' }, { status: 500 })
-    return NextResponse.json({ success: true, plan: data[0].plan, plan_expires_at: data[0].plan_expires_at })
+    // El webhook de Mercado Pago confirma y activa el plan de forma idempotente.
+    return NextResponse.json({ accepted: true, payment_id: String(payment.id), payment_status: payment.status ?? 'pending' }, { status: 202 })
   } catch (error) {
     console.error('Platform Mercado Pago billing error:', error)
     return NextResponse.json({ error: 'No se pudo procesar el cobro.' }, { status: 500 })

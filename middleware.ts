@@ -17,7 +17,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * la inicializa, asigna el trial y gestiona la redirección si es necesario.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // ── Rutas siempre públicas ────────────────────────────────────────────────

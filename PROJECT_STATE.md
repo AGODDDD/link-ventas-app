@@ -7,7 +7,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - Señal de disponibilidad limitada basada en stock real.
 - Generación de tickets térmicos (impresión optimizada con `html2canvas`).
 - Slugs dinámicos (`/tienda/[id]`) renderizados del lado del servidor.
-- Webhook de Culqi para verificación de pagos automatizados.
+- Webhook de Mercado Pago para verificación de pagos automatizados.
 - RLS de Supabase implementado y funcional.
 - Persistencia del carrito offline/local vía Zustand.
 - Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
@@ -24,8 +24,8 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - Navegación instantánea (0ms) entre pestañas de datos del Panel de Control, eliminando re-renders intermedios.
   - Skeletons estructurales *Pixel-Perfect* desarrollados e inyectados para *Cold Starts* en Clientes, Pedidos, Analytics y Bodega. Evaluados estrictamente bajo la regla `if (lastFetch === 0)`.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
-  - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Culqi), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
-  - **Datos unificados**: Todas las compras de WhatsApp y Culqi convergen exclusivamente en el modelo relacional `orders` y `order_items`. Se erradicó la tabla `delivery_orders` y su estrategia de doble escritura.
+  - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Mercado Pago), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
+  - **Datos unificados**: Todas las compras de WhatsApp y Mercado Pago convergen exclusivamente en el modelo relacional `orders` y `order_items`. Se erradicó la tabla `delivery_orders` y su estrategia de doble escritura.
   - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras. Único canal `orders` activo, eliminando colisiones.
   - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard. Auto-cancelación a las 24h para pedidos no pagados.
   - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime (filtro por UUID clave primaria) + polling cada 2s, con integración opcional a OpenRouteService para rutas reales. `REPLICA IDENTITY FULL` habilitado en tabla `orders` para transmisión completa por WebSocket.
@@ -33,7 +33,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - **Tickets e impresión** (`ThermalReceipt`): Impresión térmica de 80mm, descarga PNG/PDF, compartir por WhatsApp o email.
 
 ## Funcionalidades Parcialmente Implementadas
-- **Onboarding de Pagos Culqi:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
+- **Onboarding de Pagos Mercado Pago:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
 - **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
 
 ## Funcionalidades Pendientes
@@ -45,12 +45,12 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Identidad del Merchant (Alta Severidad):** Se unificó la nomenclatura en el frontend para referirse consistentemente a `store_id` al hacer consultas a la tabla `orders` (eliminando `merchant_id` de stores, rutas y analíticas).
 - **FK de delivery_orders (Alta Severidad):** Se corrigió la migración local `migrations/delivery_orders.sql` para apuntar a `stores(id)` en vez de `profiles(id)`.
 - **Correlativos Seguros de Pedidos:** Se trasladó la lógica de IDs (ej. BARR-110626-4132) desde una generación aleatoria cliente a una Transacción Atómica en Supabase (`store_sequences`) garantizando números secuenciales e inmutables que se reinician cada día, y se unificó la inyección del `legacy_id` tanto en Checkout de Moda como de Restaurantes.
-- **Race Condition y Timeline (Bugfix):** Se resolvió un bug crítico donde el evento del Webhook de Culqi y el evento local chocaban insertando dos órdenes idénticas en el panel. Se aplicó deduplicación por `legacy_id` en el Store de Zustand y se reparó el renderizado de progreso para estados `paid`.
+- **Race Condition y Timeline (Bugfix):** Se resolvió un bug crítico donde el evento del Webhook de Mercado Pago y el evento local chocaban insertando dos órdenes idénticas en el panel. Se aplicó deduplicación por `legacy_id` en el Store de Zustand y se reparó el renderizado de progreso para estados `paid`.
 - **Desacoplamiento de doctor.ts (Alta Severidad):** Se eliminó el script manual `doctor.ts` y `seguridad_supabase.sql`. Se configuró el Supabase CLI y se consolidó el esquema en la carpeta estandarizada `supabase/migrations/*`.
-- **Refactor de Estados de Pago:** Se eliminó el hardcodeo de `status: 'pending'`. Ahora los pagos manuales por transferencia nacen en estado `pendiente_verificacion` y los pagos por Culqi nacen en `pendiente_pago` respetando la Idempotencia Zero-Trust de Webhooks. Se actualizó el Dashboard para soportarlo con etiquetas y colores amigables.
+- **Refactor de Estados de Pago:** Se eliminó el hardcodeo de `status: 'pending'`. Ahora los pagos manuales por transferencia nacen en estado `pendiente_verificacion` y los pagos por Mercado Pago nacen en `pendiente_pago` respetando la Idempotencia Zero-Trust de Webhooks. Se actualizó el Dashboard para soportarlo con etiquetas y colores amigables.
 - **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
 - **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
-- **Realtime del cliente Culqi (Alta Severidad):** El `OrderDetailModal.tsx` escuchaba `delivery_orders` por `id`, pero Culqi solo escribe en `orders`. Además, Supabase Realtime ignora filtros en columnas no-PK (`legacy_id`). Se añadió `coreId` (UUID) al store del cliente para filtrar por clave primaria. Polling reducido a 2s.
+- **Realtime del cliente Mercado Pago (Alta Severidad):** El `OrderDetailModal.tsx` escuchaba `delivery_orders` por `id`, pero Mercado Pago solo escribe en `orders`. Además, Supabase Realtime ignora filtros en columnas no-PK (`legacy_id`). Se añadió `coreId` (UUID) al store del cliente para filtrar por clave primaria. Polling reducido a 2s.
 - **Pedidos auto-cancelados al crearse:** El `RestauranteCheckoutModal.tsx` usaba el `legacy_id` como `id` en inserts a `orders` (que exige UUID). Se unificó la generación de `crypto.randomUUID()` compartido antes de ambos flujos.
 - **Historial mostraba 'Completado' al instante:** Colisión de `legacy_id` entre pruebas. Se migró la consulta a tabla `orders` con deduplicación por fecha. Status `paid` se mapea a `pendiente` para el comprador.
 - **Deduplicación de Modales (Compartir):** Solucionado un bug donde los IDs `BARR-XXX` aparecían cortados al compartir pedidos `legacy_delivery` que llegaban por WebSockets. Se implementó un bypass para que asuma el ID como legacy_id cuando `_source === 'legacy_delivery'`.
@@ -59,7 +59,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Erradicación de la "Doble Escritura":** Se eliminó por completo la dependencia a la tabla obsoleto `delivery_orders`. Todo el ecosistema de LinkVentas (Checkout, WebSockets, Store, Analíticas y API de PDF) interactúa ahora únicamente con la tabla `orders` usando IDs UUID y `legacy_id`, resultando en un código más robusto, veloz y sin problemas de sincronización fantasmas.
 
 ## Bugs Potenciales Detectados
-- **Severidad Media:** El Webhook de Culqi depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
+- **Severidad Media:** El Webhook de Mercado Pago depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
 - **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.
 
 ## Deuda Técnica Detectada

@@ -91,11 +91,11 @@ export default function OrderHistoryPanel({ isOpen, onClose, storeId, storeLat, 
 
       await Promise.all(storeOrders.map(async (local) => {
         const reference = local.coreId || local.id
-        const response = await fetch(`/api/orders/status?store_id=${encodeURIComponent(storeId)}&order_id=${encodeURIComponent(reference)}`)
+        const response = await fetch(`/api/orders/status?store_id=${encodeURIComponent(storeId)}&order_id=${encodeURIComponent(reference)}&customer_phone=${encodeURIComponent(local.cliente.telefono)}`)
         if (!response.ok) return
         const result = await response.json()
         if (!result?.order?.status) return
-        const mappedStatus = result.order.status === 'paid' ? 'pendiente' : result.order.status
+        const mappedStatus = result.order.status
         if (local.status !== mappedStatus) {
           customerStore.updateOrderStatus(local.id, mappedStatus as Order['status'])
         }

@@ -46,7 +46,7 @@ async function runTests() {
         console.log("   ✅ Éxito: La tabla orders acepta 'pendiente_verificacion'.")
 
         // TEST 2: Insertar en orders (Core) con 'pendiente_pago'
-        console.log("\n-> TEST 2: Insertar Core Order (Culqi) con status: 'pendiente_pago'")
+        console.log("\n-> TEST 2: Insertar Core Order (Mercado Pago) con status: 'pendiente_pago'")
         const { error: e2 } = await supabase.from('orders').insert({
             id: testOrderId2,
             store_id: store.id,
@@ -54,7 +54,7 @@ async function runTests() {
             order_type: 'standard',
             customer_name: 'QA Tester 2',
             total: 150,
-            metodo_pago: 'culqi'
+            metodo_pago: 'mercadopago'
         })
         if (e2) throw new Error(`Fallo Test 2: ${e2.message}`)
         console.log("   ✅ Éxito: La tabla orders acepta 'pendiente_pago'.")
@@ -67,13 +67,13 @@ async function runTests() {
             status: 'pendiente_pago',
             customer_name: 'QA Tester 3',
             total: 200,
-            metodo_pago: 'culqi'
+            metodo_pago: 'mercadopago'
         })
         if (e3) throw new Error(`Fallo Test 3: ${e3.message}`)
         console.log("   ✅ Éxito: La tabla delivery_orders enlaza correctamente con stores(id).")
 
-        // TEST 4: Modificar a 'paid' para simular Culqi
-        console.log("\n-> TEST 4: Simular Webhook Culqi (Actualizar a 'paid')")
+        // TEST 4: Modificar a 'paid' para simular Mercado Pago
+        console.log("\n-> TEST 4: Simular Webhook Mercado Pago (Actualizar a 'paid')")
         const { error: e4 } = await supabase.from('orders').update({ status: 'paid' }).eq('id', testOrderId2)
         if (e4) throw new Error(`Fallo Test 4: ${e4.message}`)
         console.log("   ✅ Éxito: Update a 'paid' funciona correctamente.")

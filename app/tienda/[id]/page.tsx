@@ -33,6 +33,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
     .from('stores')
     .select('*')
     .eq(isUUID ? 'id' : 'slug', params.id)
+    .eq('is_active', true)
     .single()
 
   if (!store) return <div>Tienda no encontrada</div>

@@ -15,7 +15,7 @@ export default function DashboardPage() {
 
   // Estadísticas calculadas reactivamente desde el cerebro Zustand
   const ingresosTotales = useMemo(() => {
-    return orders.reduce((acc, obj) => acc + parseFloat(obj.total_amount || 0), 0)
+    return orders.reduce((acc, obj) => acc + parseFloat(obj.total || 0), 0)
   }, [orders])
 
   const pedidosTotales = orders.length
@@ -76,11 +76,11 @@ export default function DashboardPage() {
     const hace7dias = ahora - 7 * 24 * 60 * 60 * 1000
     const hace14dias = ahora - 14 * 24 * 60 * 60 * 1000
     const ventasSemanaActual = orders.filter(o => new Date(o.created_at).getTime() >= hace7dias)
-      .reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+      .reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
     const ventasSemanaPasada = orders.filter(o => {
       const t = new Date(o.created_at).getTime()
       return t >= hace14dias && t < hace7dias
-    }).reduce((acc, o) => acc + parseFloat(o.total_amount || 0), 0)
+    }).reduce((acc, o) => acc + parseFloat(o.total || 0), 0)
     if (ventasSemanaPasada === 0) return ventasSemanaActual > 0 ? 100 : 0
     return Math.round(((ventasSemanaActual - ventasSemanaPasada) / ventasSemanaPasada) * 100)
   }, [orders])
@@ -92,7 +92,7 @@ export default function DashboardPage() {
     const dataToExport = orders.map(o => ({
       "ID Pedido": (o.legacy_id || o.id).split('-')[0].toUpperCase(),
       "Cliente": o.customer_name || "Anónimo",
-      "Monto": `S/ ${parseFloat(o.total_amount).toFixed(2)}`,
+      "Monto": `S/ ${parseFloat(o.total).toFixed(2)}`,
       "Fecha": new Date(o.created_at).toLocaleDateString(),
       "Hora": new Date(o.created_at).toLocaleTimeString(),
       "Metodo": o.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'QR/Voucher',
@@ -108,6 +108,8 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
+      const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
+      if (!store) return
 
       // Cargar Orders al cerebro Zustand (0ms si ya están en caché)
       await cargarOrders(user.id)
@@ -116,7 +118,7 @@ export default function DashboardPage() {
       const { data: leads } = await supabase
         .from('store_leads')
         .select('id')
-        .eq('store_id', user.id)
+        .eq('store_id', store.id)
 
       if (leads) setLeadsNuevos(leads.length)
     }
@@ -258,7 +260,7 @@ export default function DashboardPage() {
                         <td className="px-6 py-5 text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 whitespace-nowrap">
                             {new Date(order.created_at).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total_amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="px-6 py-5 text-sm font-bold text-zinc-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-right">S/ {parseFloat(order.total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className="px-6 py-5">
                             <span className="badge-green px-2 py-1 rounded text-[10px] font-bold tracking-tight group-hover:border-emerald-500/40 transition-all uppercase whitespace-nowrap">
                                 {order.payment_proof_url === 'CONTRA_ENTREGA' ? 'Efectivo' : 'Con QR'}

@@ -22,7 +22,7 @@ export function generateInsights(
 
   // 1. Proyección de Cierre de Mes (Prediction)
   const currentMonthOrders = orders.filter(o => isSameMonth(new Date(o.created_at), currentDate));
-  const currentMonthTotal = currentMonthOrders.reduce((acc, o) => acc + parseFloat(o.total_amount || o.total || '0'), 0);
+  const currentMonthTotal = currentMonthOrders.reduce((acc, o) => acc + parseFloat(o.total || '0'), 0);
   
   const currentDay = Math.max(1, currentDate.getDate());
   const daysInMonth = getDaysInMonth(currentDate);

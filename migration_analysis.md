@@ -69,7 +69,7 @@ Resultado previo a migración: 7 merchants sin entrada en `stores`. Resultado po
 
 Estas columnas **no existen en `stores`** y deben permanecer en `profiles`:
 - `plan`, `plan_expires_at` — datos de facturación SaaS
-- `culqi_active`, `culqi_public_key`, `culqi_secret_key` — credenciales encriptadas
+- `mercadopago_active`, `mercadopago_public_key`, `mercadopago_secret_key` — credenciales encriptadas
 - `yape_image_url`, `plin_image_url` — imágenes de QR de pago
 - `fomo_enabled`, `fomo_min_viewers`, `fomo_max_viewers`, `fomo_message` — motor FOMO
 - `social_instagram`, `social_facebook`, `social_tiktok` — redes sociales

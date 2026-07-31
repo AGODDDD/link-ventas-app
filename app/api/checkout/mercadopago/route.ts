@@ -21,13 +21,16 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabaseServiceClient()
-    const [{ data: order }, { data: store }, { data: profile }] = await Promise.all([
+    const [{ data: order }, { data: config }, { data: store }] = await Promise.all([
       supabase.from('orders').select('id, total, status, store_id').eq('id', orderId).eq('store_id', storeId).single(),
       supabase.from('store_config').select('mercadopago_active').eq('store_id', storeId).single(),
-      supabase.from('profiles').select('mercadopago_access_token, plan, plan_expires_at').eq('id', storeId).single(),
+      supabase.from('stores').select('owner_id').eq('id', storeId).single(),
     ])
+    const { data: profile } = store
+      ? await supabase.from('profiles').select('mercadopago_access_token, plan, plan_expires_at').eq('id', store.owner_id).single()
+      : { data: null }
     if (!order || order.status !== 'pendiente_pago') return NextResponse.json({ error: 'Orden no disponible para pago.' }, { status: 409 })
-    if (!store?.mercadopago_active || !profile?.mercadopago_access_token || !hasProFeatures(profile.plan, profile.plan_expires_at)) return NextResponse.json({ error: 'Mercado Pago no esta disponible en esta tienda.' }, { status: 403 })
+    if (!config?.mercadopago_active || !profile?.mercadopago_access_token || !hasProFeatures(profile.plan, profile.plan_expires_at)) return NextResponse.json({ error: 'Mercado Pago no esta disponible en esta tienda.' }, { status: 403 })
 
     const accessToken = decryptText(profile.mercadopago_access_token)
     const amount = Number(order.total)
@@ -37,14 +40,13 @@ export async function POST(request: Request) {
       body: JSON.stringify({ token, transaction_amount: amount, installments, payment_method_id: paymentMethodId, issuer_id: issuerId || undefined, payer: { email }, external_reference: order.id, description: `Orden ${order.id}` }),
     })
     const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string; message?: string } = await mpResponse.json()
-    if (!mpResponse.ok || payment.status !== 'approved' || Number(payment.transaction_amount) !== amount || payment.currency_id !== 'PEN' || !payment.id) {
+    if (!mpResponse.ok || Number(payment.transaction_amount) !== amount || payment.currency_id !== 'PEN' || !payment.id) {
       console.error('Mercado Pago API Rechazó el pago:', payment)
-      return NextResponse.json({ error: payment.message || payment.status_detail || 'Pago no aprobado.' }, { status: 400 })
+      return NextResponse.json({ error: payment.message || payment.status_detail || 'Pago no pudo ser procesado.' }, { status: 400 })
     }
 
-    const { data: paidOrder, error } = await supabase.from('orders').update({ status: 'paid', metodo_pago: 'mercadopago', mercadopago_payment_id: String(payment.id), mercadopago_paid_at: new Date().toISOString(), payment_proof_url: 'MERCADOPAGO_AUTOMATIC' }).eq('id', order.id).eq('status', 'pendiente_pago').is('mercadopago_payment_id', null).select('id, legacy_id').maybeSingle()
-    if (error || !paidOrder) return NextResponse.json({ error: 'Pago aprobado; estamos conciliando la orden.' }, { status: 202 })
-    return NextResponse.json({ success: true, order: paidOrder })
+    // La confirmación final y el descuento de stock ocurren exclusivamente en el webhook.
+    return NextResponse.json({ accepted: true, payment_id: String(payment.id), payment_status: payment.status ?? 'pending' }, { status: 202 })
   } catch (error) {
     console.error('Mercado Pago checkout error:', error)
     return NextResponse.json({ error: 'No se pudo procesar el pago.' }, { status: 500 })

@@ -154,7 +154,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             return;
                         }
 
-                        toast.success(`🛍️ NUEVA VENTA — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
+                        toast.success(`🛍️ NUEVA VENTA — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
                             description: `${nuevaOrden.customer_name} acaba de pagar`,
                             duration: 6000,
                             icon: <ShoppingBag className="text-secondary" />,
@@ -166,7 +166,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         setNotificaciones(prev => [{
                             id: nuevaOrden.id,
                             mensaje: `Compra de ${nuevaOrden.customer_name}`,
-                            monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
+                            monto: nuevaOrden.total || 0,
                             fecha: new Date(),
                             leida: false
                         }, ...prev])
@@ -185,8 +185,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         // Inyectar al store inmediatamente con lo que hay
                         nuevaOrden.order_items = items;
                         const store = useDashboardStore.getState()
-                        const norm = store.normalizarOrder(nuevaOrden, 'core')
-                        store.agregarOrderLocal(norm)
+                        store.agregarOrderLocal({ ...nuevaOrden, total: Number(nuevaOrden.total || 0) })
 
                         // Si no había items aún, reintentar a los 2s y actualizar el store
                         if (items.length === 0) {
@@ -202,7 +201,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         playNotificationSound();
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                             new Notification('🛍️ Nueva Venta Recibida', { 
-                                body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
+                                body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
                                 icon: '/favicon.ico' 
                             })
                         }
@@ -215,16 +214,15 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         const store = useDashboardStore.getState();
                         const exists = store.orders.some(o => o.id === payload.new.id);
                         
-                        // Si no existía (era un pago pendiente) y ahora es 'paid', ingresarlo como orden nueva.
-                        if (!exists && payload.new.status === 'paid') {
+                        // Un pago confirmado pasa a estado operativo pendiente mediante el webhook.
+                        if (!exists && payload.new.status === 'pendiente' && payload.new.payment_status === 'approved') {
                             const nuevaOrden = payload.new;
                             const { data: items } = await supabase.from('order_items').select('*').eq('order_id', nuevaOrden.id);
                             nuevaOrden.order_items = items || [];
                             
-                            const norm = store.normalizarOrder(nuevaOrden, 'core');
-                            store.agregarOrderLocal(norm);
+                            store.agregarOrderLocal({ ...nuevaOrden, total: Number(nuevaOrden.total || 0) });
                             
-                            toast.success(`💳 PAGO MERCADO PAGO — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, {
+                            toast.success(`💳 PAGO MERCADO PAGO — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`, {
                                 description: `${nuevaOrden.customer_name} pagó con tarjeta exitosamente`,
                                 duration: 6000,
                                 icon: <ShoppingBag className="text-secondary" />,
@@ -236,14 +234,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             setNotificaciones(prev => [{
                                 id: nuevaOrden.id,
                                 mensaje: `Pago Mercado Pago de ${nuevaOrden.customer_name}`,
-                                monto: nuevaOrden.total_amount || nuevaOrden.total || 0,
+                                monto: nuevaOrden.total || 0,
                                 fecha: new Date(),
                                 leida: false
                             }, ...prev])
                             playNotificationSound();
                             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                                 new Notification('🛍️ Nueva Venta Pagada (Mercado Pago)', {
-                                    body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total_amount || nuevaOrden.total || 0).toFixed(2)}`, 
+                                    body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
                                     icon: '/favicon.ico' 
                                 })
                             }

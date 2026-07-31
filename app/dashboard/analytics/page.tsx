@@ -12,7 +12,7 @@ import { generateInsights, Insight } from '@/lib/analyticsEngine'
 type Order = {
     id: string
     created_at: string
-    total_amount: string
+    total: string
     status: string
     customer_name: string
     payment_proof_url: string
@@ -106,7 +106,7 @@ export default function AnalyticsPage() {
 
     // === MÉTRICAS PRINCIPALES ===
     const ingresoTotal = useMemo(() =>
-        ordersFiltradas.reduce((acc, o) => acc + parseFloat(o.total_amount || '0'), 0)
+        ordersFiltradas.reduce((acc, o) => acc + parseFloat(o.total || '0'), 0)
     , [ordersFiltradas])
 
     const ticketPromedio = ordersFiltradas.length > 0 ? ingresoTotal / ordersFiltradas.length : 0
@@ -136,7 +136,7 @@ export default function AnalyticsPage() {
             dias.push({
                 date: key,
                 label,
-                Ventas: ordenesDia.reduce((acc, o) => acc + parseFloat(o.total_amount || '0'), 0),
+                Ventas: ordenesDia.reduce((acc, o) => acc + parseFloat(o.total || '0'), 0),
                 Ordenes: ordenesDia.length
             })
         }
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
         const map = new Map<string, { name: string; total: number; count: number }>()
         ordersFiltradas.forEach(o => {
             const existing = map.get(o.customer_name) || { name: o.customer_name, total: 0, count: 0 }
-            existing.total += parseFloat(o.total_amount || '0')
+            existing.total += parseFloat(o.total || '0')
             existing.count += 1
             map.set(o.customer_name, existing)
         })
@@ -201,7 +201,7 @@ export default function AnalyticsPage() {
                 `"${o.customer_name}"`,
                 o.status,
                 o.metodo_pago,
-                parseFloat(o.total_amount).toFixed(2)
+                parseFloat(o.total).toFixed(2)
             ]
             csvRows.push(row.join(','))
         })
@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
                             ))}
                         </div>
                         <a
-                            href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para acceder a las analíticas avanzadas.')}`}
+                            href={`/pendiente`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -291,7 +291,7 @@ export default function AnalyticsPage() {
                             }}
                         >
                             <Zap size={16} />
-                            Activar Plan Pro — S/ 29/mes
+                            Activar Plan Pro — S/ 25/mes
                         </a>
                     </div>
                 </div>

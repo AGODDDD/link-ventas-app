@@ -11,7 +11,7 @@ type ThermalReceiptProps = {
 export const ThermalReceipt = forwardRef<HTMLDivElement, ThermalReceiptProps>(({ order, storeName }, ref) => {
     if (!order) return null
 
-    const totalRaw = parseFloat(order.total_amount || order.total || order.total_price || 0)
+    const totalRaw = parseFloat(order.total_price || 0)
     const total = isNaN(totalRaw) ? '0.00' : totalRaw.toFixed(2)
     const store_name = storeName || "TU TIENDA"
     const orderDate = new Date(order.created_at)

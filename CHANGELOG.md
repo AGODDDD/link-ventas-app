@@ -4,6 +4,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+### Changed
+- Consolidado el contrato de pedidos: una tienda por cuenta, estados validados por RPC, reservas de inventario y stock por combinación de Moda.
+- Mercado Pago ahora se concilia por webhook; el checkout y la suscripción Pro no confirman pagos por respuesta síncrona.
+- Renombrado el punto de entrada Edge a `middleware.ts`, alineado el plan Pro a S/ 25 y eliminado el CTA de WhatsApp ficticio.
+
+### Added
+- **Auditoría Profunda de Modelo de Negocio y Arquitectura**:
+  - Evaluación completa de los 4 pilares (Visión y Modelo SaaS, Arquitectura Serverless, Seguridad/Errores Críticos y Cumplimiento de `AGENTS.md`).
+  - Reporte de evidencia detallado generado en `auditoria_modelo_negocio.md` identificando la inactividad del middleware Edge (`proxy.ts`), desincronizaciones de precios (S/ 25 vs S/ 29) y desactualización de documentos maestros sobre Mercado Pago vs Mercado Pago.
+
 
 ## [2026-07-30] — Premium UI & Moda Finalization
 
@@ -68,15 +78,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere vagamente a Semantic Versioning.
 
-## [2026-07-29] — Fase 1: Blindaje de Pedidos, Culqi y RLS
+## [2026-07-29] — Fase 1: Blindaje de Pedidos, Mercado Pago y RLS
 
 ### Seguridad
 - La creación de pedidos migró a `POST /api/orders` y a la RPC transaccional `create_order_from_cart`: los precios, modificadores, stock, delivery, totales y correlativos se calculan en PostgreSQL bajo bloqueo de filas.
 - Se eliminaron los `INSERT` directos de `orders` y `order_items` desde los checkouts público y de restaurante.
-- Culqi ya no confirma pagos desde el endpoint de cargo. El webhook exige `charge_id` único, metadata exacta de orden/tienda, `PEN`, `venta_exitosa`, estado `Exitosa` y monto idéntico antes de marcar una orden como `paid`.
+- Mercado Pago ya no confirma pagos desde el endpoint de cargo. El webhook exige `charge_id` único, metadata exacta de orden/tienda, `PEN`, `venta_exitosa`, estado `Exitosa` y monto idéntico antes de marcar una orden como `paid`.
 - Añadida protección RLS para pedidos, ítems, carritos abandonados y configuraciones satélite; se revocó acceso anónimo directo a datos de pedido.
 - `profiles` dejó de ser un origen público completo. El storefront consume exclusivamente `stores` y `store_config`; los secretos y campos internos no se serializan al cliente.
-- Se añadió un guard de base de datos que bloquea cambios de totales, cargos Culqi o estado `paid` desde el navegador.
+- Se añadió un guard de base de datos que bloquea cambios de totales, cargos Mercado Pago o estado `paid` desde el navegador.
 
 ### Compatibilidad
 - El seguimiento de pedidos público ahora consulta `/api/orders/status`, que devuelve solo estado e identificadores, preservando el tracking sin reabrir acceso a la tabla `orders`.
@@ -88,7 +98,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Scripts de mantenimiento y pruebas: `fix_pedidos.py`, `scripts/fix-escapes.js`, y `scripts/test_store.ts`.
 
 ### Fixed
-- Limpieza de espacios en blanco al final de la línea en `app/api/checkout/culqi/route.ts`.
+- Limpieza de espacios en blanco al final de la línea en `app/api/checkout/mercadopago/route.ts`.
 
 ## [2026-06-20] — Sistema de Reseñas + Rediseño ModaTemplate
 
@@ -154,11 +164,11 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ## [2026-06-11] — Sesión 11
 ### Corregido (Alta Severidad)
-- **Realtime del cliente Culqi roto:** El `OrderDetailModal.tsx` escuchaba cambios en `delivery_orders` por `id`, pero Culqi solo escribe en `orders`. Además, el filtro usaba `legacy_id` (no es clave primaria), lo cual Supabase Realtime **ignora silenciosamente**. El cliente caía al polling de 8s, causando retraso perceptible de 3-5s.
+- **Realtime del cliente Mercado Pago roto:** El `OrderDetailModal.tsx` escuchaba cambios en `delivery_orders` por `id`, pero Mercado Pago solo escribe en `orders`. Además, el filtro usaba `legacy_id` (no es clave primaria), lo cual Supabase Realtime **ignora silenciosamente**. El cliente caía al polling de 8s, causando retraso perceptible de 3-5s.
   - **Fix:** Se añadió `coreId` (UUID) a la interfaz `Order` del cliente (`useCustomerStore.ts`). La suscripción Realtime ahora filtra por `id=eq.<UUID>` (clave primaria) → **instantáneo**.
   - **Fix:** Polling de respaldo reducido de 8s a 2s como safety net.
-- **Pedidos auto-cancelados al crearse (Culqi + WhatsApp):** El `RestauranteCheckoutModal.tsx` insertaba el `legacy_id` (ej. `BARR-110626-0006`) directamente como `id` en la tabla `orders`, cuya columna exige UUID. Postgres rechazaba con `invalid input syntax for type uuid`, la orden nunca se creaba, y el frontend lo interpretaba como "cancelado".
-  - **Fix:** Se genera `crypto.randomUUID()` compartido antes de ambos flujos (Culqi y WhatsApp). El UUID va como `id`, el código bonito va como `legacy_id`.
+- **Pedidos auto-cancelados al crearse (Mercado Pago + WhatsApp):** El `RestauranteCheckoutModal.tsx` insertaba el `legacy_id` (ej. `BARR-110626-0006`) directamente como `id` en la tabla `orders`, cuya columna exige UUID. Postgres rechazaba con `invalid input syntax for type uuid`, la orden nunca se creaba, y el frontend lo interpretaba como "cancelado".
+  - **Fix:** Se genera `crypto.randomUUID()` compartido antes de ambos flujos (Mercado Pago y WhatsApp). El UUID va como `id`, el código bonito va como `legacy_id`.
 - **Historial del cliente mostraba "Completado" al instante:** Colisión de `legacy_id` entre pruebas antiguas y nuevas. El `OrderHistoryPanel.tsx` consultaba `delivery_orders` (tabla legacy con datos viejos marcados como completados).
   - **Fix:** Migrada la consulta a tabla `orders` (core), con deduplicación por `legacy_id` tomando siempre el registro más reciente. Status `paid` se mapea a `pendiente` en la vista del comprador.
 - **DB: REPLICA IDENTITY FULL:** Ejecutado `ALTER TABLE orders REPLICA IDENTITY FULL` para que Supabase Realtime transmita todos los campos en cada UPDATE por WebSocket.
@@ -189,7 +199,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 
 ### Modificado
 - `store/useCustomerStore.ts`: Interfaz `Order` ahora incluye `coreId?: string` para suscripción realtime por UUID.
-- `components/tienda/templates/RestauranteCheckoutModal.tsx`: UUID compartido para Culqi y WhatsApp. `coreId` se persiste en localStorage del comprador.
+- `components/tienda/templates/RestauranteCheckoutModal.tsx`: UUID compartido para Mercado Pago y WhatsApp. `coreId` se persiste en localStorage del comprador.
 - `components/tienda/templates/OrderDetailModal.tsx`: Realtime apunta a `orders` con filtro por UUID. Polling a 2s.
 - `components/tienda/templates/OrderHistoryPanel.tsx`: Sincronización por `coreId` (UUID) cuando disponible. Polling continuo a 2s mientras el panel está abierto.
 - `app/dashboard/pedidos/page.tsx`: Restaurada lógica de auto-cancelación 24h. Modal de compartir detecta `legacy_delivery`.
@@ -222,7 +232,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - [Tickets] Se instalaron e integraron las librerías `bwip-js` y `react-barcode` para renderizar Códigos de Barras (CODE128) reales y legibles, garantizando un ticket verdaderamente trazable tanto en Backend (Buffer PNG inyectado al PDF) como Frontend (Componente SVG).
 
 ### Corregido
-- [Frontend] Bug de Race Condition en pagos Culqi: Se implementó deduplicación de eventos en `useDashboardStore.ts` para que no se muestre la misma orden duplicada (una desde el Webhook y otra desde el Modal Callback).
+- [Frontend] Bug de Race Condition en pagos Mercado Pago: Se implementó deduplicación de eventos en `useDashboardStore.ts` para que no se muestre la misma orden duplicada (una desde el Webhook y otra desde el Modal Callback).
 - [Frontend] Timeline UI en blanco: Se agregó la compatibilidad del estado `paid` en la barra de progreso (Timeline) del Dashboard de pedidos, rellenando los checkboxes de éxito automáticamente en órdenes pagadas con tarjeta.
 
 - Refactorización Masiva: Reemplazadas cientos de clases fijas o antiguas (`bg-surface-container`, `text-on-surface`, `bg-slate-900`, etc.) por sus equivalentes nativos de Tailwind (`bg-white dark:bg-zinc-900`, `text-zinc-900 dark:text-zinc-100`, etc.) asegurando que el modo oscuro aplique limpiamente en todo el ecosistema y unificándolo al estándar de diseño establecido en el layout (Stitch Design).
@@ -310,28 +320,28 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - `components/dashboard/DashboardTopBar.tsx`: Corregidos 3 problemas reales — (1) sombra oscura fija en modo claro (`shadow-[0_1px_3px...] dark:shadow-[0_20px_40px...]`), (2) border del header hardcoded (`border-zinc-200 dark:border-[var(--dash-border)]`), (3) buscador y dropdown de notificaciones sin fondo adaptativo (`bg-zinc-50 dark:bg-[var(--dash-surface-2)]`, `bg-white dark:bg-[var(--dash-surface-2)]`).
   - `components/dashboard/ThemeToggle.tsx`: Corregido `hover:bg-neutral-800` fijo oscuro → `hover:bg-zinc-100 dark:hover:bg-zinc-800`.
   - **No modificado:** `components/DashboardSidebar.tsx` — ya usaba exclusivamente variables CSS `var(--dash-*)` que responden correctamente al tema. Sin regresión.
-- Pago/Culqi: Eliminada la columna fantasma `total_amount` de las rutas de API de Culqi (`webhooks/culqi` y `checkout/culqi`). Esto resuelve un HTTP 500 fatal donde el backend intentaba hacer un `.select('total_amount')` sobre la tabla `orders` (que solo tiene la columna `total`), causando que los pagos confirmados no lograran actualizar el estado de la orden a 'paid'.
-- Checkout/Culqi: Se extirpó por fin el `total_amount` residual del bloque de pre-registro de Culqi en `RestauranteCheckoutModal.tsx`, curando el error silencioso que truncaba la ejecución. Asimismo, se unificó la identidad de la orden inyectando el BARR-XXX (`orderId`) directamente en la columna `legacy_id` al insertar en Supabase.
+- Pago/Mercado Pago: Eliminada la columna fantasma `total_amount` de las rutas de API de Mercado Pago (`webhooks/mercadopago` y `checkout/mercadopago`). Esto resuelve un HTTP 500 fatal donde el backend intentaba hacer un `.select('total_amount')` sobre la tabla `orders` (que solo tiene la columna `total`), causando que los pagos confirmados no lograran actualizar el estado de la orden a 'paid'.
+- Checkout/Mercado Pago: Se extirpó por fin el `total_amount` residual del bloque de pre-registro de Mercado Pago en `RestauranteCheckoutModal.tsx`, curando el error silencioso que truncaba la ejecución. Asimismo, se unificó la identidad de la orden inyectando el BARR-XXX (`orderId`) directamente en la columna `legacy_id` al insertar en Supabase.
 - Dashboard/Pedidos: Ajustado el renderizado en la tabla para mostrar el `legacy_id` (BARR-XXX) en lugar del UUID completo en el historial de Delivery. Adicionalmente se agregó `"pending"` a los diccionarios `DELIVERY_LABELS` y `DELIVERY_COLORS` para que el estado se traduzca como "Pendiente" y adquiera el color de badge amarillo correspondiente, en lugar del texto crudo sin estilo.
-- Resiliencia (Checkout): Agregado un manejo seguro (grácil) en el registro de la sub-tabla `order_items` de Culqi. En caso de fallo (ej. formato en modifiers o IDs no-UUID), el error es interceptado en consola sin interrumpir el bloque principal, asegurando que `Culqi.open()` sí logre ejecutarse.
-- Historial del Cliente: Modificado el callback de éxito de Culqi (`RestauranteCheckoutModal.tsx`) para usar el `legacy_id` (BARR-XXX) en lugar del UUID cuando se guarda el pedido en el historial local de Zustand (`useCustomerStore.addOrder`). Esto asegura que el pedido sea visible inmediatamente en la pantalla de historial del usuario.
-- Dashboard/Pedidos: Agregado el estado `paid` al diccionario de traducciones (`DELIVERY_LABELS` y `DELIVERY_COLORS`) con texto "Pagado" y color de fondo verde, corrigiendo el renderizado en inglés causado por el webhook de Culqi.
+- Resiliencia (Checkout): Agregado un manejo seguro (grácil) en el registro de la sub-tabla `order_items` de Mercado Pago. En caso de fallo (ej. formato en modifiers o IDs no-UUID), el error es interceptado en consola sin interrumpir el bloque principal, asegurando que `Mercado Pago.open()` sí logre ejecutarse.
+- Historial del Cliente: Modificado el callback de éxito de Mercado Pago (`RestauranteCheckoutModal.tsx`) para usar el `legacy_id` (BARR-XXX) en lugar del UUID cuando se guarda el pedido en el historial local de Zustand (`useCustomerStore.addOrder`). Esto asegura que el pedido sea visible inmediatamente en la pantalla de historial del usuario.
+- Dashboard/Pedidos: Agregado el estado `paid` al diccionario de traducciones (`DELIVERY_LABELS` y `DELIVERY_COLORS`) con texto "Pagado" y color de fondo verde, corrigiendo el renderizado en inglés causado por el webhook de Mercado Pago.
 - Verificación: `npx tsc --noEmit` sin errores en ambas sesiones de commit.
 
-## [2026-06-08] — Sesión 3 (Fix definitivo Culqi)
+## [2026-06-08] — Sesión 3 (Fix definitivo Mercado Pago)
 ### Diagnóstico profundo
-- Se realizó un análisis exhaustivo del flujo completo de Culqi contrastando el código fuente contra el esquema real de Supabase.
-- **Causa raíz identificada:** 3 bugs en `RestauranteCheckoutModal.tsx` (bloque Culqi, líneas 284-304):
-  1. **`total_amount: total`** (L285): Columna fantasma que no existe en la tabla `orders`. El INSERT a Supabase fallaba silenciosamente con error de columna inexistente, y como `handlePagar()` no tiene `try/catch`, el `throw coreOrderError` generaba una promesa rechazada sin manejador visible. Resultado: `win.Culqi.open()` nunca se ejecutaba y el botón "no hacía nada".
+- Se realizó un análisis exhaustivo del flujo completo de Mercado Pago contrastando el código fuente contra el esquema real de Supabase.
+- **Causa raíz identificada:** 3 bugs en `RestauranteCheckoutModal.tsx` (bloque Mercado Pago, líneas 284-304):
+  1. **`total_amount: total`** (L285): Columna fantasma que no existe en la tabla `orders`. El INSERT a Supabase fallaba silenciosamente con error de columna inexistente, y como `handlePagar()` no tiene `try/catch`, el `throw coreOrderError` generaba una promesa rechazada sin manejador visible. Resultado: `win.Mercado Pago.open()` nunca se ejecutaba y el botón "no hacía nada".
   2. **`legacy_id: coreOrderId`** (L289): Asignaba el UUID como `legacy_id`, haciéndolo redundante. Corregido a `legacy_id: orderId` para que almacene el código corto BARR-XXXX generado en L239.
-  3. **`{ orderId: coreOrderId }`** (L304): El objeto `pendingCulqiRestaurantOrder` no incluía el `legacyId`, impidiendo que el callback de éxito tuviera acceso al código BARR-XXXX para el historial del cliente.
+  3. **`{ orderId: coreOrderId }`** (L304): El objeto `pendingMercado PagoRestaurantOrder` no incluía el `legacyId`, impidiendo que el callback de éxito tuviera acceso al código BARR-XXXX para el historial del cliente.
 
 ### Cambios aplicados (Fase 1 — handlePagar)
 - Eliminada línea `total_amount: total` del INSERT a `orders`.
 - Cambiado `legacy_id: coreOrderId` → `legacy_id: orderId` (BARR-XXXX).
 - Cambiado `{ orderId: coreOrderId }` → `{ orderId: coreOrderId, legacyId: orderId }`.
 
-### Cambios aplicados (Fase 2 — callback Culqi)
+### Cambios aplicados (Fase 2 — callback Mercado Pago)
 - `delivery_orders` insert: Cambiado `id: orderId` (que contenía el UUID) → `id: pendingOrder?.legacyId || orderId` para que la tabla legacy reciba el BARR-XXXX.
 - `customerStore.addOrder`: Mismo cambio para que el historial local del cliente use BARR-XXXX.
 
@@ -342,15 +352,15 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 - Verificación: `npx tsc --noEmit` sin errores.
 
 ### Commits de esta sesión
-- `ccf1053` — fix(culqi): use legacyId in callback delivery_orders and customer history, add pending/paid labels, show BARR-XXX in dashboard
-- `6af1b5b` — fix(culqi): remove phantom total_amount, fix legacy_id to BARR-XXX, pass legacyId to pending order
+- `ccf1053` — fix(mercadopago): use legacyId in callback delivery_orders and customer history, add pending/paid labels, show BARR-XXX in dashboard
+- `6af1b5b` — fix(mercadopago): remove phantom total_amount, fix legacy_id to BARR-XXX, pass legacyId to pending order
 
 ### Commits de la sesión anterior
-- `90d6f11` — fix(culqi): remove total_amount and use orderId as legacy_id in Culqi order insert
-- `77cafd8` — fix(culqi): use legacyId for customer history and add paid/pending status labels
-- `bdeba34` — fix(culqi): handle order_items error gracefully and fix legacy_id display and pending status label
-- `7184490` — fix(culqi): remove total_amount from Culqi order insert in RestauranteCheckoutModal
-- `4f92bc6` — fix(culqi): remove total_amount from API routes select and calculations
+- `90d6f11` — fix(mercadopago): remove total_amount and use orderId as legacy_id in Mercado Pago order insert
+- `77cafd8` — fix(mercadopago): use legacyId for customer history and add paid/pending status labels
+- `bdeba34` — fix(mercadopago): handle order_items error gracefully and fix legacy_id display and pending status label
+- `7184490` — fix(mercadopago): remove total_amount from Mercado Pago order insert in RestauranteCheckoutModal
+- `4f92bc6` — fix(mercadopago): remove total_amount from API routes select and calculations
 - `ff7b0e4` — chore: trigger deployment after hard reset
 - `8f46738` — revert: restore original order flow before today's changes
 - `fc800f2` — fix(dashboard): dark/light theme support in page.tsx via Tailwind dark: prefix

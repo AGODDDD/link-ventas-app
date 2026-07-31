@@ -4,6 +4,7 @@
  */
 
 export type TemplateType = 'restaurante' | 'comercio' | 'moda';
+export type StoreSchedule = Record<string, { active: boolean; open: string; close: string }>;
 
 // --- CORE: IDENTITY ---
 export interface Store {
@@ -29,7 +30,7 @@ export interface StoreConfig {
   store_lat?: number;
   store_lng?: number;
   store_address?: string;
-  store_schedule?: any;
+  store_schedule?: StoreSchedule;
   hero_image_url?: string;
   yape_image_url?: string;
   plin_image_url?: string;
@@ -114,7 +115,7 @@ export interface ExtensionDeliverySettings {
 
 export interface ExtensionProductVariants {
   product_id: string;
-  variants_data: any; // Hierarchical variants
+  variants_data: Array<{ talla?: string; color?: string; stock?: number | null; price_delta?: number }>;
 }
 
 export interface ExtensionMenuCategories {

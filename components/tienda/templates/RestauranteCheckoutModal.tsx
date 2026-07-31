@@ -65,6 +65,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
         alert("Por favor completa los campos requeridos y acepta los términos.");
         return;
      }
+     if (metodoPago === 'mercadopago' && !/^\S+@\S+\.\S+$/.test(correo.trim())) {
+        toast.error('Ingresa un correo válido para pagar con tarjeta.')
+        return
+     }
 
      // Sync profile data back
      if (onProfileUpdate) onProfileUpdate({ nombre, telefono, correo });
@@ -230,7 +234,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
   return (
     <>
-    {pendingPayment && perfil.mercadopago_public_key && <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-lg bg-white p-6"><div className="mb-4 flex justify-between"><h3 className="font-bold">Pago seguro con Mercado Pago</h3><button onClick={() => setPendingPayment(null)}>Cerrar</button></div><MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={correo || `${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => { const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || correo || `${telefono.replace(/\D/g, '')}@linkventas.pe`, order_id: pendingPayment.orderId, store_id: perfil.id }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Pago no aprobado.'); useCartStore.getState().clearCart(perfil.id); if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug); setPendingPayment(null); toast.success('¡Pago aprobado!'); if (onSuccess) onSuccess(); else handleClose(); }} /></div></div>}
+    {pendingPayment && perfil.mercadopago_public_key && <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4"><div className="w-full max-w-lg bg-white p-6"><div className="mb-4 flex justify-between"><h3 className="font-bold">Pago seguro con Mercado Pago</h3><button onClick={() => setPendingPayment(null)}>Cerrar</button></div><MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={correo} onError={(message) => toast.error(message)} onSubmit={async (payment) => { const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || correo, order_id: pendingPayment.orderId, store_id: perfil.id }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'No se pudo iniciar el pago.'); useCartStore.getState().clearCart(perfil.id); if ((perfil as any).slug) useCartStore.getState().clearCart((perfil as any).slug); setPendingPayment(null); toast.success('Pago recibido; confirmaremos tu pedido en breve.'); if (onSuccess) onSuccess(); else handleClose(); }} /></div></div>}
     <div className="fixed inset-0 z-[120] bg-neutral-100/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-6 overflow-y-auto">
       <div className="bg-[#F8F9FA] w-full max-w-5xl rounded-xl shadow-2xl relative my-auto animate-in fade-in zoom-in-95 duration-200">
         
@@ -323,7 +327,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
                               <span className="bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-sm inline-block text-neutral-600 max-w-full truncate">
                                 + Extras: {
                                   Object.entries(item.variantDetails.options as Record<string, string[]>).flatMap(([gId, oIds]) => {
-                                    const g = item.product.variants?.find((v:any) => v.id === gId);
+                                    const g = item.product.variants?.find((v:any) => v.id === gId) as any;
                                     if (!g) return [];
                                     return oIds.map(oId => {
                                       const o = g.options.find((opt:any) => opt.id === oId);

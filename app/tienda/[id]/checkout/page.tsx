@@ -71,6 +71,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
     const [nombre, setNombre] = useState('')
     const [telefono, setTelefono] = useState('')
     const [direccion, setDireccion] = useState('')
+    const [email, setEmail] = useState('')
     const [metodoPago, setMetodoPago] = useState<PaymentMethod>('transferencia')
     const [comprobante, setComprobante] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -178,6 +179,9 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
         if (!direccion.trim() || direccion.trim().length < 5) {
             return toast.error('La dirección debe tener al menos 5 caracteres')
         }
+        if (metodoPago === 'tarjeta_mercadopago' && !/^\S+@\S+\.\S+$/.test(email.trim())) {
+            return toast.error('Ingresa un correo válido para pagar con tarjeta')
+        }
         if (metodoPago === 'transferencia' && !comprobante) {
             return toast.error('Por favor sube la captura del pago para verificar')
         }
@@ -221,6 +225,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                     payment_method: metodoPago,
                     customer_name: nombre,
                     customer_phone: telefono,
+                    customer_email: email.trim() || null,
                     address: direccion,
                     items: cart.map((item) => ({
                         product_id: item.product.id,
@@ -319,12 +324,12 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
             <div className="w-full max-w-lg bg-white p-6 text-black shadow-2xl">
               <div className="mb-4 flex items-center justify-between"><h2 className="font-headline text-lg font-black">PAGO SEGURO</h2><button onClick={() => setPendingPayment(null)}>Cerrar</button></div>
-              <MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={`${telefono.replace(/\D/g, '') || 'cliente'}@linkventas.pe`} onError={(message) => toast.error(message)} onSubmit={async (payment) => {
-                const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || `${telefono.replace(/\D/g, '')}@linkventas.pe`, order_id: pendingPayment.orderId, store_id: perfil.id }) })
+              <MercadoPagoCardPayment publicKey={perfil.mercadopago_public_key} amount={pendingPayment.total} payerEmail={email} onError={(message) => toast.error(message)} onSubmit={async (payment) => {
+                const response = await fetch('/api/checkout/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payment, email: payment.payer?.email || email, order_id: pendingPayment.orderId, store_id: perfil.id }) })
                 const data = await response.json()
                 if (!response.ok) throw new Error(data.error || 'Pago no aprobado.')
                 cartStore.clearCart(perfil.id); if (storeId !== perfil.id) cartStore.clearCart(storeId)
-                setOrderSuccessId(pendingPayment.legacyId); setPendingPayment(null); toast.success('¡Pago aprobado!')
+                setOrderSuccessId(pendingPayment.legacyId); setPendingPayment(null); toast.success('Pago recibido; confirmaremos tu orden en breve.')
               }} />
             </div>
           </div>
@@ -392,6 +397,18 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                                             placeholder="EJ: 999 123 456" 
                                         />
                                     </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="customer-email" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">CORREO {metodoPago === 'tarjeta_mercadopago' ? '(REQUERIDO PARA TARJETA)' : '(OPCIONAL)'}</label>
+                                    <input
+                                        id="customer-email"
+                                        className="w-full bg-background border border-outline h-12 px-4 font-headline font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-outline"
+                                        type="email"
+                                        required={metodoPago === 'tarjeta_mercadopago'}
+                                        value={email}
+                                        onChange={e => setEmail(e.target.value)}
+                                        placeholder="cliente@correo.com"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <label htmlFor="customer-address" className="font-label text-xs uppercase tracking-widest text-on-surface-variant">DIRECCIÓN COMPLETA DE ENTREGA</label>
@@ -570,7 +587,7 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
                         <div className="space-y-4 pt-6 border-t border-outline">
                             <Button 
                                 type="submit" 
-                                disabled={submitting || (metodoPago === 'transferencia' && !comprobante) || (!nombre || telefono.length < 7 || direccion.length < 5)}
+                                disabled={submitting || (metodoPago === 'transferencia' && !comprobante) || (metodoPago === 'tarjeta_mercadopago' && !/^\S+@\S+\.\S+$/.test(email.trim())) || (!nombre || telefono.length < 7 || direccion.length < 5)}
                                 className="w-full bg-primary text-on-primary hover:brightness-110 h-16 font-headline text-lg uppercase tracking-widest font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/20"
                             >
                                 {submitting ? 'Asegurando bóveda...' : (metodoPago === 'tarjeta_mercadopago' ? 'PAGAR DE FORMA SEGURA 🔒' : 'FINALIZAR ORDEN')}

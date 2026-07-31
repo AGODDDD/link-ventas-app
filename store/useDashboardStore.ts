@@ -31,12 +31,18 @@ export interface AbandonedCart {
     customer_name?: string;
     customer_phone?: string;
     cart_items: any;
-    total_amount: number;
+    total: number;
     last_updated: string;
     [key: string]: any;
 }
 
 const CACHE_TTL = 300000; // 5 minutos en milisegundos
+
+async function resolveStoreId(ownerId: string) {
+    const { data, error } = await supabase.from('stores').select('id').eq('owner_id', ownerId).single()
+    if (error || !data) throw new Error('No se encontró la tienda del usuario.')
+    return data.id
+}
 
 interface DashboardState {
     // Estado de Tienda (Core)
@@ -59,7 +65,6 @@ interface DashboardState {
     agregarOrderLocal: (order: any) => void
     actualizarEstadoOrderLocal: (orderId: string, nuevoEstado: string, legacyId?: string) => void
     actualizarItemsOrderLocal: (orderId: string, items: any[]) => void
-    normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => any
 
     // Estado de Leads (Clientes)
     leads: Lead[]
@@ -110,10 +115,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const isStale = Date.now() - get().productosLastFetch > CACHE_TTL;
         if (!force && !isStale && get().productosLastFetch > 0) return;
 
+        const storeId = await resolveStoreId(userId)
         const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('user_id', userId)
+            .eq('user_id', storeId)
             .order('created_at', { ascending: false });
 
         set({ 
@@ -139,10 +145,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const isStale = Date.now() - get().ordersLastFetch > CACHE_TTL;
         if (!force && !isStale && get().ordersLastFetch > 0) return;
 
+        const storeId = await resolveStoreId(userId)
         const { data, error } = await supabase
             .from('orders')
             .select(`*, order_items (*)`)
-            .eq('store_id', userId)
+            .eq('store_id', storeId)
             .order('created_at', { ascending: false })
             .limit(300);
 
@@ -164,8 +171,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                     customer_phone: o.customer_phone || '-',
                     direccion: o.direccion || 'Sin dirección',
                     referencia: o.referencia || '',
-                    total_amount: (o.total || o.total_amount || 0).toString(),
-                    total: o.total || o.total_amount || 0,
+                    total: Number(o.total || 0),
                     subtotal: o.subtotal || 0,
                     delivery_fee: o.delivery_fee || 0,
                     status: o.status,
@@ -221,47 +227,6 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         }))
     },
 
-    normalizarOrder: (raw: any, source: 'legacy_delivery' | 'core' | 'legacy_standard') => {
-        if (source === 'legacy_delivery') {
-            return {
-                id: raw.id,
-                created_at: raw.created_at,
-                customer_name: raw.customer_name || 'Sin nombre',
-                customer_phone: raw.customer_phone || '-',
-                direccion: raw.direccion || raw.address || 'Sin dirección',
-                referencia: raw.referencia || '',
-                total_amount: raw.total ? raw.total.toString() : '0',
-                subtotal: raw.subtotal || 0,
-                delivery_fee: raw.delivery_fee || 0,
-                status: raw.status,
-                payment_proof_url: raw.metodo_pago === 'contra_entrega' ? 'CONTRA_ENTREGA' : 'WHATSAPP_LINK',
-                order_items: raw.items || [],
-                _source: 'legacy_delivery'
-            }
-        }
-        if (source === 'core') {
-            return {
-                id: raw.id,
-                legacy_id: raw.legacy_id,
-                created_at: raw.created_at,
-                customer_name: raw.customer_name || 'Sin nombre',
-                customer_phone: raw.customer_phone || '-',
-                direccion: raw.direccion || raw.customer_address || 'Sin dirección',
-                referencia: raw.referencia || '',
-                total_amount: (raw.total || raw.total_amount || 0).toString(),
-                subtotal: raw.subtotal || 0,
-                delivery_fee: raw.delivery_fee || 0,
-                status: raw.status,
-                order_type: raw.order_type,
-                metodo_pago: raw.metodo_pago,
-                payment_proof_url: raw.payment_proof_url || 'NUEVO_CORE',
-                order_items: raw.order_items || [],
-                _source: 'core'
-            }
-        }
-        return { ...raw, _source: 'legacy_standard' }
-    },
-
     // ---- LEADS (CLIENTES) ----
     leads: [],
     leadsLastFetch: 0,
@@ -270,10 +235,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const isStale = Date.now() - get().leadsLastFetch > CACHE_TTL;
         if (!force && !isStale && get().leadsLastFetch > 0) return;
 
+        const storeId = await resolveStoreId(userId)
         const { data, error } = await supabase
             .from('store_leads')
             .select('*')
-            .eq('store_id', userId)
+            .eq('store_id', storeId)
             .order('created_at', { ascending: false });
 
         set({ 
@@ -297,10 +263,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
         const isStale = Date.now() - get().cartsLastFetch > CACHE_TTL;
         if (!force && !isStale && get().cartsLastFetch > 0) return;
 
+        const storeId = await resolveStoreId(userId)
         const { data, error } = await supabase
             .from('abandoned_carts')
             .select('*')
-            .eq('store_id', userId)
+            .eq('store_id', storeId)
             .order('last_updated', { ascending: false });
 
         set({ 

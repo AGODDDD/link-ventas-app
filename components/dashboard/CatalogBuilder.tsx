@@ -271,7 +271,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                             </div>
 
                             <a
-                                href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para tener productos ilimitados.')}`}
+                                href={`/pendiente`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
@@ -286,7 +286,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                                 onClick={() => setShowPaywallModal(false)}
                             >
                                 <Zap size={15} />
-                                Activar Plan Pro — S/ 29/mes
+                                Activar Plan Pro — S/ 25/mes
                             </a>
                             <button
                                 onClick={() => setShowPaywallModal(false)}

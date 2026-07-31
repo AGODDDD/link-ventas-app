@@ -411,7 +411,7 @@ export default function ConfiguracionPage() {
                       {systemData.planStatus === 'inactivo' && <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">INACTIVO</span>}
                     </div>
                     {(systemData.planStatus === 'free' || systemData.planStatus === 'trial') && (
-                      <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-md text-sm font-semibold transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200">
+                      <a href="/pendiente" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-md text-sm font-semibold transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200">
                         Mejorar Plan
                       </a>
                     )}
@@ -610,7 +610,7 @@ export default function ConfiguracionPage() {
                     <Lock size={24} className="text-zinc-400 mb-3" />
                     <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Disponible en Plan Pro</h4>
                     <p className="text-xs text-zinc-500 max-w-sm mb-4">Automatiza tus ventas aceptando tarjetas de crédito y débito directamente en tu tienda.</p>
-                    <a href="https://wa.me/51999999999" target="_blank" rel="noopener noreferrer" className="bg-zinc-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-md text-sm font-medium">Activar Pro</a>
+                    <a href="/pendiente" target="_blank" rel="noopener noreferrer" className="bg-zinc-900 dark:bg-white text-white dark:text-black px-4 py-2 rounded-md text-sm font-medium">Activar Pro</a>
                   </div>
                 )}
                 

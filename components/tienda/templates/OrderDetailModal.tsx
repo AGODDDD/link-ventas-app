@@ -101,7 +101,7 @@ export default function OrderDetailModal({
           if (!realtimeId && payload.new?.legacy_id !== legacyId) return;
           
           if (payload.new?.status) {
-            const mappedStatus = payload.new.status === 'paid' ? 'pendiente' : payload.new.status;
+            const mappedStatus = payload.new.status;
             setOrder(prev => ({ ...prev, status: mappedStatus }))
             updateOrderStatus(order.id, mappedStatus)
           }
@@ -112,10 +112,10 @@ export default function OrderDetailModal({
     // Polling as safety net (2s for near-instant feel)
     const poll = setInterval(async () => {
       const reference = realtimeId || legacyId
-      const response = await fetch(`/api/orders/status?store_id=${encodeURIComponent(order.storeId)}&order_id=${encodeURIComponent(reference)}`)
+      const response = await fetch(`/api/orders/status?store_id=${encodeURIComponent(order.storeId)}&order_id=${encodeURIComponent(reference)}&customer_phone=${encodeURIComponent(order.cliente.telefono)}`)
       const result = response.ok ? await response.json() : null
       if (result?.order?.status) {
-        const mappedStatus = result.order.status === 'paid' ? 'pendiente' : result.order.status;
+        const mappedStatus = result.order.status;
         if (mappedStatus !== order.status) {
           setOrder(prev => ({ ...prev, status: mappedStatus }))
           updateOrderStatus(order.id, mappedStatus)

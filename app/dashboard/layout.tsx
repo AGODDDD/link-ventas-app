@@ -86,15 +86,7 @@ export default function DashboardLayout({
 
   const mostrarBanner = (planStatus === 'free' || (planStatus === 'trial' && diasRestantes !== null)) && bannerVisible;
 
-  const trialBannerColor = diasRestantes !== null && diasRestantes <= 3
-    ? 'rgba(239,68,68,0.15)'
-    : 'rgba(139,92,246,0.12)'
-  const trialTextColor = diasRestantes !== null && diasRestantes <= 3
-    ? '#f87171'
-    : '#c4b5fd'
-  const trialBorderColor = diasRestantes !== null && diasRestantes <= 3
-    ? 'rgba(239,68,68,0.25)'
-    : 'rgba(139,92,246,0.25)'
+  const trialUrgent = diasRestantes !== null && diasRestantes <= 3
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -102,47 +94,24 @@ export default function DashboardLayout({
 
         {/* ─── STICKY BANNER (TRIAL / FREE) ────────────────────────────────── */}
       {mostrarBanner && (
-        <div
-          id="global-plan-banner"
-          style={{
-            background: planStatus === 'trial' ? trialBannerColor : 'rgba(59,130,246,0.12)',
-            borderBottom: `1px solid ${planStatus === 'trial' ? trialBorderColor : 'rgba(59,130,246,0.25)'}`,
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-          }}
-          className="sticky top-0 z-[60] w-full px-4 py-2.5 flex items-center justify-between gap-4"
-        >
+        <div id="global-plan-banner" className={`sticky top-0 z-[60] flex w-full items-center justify-between gap-4 border-b px-4 py-2.5 backdrop-blur ${planStatus === 'trial' ? (trialUrgent ? 'border-red-400/25 bg-red-500/15' : 'border-violet-400/25 bg-violet-500/15') : 'border-blue-400/25 bg-blue-500/15'}`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Zap size={14} style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd', flexShrink: 0 }} />
-            <p className="text-xs font-semibold truncate" style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd' }}>
+            <Zap size={14} className={`shrink-0 ${planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'}`} />
+            <p className={`truncate text-xs font-semibold ${planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'}`}>
               {planStatus === 'trial'
                 ? (diasRestantes === 0
                   ? '⚠️ Tu prueba Pro vence hoy. Actualiza para no perder el acceso.'
-                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 29/mes para no perder funciones avanzadas.`)
+                  : `✨ Prueba Pro gratis — Te quedan ${diasRestantes ?? '...'} ${diasRestantes === 1 ? 'día' : 'días'}. Actualiza por solo S/ 25/mes para no perder funciones avanzadas.`)
                 : '📦 Estás usando el Plan Emprendedor (Gratis). Actualiza a Pro para desbloquear Mercado Pago, analíticas y más.'
               }
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <a
-              href="https://wa.me/51999999999?text=Hola,%20quiero%20activar%20el%20Plan%20Pro%20de%20LinkVentas."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-bold px-3 py-1 rounded-full transition-all hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                color: '#fff',
-                textDecoration: 'none',
-              }}
-            >
+            <a href="/pendiente" className="rounded-full bg-gradient-to-br from-violet-600 to-violet-700 px-3 py-1 text-[11px] font-bold text-white transition-all hover:scale-105">
               Activar Pro
             </a>
-            <button
-              onClick={() => setBannerVisible(false)}
-              className="p-1 rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Cerrar banner"
-            >
-              <X size={13} style={{ color: planStatus === 'trial' ? trialTextColor : '#93c5fd' }} />
+            <button onClick={() => setBannerVisible(false)} className="rounded-full p-1 transition-colors hover:bg-white/10" aria-label="Cerrar banner">
+              <X size={13} className={planStatus === 'trial' ? (trialUrgent ? 'text-red-400' : 'text-violet-300') : 'text-blue-300'} />
             </button>
           </div>
         </div>

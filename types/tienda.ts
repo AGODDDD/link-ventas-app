@@ -60,6 +60,12 @@ export interface ProductModifierGroup {
   options: ProductModifierOption[];
 }
 
+export interface ModaVariant {
+  talla?: string;
+  color?: string;
+  image_url?: string;
+}
+
 export interface ProductMedia {
   id?: string;
   type: 'image' | 'video';
@@ -93,7 +99,7 @@ export interface Product {
   reviews_count?: number;
 
   // Restaurante & Moda Extensions
-  variants?: any[]; // We'll store ProductModifierGroup[] in here for restaurants
+  variants?: Array<ProductModifierGroup | ModaVariant>;
   is_available?: boolean;
   preparation_time?: string;
   gallery?: string[];

@@ -14,8 +14,8 @@ type Order = {
     created_at: string
     customer_name: string
     customer_phone: string
-    customer_address: string
-    total_amount: number
+    direccion: string
+    total: number
     status: 'pending' | 'paid' | 'shipped' | 'cancelled'
     payment_proof_url: string
     order_items: any[]
@@ -168,17 +168,15 @@ export default function PedidosPage() {
     const avanzarEstadoDelivery = async (order: any) => {
         const orderId = order.id
         const currentStatus = order.status
-        let currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
-        if (currentStatus === 'paid') currentIdx = 2; // Paid visualmente = pendiente
+        const currentIdx = DELIVERY_STATUSES.indexOf(currentStatus)
 
         if (currentIdx < 0 || currentIdx >= DELIVERY_STATUSES.length - 1) return
         const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
         
-        // Actualizar en AMBAS tablas para mantener sincronía
-        const { error: primaryError } = await supabase
-            .from('orders')
-            .update({ status: nextStatus })
-            .eq('id', orderId)
+        const { error: primaryError } = await supabase.rpc('transition_order_status', {
+            p_order_id: orderId,
+            p_next_status: nextStatus,
+        })
         
         if (primaryError) {
             toast.error('Error actualizando estado: ' + primaryError.message)
@@ -194,7 +192,10 @@ export default function PedidosPage() {
         const confirmed = window.confirm('¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.')
         if (!confirmed) return
 
-        const { error } = await supabase.from('orders').update({ status: 'cancelado' }).eq('id', orderId)
+        const { error } = await supabase.rpc('transition_order_status', {
+            p_order_id: orderId,
+            p_next_status: 'cancelado',
+        })
 
         if (!error) {
             actualizarEstadoOrderLocal(orderId, 'cancelado')
@@ -210,10 +211,10 @@ export default function PedidosPage() {
     }
 
     const actualizarEstado = async (id: string, nuevoEstado: string) => {
-        const { error } = await supabase
-            .from('orders')
-            .update({ status: nuevoEstado })
-            .eq('id', id)
+        const { error } = await supabase.rpc('transition_order_status', {
+            p_order_id: id,
+            p_next_status: nuevoEstado,
+        })
 
         if (!error) {
             actualizarEstadoOrderLocal(id, nuevoEstado)
@@ -477,7 +478,7 @@ export default function PedidosPage() {
                         </p>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px' }}>
                             La impresión de tickets PDF de <strong style={{ color: '#fff' }}>80mm estilo térmico</strong> es exclusiva del Plan Pro.
-                            Profesionaliza tu operación por solo <strong style={{ color: '#a78bfa' }}>S/ 29/mes</strong>.
+                            Profesionaliza tu operación por solo <strong style={{ color: '#a78bfa' }}>S/ 25/mes</strong>.
                         </p>
 
                         <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
@@ -494,7 +495,7 @@ export default function PedidosPage() {
                         </div>
 
                         <a
-                            href={`https://wa.me/51999999999?text=${encodeURIComponent('Hola, quiero activar el Plan Pro de LinkVentas para imprimir tickets térmicos.')}`}
+                            href={`/pendiente`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -509,7 +510,7 @@ export default function PedidosPage() {
                             onClick={() => setShowTicketPaywall(false)}
                         >
                             <Zap size={15} />
-                            Activar Plan Pro — S/ 29/mes
+                            Activar Plan Pro — S/ 25/mes
                         </a>
                         <button
                             onClick={() => setShowTicketPaywall(false)}
@@ -588,7 +589,7 @@ export default function PedidosPage() {
                                                     {new Date(order.created_at).toLocaleString()}
                                                 </span>
                                             </div>
-                                            <div className="font-bold text-xl tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {parseFloat(order.total || order.total_amount).toFixed(2)}</div>
+                                            <div className="font-bold text-xl tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {parseFloat(order.total).toFixed(2)}</div>
                                         </div>
 
                                         {/* Body */}
@@ -612,7 +613,7 @@ export default function PedidosPage() {
                                                     <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1">Dirección</p>
                                                     <div className="bg-white dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800/50 flex items-start gap-2">
                                                         <MapPin size={14} className="text-zinc-500 dark:text-zinc-400 mt-0.5 shrink-0" />
-                                                        <p className="text-xs text-zinc-900 dark:text-zinc-100">{order.direccion || order.address_text || order.customer_address || 'Sin dirección'}</p>
+                                                        <p className="text-xs text-zinc-900 dark:text-zinc-100">{order.direccion || order.address_text || order.direccion || 'Sin dirección'}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -809,7 +810,7 @@ export default function PedidosPage() {
                                                 {new Date(order.created_at).toLocaleString()}
                                             </span>
                                         </div>
-                                        <div className="font-bold text-xl tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {parseFloat(order.total_amount as any).toFixed(2)}</div>
+                                        <div className="font-bold text-xl tracking-tighter text-zinc-900 dark:text-zinc-100">S/ {parseFloat(order.total as any).toFixed(2)}</div>
                                     </div>
 
                                     {/* Order Body */}
@@ -832,7 +833,7 @@ export default function PedidosPage() {
                                                 <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-1 mt-4">Dirección de Entrega</p>
                                                 <div className="bg-white dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800/50 flex items-start gap-2">
                                                     <span className="text-zinc-500 dark:text-zinc-400 pt-0.5">📍</span>
-                                                    <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium capitalize">{order.customer_address || 'Sin dirección proporcionada'}</p>
+                                                    <p className="text-sm text-zinc-900 dark:text-zinc-100 font-medium capitalize">{order.direccion || 'Sin dirección proporcionada'}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1042,7 +1043,7 @@ export default function PedidosPage() {
                                     {shareOrder.legacy_id || (shareOrder._source === 'legacy_delivery' ? shareOrder.id : shareOrder.id.split('-')[0].toUpperCase())}
                                 </h3>
                                 <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                                    {shareOrder.customer_name} · S/ {parseFloat(shareOrder.total_amount || shareOrder.total || 0).toFixed(2)}
+                                    {shareOrder.customer_name} · S/ {parseFloat(shareOrder.total || 0).toFixed(2)}
                                 </p>
                             </div>
 

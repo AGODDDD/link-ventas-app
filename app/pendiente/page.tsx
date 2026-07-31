@@ -56,8 +56,8 @@ export default function PendientePage() {
       const response = await fetch('/api/billing/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...payment, email: payment.payer?.email || email }) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Pago no aprobado.')
-      document.cookie = 'sb-plan-status=pro; path=/; SameSite=Lax'
-      window.location.href = '/dashboard'
+      alert('Pago recibido. Activaremos tu plan Pro cuando Mercado Pago confirme la operación.')
+      setShowPayment(false)
     } finally { setPaying(false) }
   }
 

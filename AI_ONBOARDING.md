@@ -14,7 +14,7 @@ Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente desp
 ```text
 [Cliente React/Next.js] --- (Zustand Local)
       |
-[Next.js App Router (SSR/API)] <--> [Webhooks (Culqi)]
+[Next.js App Router (SSR/API)] <--> [Webhooks (Mercado Pago)]
       |
 [Supabase (Auth, RLS, Storage, DB)]
   |-- Core Nuevo: stores, orders, products, product_variants

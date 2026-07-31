@@ -175,7 +175,7 @@ export default function CrearProducto() {
       const { data: newProduct, error: dbError } = await supabase
         .from('products')
         .insert({
-          user_id: user.id,
+          user_id: store.id,
           name: nombre,
           price: currentPrice,
           description: descripcion,
@@ -202,11 +202,15 @@ export default function CrearProducto() {
       // 3. Extensión: product_variants (Relacional)
       if (templateType === 'moda' && variants.length > 0 && newProduct) {
         const relVariants = variants.map((v: any) => ({
-            store_id: user.id,
+            store_id: store.id,
             product_id: newProduct.id,
             name: v.talla ? (v.color ? `${v.talla} / ${v.color}` : v.talla) : v.color,
             value: v.talla || v.color,
-            price_delta: 0
+            price_delta: 0,
+            talla: v.talla || null,
+            color: v.color || null,
+            combination_key: [v.talla, v.color].filter(Boolean).join('|').toLowerCase() || null,
+            stock: stock ? parseInt(stock) : null,
         }))
         await supabase.from('product_variants').insert(relVariants)
       }

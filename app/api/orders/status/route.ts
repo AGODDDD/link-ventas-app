@@ -8,7 +8,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const storeId = searchParams.get('store_id')
   const orderId = searchParams.get('order_id')
-  if (!storeId || !orderId || !uuidPattern.test(storeId) || !orderReferencePattern.test(orderId)) {
+  const customerPhone = searchParams.get('customer_phone')?.replace(/\s/g, '')
+  if (!storeId || !orderId || !customerPhone || !uuidPattern.test(storeId) || !orderReferencePattern.test(orderId) || !/^\d{7,15}$/.test(customerPhone)) {
     return NextResponse.json({ error: 'Solicitud invalida.' }, { status: 400 })
   }
 
@@ -17,6 +18,7 @@ export async function GET(req: Request) {
     .from('orders')
     .select('id, legacy_id, status, updated_at')
     .eq('store_id', storeId)
+    .eq('customer_phone', customerPhone)
 
   query = uuidPattern.test(orderId)
     ? query.eq('id', orderId)

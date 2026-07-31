@@ -29,6 +29,7 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
     .from('stores')
     .select('*')
     .eq(isUUID ? 'id' : 'slug', params.id)
+    .eq('is_active', true)
     .single();
   
   if (!store) {
