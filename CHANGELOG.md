@@ -31,6 +31,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
     4. Inactividad del middleware Edge por denominarse `proxy.ts`.
 
 ### Fixed
+  - Corrección de carrera de hidratación (Hydration Mismatch) en el panel de pedidos que mostraba temporalmente la plantilla de Comercio en lugar de la asignada a la tienda.
 - Eliminadas del Resumen las señales operativas ficticias, los avatares decorativos y los controles sin acción.
 - Pedidos ya no abre la vista de restaurante para tiendas Comercio o Moda y ahora permite buscar, filtrar y actualizar.
 - Analytics calcula conversión con el mismo periodo, no fusiona homónimos y no expone controles bloqueados detrás del paywall.
