@@ -5,11 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ## [Unreleased]
 
 ### Changed
+  - Refactor masivo de APIs de órdenes y checkouts, webhooks y optimización de base de datos.
 - Consolidado el contrato de pedidos: una tienda por cuenta, estados validados por RPC, reservas de inventario y stock por combinación de Moda.
 - Mercado Pago ahora se concilia por webhook; el checkout y la suscripción Pro no confirman pagos por respuesta síncrona.
 - Renombrado el punto de entrada Edge a `middleware.ts`, alineado el plan Pro a S/ 25 y eliminado el CTA de WhatsApp ficticio.
 
 ### Added
+  - Consolidación del modelo de negocio (`contract_cleanup.sql`) integrando validaciones de stock, unificación de middleware y limpieza general de APIs obsoletas.
 - **Auditoría Profunda de Modelo de Negocio y Arquitectura**:
   - Evaluación completa de los 4 pilares (Visión y Modelo SaaS, Arquitectura Serverless, Seguridad/Errores Críticos y Cumplimiento de `AGENTS.md`).
   - Reporte de evidencia detallado generado en `auditoria_modelo_negocio.md` identificando la inactividad del middleware Edge (`proxy.ts`), desincronizaciones de precios (S/ 25 vs S/ 29) y desactualización de documentos maestros sobre Mercado Pago vs Mercado Pago.
