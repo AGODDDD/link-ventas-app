@@ -37,6 +37,7 @@ function paymentLabel(order: any) {
 export default function DashboardPage() {
   const { orders, cargarOrders } = useDashboardStore()
   const [leadsCount, setLeadsCount] = useState(0)
+  const [merchantName, setMerchantName] = useState('Administrador')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
@@ -45,6 +46,11 @@ export default function DashboardPage() {
     async function loadStats() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+
+      const fullName = String(user.user_metadata?.full_name || '').trim()
+      const emailName = String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ').trim()
+      const displayName = fullName || emailName || 'Administrador'
+      setMerchantName(displayName.split(/\s+/)[0])
 
       const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
       if (!store) return
@@ -154,9 +160,10 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-7xl space-y-8 pb-10">
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Operación de hoy</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">Resumen del negocio</h1>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Pedidos, ingresos y tareas pendientes con datos reales.</p>
+          <h1 className="text-3xl font-semibold tracking-[-0.035em] text-zinc-950 dark:text-white sm:text-[2rem]">
+            Buenos días, {merchantName}.
+          </h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aquí tienes el resumen de tu operación.</p>
         </div>
         <Link
           href="/dashboard/pedidos"

@@ -116,8 +116,8 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
         </div>
 
         {/* MENÚ */}
-        <nav className="flex-1 space-y-1">
-          {menuItems.map((item, index) => {
+        <nav className="flex-1 space-y-1 px-3">
+          {menuItems.map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
@@ -126,15 +126,20 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
                 onClick={onClose}
                 aria-current={isActive ? 'page' : undefined}
                 className={`
-                  flex items-center py-2.5 px-4 group
+                  group flex items-center rounded-xl border px-4 py-2.5 transition-all duration-300 ease-out
                   ${isActive 
-                    ? 'active-nav text-zinc-900 dark:text-white font-medium' 
-                    : 'nav-item font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white'}
+                    ? 'border-black/10 bg-[#171719] font-semibold text-white shadow-[0_10px_28px_rgba(0,0,0,0.16)] dark:border-white/10'
+                    : 'nav-item border-transparent font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white'}
                 `}
               >
-                <span className="mr-3 w-5 shrink-0 font-mono text-[10px] font-semibold tracking-wider opacity-60">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
+                <span
+                  aria-hidden="true"
+                  className={`mr-3 h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-300 ${
+                    isActive
+                      ? 'bg-white shadow-[0_0_0_3px_rgba(255,255,255,0.08)]'
+                      : 'bg-zinc-300 group-hover:bg-zinc-500 dark:bg-zinc-600 dark:group-hover:bg-zinc-400'
+                  }`}
+                />
                 <span className="text-sm">{item.name}</span>
               </Link>
             )

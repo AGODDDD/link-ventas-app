@@ -96,7 +96,19 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     const [userId, setUserId] = useState<string | null>(null)
     const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [todayLabel, setTodayLabel] = useState('Hoy')
+    const [realtimeConnected, setRealtimeConnected] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const formattedDate = new Intl.DateTimeFormat('es-PE', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            timeZone: 'America/Lima',
+        }).format(new Date()).replace('.', '')
+        setTodayLabel(`Hoy, ${formattedDate}`)
+    }, [])
 
     // Cargar Usuario
     useEffect(() => {
@@ -256,7 +268,9 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         }
                     }
                 )
-                .subscribe()
+                .subscribe(status => {
+                    setRealtimeConnected(status === 'SUBSCRIBED')
+                })
 
         }
 
@@ -295,7 +309,21 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                 </Link>
             </div>
 
-            <div className="flex items-center gap-4 md:gap-6 ml-4">
+            <div className="ml-4 flex items-center gap-3 md:gap-5">
+                <div className="hidden items-center gap-3 border-r border-zinc-200 pr-5 text-xs dark:border-zinc-800 lg:flex">
+                    <time className="font-medium text-zinc-500 dark:text-zinc-400">{todayLabel}</time>
+                    <span className="inline-flex items-center gap-2 font-semibold text-zinc-700 dark:text-zinc-200">
+                        <span
+                            aria-hidden="true"
+                            className={`h-2 w-2 rounded-full transition-colors duration-300 ${
+                                realtimeConnected
+                                    ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.10)]'
+                                    : 'bg-amber-400'
+                            }`}
+                        />
+                        {realtimeConnected ? 'Sincronizado' : 'Sincronizando'}
+                    </span>
+                </div>
                 
                 {/* LA ANTENA: CAMPANA Y BADGE */}
                 <div className="relative" ref={menuRef}>

@@ -5,6 +5,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ## [Unreleased]
 
 ### Changed
+- La cabecera del dashboard ahora saluda al comerciante por su nombre y muestra fecha local con el estado real de sincronización.
+- El sidebar reemplaza la numeración editorial por bullets y usa un estado activo negro, más cercano al acabado del producto de referencia.
 - Refactor masivo de APIs de órdenes y checkouts, webhooks y optimización de base de datos.
 - Consolidado el contrato de pedidos: una tienda por cuenta, estados validados por RPC, reservas de inventario y stock por combinación de Moda.
 - Mercado Pago ahora se concilia por webhook; el checkout y la suscripción Pro no confirman pagos por respuesta síncrona.

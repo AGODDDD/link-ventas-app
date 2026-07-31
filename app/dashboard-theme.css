@@ -333,10 +333,6 @@
 .dark .dashboard-theme .table-header-bg {
   background-color: #1d1d21;
 }
-.dark .dashboard-theme .active-nav {
-  background-color: #1c1c24;
-  border-right: 4px solid #6366f1;
-}
 .dark .dashboard-theme .badge-green {
   background-color: rgba(16,185,129,0.1);
   color: #10b981;
@@ -356,10 +352,6 @@
 }
 .light .dashboard-theme .table-header-bg {
   background-color: #f9fafb;
-}
-.light .dashboard-theme .active-nav {
-  background-color: #f0f7ff;
-  border-right: 4px solid #2F7EDA;
 }
 .light .dashboard-theme .badge-green {
   background-color: rgba(16,185,129,0.1);
