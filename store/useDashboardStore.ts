@@ -45,6 +45,11 @@ async function resolveStoreId(ownerId: string) {
 }
 
 interface DashboardState {
+    // Propietario del cache en memoria. Nunca se reutilizan datos entre cuentas.
+    dashboardOwnerId: string | null
+    prepararParaUsuario: (userId: string, reset?: boolean) => void
+    limpiarDashboard: () => void
+
     // Estado de Tienda (Core)
     storeInfo: Store | null
     storeConfig: StoreConfig | null
@@ -78,17 +83,44 @@ interface DashboardState {
     cargarCarts: (userId: string, force?: boolean) => Promise<void>
 }
 
+function emptyDashboardData(ownerId: string | null = null) {
+    return {
+        dashboardOwnerId: ownerId,
+        storeInfo: null,
+        storeConfig: null,
+        productos: [],
+        productosLastFetch: 0,
+        productosCargados: false,
+        orders: [],
+        ordersLastFetch: 0,
+        ordersCargadas: false,
+        leads: [],
+        leadsLastFetch: 0,
+        abandonedCarts: [],
+        cartsLastFetch: 0,
+    }
+}
+
 export const useDashboardStore = create<DashboardState>((set, get) => ({
+    dashboardOwnerId: null,
+    prepararParaUsuario: (userId: string, reset: boolean = false) => {
+        if (reset || get().dashboardOwnerId !== userId) set(emptyDashboardData(userId))
+    },
+    limpiarDashboard: () => set(emptyDashboardData()),
+
     // ---- TIENDA (CORE) ----
     storeInfo: null,
     storeConfig: null,
 
     cargarStoreInfo: async (userId: string) => {
+        get().prepararParaUsuario(userId)
         const { data: store } = await supabase
             .from('stores')
             .select('*')
             .eq('owner_id', userId)
             .single()
+
+        if (get().dashboardOwnerId !== userId) return
 
         if (store) {
             const { data: config } = await supabase
@@ -97,7 +129,8 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                 .eq('store_id', store.id)
                 .maybeSingle()
 
-            set({ 
+            if (get().dashboardOwnerId !== userId) return
+            set({
                 storeInfo: store as Store,
                 storeConfig: config as StoreConfig | null,
             });
@@ -112,15 +145,23 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     productosCargados: false,
     
     cargarProductos: async (userId: string, force: boolean = false) => {
+        get().prepararParaUsuario(userId)
         const isStale = Date.now() - get().productosLastFetch > CACHE_TTL;
         if (!force && !isStale && get().productosLastFetch > 0) return;
 
         const storeId = await resolveStoreId(userId)
+        if (get().dashboardOwnerId !== userId) return
         const { data, error } = await supabase
             .from('products')
             .select('*')
             .eq('user_id', storeId)
             .order('created_at', { ascending: false });
+
+        if (get().dashboardOwnerId !== userId) return
+        if (error) {
+            console.error('Error fetching products:', error)
+            return
+        }
 
         set({ 
             productos: data || [], 
@@ -142,10 +183,12 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     ordersCargadas: false,
 
     cargarOrders: async (userId: string, force: boolean = false) => {
+        get().prepararParaUsuario(userId)
         const isStale = Date.now() - get().ordersLastFetch > CACHE_TTL;
         if (!force && !isStale && get().ordersLastFetch > 0) return;
 
         const storeId = await resolveStoreId(userId)
+        if (get().dashboardOwnerId !== userId) return
         const { data, error } = await supabase
             .from('orders')
             .select(`*, order_items (*)`)
@@ -153,6 +196,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
             .order('created_at', { ascending: false })
             .limit(300);
 
+        if (get().dashboardOwnerId !== userId) return
         if (error) {
             console.error('Error fetching orders:', error);
             return;
@@ -233,15 +277,23 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     leadsLastFetch: 0,
 
     cargarLeads: async (userId: string, force: boolean = false) => {
+        get().prepararParaUsuario(userId)
         const isStale = Date.now() - get().leadsLastFetch > CACHE_TTL;
         if (!force && !isStale && get().leadsLastFetch > 0) return;
 
         const storeId = await resolveStoreId(userId)
+        if (get().dashboardOwnerId !== userId) return
         const { data, error } = await supabase
             .from('store_leads')
             .select('*')
             .eq('store_id', storeId)
             .order('created_at', { ascending: false });
+
+        if (get().dashboardOwnerId !== userId) return
+        if (error) {
+            console.error('Error fetching leads:', error)
+            return
+        }
 
         set({ 
             leads: data || [], 
@@ -261,15 +313,23 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
     cartsLastFetch: 0,
 
     cargarCarts: async (userId: string, force: boolean = false) => {
+        get().prepararParaUsuario(userId)
         const isStale = Date.now() - get().cartsLastFetch > CACHE_TTL;
         if (!force && !isStale && get().cartsLastFetch > 0) return;
 
         const storeId = await resolveStoreId(userId)
+        if (get().dashboardOwnerId !== userId) return
         const { data, error } = await supabase
             .from('abandoned_carts')
             .select('*')
             .eq('store_id', storeId)
             .order('created_at', { ascending: false });
+
+        if (get().dashboardOwnerId !== userId) return
+        if (error) {
+            console.error('Error fetching abandoned carts:', error)
+            return
+        }
 
         set({ 
             abandonedCarts: data || [], 

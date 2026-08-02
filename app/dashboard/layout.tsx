@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from '@/components/dashboard/ThemeProvider'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 // Tipos de plan válidos
 type PlanStatus = 'trial' | 'pro' | 'free' | 'inactivo' | null
@@ -34,59 +35,89 @@ export default function DashboardLayout({
   const [planStatus, setPlanStatus] = useState<PlanStatus>(null)
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null)
   const [bannerVisible, setBannerVisible] = useState(true)
+  const [dashboardReady, setDashboardReady] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    let isMounted = true
+
     const initLayout = async () => {
-      const { supabase } = await import('@/lib/supabase')
-      const { data: sessionData } = await supabase.auth.getSession()
+      try {
+        const { supabase } = await import('@/lib/supabase')
+        const { data: sessionData } = await supabase.auth.getSession()
 
-      if (!sessionData.session) {
-        router.replace('/')
-        return
-      }
+        if (!sessionData.session) {
+          useDashboardStore.getState().limpiarDashboard()
+          router.replace('/')
+          return
+        }
 
-      const statusRes = await fetch('/api/billing/status', {
-        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
-      })
-      if (!statusRes.ok) {
-        router.replace('/pendiente')
-        return
-      }
+        // Una entrada nueva al panel debe consultar una fotografía fresca. El
+        // cache se conserva únicamente durante la navegación interna.
+        useDashboardStore.getState().prepararParaUsuario(sessionData.session.user.id, true)
 
-      const billing = await statusRes.json()
-      const planActual: string = billing.plan ?? null
-      const expiresAt: string | null = billing.plan_expires_at ?? null
+        const statusRes = await fetch('/api/billing/status', {
+          headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        })
+        if (!statusRes.ok) {
+          router.replace('/pendiente')
+          return
+        }
+
+        const billing = await statusRes.json()
+        const planActual: string = billing.plan ?? null
+        const expiresAt: string | null = billing.plan_expires_at ?? null
 
 
       // ─── Setear cookie para el Edge Middleware ───────────────────────
-      setPlanCookie(planActual, expiresAt)
+        setPlanCookie(planActual, expiresAt)
 
       // ─── Verificar expiración en cliente ─────────────────────────────
-      const estaVencido = expiresAt ? new Date(expiresAt) < new Date() : false
+        const estaVencido = expiresAt ? new Date(expiresAt) < new Date() : false
 
-      if ((planActual === 'inactivo') || (estaVencido && planActual !== 'free')) {
-        // Limpiar cookie y redirigir
-        document.cookie = 'sb-plan-status=; path=/; max-age=0'
-        router.replace('/pendiente')
-        return
-      }
+        if ((planActual === 'inactivo') || (estaVencido && planActual !== 'free')) {
+          document.cookie = 'sb-plan-status=; path=/; max-age=0'
+          router.replace('/pendiente')
+          return
+        }
 
-      setPlanStatus(planActual as PlanStatus)
+        if (!isMounted) return
+        setPlanStatus(planActual as PlanStatus)
 
       // ─── Paso 3: Calcular días para el Banner ────────────────────────
-      if (planActual === 'trial' && expiresAt) {
-        const dias = calcularDiasRestantes(expiresAt)
-        setDiasRestantes(dias)
+        if (planActual === 'trial' && expiresAt) {
+          const dias = calcularDiasRestantes(expiresAt)
+          setDiasRestantes(dias)
+        }
+
+        setDashboardReady(true)
+      } catch (error) {
+        console.error('No se pudo preparar la sesión del dashboard:', error)
+        useDashboardStore.getState().limpiarDashboard()
+        router.replace('/')
       }
     }
 
-    initLayout()
+    void initLayout()
+
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   const mostrarBanner = (planStatus === 'free' || (planStatus === 'trial' && diasRestantes !== null)) && bannerVisible;
 
   const trialUrgent = diasRestantes !== null && diasRestantes <= 3
+
+  if (!dashboardReady) {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <div className="dashboard-theme flex min-h-screen items-center justify-center bg-[var(--dash-bg)] text-[var(--dash-text-muted)]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent" aria-label="Cargando panel" />
+        </div>
+      </ThemeProvider>
+    )
+  }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>

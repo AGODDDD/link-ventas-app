@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { XIcon as AnimatedX } from '@animateicons/react/lucide'
+import { useDashboardStore } from '@/store/useDashboardStore'
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -77,6 +78,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
   }, [])
 
   const handleLogout = async () => {
+    useDashboardStore.getState().limpiarDashboard()
     await supabase.auth.signOut()
     router.push('/')
   }

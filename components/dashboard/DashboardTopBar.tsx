@@ -197,14 +197,16 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         // Inyectar al store inmediatamente con lo que hay
                         nuevaOrden.order_items = items;
                         const store = useDashboardStore.getState()
+                        if (store.dashboardOwnerId !== userId) return
                         store.agregarOrderLocal({ ...nuevaOrden, total: Number(nuevaOrden.total || 0) })
 
                         // Si no había items aún, reintentar a los 2s y actualizar el store
                         if (items.length === 0) {
                             setTimeout(async () => {
                                 const retryItems = await fetchItems();
-                                if (retryItems.length > 0) {
-                                    useDashboardStore.getState().actualizarItemsOrderLocal?.(nuevaOrden.id, retryItems);
+                                const currentStore = useDashboardStore.getState()
+                                if (retryItems.length > 0 && currentStore.dashboardOwnerId === userId) {
+                                    currentStore.actualizarItemsOrderLocal?.(nuevaOrden.id, retryItems);
                                 }
                             }, 2000);
                         }
@@ -224,6 +226,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     { event: 'UPDATE', schema: 'public', table: 'orders', filter: `store_id=eq.${targetId}` },
                     async (payload) => {
                         const store = useDashboardStore.getState();
+                        if (store.dashboardOwnerId !== userId) return
                         const exists = store.orders.some(o => o.id === payload.new.id);
                         
                         // Un pago confirmado pasa a estado operativo pendiente mediante el webhook.

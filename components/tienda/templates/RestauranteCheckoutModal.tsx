@@ -7,7 +7,7 @@ import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore, Order } from '@/store/useCustomerStore'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { isStoreClosed as checkStoreClosed } from '@/lib/storeSchedule'
+import { isStoreClosed as checkStoreClosed, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
 import { toast } from 'sonner'
 import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPayment'
 
@@ -36,7 +36,7 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   const [pendingPayment, setPendingPayment] = useState<{ orderId: string; legacyId: string; total: number } | null>(null)
   const operations = perfil.operations_config || {}
   const deliveryEnabled = operations.deliveryEnabled !== false
-  const pickupEnabled = operations.pickupEnabled !== false
+  const pickupEnabled = operations.pickupEnabled === true
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>(deliveryEnabled ? 'delivery' : 'pickup')
 
   // Sync data back to parent when closing
@@ -60,7 +60,8 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
   }, [isOpen])
 
   // Estrategia Horaria: bloquear checkout si la tienda está cerrada
-  const isStoreClosed = operations.acceptsOrdersAlways ? false : checkStoreClosed(perfil.store_schedule ?? null)
+  const isStoreClosed = shouldEnforceStoreSchedule(operations.acceptsOrdersAlways)
+    && checkStoreClosed(perfil.store_schedule ?? null)
 
   if (!isOpen) return null;
 
@@ -79,6 +80,11 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
      }
      if (metodoPago === 'mercadopago' && !/^\S+@\S+\.\S+$/.test(correo.trim())) {
         toast.error('Ingresa un correo válido para pagar con tarjeta.')
+        return
+     }
+     const merchantWhatsapp = perfil.whatsapp_phone?.replace(/\D/g, '') || ''
+     if (metodoPago === 'whatsapp' && !merchantWhatsapp) {
+        toast.error('La tienda aún no configuró un número de WhatsApp para recibir pedidos.')
         return
      }
 
@@ -240,9 +246,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
             handleClose();
         }
 
-        // 4. Redirigimos clásicamente a WhatsApp en una NUEVA pestaña
-        const waUrl = `https://wa.me/${perfil.whatsapp_phone || ''}?text=${text}`
-        window.open(waUrl, '_blank')
+        // 4. Navegamos en la misma pestaña: los navegadores bloquean window.open
+        // cuando se ejecuta después de esperar la creación asíncrona del pedido.
+        const waUrl = `https://wa.me/${merchantWhatsapp}?text=${text}`
+        window.location.assign(waUrl)
      }
   }
 
@@ -474,7 +481,10 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
             {/* Submit */}
             <Button 
-               onClick={handlePagar}
+               onClick={() => void handlePagar().catch((error) => {
+                 console.error('Restaurant checkout failed:', error)
+                 toast.error(error instanceof Error ? error.message : 'No se pudo crear el pedido.')
+               })}
                disabled={isStoreClosed}
                className={`w-full rounded-full h-14 font-extrabold text-[15px] transition-transform ${isStoreClosed ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed' : 'bg-black text-white hover:bg-neutral-800 active:scale-[0.98]'}`}
             >

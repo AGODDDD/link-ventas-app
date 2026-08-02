@@ -11,7 +11,7 @@ import AddressMapModal from './AddressMapModal'
 import OrderHistoryPanel from './OrderHistoryPanel'
 import PaymentTrustBadges from './PaymentTrustBadges'
 import SlideOverCart from '../SlideOverCart'
-import { isStoreClosed, getTodayScheduleText } from '@/lib/storeSchedule'
+import { isStoreClosed, getTodayScheduleText, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
 
 interface Props {
   perfil: Profile;
@@ -45,9 +45,8 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const [mounted, setMounted] = useState(false)
   const configuredDeliveryFee = Number(extensionData?.deliverySettings?.base_delivery_fee)
   const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0
-  const storeIsClosed = perfil.operations_config?.acceptsOrdersAlways
-    ? false
-    : isStoreClosed(perfil.store_schedule ?? null)
+  const storeIsClosed = shouldEnforceStoreSchedule(perfil.operations_config?.acceptsOrdersAlways)
+    && isStoreClosed(perfil.store_schedule ?? null)
 
   useEffect(() => {
     setMounted(true)

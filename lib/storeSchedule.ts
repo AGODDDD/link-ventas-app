@@ -45,6 +45,15 @@ export const DEFAULT_SCHEDULE: StoreSchedule = {
   dom: { active: false, open: '10:00', close: '20:00' },
 }
 
+/**
+ * Las configuraciones anteriores a `accepts_orders_always` no guardaban este
+ * campo. El dashboard trata su ausencia como "aceptar 24/7", así que el
+ * horario solo se aplica cuando el merchant lo desactiva explícitamente.
+ */
+export function shouldEnforceStoreSchedule(acceptsOrdersAlways: unknown): boolean {
+  return acceptsOrdersAlways === false
+}
+
 /** Mapeo JS getDay() (0=dom, 1=lun...) a DayKey */
 const JS_DAY_TO_KEY: Record<number, DayKey> = {
   0: 'dom', 1: 'lun', 2: 'mar', 3: 'mie', 4: 'jue', 5: 'vie', 6: 'sab',

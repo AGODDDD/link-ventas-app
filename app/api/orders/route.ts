@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
-import { isStoreClosed } from '@/lib/storeSchedule'
+import { isStoreClosed, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
 
 type CartLine = {
   product_id?: unknown
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (operations.accepts_orders_always !== true && isStoreClosed(storeConfig?.store_schedule)) {
+    if (shouldEnforceStoreSchedule(operations.accepts_orders_always) && isStoreClosed(storeConfig?.store_schedule)) {
       return NextResponse.json({ error: 'La tienda está cerrada en este momento.' }, { status: 409 })
     }
 

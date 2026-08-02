@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { DEFAULT_SCHEDULE, getTodayScheduleText, isStoreClosed } from '../../lib/storeSchedule'
+import { DEFAULT_SCHEDULE, getTodayScheduleText, isStoreClosed, shouldEnforceStoreSchedule } from '../../lib/storeSchedule'
 
 test('una tienda sin horario se considera abierta', () => {
   assert.equal(isStoreClosed(null, new Date(2026, 6, 27, 12, 0)), false)
@@ -19,4 +19,11 @@ test('el horario bloquea pedidos fuera de su rango', () => {
 test('el texto de hoy refleja un dia inactivo', () => {
   const sunday = new Date(2026, 6, 26, 12, 0)
   assert.equal(getTodayScheduleText(DEFAULT_SCHEDULE, sunday), 'Cerrado hoy')
+})
+
+test('configuraciones legacy sin bandera aceptan pedidos 24/7', () => {
+  assert.equal(shouldEnforceStoreSchedule(undefined), false)
+  assert.equal(shouldEnforceStoreSchedule(null), false)
+  assert.equal(shouldEnforceStoreSchedule(true), false)
+  assert.equal(shouldEnforceStoreSchedule(false), true)
 })
