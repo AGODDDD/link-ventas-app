@@ -69,6 +69,7 @@ export interface StoreConfig {
 export type OrderStatus = 
   | 'pendiente' 
   | 'pendiente_pago' 
+  | 'pendiente_verificacion'
   | 'en_preparacion' 
   | 'alistando' 
   | 'en_camino' 

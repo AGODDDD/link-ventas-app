@@ -23,8 +23,6 @@ const VALID_CUSTOMER_STATUSES = new Set([
   'alistando',
   'en_camino',
   'completado',
-  'paid',
-  'shipped',
 ])
 
 function normalizePhone(value?: string) {

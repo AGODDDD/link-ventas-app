@@ -16,9 +16,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const supabase = hasSupabaseServiceRoleKey()
-      ? getSupabaseServiceClient()
-      : getSupabaseUserServerClient(token)
+    if (!hasSupabaseServiceRoleKey()) {
+      return NextResponse.json({ error: 'Billing no configurado en el servidor.' }, { status: 503 })
+    }
+    const supabase = getSupabaseServiceClient()
 
     const { data: profile, error } = await supabase
       .from('profiles')
@@ -79,12 +80,10 @@ export async function POST(req: Request) {
       ? getSupabaseServiceClient()
       : getSupabaseUserServerClient(token)
 
-    const { error } = hasSupabaseServiceRoleKey()
-      ? await supabase
-          .from('profiles')
-          .update({ plan: 'free', plan_expires_at: null })
-          .eq('id', user.id)
-      : await supabase.rpc('set_own_plan_free')
+    const { error } = await supabase
+      .from('profiles')
+      .update({ plan: 'free', plan_expires_at: null })
+      .eq('id', user.id)
 
     if (error) {
       console.error('Supabase update error:', error)

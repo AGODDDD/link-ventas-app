@@ -178,18 +178,12 @@ export default function RestauranteCheckoutModal({ isOpen, onClose, onSuccess, p
 
       // 2. Registrar como Lead (INDEPENDIENTE del pedido para que no se pierda)
       try {
-        const { error: leadError } = await supabase.from('store_leads').insert({
-          store_id: perfil.id,
-          name: nombre,
-          phone: telefono || null,
-          email: correo || null,
-          preference: 'Delivery Restaurante',
+        const leadResponse = await fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ store_id: perfil.id, name: nombre, phone: telefono, email: correo, preference: 'Delivery Restaurante' }),
         });
-        if (leadError) {
-          console.error('Error guardando lead:', leadError.message, leadError.details, leadError.hint);
-        } else {
-          console.log('✅ Lead capturado correctamente:', nombre);
-        }
+        if (!leadResponse.ok) console.error('No se pudo registrar el lead del pedido.');
       } catch (e) {
         console.error('Error crítico en lead:', e);
       }

@@ -18,17 +18,19 @@ Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente desp
       |
 [Supabase (Auth, RLS, Storage, DB)]
   |-- Core Nuevo: stores, orders, products, product_variants
-  |-- Legacy/Módulos: profiles, delivery_orders, abandoned_carts
+  |-- Cuenta: profiles (plan y credenciales cifradas)
+  |-- Operación: stores, store_config, orders, order_items, products
+  |-- Captación: store_leads, abandoned_carts, product_reviews
 ```
 → ver detalle en `ARCHITECTURE.md`
 
 ## 5. Tablas principales
-Las tablas operan en un modo híbrido de transición: `stores` asume progresivamente el rol principal de identidad reemplazando a `profiles`, y `orders` convive con el histórico `delivery_orders`.
+El contrato es canónico: `profiles` representa la cuenta, `stores` la única tienda de esa cuenta y `orders`/`order_items` todos los pedidos. `delivery_orders` puede existir únicamente como archivo histórico sin permisos de Data API.
 → ver `DATABASE_SCHEMA.md#tablas-principales`
 
 ## 6. Reglas críticas
 1. Seguir flujo de modificación de código (Regla de Onboarding).
-2. Proteger sistemas críticos (`seguridad_supabase.sql`, `lib/encryption.ts`).
+2. Proteger sistemas críticos (`supabase/migrations`, `lib/encryption.ts` y el webhook de Mercado Pago).
 3. Usar Supabase Server Client solo donde es absolutamente necesario, respetando RLS en cliente.
 4. Aplicar regla anti-alucinación (Documentar origen, Inferido, o DESCONOCIDO).
 5. Ejecutar y mostrar checklist de cierre al terminar cada tarea (archivos modificados, docs actualizadas, docs omitidas con razón).

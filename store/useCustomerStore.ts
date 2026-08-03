@@ -31,7 +31,7 @@ export interface Order {
     telefono: string;
     correo: string;
   };
-  metodoPago: 'whatsapp' | 'niubiz' | 'mercadopago';
+  metodoPago: 'whatsapp' | 'mercadopago';
   estimatedTime?: string; // e.g. "50 - 60 min"
 }
 

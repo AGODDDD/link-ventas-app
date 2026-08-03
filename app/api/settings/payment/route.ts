@@ -8,18 +8,26 @@ import {
   hasSupabaseServiceRoleKey,
 } from '@/lib/supabaseServer'
 
+function credential(value: unknown) {
+  return typeof value === 'string' ? value.trim().slice(0, 1024) : ''
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { mercadopago_access_token, mercadopago_public_key, mercadopago_active } = body
+    const { mercadopago_active } = body
+    const mercadopagoAccessToken = credential(body.mercadopago_access_token)
+    const mercadopagoPublicKey = credential(body.mercadopago_public_key)
+    const mercadopagoWebhookSecret = credential(body.mercadopago_webhook_secret)
 
     const { user, token } = await getAuthenticatedUser(req)
     if (!user || !token) {
       return NextResponse.json({ error: 'Token invalido o expirado' }, { status: 401 })
     }
 
-    const hasSecretKeyChange = Boolean(mercadopago_access_token && mercadopago_access_token.trim() !== '' && !mercadopago_access_token.includes('***'))
-    const hasPaymentConfigChange = mercadopago_active === true || Boolean(mercadopago_public_key?.trim()) || hasSecretKeyChange
+    const hasSecretKeyChange = Boolean(mercadopagoAccessToken && !mercadopagoAccessToken.includes('***'))
+    const hasWebhookSecretChange = Boolean(mercadopagoWebhookSecret && !mercadopagoWebhookSecret.includes('***'))
+    const hasPaymentConfigChange = mercadopago_active === true || Boolean(mercadopagoPublicKey) || hasSecretKeyChange || hasWebhookSecretChange
 
     if (!hasSupabaseServiceRoleKey() && !hasPaymentConfigChange) {
       return NextResponse.json({ success: true, message: 'Sin cambios de pasarela' })
@@ -48,7 +56,7 @@ export async function POST(req: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('plan, plan_expires_at')
+      .select('plan, plan_expires_at, mercadopago_access_token, mercadopago_webhook_secret')
       .eq('id', user.id)
       .single()
 
@@ -62,18 +70,27 @@ export async function POST(req: Request) {
         { status: 403 }
       )
     }
+    if (mercadopago_active === true && (!mercadopagoPublicKey || (!hasSecretKeyChange && !profile.mercadopago_access_token) || (!hasWebhookSecretChange && !profile.mercadopago_webhook_secret))) {
+      return NextResponse.json(
+        { error: 'Completa Public Key, Access Token y firma secreta de Webhooks antes de activar Mercado Pago.' },
+        { status: 400 }
+      )
+    }
 
     let encryptedSecretKey = null
     if (hasSecretKeyChange) {
-      encryptedSecretKey = encryptText(mercadopago_access_token.trim())
+      encryptedSecretKey = encryptText(mercadopagoAccessToken)
     }
+    const encryptedWebhookSecret = hasWebhookSecretChange
+      ? encryptText(mercadopagoWebhookSecret)
+      : null
 
     const { error: configError } = await supabase
       .from('store_config')
       .upsert({
         store_id: store.id,
         mercadopago_active: mercadopago_active === true,
-        mercadopago_public_key: mercadopago_public_key ? mercadopago_public_key.trim() : null,
+        mercadopago_public_key: mercadopagoPublicKey || null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'store_id' })
 
@@ -86,6 +103,7 @@ export async function POST(req: Request) {
       .from('profiles')
       .update({
         ...(encryptedSecretKey ? { mercadopago_access_token: encryptedSecretKey } : {}),
+        ...(encryptedWebhookSecret ? { mercadopago_webhook_secret: encryptedWebhookSecret } : {}),
       })
       .eq('id', user.id)
 

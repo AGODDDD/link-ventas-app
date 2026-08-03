@@ -44,31 +44,35 @@ export function getProductMediaThumbnail(media: ProductMedia[]) {
 
 export async function uploadProductMediaFiles(files: File[]): Promise<ProductMedia[]> {
   const uploaded: ProductMedia[] = []
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Tu sesión ya no está disponible.')
 
   for (const file of files) {
     const optimized = await optimizeProductMedia(file)
+    const objectPath = `${user.id}/${optimized.fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('productos')
-      .upload(optimized.fileName, optimized.blob, { contentType: optimized.contentType })
+      .upload(objectPath, optimized.blob, { contentType: optimized.contentType })
 
     if (uploadError) throw uploadError
 
     const { data: publicData } = supabase.storage
       .from('productos')
-      .getPublicUrl(optimized.fileName)
+      .getPublicUrl(objectPath)
 
     let posterUrl: string | undefined
     if (optimized.posterBlob && optimized.posterFileName) {
+      const posterPath = `${user.id}/${optimized.posterFileName}`
       const { error: posterError } = await supabase.storage
         .from('productos')
-        .upload(optimized.posterFileName, optimized.posterBlob, { contentType: 'image/webp' })
+        .upload(posterPath, optimized.posterBlob, { contentType: 'image/webp' })
 
       if (posterError) throw posterError
 
       const { data: posterData } = supabase.storage
         .from('productos')
-        .getPublicUrl(optimized.posterFileName)
+        .getPublicUrl(posterPath)
       posterUrl = posterData.publicUrl
     }
 

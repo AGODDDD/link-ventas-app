@@ -22,7 +22,7 @@ type Order = {
     customer_phone: string
     direccion: string
     total: number
-    status: 'pending' | 'paid' | 'shipped' | 'cancelled'
+    status: 'pendiente_pago' | 'pendiente_verificacion' | 'pendiente' | 'en_preparacion' | 'alistando' | 'en_camino' | 'completado' | 'cancelado'
     payment_proof_url: string
     order_items: any[]
 }
@@ -181,13 +181,25 @@ export default function PedidosPage() {
     const DELIVERY_LABELS: Record<string, string> = {
         pendiente_pago: 'Pendiente de Pago',
         pendiente_verificacion: 'Verificando Pago',
-        pending: 'Pendiente',
-        paid: 'Pagado',
         pendiente: 'Pendiente',
         en_preparacion: 'En preparación',
         alistando: 'Alistando',
         en_camino: 'En camino',
         completado: 'Completado',
+    }
+    const transitionOrderStatus = async (orderId: string, nextStatus: string) => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return { error: { message: 'Sesión expirada.' } }
+        const response = await fetch('/api/orders/status', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ order_id: orderId, next_status: nextStatus }),
+        })
+        const result = await response.json()
+        return response.ok ? { error: null } : { error: { message: result.error || 'No se pudo actualizar el estado.' } }
     }
     const avanzarEstadoDelivery = async (order: any) => {
         const orderId = order.id
@@ -197,10 +209,7 @@ export default function PedidosPage() {
         if (currentIdx < 0 || currentIdx >= DELIVERY_STATUSES.length - 1) return
         const nextStatus = DELIVERY_STATUSES[currentIdx + 1]
         
-        const { error: primaryError } = await supabase.rpc('transition_order_status', {
-            p_order_id: orderId,
-            p_next_status: nextStatus,
-        })
+        const { error: primaryError } = await transitionOrderStatus(orderId, nextStatus)
         
         if (primaryError) {
             toast.error('Error actualizando estado: ' + primaryError.message)
@@ -216,10 +225,7 @@ export default function PedidosPage() {
         const confirmed = window.confirm('¿Seguro que deseas cancelar este pedido? Esta acción no se puede deshacer.')
         if (!confirmed) return
 
-        const { error } = await supabase.rpc('transition_order_status', {
-            p_order_id: orderId,
-            p_next_status: 'cancelado',
-        })
+        const { error } = await transitionOrderStatus(orderId, 'cancelado')
 
         if (!error) {
             actualizarEstadoOrderLocal(orderId, 'cancelado')
@@ -235,10 +241,7 @@ export default function PedidosPage() {
     }
 
     const actualizarEstado = async (id: string, nuevoEstado: string) => {
-        const { error } = await supabase.rpc('transition_order_status', {
-            p_order_id: id,
-            p_next_status: nuevoEstado,
-        })
+        const { error } = await transitionOrderStatus(id, nuevoEstado)
 
         if (!error) {
             actualizarEstadoOrderLocal(id, nuevoEstado)
@@ -330,10 +333,8 @@ export default function PedidosPage() {
 
     const descargarPdfDesdeModal = async (order: any) => {
         toast.loading('Generando PDF oficial... 📄', { id: 'modal-pdf' })
-        // Para la API: legacy_delivery usa su propio id (BARR-...), core usa UUID
-        const ticketId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id)
-        // Para el nombre del archivo: mostrar siempre el BARR completo
-        const displayId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id.split('-')[0].toUpperCase())
+        const ticketId = order.legacy_id || order.id
+        const displayId = order.legacy_id || order.id.split('-')[0].toUpperCase()
         try {
             const { data: { session } } = await supabase.auth.getSession()
             const response = await fetch(`/api/pedidos/ticket?id=${ticketId}`, {
@@ -355,7 +356,7 @@ export default function PedidosPage() {
         if (sharePngPreview) {
             const link = document.createElement('a')
             link.href = sharePngPreview
-        const displayId = order.legacy_id || (order._source === 'legacy_delivery' ? order.id : order.id.split('-')[0].toUpperCase())
+        const displayId = order.legacy_id || order.id.split('-')[0].toUpperCase()
             link.download = `Ticket_${displayId}.png`
             link.click()
             toast.success('Ticket descargado como PNG con éxito!')
@@ -581,7 +582,7 @@ export default function PedidosPage() {
                             className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-sm font-semibold outline-none transition-all duration-300 focus:border-primary/50 dark:border-zinc-700 dark:bg-zinc-900"
                         >
                             <option value="all">Todos los estados</option>
-                            {Object.entries(DELIVERY_LABELS).filter(([value]) => !['pending', 'paid'].includes(value)).map(([value, label]) => (
+                            {Object.entries(DELIVERY_LABELS).map(([value, label]) => (
                                 <option key={value} value={value}>{label}</option>
                             ))}
                             <option value="cancelado">Cancelado</option>
@@ -631,7 +632,7 @@ export default function PedidosPage() {
                         ) : (
                             <>
                                 {paginatedDelivery.map(order => {
-                                const statusIdx = order.status === 'paid' ? 2 : DELIVERY_STATUSES.indexOf(order.status)
+                                const statusIdx = DELIVERY_STATUSES.indexOf(order.status)
                                 const isCompleted = order.status === 'completado'
                                 const items = order.order_items || []
 
@@ -939,16 +940,16 @@ export default function PedidosPage() {
                                                 </div>
                                             )}
 
-                                            {order.status === 'pending' && (
+                                            {order.status === 'pendiente_verificacion' && (
                                                 <div className="grid grid-cols-2 gap-2 mt-2">
                                                     <button
-                                                        onClick={() => actualizarEstado(order.id, 'paid')}
+                                                        onClick={() => actualizarEstado(order.id, 'pendiente')}
                                                         className="flex flex-col items-center justify-center gap-1 p-2 bg-secondary/10 hover:bg-secondary text-secondary hover:text-on-secondary rounded-lg transition-colors border border-secondary/20 hover:border-transparent font-bold text-xs"
                                                     >
                                                         <CheckCircle size={18} /> Validar
                                                     </button>
                                                     <button
-                                                        onClick={() => actualizarEstado(order.id, 'cancelled')}
+                                                        onClick={() => actualizarEstado(order.id, 'cancelado')}
                                                         className="flex flex-col items-center justify-center gap-1 p-2 bg-error/10 hover:bg-error text-error hover:text-on-error rounded-lg transition-colors border border-error/20 hover:border-transparent font-bold text-xs"
                                                     >
                                                         <Ban size={18} /> Cancelar
@@ -956,13 +957,26 @@ export default function PedidosPage() {
                                                 </div>
                                             )}
 
-                                            {order.status === 'paid' && (
+                                            {['pendiente', 'en_preparacion', 'alistando', 'en_camino'].includes(order.status) && (
                                                 <div className="space-y-2 mt-2 w-full">
                                                     <button
-                                                        onClick={() => actualizarEstado(order.id, 'shipped')}
+                                                        onClick={() => actualizarEstado(
+                                                            order.id,
+                                                            order.status === 'pendiente'
+                                                                ? 'en_preparacion'
+                                                                : order.status === 'en_preparacion'
+                                                                    ? 'alistando'
+                                                                    : 'completado'
+                                                        )}
                                                         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-on-primary hover:brightness-110 text-sm font-bold rounded-xl transition-all shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95"
                                                     >
-                                                        <Truck size={18} /> Marcar Enviado
+                                                        <Truck size={18} /> {
+                                                            order.status === 'pendiente'
+                                                                ? 'Iniciar preparación'
+                                                                : order.status === 'en_preparacion'
+                                                                    ? 'Marcar alistado'
+                                                                    : 'Completar pedido'
+                                                        }
                                                     </button>
 
                                                     {/* BOTONES IMPRIMIR Y COMPARTIR TICKET */}
@@ -1102,7 +1116,7 @@ export default function PedidosPage() {
                             <div>
                                 <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-1">Ticket del Pedido</p>
                                 <h3 className="font-headline font-black text-xl text-zinc-900 dark:text-zinc-100 uppercase italic tracking-tight mb-1">
-                                    {shareOrder.legacy_id || (shareOrder._source === 'legacy_delivery' ? shareOrder.id : shareOrder.id.split('-')[0].toUpperCase())}
+                                    {shareOrder.legacy_id || shareOrder.id.split('-')[0].toUpperCase()}
                                 </h3>
                                 <p className="text-xs text-zinc-400 dark:text-zinc-500">
                                     {shareOrder.customer_name} · S/ {parseFloat(shareOrder.total || 0).toFixed(2)}

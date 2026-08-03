@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { CheckCircle2 } from 'lucide-react'
 
@@ -27,17 +26,19 @@ export default function LeadCaptureForm({ storeId }: { storeId: string }) {
     setLoading(true)
     
     try {
-      const { error } = await supabase
-        .from('store_leads')
-        .insert({
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           store_id: storeId,
           name: nombre,
           email: email,
           phone: telefono,
           preference: preferencia
-        })
-
-      if (error) throw error
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'No se pudo registrar el contacto.')
 
       toast.success(
         <div className="flex flex-col gap-1">

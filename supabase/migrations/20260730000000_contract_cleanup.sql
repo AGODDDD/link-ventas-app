@@ -60,6 +60,10 @@ REVOKE ALL ON FUNCTION public.activate_platform_pro_subscription(UUID, TEXT, NUM
 GRANT EXECUTE ON FUNCTION public.activate_platform_pro_subscription(UUID, TEXT, NUMERIC, TEXT) TO service_role;
 
 -- Se elimina la capa de columnas legacy: orders usa store_id, direccion y total.
+-- La politica historica depende de merchant_id y debe retirarse antes de
+-- eliminar la columna para que un reset completo no falle por dependencias.
+DROP POLICY IF EXISTS "Merchants ven sus propias órdenes" ON public.orders;
+DROP POLICY IF EXISTS "Clientes pueden crear órdenes" ON public.orders;
 ALTER TABLE public.orders
   DROP COLUMN IF EXISTS merchant_id,
   DROP COLUMN IF EXISTS customer_address,

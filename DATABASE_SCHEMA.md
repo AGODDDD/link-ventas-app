@@ -7,3 +7,7 @@
 `orders` usa exclusivamente `store_id`, `direccion`, `subtotal`, `delivery_fee`, `total`, `status` y `payment_status`. Las líneas son `order_items`; las reservas son `order_inventory_reservations`.
 
 No existen columnas alternativas de pedidos. Las migraciones de `supabase/migrations` son la fuente de verdad.
+
+`delivery_orders` puede mantenerse temporalmente como archivo histórico, sin permisos para `anon` ni `authenticated`. Ningún flujo activo consulta o escribe esa tabla.
+
+Las reseñas guardan `order_id` y solo se crean desde la API después de verificar pedido completado, teléfono, correo y producto comprado. Los campos privados de verificación no tienen privilegio de lectura pública.

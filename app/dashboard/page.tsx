@@ -9,7 +9,7 @@ import { useDashboardStore } from '@/store/useDashboardStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 import { getOrderStatusBadgeStyle, getOrderStatusLabel, ORDER_STATUS_LABELS } from '@/lib/orderStatus'
 
-const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
+const INGRESO_STATUSES = new Set(['completado', 'en_camino'])
 const ATTENTION_STATUSES = new Set(['pendiente', 'pendiente_pago', 'pendiente_verificacion'])
 const ITEMS_PER_PAGE = 10
 
@@ -214,7 +214,7 @@ export default function DashboardPage() {
               >
                 <option value="all">Todos los estados</option>
                 {Object.entries(ORDER_STATUS_LABELS)
-                  .filter(([value]) => !['pending', 'paid', 'shipped', 'cancelled'].includes(value))
+                  .filter(([value]) => value !== 'cancelado')
                   .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>

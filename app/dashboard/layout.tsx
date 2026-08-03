@@ -18,14 +18,6 @@ function calcularDiasRestantes(expiresAt: string): number {
   return Math.max(0, Math.ceil((vencimiento - ahora) / (1000 * 60 * 60 * 24)))
 }
 
-// Seteamos la cookie sb-plan-status para que el middleware edge la lea sin DB
-function setPlanCookie(plan: string, expiresAt: string | null) {
-  const valor = expiresAt ? `${plan}|${expiresAt}` : plan
-  // Cookie de sesión (sin max-age para que expire al cerrar el navegador), 
-  // se refresca en cada carga del layout
-  document.cookie = `sb-plan-status=${encodeURIComponent(valor)}; path=/; SameSite=Lax`
-}
-
 export default function DashboardLayout({
   children,
 }: {
@@ -69,14 +61,10 @@ export default function DashboardLayout({
         const expiresAt: string | null = billing.plan_expires_at ?? null
 
 
-      // ─── Setear cookie para el Edge Middleware ───────────────────────
-        setPlanCookie(planActual, expiresAt)
-
       // ─── Verificar expiración en cliente ─────────────────────────────
         const estaVencido = expiresAt ? new Date(expiresAt) < new Date() : false
 
         if ((planActual === 'inactivo') || (estaVencido && planActual !== 'free')) {
-          document.cookie = 'sb-plan-status=; path=/; max-age=0'
           router.replace('/pendiente')
           return
         }

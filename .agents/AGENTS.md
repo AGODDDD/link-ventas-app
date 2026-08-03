@@ -1,7 +1,7 @@
 # Manual de operación para cualquier agente futuro
 
 ## Stack Tecnológico
-- **Framework Core**: Next.js 15+ (App Router), React 19.
+- **Framework Core**: Next.js 16 (App Router), React 19.
 - **Estilos**: Tailwind CSS v4, Lucide React (Iconos).
 - **Base de Datos & Auth**: Supabase (PostgreSQL, GoTrue, @supabase/ssr v0.10.0, @supabase/supabase-js v2.101.1).
 - **Estado Global**: Zustand v5 (Persistido).
@@ -17,9 +17,9 @@
 - **Variables de Entorno**: `ADMIN_USER_ID` (y llaves maestras) son estrictamente variables privadas de servidor. NUNCA exponerlas usando el prefijo `NEXT_PUBLIC_`. Toda validación de administrador debe ocurrir del lado del backend.
 
 ## Sistemas Protegidos (NO TOCAR SIN AUTORIZACIÓN EXPLÍCITA)
-1. `seguridad_supabase.sql`: Reglas RLS y esquema maestro.
+1. `supabase/migrations`: esquema, RLS y contrato transaccional.
 2. `lib/encryption.ts`: Funciones de cifrado de llaves de pasarela de pago.
-3. `/app/api/webhooks/culqi/route.ts`: Lógica de transacciones financieras.
+3. `/app/api/webhooks/mercadopago/route.ts`: conciliación financiera e inventario.
 
 ## Flujo Obligatorio Antes de Modificar Código
 Cualquier IA que interactúe con este proyecto DEBE seguir estos pasos:
@@ -34,12 +34,13 @@ REGLA DE CHANGELOG AUTOMÁTICO:
 Al finalizar cada sesión de trabajo, el agente DEBE actualizar CHANGELOG.md sin esperar instrucción del usuario. Esta actualización es parte del checklist de cierre — si el CHANGELOG no fue actualizado, la tarea NO está completa. El agente no puede marcar "TAREA COMPLETADA" si CHANGELOG.md no refleja el trabajo de la sesión actual.
 
 ## Reglas de Testing
-- **DESCONOCIDO** (No se han inferido configuraciones de Jest o Playwright en el repositorio. Testeo manual recomendado).
+- Unitarias: `npm run test:unit` (Node Test Runner + tsx).
+- E2E de checkout: Playwright mediante `test-checkout.spec.ts` cuando existan credenciales de prueba.
 
 ## Cómo Manejar Migraciones de BD
 - LinkVentas no usa un ORM tradicional con CLI de migraciones.
-- Los cambios estructurales se reflejan actualizando manualmente `seguridad_supabase.sql`.
-- Existe `scripts/doctor.ts` como herramienta de parcheo, pero no debe considerarse un gestor de migraciones absoluto.
+- Todo cambio estructural se crea y aplica con Supabase CLI en `supabase/migrations`.
+- No se permiten scripts ad hoc que escriban directamente sobre producción.
 
 ---
 ## Campos que requieren verificación manual

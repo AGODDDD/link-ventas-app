@@ -31,6 +31,7 @@ interface SettingsFormData {
   mercadopagoActive: boolean;
   mercadopagoPublicKey: string;
   mercadopagoAccessToken: string;
+  mercadopagoWebhookSecret: string;
   storeAddress: string;
   storeLat: number | null;
   storeLng: number | null;
@@ -82,6 +83,9 @@ export default function ConfiguracionPage() {
   const [uploading, setUploading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
   const [showFomoConfig, setShowFomoConfig] = useState(false)
+  const [appOrigin, setAppOrigin] = useState('')
+
+  useEffect(() => setAppOrigin(window.location.origin), [])
 
   const [systemData, setSystemData] = useState<SystemData>({
     userId: '',
@@ -144,6 +148,7 @@ export default function ConfiguracionPage() {
           mercadopagoActive: config.mercadopago_active || false,
           mercadopagoPublicKey: config.mercadopago_public_key || '',
           mercadopagoAccessToken: '', // Never returned by the server
+          mercadopagoWebhookSecret: '', // Never returned by the server
           storeAddress: config.store_address || '',
           storeLat: config.store_lat || null,
           storeLng: config.store_lng || null,
@@ -197,7 +202,7 @@ export default function ConfiguracionPage() {
       }
 
       const { blob, fileName } = await optimizeImage(file, { maxDimension: 1400, quality: 0.90 })
-      const filePath = `${systemData.userId}-${fileName}`
+      const filePath = `${systemData.userId}/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from(bucket)
@@ -248,8 +253,7 @@ export default function ConfiguracionPage() {
 
       const { error: configError } = await supabase
         .from('store_config')
-        .upsert({
-          store_id: systemData.storeId,
+        .update({
           hero_image_url: formData.heroImageUrl,
           yape_image_url: formData.yapeUrl,
           plin_image_url: formData.plinUrl,
@@ -281,7 +285,8 @@ export default function ConfiguracionPage() {
             exchange_days: formData.exchangeDays,
           },
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'store_id' })
+        })
+        .eq('store_id', systemData.storeId)
 
       if (configError) throw configError
 
@@ -307,7 +312,8 @@ export default function ConfiguracionPage() {
       const paymentSettingsChanged =
         formData.mercadopagoActive !== initialData.mercadopagoActive ||
         formData.mercadopagoPublicKey.trim() !== initialData.mercadopagoPublicKey ||
-        formData.mercadopagoAccessToken.trim() !== ''
+        formData.mercadopagoAccessToken.trim() !== '' ||
+        formData.mercadopagoWebhookSecret.trim() !== ''
 
       if (paymentSettingsChanged) {
         const { data: { session } } = await supabase.auth.getSession()
@@ -322,6 +328,7 @@ export default function ConfiguracionPage() {
               mercadopago_active: formData.mercadopagoActive,
               mercadopago_public_key: formData.mercadopagoPublicKey,
               mercadopago_access_token: formData.mercadopagoAccessToken,
+              mercadopago_webhook_secret: formData.mercadopagoWebhookSecret,
             })
           })
           const paymentData = await paymentRes.json()
@@ -331,7 +338,7 @@ export default function ConfiguracionPage() {
         }
       }
 
-      const newInitialData = { ...formData, mercadopagoAccessToken: '' }
+      const newInitialData = { ...formData, mercadopagoAccessToken: '', mercadopagoWebhookSecret: '' }
       setInitialData(newInitialData)
       setFormData(JSON.parse(JSON.stringify(newInitialData)))
       setPendingTemplate(null)
@@ -682,6 +689,12 @@ export default function ConfiguracionPage() {
                       <Label>Access Token</Label>
                       <Input type="password" value={formData.mercadopagoAccessToken} onChange={(e) => updateForm('mercadopagoAccessToken', e.target.value)} className="font-mono text-sm" placeholder="Ingresa para modificar" />
                       <p className="text-xs text-zinc-500">Solo visible al momento de editar. Se guarda cifrada en el servidor.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Firma secreta de Webhooks</Label>
+                      <Input type="password" value={formData.mercadopagoWebhookSecret} onChange={(e) => updateForm('mercadopagoWebhookSecret', e.target.value)} className="font-mono text-sm" placeholder="Ingresa para modificar" />
+                      <p className="text-xs text-zinc-500">Configura esta URL para eventos de pagos y copia aquí la firma secreta generada por Mercado Pago.</p>
+                      <Input readOnly value={appOrigin && systemData.storeId ? `${appOrigin}/api/webhooks/mercadopago?store_id=${systemData.storeId}` : ''} className="font-mono text-xs" />
                     </div>
                   </CardContent>
                 )}

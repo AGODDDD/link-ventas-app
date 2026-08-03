@@ -24,18 +24,25 @@ Crea un archivo `.env.local` con tus credenciales de Supabase:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+APP_URL=https://tu-dominio.com
 ADMIN_USER_ID=uuid_del_admin
 SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_solo_servidor
 PAYMENT_ENCRYPTION_KEY=64_caracteres_hex_para_cifrar_secretos_de_pago
 CRON_SECRET=secreto_largo_aleatorio_para_los_crons_de_vercel
 NEXT_PUBLIC_MP_PUBLIC_KEY=APP_USR_public_key_de_la_plataforma
 MP_ACCESS_TOKEN=APP_USR_access_token_solo_servidor_de_la_plataforma
+MP_WEBHOOK_SECRET=secreto_de_firma_entregado_por_mercado_pago
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET` y `MP_ACCESS_TOKEN` deben configurarse solo en el entorno del servidor/Vercel. No deben exponerse en el navegador. `NEXT_PUBLIC_MP_PUBLIC_KEY` tokeniza el Plan Pro; cada comercio configura su Public Key y Access Token de Mercado Pago desde el dashboard, y este último se cifra antes de persistirse.
+`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET`, `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` deben configurarse solo en el entorno del servidor/Vercel. `MP_WEBHOOK_SECRET` corresponde exclusivamente a la aplicación que cobra el Plan Pro. `NEXT_PUBLIC_MP_PUBLIC_KEY` tokeniza ese cobro. Cada comercio configura desde su dashboard su Public Key, Access Token y firma secreta de Webhooks; ambos secretos se cifran antes de persistirse. `APP_URL` fija el origen HTTPS usado en las notificaciones de pago.
 
 ### 3. Configurar Base de Datos
-Copia el contenido de `seguridad_supabase.sql` y ejecútalo en el SQL Editor de tu Dashboard de Supabase. Esto configurará todas las tablas y políticas de seguridad (RLS).
+El esquema y RLS se administran exclusivamente con las migraciones versionadas:
+
+```bash
+npx supabase link --project-ref TU_PROJECT_REF
+npx supabase db push
+```
 
 ### 4. Lanzar el Proyecto
 ```bash
@@ -46,19 +53,12 @@ npm run dev
 ```bash
 npm run lint
 npm run test:unit
+npm run build
 ```
 
----
-
-## 🩺 Mantenimiento (El Doctor)
-
-Este proyecto incluye un auditor inteligente para asegurar que tu base de datos y tu código estén siempre sincronizados.
-
-Si algo no funciona, corre:
-```bash
-npx tsx scripts/doctor.ts
-```
-El "Doctor" analizará tu conexión y te dará los comandos SQL necesarios para arreglar cualquier fallo estructural.
+La prueba E2E de Mercado Pago solo debe ejecutarse contra sandbox y requiere
+`CHECKOUT_STORE_URL`, `MP_TEST_CARD_NUMBER`, `MP_TEST_CARD_EXPIRATION` y
+`MP_TEST_CARD_SECURITY_CODE` explícitos. No tiene un destino de producción por defecto.
 
 ---
 

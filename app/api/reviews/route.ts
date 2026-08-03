@@ -1,109 +1,108 @@
 import { NextResponse } from 'next/server'
+import { getRateLimitKey } from '@/lib/rateLimit'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
 
-export async function POST(req: Request) {
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const orderReferencePattern = /^[A-Za-z0-9-]{1,80}$/
+
+function text(value: unknown, maxLength: number) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+export async function POST(request: Request) {
   try {
-    const body = await req.json()
-    const { store_id, product_id, customer_name, customer_email, rating, comment } = body
+    const body: Record<string, unknown> = await request.json()
+    const storeId = text(body.store_id, 64)
+    const productId = text(body.product_id, 64)
+    const orderReference = text(body.order_reference, 80)
+    const customerPhone = text(body.customer_phone, 40).replace(/\s/g, '')
+    const customerEmail = text(body.customer_email, 254).toLowerCase()
+    const fallbackName = text(body.customer_name, 80)
+    const comment = text(body.comment, 600)
+    const rating = Number(body.rating)
 
-    // 1. Validar presencia de todos los campos
-    if (!store_id || !product_id || !customer_name || !customer_email || !rating || !comment) {
-      return NextResponse.json(
-        { error: 'Todos los campos son requeridos.' },
-        { status: 400 }
-      )
+    if (!uuidPattern.test(storeId) || !uuidPattern.test(productId) || !orderReferencePattern.test(orderReference)) {
+      return NextResponse.json({ error: 'Tienda, producto o pedido inválido.' }, { status: 400 })
     }
-
-    // 2. Validar rango del rating
-    const ratingNum = Number(rating)
-    if (!Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-      return NextResponse.json(
-        { error: 'La calificacion debe ser un numero entre 1 y 5.' },
-        { status: 400 }
-      )
+    if (!/^\d{7,15}$/.test(customerPhone) || !/^\S+@\S+\.\S+$/.test(customerEmail)) {
+      return NextResponse.json({ error: 'Los datos usados para verificar la compra no son válidos.' }, { status: 400 })
+    }
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5 || comment.length < 5) {
+      return NextResponse.json({ error: 'Selecciona una calificación y escribe un comentario válido.' }, { status: 400 })
     }
 
     const supabase = getSupabaseServiceClient()
+    const rateLimitKey = getRateLimitKey(request, 'review', [storeId, productId])
+    const { data: allowed, error: limitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {
+      p_client_key: rateLimitKey,
+      p_limit: 5,
+      p_window_seconds: 3600,
+    })
+    if (limitError) throw limitError
+    if (!allowed) return NextResponse.json({ error: 'Demasiados intentos. Intenta más tarde.' }, { status: 429 })
 
-    // 3. Verificar si ya existe una reseña de este email para este producto
+    let orderQuery = supabase
+      .from('orders')
+      .select('id, customer_name')
+      .eq('store_id', storeId)
+      .eq('customer_phone', customerPhone)
+      .eq('customer_email', customerEmail)
+      .eq('status', 'completado')
+
+    orderQuery = uuidPattern.test(orderReference)
+      ? orderQuery.eq('id', orderReference)
+      : orderQuery.eq('legacy_id', orderReference)
+
+    const { data: order } = await orderQuery.maybeSingle()
+    if (!order) {
+      return NextResponse.json({ error: 'No encontramos una compra completada con esos datos.' }, { status: 403 })
+    }
+
+    const { data: purchasedItem } = await supabase
+      .from('order_items')
+      .select('id')
+      .eq('order_id', order.id)
+      .eq('product_id', productId)
+      .limit(1)
+      .maybeSingle()
+    if (!purchasedItem) {
+      return NextResponse.json({ error: 'Ese producto no pertenece al pedido indicado.' }, { status: 403 })
+    }
+
     const { data: existingReview } = await supabase
       .from('product_reviews')
       .select('id')
-      .eq('store_id', store_id)
-      .eq('product_id', product_id)
-      .eq('customer_email', customer_email)
+      .eq('order_id', order.id)
+      .eq('product_id', productId)
       .maybeSingle()
-
     if (existingReview) {
-      return NextResponse.json(
-        { error: 'Ya dejaste una reseña para este producto.' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Este producto ya fue reseñado para ese pedido.' }, { status: 409 })
     }
 
-    // 4. Buscar orden completada del cliente en esta tienda que incluya el producto
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('store_id', store_id)
-      .eq('customer_email', customer_email)
-      .eq('status', 'completado')
-
-    let verifiedPurchase = false
-
-    if (orders && orders.length > 0) {
-      const orderIds = orders.map((o) => o.id)
-
-      const { data: matchingItem } = await supabase
-        .from('order_items')
-        .select('id')
-        .in('order_id', orderIds)
-        .eq('product_id', product_id)
-        .limit(1)
-        .maybeSingle()
-
-      if (matchingItem) {
-        verifiedPurchase = true
-      }
-    }
-
-    // 5. Si no es compra verificada, bloquear
-    if (!verifiedPurchase) {
-      return NextResponse.json(
-        { error: 'Solo clientes que hayan comprado este producto pueden dejar una resena.' },
-        { status: 403 }
-      )
-    }
-
-    // 6. Insertar la reseña con verified_purchase = true
     const { data: review, error: insertError } = await supabase
       .from('product_reviews')
       .insert({
-        store_id,
-        product_id,
-        customer_name: customer_name.trim(),
-        customer_email: customer_email.trim().toLowerCase(),
-        rating: ratingNum,
-        comment: comment.trim(),
+        store_id: storeId,
+        product_id: productId,
+        order_id: order.id,
+        customer_name: text(order.customer_name, 80) || fallbackName || 'Cliente verificado',
+        customer_email: customerEmail,
+        rating,
+        comment,
         verified_purchase: true,
       })
       .select('id, customer_name, rating, comment, verified_purchase, created_at')
       .single()
-
     if (insertError) {
-      console.error('Error insertando resena:', insertError)
-      return NextResponse.json(
-        { error: 'No se pudo guardar la resena. Intenta de nuevo.' },
-        { status: 500 }
-      )
+      if (insertError.code === '23505') {
+        return NextResponse.json({ error: 'Este producto ya fue reseñado para ese pedido.' }, { status: 409 })
+      }
+      throw insertError
     }
 
-    return NextResponse.json({ success: true, review })
-  } catch (error: any) {
-    console.error('Error en API reviews:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor.' },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: true, review }, { status: 201 })
+  } catch (error) {
+    console.error('Review API error:', error)
+    return NextResponse.json({ error: 'No se pudo guardar la reseña.' }, { status: 500 })
   }
 }

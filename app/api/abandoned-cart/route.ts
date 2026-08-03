@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
-import { createHash } from 'crypto'
+import { getRateLimitKey } from '@/lib/rateLimit'
 
 const MAX_ATTEMPTS = 8
 
@@ -10,11 +10,9 @@ function text(value: unknown, maxLength: number) {
 
 export async function POST(request: Request) {
   try {
-    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip')?.trim() || 'unknown'
-    const clientKey = createHash('sha256').update(clientIp).digest('hex')
     const supabase = getSupabaseServiceClient()
     const { data: allowed, error: rateLimitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {
-      p_client_key: clientKey,
+      p_client_key: getRateLimitKey(request, 'abandoned-cart'),
       p_limit: MAX_ATTEMPTS,
       p_window_seconds: 60,
     })

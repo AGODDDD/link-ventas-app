@@ -39,10 +39,10 @@ export default function FomoConfigModal({ isOpen, onClose, storeId }: FomoConfig
         try {
             const { error } = await supabase
                 .from('store_config')
-                .upsert({
-                    store_id: storeId,
+                .update({
                     fomo_enabled: enabled,
-                }, { onConflict: 'store_id' })
+                })
+                .eq('store_id', storeId)
 
             if (error) {
                 // If column does not exist error

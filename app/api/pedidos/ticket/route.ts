@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import PDFDocument from 'pdfkit'
 import fs from 'fs'
 import path from 'path'
-import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { getAuthenticatedUser, getSupabaseServiceClient, hasProFeatures } from '@/lib/supabaseServer'
 
 // Helper para buscar el pedido por ID en la tabla unificada
 async function getOrderById(orderId: string) {
@@ -21,8 +21,7 @@ async function getOrderById(orderId: string) {
     if (orderData) {
         return {
             ...orderData,
-            total: (orderData.total || 0).toString(),
-            _source: orderData.store_id ? 'core' : 'legacy_standard'
+            total: (orderData.total || 0).toString()
         }
     }
     
@@ -56,9 +55,19 @@ export async function GET(request: NextRequest) {
                 headers: { 'content-type': 'application/json' }
             })
         }
-        const ownerId = order.store_id
-        if (ownerId !== user.id) {
+        const supabase = getSupabaseServiceClient()
+        const [{ data: store }, { data: profile }] = await Promise.all([
+            supabase.from('stores').select('name, owner_id').eq('id', order.store_id).maybeSingle(),
+            supabase.from('profiles').select('plan, plan_expires_at').eq('id', user.id).maybeSingle(),
+        ])
+        if (!store || store.owner_id !== user.id) {
             return new Response(JSON.stringify({ error: 'No autorizado para este pedido' }), {
+                status: 403,
+                headers: { 'content-type': 'application/json' }
+            })
+        }
+        if (!hasProFeatures(profile?.plan ?? null, profile?.plan_expires_at ?? null)) {
+            return new Response(JSON.stringify({ error: 'Los tickets PDF requieren un plan Pro o trial activo' }), {
                 status: 403,
                 headers: { 'content-type': 'application/json' }
             })
@@ -68,12 +77,6 @@ export async function GET(request: NextRequest) {
         const storeId = order.store_id
         let storeName = "TU TIENDA"
         if (storeId) {
-            const supabase = getSupabaseServiceClient()
-            const { data: store } = await supabase
-                .from('stores')
-                .select('name')
-                .eq('id', storeId)
-                .single()
             if (store?.name) {
                 storeName = store.name
             }

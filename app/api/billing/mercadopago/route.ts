@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser } from '@/lib/supabaseServer'
+import { getPublicAppOrigin } from '@/lib/appUrl'
+import { getRateLimitKey } from '@/lib/rateLimit'
+import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
 
 const PRO_AMOUNT = 25
 
@@ -25,6 +27,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Datos de pago invalidos.' }, { status: 400 })
     }
 
+    const { data: allowed, error: limitError } = await getSupabaseServiceClient().rpc('consume_abandoned_cart_rate_limit', {
+      p_client_key: getRateLimitKey(request, 'platform-payment-attempt', [user.id]),
+      p_limit: 5,
+      p_window_seconds: 3600,
+    })
+    if (limitError) throw limitError
+    if (!allowed) return NextResponse.json({ error: 'Demasiados intentos de pago. Intenta nuevamente más tarde.' }, { status: 429 })
+
     const paymentResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}`, 'X-Idempotency-Key': `pro-${user.id}-${token}` },
@@ -37,6 +47,7 @@ export async function POST(request: Request) {
         payer: { email },
         external_reference: user.id,
         description: 'LinkVentas Pro - 30 dias',
+        notification_url: `${getPublicAppOrigin(request.url)}/api/webhooks/mercadopago?scope=platform`,
       }),
     })
     const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string } = await paymentResponse.json()

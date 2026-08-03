@@ -1,6 +1,6 @@
-import { createHmac, timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
 import { decryptText } from '@/lib/encryption'
+import { hasValidMercadoPagoSignature } from '@/lib/mercadoPagoWebhook'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
 
 type MercadoPagoPayment = {
@@ -12,22 +12,11 @@ type MercadoPagoPayment = {
   date_approved?: string
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 function paymentIdFromRequest(url: URL, body: Record<string, unknown>) {
   const data = body.data as Record<string, unknown> | undefined
   return String(data?.id ?? body.id ?? url.searchParams.get('data.id') ?? '').trim()
-}
-
-function hasValidSignature(request: Request, paymentId: string) {
-  const secret = process.env.MP_WEBHOOK_SECRET
-  if (!secret) return true
-  const signature = request.headers.get('x-signature')
-  const requestId = request.headers.get('x-request-id')
-  if (!signature || !requestId || !paymentId) return false
-  const value = `id:${paymentId};request-id:${requestId};ts:${signature.match(/ts=([^,]+)/)?.[1] ?? ''};`
-  const expected = createHmac('sha256', secret).update(value).digest('hex')
-  const received = signature.match(/v1=([a-f0-9]+)/i)?.[1]
-  if (!received || received.length !== expected.length) return false
-  return timingSafeEqual(Buffer.from(received), Buffer.from(expected))
 }
 
 async function fetchPayment(accessToken: string, paymentId: string) {
@@ -44,11 +33,15 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
     const paymentId = paymentIdFromRequest(url, body)
     const scope = url.searchParams.get('scope')
-    if (!paymentId || !hasValidSignature(request, paymentId)) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
-
     const supabase = getSupabaseServiceClient()
     if (scope === 'platform') {
-      const payment = await fetchPayment(process.env.MP_ACCESS_TOKEN || '', paymentId)
+      const webhookSecret = process.env.MP_WEBHOOK_SECRET
+      const platformAccessToken = process.env.MP_ACCESS_TOKEN
+      if (!webhookSecret || !platformAccessToken) return NextResponse.json({ error: 'Facturación no configurada.' }, { status: 503 })
+      if (!paymentId || !hasValidMercadoPagoSignature(
+        request.headers.get('x-signature'), request.headers.get('x-request-id'), paymentId, webhookSecret,
+      )) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
+      const payment = await fetchPayment(platformAccessToken, paymentId)
       const userId = payment.external_reference
       if (!userId || payment.status !== 'approved' || Number(payment.transaction_amount) !== 25 || payment.currency_id !== 'PEN') return NextResponse.json({ ok: true })
       const { error } = await supabase.rpc('activate_platform_pro_subscription', {
@@ -62,11 +55,14 @@ export async function POST(request: Request) {
     }
 
     const storeId = url.searchParams.get('store_id')
-    if (!storeId) return NextResponse.json({ error: 'store_id requerido.' }, { status: 400 })
+    if (!storeId || !uuidPattern.test(storeId)) return NextResponse.json({ error: 'store_id inválido.' }, { status: 400 })
     const { data: store } = await supabase.from('stores').select('owner_id').eq('id', storeId).single()
     if (!store) return NextResponse.json({ error: 'Tienda no encontrada.' }, { status: 404 })
-    const { data: profile } = await supabase.from('profiles').select('mercadopago_access_token').eq('id', store.owner_id).single()
-    if (!profile?.mercadopago_access_token) return NextResponse.json({ error: 'Pasarela no configurada.' }, { status: 409 })
+    const { data: profile } = await supabase.from('profiles').select('mercadopago_access_token, mercadopago_webhook_secret').eq('id', store.owner_id).single()
+    if (!profile?.mercadopago_access_token || !profile.mercadopago_webhook_secret) return NextResponse.json({ error: 'Pasarela no configurada.' }, { status: 409 })
+    if (!paymentId || !hasValidMercadoPagoSignature(
+      request.headers.get('x-signature'), request.headers.get('x-request-id'), paymentId, decryptText(profile.mercadopago_webhook_secret),
+    )) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
     const payment = await fetchPayment(decryptText(profile.mercadopago_access_token), paymentId)
     const orderId = payment.external_reference
     const order = orderId ? await supabase.from('orders').select('id, total, store_id').eq('id', orderId).eq('store_id', storeId).maybeSingle() : { data: null }

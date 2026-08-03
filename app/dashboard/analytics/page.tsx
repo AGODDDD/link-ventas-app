@@ -9,7 +9,7 @@ import {
 } from 'recharts'
 import { generateInsights, Insight } from '@/lib/analyticsEngine'
 
-const INGRESO_STATUSES = new Set(['completado', 'en_camino', 'paid', 'shipped'])
+const INGRESO_STATUSES = new Set(['completado', 'en_camino'])
 
 type Order = {
     id: string
@@ -119,10 +119,10 @@ export default function AnalyticsPage() {
     const ticketPromedio = ordersConVenta.length > 0 ? ingresoTotal / ordersConVenta.length : 0
 
     const pedidosPendientes = ordersFiltradas.filter(o => 
-        ['pending', 'pendiente', 'pendiente_pago', 'pendiente_verificacion'].includes(o.status)
+        ['pendiente', 'pendiente_pago', 'pendiente_verificacion'].includes(o.status)
     ).length
     const pedidosCompletados = ordersFiltradas.filter(o => 
-        ['paid', 'shipped', 'completado'].includes(o.status)
+        o.status === 'completado'
     ).length
 
     const leadsFiltrados = useMemo(() => {
@@ -160,8 +160,8 @@ export default function AnalyticsPage() {
     // === MÉTODO DE PAGO ===
     const metodosPagoData = useMemo(() => {
         const efectivo = ordersConVenta.filter(o => o.payment_proof_url === 'CONTRA_ENTREGA' || o.metodo_pago === 'contra_entrega').length
-        const transferencia = ordersConVenta.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'mercadopago' && o.metodo_pago !== 'contra_entrega').length
-        const mercadopago = ordersConVenta.filter(o => o.metodo_pago === 'mercadopago').length
+        const transferencia = ordersConVenta.filter(o => o.payment_proof_url !== 'CONTRA_ENTREGA' && o.metodo_pago !== 'mercadopago' && o.metodo_pago !== 'tarjeta_mercadopago' && o.metodo_pago !== 'contra_entrega').length
+        const mercadopago = ordersConVenta.filter(o => o.metodo_pago === 'mercadopago' || o.metodo_pago === 'tarjeta_mercadopago').length
         
         return [
             { name: 'Transferencia/Yape', value: transferencia },

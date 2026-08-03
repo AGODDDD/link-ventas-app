@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
 import { isStoreClosed, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
+import { normalizeOrderPaymentMethod } from '@/lib/orderPayment'
+import { getRateLimitKey } from '@/lib/rateLimit'
 
 type CartLine = {
   product_id?: unknown
@@ -10,6 +12,7 @@ type CartLine = {
 
 const paymentMethods = new Set(['mercadopago', 'tarjeta_mercadopago', 'whatsapp', 'transferencia', 'contra_entrega'])
 const orderTypes = new Set(['delivery', 'pickup', 'standard'])
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function asText(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
@@ -20,12 +23,13 @@ export async function POST(req: Request) {
     const body: Record<string, unknown> = await req.json()
     const storeId = asText(body.store_id, 64)
     const orderType = asText(body.order_type, 24)
-    const paymentMethod = asText(body.payment_method, 32)
+    const requestedPaymentMethod = asText(body.payment_method, 32)
+    const paymentMethod = normalizeOrderPaymentMethod(requestedPaymentMethod)
     const customerName = asText(body.customer_name, 160)
     const customerPhone = asText(body.customer_phone, 40)
     const items = Array.isArray(body.items) ? body.items : []
 
-    if (!storeId || !orderTypes.has(orderType) || !paymentMethods.has(paymentMethod)) {
+    if (!uuidPattern.test(storeId) || !orderTypes.has(orderType) || !paymentMethods.has(requestedPaymentMethod)) {
       return NextResponse.json({ error: 'Solicitud de orden invalida.' }, { status: 400 })
     }
 
@@ -37,8 +41,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Direccion invalida.' }, { status: 400 })
     }
 
-    if (paymentMethod === 'transferencia' && !asText(body.payment_proof_url, 500)) {
-      return NextResponse.json({ error: 'Adjunta un comprobante de transferencia.' }, { status: 400 })
+    const customerEmail = asText(body.customer_email, 254).toLowerCase()
+    if (customerEmail && !/^\S+@\S+\.\S+$/.test(customerEmail)) {
+      return NextResponse.json({ error: 'Correo electrónico inválido.' }, { status: 400 })
+    }
+
+    const paymentProof = asText(body.payment_proof_url, 500)
+    if (paymentMethod === 'transferencia' && !new RegExp(`^${storeId}/[0-9a-f-]{36}\\.(?:jpg|png|webp)$`, 'i').test(paymentProof)) {
+      return NextResponse.json({ error: 'Adjunta un comprobante de transferencia válido.' }, { status: 400 })
     }
 
     const normalizedItems = items.map((item: CartLine) => ({
@@ -75,6 +85,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La tienda está cerrada en este momento.' }, { status: 409 })
     }
 
+    // A public order creates an inventory reservation. Bound it per client and
+    // store so automated traffic cannot hold a merchant's stock hostage.
+    const { data: allowed, error: limitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {
+      p_client_key: getRateLimitKey(req, 'order-create', [storeId]),
+      p_limit: 5,
+      p_window_seconds: 900,
+    })
+    if (limitError) throw limitError
+    if (!allowed) return NextResponse.json({ error: 'Demasiados pedidos en poco tiempo. Intenta nuevamente más tarde.' }, { status: 429 })
+
     const latitude = typeof body.lat === 'number' && Number.isFinite(body.lat) ? body.lat : null
     const longitude = typeof body.lng === 'number' && Number.isFinite(body.lng) ? body.lng : null
     const { data, error } = await supabase.rpc('create_order_from_cart', {
@@ -83,13 +103,13 @@ export async function POST(req: Request) {
       p_payment_method: paymentMethod,
       p_customer_name: customerName,
       p_customer_phone: customerPhone.replace(/\s/g, ''),
-      p_customer_email: asText(body.customer_email, 254) || null,
+      p_customer_email: customerEmail || null,
       p_address: asText(body.address, 500) || null,
       p_reference: asText(body.reference, 500) || null,
       p_lat: latitude,
       p_lng: longitude,
       p_items: normalizedItems,
-      p_payment_proof_url: asText(body.payment_proof_url, 500) || null,
+      p_payment_proof_url: paymentProof || null,
     })
 
     if (error || !data?.[0]) {

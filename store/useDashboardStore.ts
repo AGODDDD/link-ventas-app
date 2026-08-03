@@ -223,8 +223,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
                     order_type: o.order_type,
                     metodo_pago: o.metodo_pago,
                     payment_proof_url: o.payment_proof_url || 'NUEVO_CORE',
-                    order_items: o.order_items || [],
-                    _source: 'core'
+                    order_items: o.order_items || []
                 }));
         }
 

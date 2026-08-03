@@ -201,14 +201,13 @@ export default function CheckoutPage({ params: paramsPromise }: { params: Promis
 
             // 1. Subir Comprobante solo si es transferencia
             if (metodoPago === 'transferencia' && comprobante) {
-                const fileExt = comprobante.name.split('.').pop()
-                fileName = `${perfil.id}-${Date.now()}.${fileExt}`
-
-                const { error: uploadError } = await supabase.storage
-                    .from('comprobantes')
-                    .upload(fileName, comprobante)
-
-                if (uploadError) throw uploadError
+                const form = new FormData()
+                form.append('store_id', perfil.id)
+                form.append('file', comprobante)
+                const uploadResponse = await fetch('/api/payment-proof', { method: 'POST', body: form })
+                const uploadData = await uploadResponse.json()
+                if (!uploadResponse.ok || !uploadData.path) throw new Error(uploadData.error || 'No se pudo subir el comprobante.')
+                fileName = uploadData.path
             }
 
             const proofMap: Record<PaymentMethod, string | null> = {

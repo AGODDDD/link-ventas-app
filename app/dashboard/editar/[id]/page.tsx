@@ -81,17 +81,20 @@ export default function EditarProducto({ params: paramsPromise }: { params: Prom
   const uploadColorImage = async (colorName: string, file: File) => {
     setUploadingColor(colorName)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Tu sesión ya no está disponible.')
       const fileExt = file.name.split('.').pop()
       const fileName = `${crypto.randomUUID()}.${fileExt}`
+      const objectPath = `${user.id}/variants/${fileName}`
       const { data, error } = await supabase.storage
         .from('productos')
-        .upload(`variants/${fileName}`, file)
+        .upload(objectPath, file)
 
       if (error) throw error
 
       const { data: publicUrlData } = supabase.storage
         .from('productos')
-        .getPublicUrl(`variants/${fileName}`)
+        .getPublicUrl(objectPath)
 
       setColoresList(coloresList.map(c => 
         c.color === colorName ? { ...c, image_url: publicUrlData.publicUrl } : c

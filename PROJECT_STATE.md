@@ -1,14 +1,16 @@
 # Fuente única de verdad sobre el estado actual
 
 ## Resumen Ejecutivo
-LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrito, webhook de pagos, dashboard, tickets térmicos), pero posee deuda técnica importante en migraciones de base de datos y flujos incompletos en la facturación interna del producto (SaaS Billing).
+LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inventario, dashboard y Mercado Pago). El contrato multi-tenant y las rutas sensibles están endurecidos; la facturación SaaS sigue siendo una activación Pro de 30 días, no una suscripción recurrente completa.
 
 ## Funcionalidades Completadas
 - Señal de disponibilidad limitada basada en stock real.
 - Generación de tickets térmicos (impresión optimizada con `html2canvas`).
 - Slugs dinámicos (`/tienda/[id]`) renderizados del lado del servidor.
 - Webhook de Mercado Pago para verificación de pagos automatizados.
-- RLS de Supabase implementado y funcional.
+- RLS consolidado por `stores.owner_id`, perfiles privados y privilegios explícitos por tabla/columna.
+- Webhook Mercado Pago con firma obligatoria y fallo cerrado.
+- Leads, comprobantes, pedidos públicos, tracking e intentos de pago protegidos por APIs validadas y rate limiting atómico.
 - Persistencia del carrito offline/local vía Zustand.
 - Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
 - **Dashboard Redesign & Theming (Fase 1 Completada):**
@@ -25,7 +27,7 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - Skeletons estructurales *Pixel-Perfect* desarrollados e inyectados para *Cold Starts* en Clientes, Pedidos, Analytics y Bodega. Evaluados estrictamente bajo la regla `if (lastFetch === 0)`.
 - **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
   - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Mercado Pago), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
-  - **Datos unificados**: Todas las compras de WhatsApp y Mercado Pago convergen exclusivamente en el modelo relacional `orders` y `order_items`. Se erradicó la tabla `delivery_orders` y su estrategia de doble escritura.
+  - **Datos unificados**: Todas las compras de WhatsApp y Mercado Pago convergen exclusivamente en el modelo relacional `orders` y `order_items`. `delivery_orders` permanece únicamente como archivo histórico sin acceso desde la Data API.
   - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras. Único canal `orders` activo, eliminando colisiones.
   - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard. Auto-cancelación a las 24h para pedidos no pagados.
   - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime (filtro por UUID clave primaria) + polling cada 2s, con integración opcional a OpenRouteService para rutas reales. `REPLICA IDENTITY FULL` habilitado en tabla `orders` para transmisión completa por WebSocket.
@@ -33,14 +35,15 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
   - **Tickets e impresión** (`ThermalReceipt`): Impresión térmica de 80mm, descarga PNG/PDF, compartir por WhatsApp o email.
 
 ## Funcionalidades Parcialmente Implementadas
-- **Onboarding de Pagos Mercado Pago:** Se puede configurar y el webhook lo soporta, pero el checkout marca pagos como "pending" con comentarios que indican flujos apresurados. (80% completado).
-- **Facturación SaaS (LinkVentas a Merchants):** La vista `app/pendiente/page.tsx` bloquea el acceso si no hay pago, pero el proceso requiere enviar un WhatsApp y comprobación manual. No hay Stripe o facturación recurrente real. (40% completado).
+- **Pagos Mercado Pago:** El checkout deja el pago en conciliación y solo el webhook firmado puede aprobarlo. Producción requiere `MP_WEBHOOK_SECRET` para los cobros del Plan Pro; cada comercio guarda cifrada su propia firma de Webhooks junto con sus credenciales.
+- **Facturación SaaS (LinkVentas a Merchants):** El Plan Pro se cobra con Mercado Pago y se activa únicamente después de conciliar el webhook firmado. Aún no existe renovación automática recurrente.
 
 ## Funcionalidades Pendientes
-- Interfaz nativa de Checkout automatizado de la propia plataforma SaaS (LinkVentas Pro Plan).
+- Renovación automática recurrente del Plan Pro.
 - Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
 
 ## Bugs Resueltos Recientemente
+- **Contrato de checkout, transiciones e inventario:** el alias `tarjeta_mercadopago` se normaliza al valor canónico `mercadopago`, la transición de estados usa el JWT del merchant para que `auth.uid()` valide la propiedad y la migración `20260803000000_fix_order_contract_boundaries.sql` reinicia el identificador de variante en cada línea del carrito.
 - **Checkout roto por columnas fantasma (Alta Severidad):** Se eliminó el uso de `merchant_id` y `total_amount` en el checkout estándar (`app/tienda/[id]/checkout/page.tsx`), lo cual causaba errores silenciosos y rompía el flujo de pago.
 - **Identidad del Merchant (Alta Severidad):** Se unificó la nomenclatura en el frontend para referirse consistentemente a `store_id` al hacer consultas a la tabla `orders` (eliminando `merchant_id` de stores, rutas y analíticas).
 - **FK de delivery_orders (Alta Severidad):** Se corrigió la migración local `migrations/delivery_orders.sql` para apuntar a `stores(id)` en vez de `profiles(id)`.
@@ -53,21 +56,23 @@ LinkVentas es una plataforma SaaS eCommerce plenamente funcional (tienda, carrit
 - **Realtime del cliente Mercado Pago (Alta Severidad):** El `OrderDetailModal.tsx` escuchaba `delivery_orders` por `id`, pero Mercado Pago solo escribe en `orders`. Además, Supabase Realtime ignora filtros en columnas no-PK (`legacy_id`). Se añadió `coreId` (UUID) al store del cliente para filtrar por clave primaria. Polling reducido a 2s.
 - **Pedidos auto-cancelados al crearse:** El `RestauranteCheckoutModal.tsx` usaba el `legacy_id` como `id` en inserts a `orders` (que exige UUID). Se unificó la generación de `crypto.randomUUID()` compartido antes de ambos flujos.
 - **Historial mostraba 'Completado' al instante:** Colisión de `legacy_id` entre pruebas. Se migró la consulta a tabla `orders` con deduplicación por fecha. Status `paid` se mapea a `pendiente` para el comprador.
-- **Deduplicación de Modales (Compartir):** Solucionado un bug donde los IDs `BARR-XXX` aparecían cortados al compartir pedidos `legacy_delivery` que llegaban por WebSockets. Se implementó un bypass para que asuma el ID como legacy_id cuando `_source === 'legacy_delivery'`.
+- **Deduplicación de Modales (Compartir):** Los IDs públicos se toman de `legacy_id`; ya no existe una rama activa basada en fuentes legacy.
 - **Alineación PDF Ticket:** La mezcla de `fontSize` rompía el `padStart`/`padEnd`. Se reemplazó por coordenadas absolutas (`doc.text` con `x` y `align: 'right'`) en `PDFKit` para alinear precios con precisión de píxel.
 - **Error 403 PDF Ticket (Legacy):** Solucionado el bug que impedía descargar tickets de pedidos de WhatsApp. `getOrderById` omitía el `store_id` en la reconstrucción del pedido, fallando la verificación de RLS.
 - **Erradicación de la "Doble Escritura":** Se eliminó por completo la dependencia a la tabla obsoleto `delivery_orders`. Todo el ecosistema de LinkVentas (Checkout, WebSockets, Store, Analíticas y API de PDF) interactúa ahora únicamente con la tabla `orders` usando IDs UUID y `legacy_id`, resultando en un código más robusto, veloz y sin problemas de sincronización fantasmas.
 
-## Bugs Potenciales Detectados
-- **Severidad Media:** El Webhook de Mercado Pago depende de desencriptación manual. Errores de llave rechazarían todos los pagos entrantes (500 Server Error).
-- **Severidad Baja:** Posibles desajustes de hidratación en React debido a la carga inicial de Zustand desde `localStorage`.
+## Riesgos operativos pendientes
+ - La protección de contraseñas filtradas de Supabase Auth debe permanecer habilitada en producción; verificarlo en el panel de Auth después de cada cambio de configuración.
+- Ejecutar una compra controlada en sandbox que cubra pedido, webhook firmado, confirmación e inventario.
+- Posibles desajustes de hidratación en React por la carga inicial de Zustand desde `localStorage`.
 
 ## Deuda Técnica Detectada
 - **Manejo de Base de Datos (Impacto: ALTO):** El uso de sentencias sueltas `ALTER TABLE IF EXISTS` sin un ORM (como Prisma/Drizzle) limita la trazabilidad y la seguridad en despliegues.
 - **Estilos CSS Inline (Impacto: MEDIO):** Componentes grandes (ej: `app/pendiente/page.tsx`, `app/page.tsx`) combinan Tailwind con objetos `style={{...}}` masivos.
 
 ## Prioridades Sugeridas
-1. **Automatización del SaaS Billing:** Implementar pasarela real para cobrar el "Plan Pro" sin intervención manual humana (WhatsApp).
+1. Verificar migraciones/RLS en producción y ejecutar una compra real controlada.
+2. Implementar renovación recurrente, conciliación, cancelación y reintentos para Plan Pro.
 
 ---
 ## Campos que requieren verificación manual

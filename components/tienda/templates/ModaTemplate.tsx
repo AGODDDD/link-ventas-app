@@ -1599,6 +1599,8 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
   const [selectedStar, setSelectedStar] = useState(0)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [orderReference, setOrderReference] = useState('')
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
@@ -1608,7 +1610,7 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
       setLoadingReviews(true)
       const { data } = await supabase
         .from('product_reviews')
-        .select('*')
+        .select('id, customer_name, rating, comment, verified_purchase, created_at')
         .eq('product_id', productId)
         .eq('store_id', storeId)
         .order('created_at', { ascending: false })
@@ -1639,6 +1641,8 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
           product_id: productId,
           customer_name: name,
           customer_email: email,
+          customer_phone: phone,
+          order_reference: orderReference,
           rating: selectedStar,
           comment,
         }),
@@ -1650,12 +1654,14 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
         setFeedback({ type: 'success', message: 'Tu reseña fue enviada correctamente.' })
         setName('')
         setEmail('')
+        setPhone('')
+        setOrderReference('')
         setComment('')
         setSelectedStar(0)
         // Reload reviews
         const { data: updated } = await supabase
           .from('product_reviews')
-          .select('*')
+          .select('id, customer_name, rating, comment, verified_purchase, created_at')
           .eq('product_id', productId)
           .eq('store_id', storeId)
           .order('created_at', { ascending: false })
@@ -1754,6 +1760,27 @@ function ReviewsSection({ productId, storeId }: { productId: string; storeId: st
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            maxLength={254}
+          />
+          <input
+            id="review-phone"
+            className="review-input"
+            type="tel"
+            placeholder="Teléfono usado en la compra"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            required
+            maxLength={40}
+          />
+          <input
+            id="review-order-reference"
+            className="review-input"
+            type="text"
+            placeholder="Código de pedido"
+            value={orderReference}
+            onChange={(e) => setOrderReference(e.target.value)}
+            required
+            maxLength={80}
           />
           <textarea
             id="review-comment"

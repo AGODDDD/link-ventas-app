@@ -5,9 +5,9 @@
 - **Opciones evaluadas**: Firebase, AWS RDS custom, Supabase.
 - **Decisión**: Se eligió Supabase.
 - **Razón**: Permite manejar la separación de tenants a nivel de base de datos usando Row Level Security (RLS) y autenticación integrada.
-- **Consecuencias**: Acopla la seguridad de la app a las políticas de PostgreSQL y requiere scripts específicos (`seguridad_supabase.sql`) para mantener los entornos sincronizados.
+- **Consecuencias**: Acopla la seguridad de la app a las políticas de PostgreSQL y exige migraciones versionadas, pruebas RLS y privilegios explícitos.
 
-### [INICIAL] Next.js 15 App Router
+### [ACTUAL] Next.js 16 App Router
 - **Contexto**: Framework frontend para eCommerce rápido con SEO (Vanity URLs).
 - **Opciones evaluadas**: React SPA, Vite, Next.js.
 - **Decisión**: Next.js App Router.
@@ -40,12 +40,10 @@
 - Contexto: El usuario confirmó el diseño real del sistema frente a las dudas levantadas en auditorías previas.
 - Decisión: La tabla canónica going forward es **`stores`**. La tabla `profiles` queda relegada exclusivamente para datos de configuración de la cuenta del merchant. La relación oficial es 1:1 (`auth.users → profiles → stores`). Cada tienda adopta un `template_type` ('food', 'comercio', 'moda') que cambia radicalmente el flujo de ventas (ej: sin carrito, con pagos, con variantes obligatorias).
 
-### [DEUDA TÉCNICA ACTIVA] Inconsistencia de Nomenclatura (user_id/store_id/merchant_id)
+### [RESUELTO] Inconsistencia de Nomenclatura (user_id/store_id/merchant_id)
 
 - Contexto: El mismo UUID que representa la identidad es llamado indistintamente en el esquema y en el código como `user_id` (en `products`), `store_id` (en `product_variants`, `store_leads`) y `merchant_id` (en `orders`).
-- Estado: El usuario ha confirmado que esto **no es un diseño intencional**, sino deuda técnica originada durante la migración del modelo.
-- Riesgo: Alta fricción y fragilidad cognitiva para nuevos agentes/desarrolladores.
-- Decisión pendiente: Refactorizar y estandarizar la capa de acceso a datos para usar un solo identificador (`store_id`) apuntando a la tabla canónica `stores`.
+- Estado: `orders.store_id`, `product_variants.store_id` y `store_leads.store_id` apuntan a `stores`; `products.user_id` se conserva por compatibilidad pero también referencia `stores.id`. Las políticas RLS resuelven propiedad exclusivamente con `stores.owner_id`.
 
 ### [RESUELTO] Migración Masiva profiles → stores
 

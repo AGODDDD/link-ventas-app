@@ -4,6 +4,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+### Fixed
+- Corregida la landing: se retiró la métrica no verificable de comercios activos y el CTA final ahora inicia el registro.
+
+### Security
+- Actualizado Next.js y `eslint-config-next` a 16.2.11 para eliminar los avisos altos que afectaban a la versión anterior.
+- La creación pública de pedidos, el tracking y los intentos de pago ahora tienen límites atómicos por cliente y alcance; ya no pueden reservar inventario ilimitadamente.
+- Las funciones SQL `SECURITY DEFINER` del contrato de pedidos ahora ejecutan con `search_path` cerrado y los RPCs internos mantienen sus privilegios explícitos.
+- El E2E de Mercado Pago no apunta a producción por defecto: exige URL sandbox y credenciales de prueba explícitas.
+
 ### Changed
 - Resumen y Órdenes comparten ahora un sistema cromático único para estados, facilitando el escaneo de pendientes, preparación, envío, completados y cancelaciones.
 - La barra superior elimina el copy redundante de marca, “Nuevo producto” pasa junto a “Gestionar pedidos” y el sidebar adopta el encabezado “Workspace”.
@@ -12,7 +21,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Refactor masivo de APIs de órdenes y checkouts, webhooks y optimización de base de datos.
 - Consolidado el contrato de pedidos: una tienda por cuenta, estados validados por RPC, reservas de inventario y stock por combinación de Moda.
 - Mercado Pago ahora se concilia por webhook; el checkout y la suscripción Pro no confirman pagos por respuesta síncrona.
-- Renombrado el punto de entrada Edge a `middleware.ts`, alineado el plan Pro a S/ 25 y eliminado el CTA de WhatsApp ficticio.
+- Alineado el punto de entrada Edge `proxy.ts`, el plan Pro a S/ 25 y eliminado el CTA de WhatsApp ficticio.
 - Documentada la auditoría UX integral del dashboard, incluyendo pruebas interactivas, capturas y brechas de Configuración/Catálogo para Restaurante, Comercio y Moda.
 - Reorganizado el dashboard alrededor de datos reales: búsqueda/filtros de pedidos, compradores derivados de órdenes, oportunidades separadas y lenguaje comercial consistente.
 - Especializada la operación por plantilla y conectada al storefront: delivery/recojo y pedido mínimo en Restaurante; envíos y despacho en Comercio; guía de tallas y cambios en Moda.
@@ -31,6 +40,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
     4. Inactividad del middleware Edge por denominarse `proxy.ts`.
 
 ### Fixed
+- Corregidos tres desajustes del contrato de pedidos: el alias visual `tarjeta_mercadopago` ahora se normaliza al valor canónico, las transiciones del dashboard conservan el JWT del merchant para validar propiedad y el inventario de variantes se reinicia por línea del carrito mediante una migración nueva.
+- Consolidado el contrato RLS multi-tenant: perfiles privados, propiedad resuelta por `stores.owner_id`, privilegios por columna y RPCs privilegiados cerrados a `PUBLIC`/`anon`.
+- El webhook de Mercado Pago ahora exige firma válida y falla cerrado si falta `MP_WEBHOOK_SECRET`.
+- Tickets PDF validan el propietario real de la tienda y el plan Pro/trial en servidor.
+- Reseñas verifican pedido completado, código, teléfono, correo y producto, con rate limiting y sin exponer correo u orden al público.
+- Leads y comprobantes dejaron de escribirse directamente desde el navegador; ahora pasan por APIs validadas y limitadas.
+- Onboarding crea de forma atómica perfil, tienda y configuración, además de reparar cuentas incompletas existentes.
+- Eliminados scripts ad hoc obsoletos que escribían sobre modelos legacy o dependían de credenciales locales.
+- Corregido el contrato de checkout entre variantes Moda e inventario: la nueva migración reconstruye combinaciones talla/color faltantes en `product_variants` y permite reservas para productos sin variante, desbloqueando los pagos manuales de Moda y Comercio.
+- La creación de productos Moda ahora falla explícitamente si no se puede persistir su representación relacional de variantes.
   - Corrección de carrera de hidratación (Hydration Mismatch) en el panel de pedidos que mostraba temporalmente la plantilla de Comercio en lugar de la asignada a la tienda.
 - Eliminadas del Resumen las señales operativas ficticias, los avatares decorativos y los controles sin acción.
 - Pedidos ya no abre la vista de restaurante para tiendas Comercio o Moda y ahora permite buscar, filtrar y actualizar.
