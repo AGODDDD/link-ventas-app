@@ -102,7 +102,7 @@ export async function DELETE(request: Request) {
     const response = await fetch(`https://api.mercadopago.com/preapproval/${encodeURIComponent(subscription.provider_subscription_id)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ status: 'canceled' }),
+      body: JSON.stringify({ status: 'cancelled' }),
     })
     if (!response.ok) return NextResponse.json({ error: 'No se pudo cancelar la suscripcion en Mercado Pago.' }, { status: 502 })
     const { error: updateError } = await supabase.from('platform_billing_subscriptions')
