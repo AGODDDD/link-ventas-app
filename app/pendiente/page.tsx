@@ -1,25 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MercadoPagoCardPayment } from '@/components/payments/MercadoPagoCardPayment'
 import { supabase } from '@/lib/supabase'
 
-const PRO_AMOUNT = 25
-
 export default function PendientePage() {
-  const [email, setEmail] = useState('')
   const [nombre, setNombre] = useState('')
   const [plan, setPlan] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showPayment, setShowPayment] = useState(false)
   const [paying, setPaying] = useState(false)
-  const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
 
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        setEmail(user.email || '')
         const [{ data: profile }, { data: store }] = await Promise.all([
           supabase.from('profiles').select('plan').eq('id', user.id).single(),
           supabase.from('stores').select('name').eq('owner_id', user.id).single(),
@@ -48,17 +41,35 @@ export default function PendientePage() {
     window.location.href = '/dashboard'
   }
 
-  const submitPayment = async (payment: { token: string; payment_method_id: string; installments: number; issuer_id?: string; payer?: { email?: string } }) => {
+  const cancelSubscription = async () => {
     setPaying(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Tu sesión expiró. Ingresa nuevamente.')
-      const response = await fetch('/api/billing/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...payment, email: payment.payer?.email || email }) })
+      const response = await fetch('/api/billing/mercadopago', { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Pago no aprobado.')
-      alert('Pago recibido. Activaremos tu plan Pro cuando Mercado Pago confirme la operación.')
-      setShowPayment(false)
-    } finally { setPaying(false) }
+      if (!response.ok) throw new Error(data.error || 'No se pudo cancelar la suscripción.')
+      alert('La renovación automática fue cancelada. Conservarás Pro hasta el final del período ya pagado.')
+      window.location.href = '/dashboard'
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo cancelar la suscripción.')
+      setPaying(false)
+    }
+  }
+
+  const subscribe = async () => {
+    setPaying(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Tu sesión expiró. Ingresa nuevamente.')
+      const response = await fetch('/api/billing/mercadopago', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } })
+      const data = await response.json()
+      if (!response.ok || !data.checkout_url) throw new Error(data.error || 'No se pudo iniciar la suscripción.')
+      window.location.assign(data.checkout_url)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'No se pudo iniciar la suscripción.')
+      setPaying(false)
+    }
   }
 
   if (loading) return null
@@ -84,22 +95,16 @@ export default function PendientePage() {
           : <>Activa el <strong className="text-violet-400">Plan Pro por S/ 25/mes</strong>{nombre ? `, ${nombre}` : ''}, o continúa con el plan gratuito.</>}
       </p>
       <div className="mb-7 grid grid-cols-2 gap-3 text-left"><div className="rounded-[14px] border border-white/8 bg-white/[.03] p-3.5"><p className="text-xs font-bold uppercase text-white/35">Emprendedor</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 0</p><p className="mt-2 text-xs text-white/40">Catálogo y panel básico</p></div><div className="rounded-[14px] border border-violet-400/40 bg-violet-700/15 p-3.5"><p className="text-xs font-bold uppercase text-violet-400">Pro</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 25</p><p className="mt-2 text-xs text-white/60">Mercado Pago, tickets y analíticas</p></div></div>
-      {showPayment && publicKey ? (
-        <div className="mb-5 rounded-xl bg-white p-4 text-left">
-          <MercadoPagoCardPayment publicKey={publicKey} amount={PRO_AMOUNT} payerEmail={email} onSubmit={submitPayment} onError={(message) => alert(message)} />
-          {paying && <p className="mt-3 text-center text-sm text-zinc-600">Procesando pago...</p>}
-        </div>
-      ) : publicKey ? (
-        <button onClick={() => setShowPayment(true)} className="mb-3 w-full rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 p-3.5 text-[15px] font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95">
-          Pagar Plan Pro — S/ 25/mes
+      {plan === 'pro' ? <>
+        <button onClick={cancelSubscription} disabled={paying} className="mb-3 w-full rounded-xl border border-amber-400/30 bg-amber-400/10 p-3.5 text-sm font-semibold text-amber-100 disabled:cursor-wait disabled:opacity-70">{paying ? 'Cancelando...' : 'Cancelar renovación automática'}</button>
+        <p className="mb-6 text-xs leading-5 text-white/40">Conservarás Pro hasta que termine tu período ya pagado.</p>
+      </> : <>
+        <button onClick={subscribe} disabled={paying} className="mb-3 w-full rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 p-3.5 text-[15px] font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95 disabled:cursor-wait disabled:opacity-70">
+          {paying ? 'Abriendo Mercado Pago...' : 'Suscribirme a Pro — S/ 25/mes'}
         </button>
-      ) : (
-        <div className="mb-3 rounded-xl border border-amber-400/20 bg-amber-400/10 p-4 text-left">
-          <p className="text-sm font-semibold text-amber-200">Pagos temporalmente no disponibles</p>
-          <p className="mt-1 text-xs leading-5 text-amber-100/60">Falta configurar la clave pública de Mercado Pago en este entorno. Tu plan actual seguirá funcionando sin cambios.</p>
-        </div>
-      )}
-      <button onClick={downgrade} className="mb-6 w-full rounded-xl border border-white/10 bg-white/[.03] p-3.5 text-sm font-semibold text-white/80">Continuar con el Plan Emprendedor</button>
+        <p className="mb-3 text-xs leading-5 text-white/40">Serás redirigido a Mercado Pago para autorizar el cobro mensual. Puedes cancelar cuando quieras.</p>
+        <button onClick={downgrade} className="mb-6 w-full rounded-xl border border-white/10 bg-white/[.03] p-3.5 text-sm font-semibold text-white/80">Continuar con el Plan Emprendedor</button>
+      </>}
       <button onClick={handleLogout} className="text-xs text-white/30 underline">Cerrar sesión</button>
     </div>
   </div>

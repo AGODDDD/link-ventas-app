@@ -34,7 +34,7 @@ MP_ACCESS_TOKEN=APP_USR_access_token_solo_servidor_de_la_plataforma
 MP_WEBHOOK_SECRET=secreto_de_firma_entregado_por_mercado_pago
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET`, `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` deben configurarse solo en el entorno del servidor/Vercel. `MP_WEBHOOK_SECRET` corresponde exclusivamente a la aplicación que cobra el Plan Pro. `NEXT_PUBLIC_MP_PUBLIC_KEY` tokeniza ese cobro. Cada comercio configura desde su dashboard su Public Key, Access Token y firma secreta de Webhooks; ambos secretos se cifran antes de persistirse. `APP_URL` fija el origen HTTPS usado en las notificaciones de pago.
+`SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET`, `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` deben configurarse solo en el entorno del servidor/Vercel. `MP_WEBHOOK_SECRET` corresponde exclusivamente a la aplicación que cobra el Plan Pro. El Plan Pro abre el checkout alojado de Suscripciones de Mercado Pago; cada comercio configura desde su dashboard su Public Key, Access Token y firma secreta de Webhooks, y ambos secretos se cifran antes de persistirse. `APP_URL` fija el origen HTTPS usado en las notificaciones de pago. En Mercado Pago habilita los eventos `subscription_preapproval` y `subscription_authorized_payment` para el webhook de plataforma.
 
 ### 3. Configurar Base de Datos
 El esquema y RLS se administran exclusivamente con las migraciones versionadas:

@@ -18,6 +18,14 @@ const trackingRoute = readFileSync(
   new URL('../app/api/orders/status/route.ts', import.meta.url),
   'utf8',
 )
+const recurringSubscriptionMigration = readFileSync(
+  new URL('../supabase/migrations/20260804000000_platform_pro_recurring_subscriptions.sql', import.meta.url),
+  'utf8',
+)
+const billingRoute = readFileSync(
+  new URL('../app/api/billing/mercadopago/route.ts', import.meta.url),
+  'utf8',
+)
 
 test('security migration removes public profile access and legacy order policies', () => {
   assert.match(migration, /REVOKE ALL ON TABLE public\.profiles FROM anon, authenticated/)
@@ -55,4 +63,15 @@ test('public order creation and tracking are rate limited before privileged acce
   assert.match(ordersRoute, /getRateLimitKey\(req, 'order-create', \[storeId\]\)/)
   assert.match(ordersRoute, /p_limit: 5/)
   assert.match(trackingRoute, /getRateLimitKey\(req, 'order-tracking', \[storeId\]\)/)
+})
+
+test('Pro recurring billing is server-created and invoice-confirmed', () => {
+  assert.match(billingRoute, /api\.mercadopago\.com\/preapproval/)
+  assert.match(billingRoute, /external_reference: user\.id/)
+  assert.match(billingRoute, /notification_url/)
+  assert.match(webhookRoute, /subscription_authorized_payment/)
+  assert.match(webhookRoute, /authorized_payments/)
+  assert.match(webhookRoute, /record_platform_pro_subscription_charge/)
+  assert.match(recurringSubscriptionMigration, /REVOKE ALL ON TABLE public\.platform_billing_subscriptions FROM PUBLIC, anon, authenticated/)
+  assert.match(recurringSubscriptionMigration, /REVOKE ALL ON FUNCTION public\.record_platform_pro_subscription_charge/)
 })

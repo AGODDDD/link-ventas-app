@@ -1,7 +1,7 @@
 # Fuente única de verdad sobre el estado actual
 
 ## Resumen Ejecutivo
-LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inventario, dashboard y Mercado Pago). El contrato multi-tenant y las rutas sensibles están endurecidos; la facturación SaaS sigue siendo una activación Pro de 30 días, no una suscripción recurrente completa.
+LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inventario, dashboard y Mercado Pago). El contrato multi-tenant y las rutas sensibles están endurecidos; el Plan Pro usa suscripciones mensuales reales de Mercado Pago, conciliadas únicamente por webhook firmado.
 
 ## Funcionalidades Completadas
 - Señal de disponibilidad limitada basada en stock real.
@@ -36,7 +36,7 @@ LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inven
 
 ## Funcionalidades Parcialmente Implementadas
 - **Pagos Mercado Pago:** El checkout deja el pago en conciliación y solo el webhook firmado puede aprobarlo. Producción requiere `MP_WEBHOOK_SECRET` para los cobros del Plan Pro; cada comercio guarda cifrada su propia firma de Webhooks junto con sus credenciales.
-- **Facturación SaaS (LinkVentas a Merchants):** El Plan Pro se cobra con Mercado Pago y se activa únicamente después de conciliar el webhook firmado. Aún no existe renovación automática recurrente.
+- **Facturación SaaS (LinkVentas a Merchants):** El Plan Pro crea una suscripción mensual (`preapproval`) en Mercado Pago. Cada factura aprobada (`subscription_authorized_payment`) extiende el acceso 30 días de forma idempotente; la cancelación detiene renovaciones sin recortar el período ya pagado.
 
 ## Funcionalidades Pendientes
 - Renovación automática recurrente del Plan Pro.
@@ -64,6 +64,7 @@ LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inven
 ## Riesgos operativos pendientes
  - La protección de contraseñas filtradas de Supabase Auth debe permanecer habilitada en producción; verificarlo en el panel de Auth después de cada cambio de configuración.
 - Ejecutar una compra controlada en sandbox que cubra pedido, webhook firmado, confirmación e inventario.
+- Ejecutar una suscripción Pro de prueba en sandbox y comprobar los eventos `subscription_preapproval` y `subscription_authorized_payment` contra el webhook firmado.
 - Posibles desajustes de hidratación en React por la carga inicial de Zustand desde `localStorage`.
 
 ## Deuda Técnica Detectada

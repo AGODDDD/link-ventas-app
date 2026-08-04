@@ -10,6 +10,24 @@ type MercadoPagoPayment = {
   currency_id?: string
   external_reference?: string
   date_approved?: string
+  preapproval_id?: string
+}
+
+type MercadoPagoSubscription = {
+  id?: string
+  status?: string
+  external_reference?: string
+  next_payment_date?: string
+  auto_recurring?: { transaction_amount?: number | string; currency_id?: string }
+}
+
+type MercadoPagoAuthorizedPayment = {
+  id?: string | number
+  preapproval_id?: string
+  currency_id?: string
+  transaction_amount?: number | string
+  debit_date?: string
+  payment?: { id?: string | number; status?: string }
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -27,6 +45,28 @@ async function fetchPayment(accessToken: string, paymentId: string) {
   return response.json() as Promise<MercadoPagoPayment>
 }
 
+async function fetchSubscription(accessToken: string, subscriptionId: string) {
+  const response = await fetch(`https://api.mercadopago.com/preapproval/${encodeURIComponent(subscriptionId)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) throw new Error('Mercado Pago no confirmó la suscripción')
+  return response.json() as Promise<MercadoPagoSubscription>
+}
+
+async function fetchAuthorizedPayment(accessToken: string, invoiceId: string) {
+  const response = await fetch(`https://api.mercadopago.com/authorized_payments/${encodeURIComponent(invoiceId)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) throw new Error('Mercado Pago no confirmó el cobro recurrente')
+  return response.json() as Promise<MercadoPagoAuthorizedPayment>
+}
+
+function subscriptionStatus(value: string | undefined) {
+  if (value === 'authorized' || value === 'paused') return value
+  if (value === 'canceled' || value === 'cancelled') return 'cancelled'
+  return 'pending'
+}
+
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url)
@@ -41,7 +81,54 @@ export async function POST(request: Request) {
       if (!paymentId || !hasValidMercadoPagoSignature(
         request.headers.get('x-signature'), request.headers.get('x-request-id'), paymentId, webhookSecret,
       )) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
+
+      const topic = String(body.type ?? body.topic ?? '').trim()
+      if (topic === 'subscription_preapproval') {
+        const subscription = await fetchSubscription(platformAccessToken, paymentId)
+        const userId = subscription.external_reference
+        if (!userId || subscription.auto_recurring?.currency_id !== 'PEN' || Number(subscription.auto_recurring?.transaction_amount) !== 25) {
+          return NextResponse.json({ ok: true })
+        }
+        const { error } = await supabase.from('platform_billing_subscriptions')
+          .update({ status: subscriptionStatus(subscription.status), next_payment_at: subscription.next_payment_date || null, updated_at: new Date().toISOString() })
+          .eq('provider_subscription_id', paymentId)
+          .eq('user_id', userId)
+        if (error) throw error
+        return NextResponse.json({ ok: true })
+      }
+
+      if (topic === 'subscription_authorized_payment') {
+        const invoice = await fetchAuthorizedPayment(platformAccessToken, paymentId)
+        if (!invoice.preapproval_id) return NextResponse.json({ ok: true })
+        const subscription = await fetchSubscription(platformAccessToken, invoice.preapproval_id)
+        const userId = subscription.external_reference
+        if (!userId || subscription.auto_recurring?.currency_id !== 'PEN' || Number(subscription.auto_recurring?.transaction_amount) !== 25) {
+          return NextResponse.json({ ok: true })
+        }
+        const { error: subscriptionError } = await supabase.from('platform_billing_subscriptions')
+          .update({ status: subscriptionStatus(subscription.status), next_payment_at: subscription.next_payment_date || null, updated_at: new Date().toISOString() })
+          .eq('provider_subscription_id', invoice.preapproval_id)
+          .eq('user_id', userId)
+        if (subscriptionError) throw subscriptionError
+        if (invoice.payment?.status !== 'approved' || invoice.currency_id !== 'PEN' || Number(invoice.transaction_amount) !== 25) {
+          return NextResponse.json({ ok: true })
+        }
+        const { error } = await supabase.rpc('record_platform_pro_subscription_charge', {
+          p_user_id: userId,
+          p_subscription_id: invoice.preapproval_id,
+          p_invoice_id: String(invoice.id ?? paymentId),
+          p_amount: 25,
+          p_currency: 'PEN',
+          p_paid_at: invoice.debit_date || new Date().toISOString(),
+        })
+        if (error) throw error
+        return NextResponse.json({ ok: true })
+      }
+
       const payment = await fetchPayment(platformAccessToken, paymentId)
+      // Subscription charges are confirmed exclusively through their invoice
+      // notification above, which binds the charge to a saved preapproval.
+      if (payment.preapproval_id) return NextResponse.json({ ok: true })
       const userId = payment.external_reference
       if (!userId || payment.status !== 'approved' || Number(payment.transaction_amount) !== 25 || payment.currency_id !== 'PEN') return NextResponse.json({ ok: true })
       const { error } = await supabase.rpc('activate_platform_pro_subscription', {
