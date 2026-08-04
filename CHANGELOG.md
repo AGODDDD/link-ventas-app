@@ -14,6 +14,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - El E2E de Mercado Pago no apunta a producción por defecto: exige URL sandbox y credenciales de prueba explícitas.
 
 ### Changed
+- Eliminados componentes, dependencias y assets sin referencias activas; la tabla histórica `delivery_orders` se conserva aislada hasta su retirada formal mediante migración.
 - Resumen y Órdenes comparten ahora un sistema cromático único para estados, facilitando el escaneo de pendientes, preparación, envío, completados y cancelaciones.
 - La barra superior elimina el copy redundante de marca, “Nuevo producto” pasa junto a “Gestionar pedidos” y el sidebar adopta el encabezado “Workspace”.
 - La cabecera del dashboard ahora saluda al comerciante por su nombre y muestra fecha local con el estado real de sincronización.
