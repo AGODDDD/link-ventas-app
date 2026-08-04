@@ -49,7 +49,9 @@ export default function PendientePage() {
       const response = await fetch('/api/billing/mercadopago', { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'No se pudo cancelar la suscripción.')
-      alert('La renovación automática fue cancelada. Conservarás Pro hasta el final del período ya pagado.')
+      alert(data.cancelled
+        ? 'La suscripción fue cancelada. Si había un período Pro pagado, conservarás el acceso hasta su vencimiento.'
+        : 'No tienes una suscripción activa ni una solicitud pendiente.')
       window.location.href = '/dashboard'
     } catch (error) {
       alert(error instanceof Error ? error.message : 'No se pudo cancelar la suscripción.')
@@ -103,6 +105,9 @@ export default function PendientePage() {
           {paying ? 'Abriendo Mercado Pago...' : 'Suscribirme a Pro — S/ 25/mes'}
         </button>
         <p className="mb-3 text-xs leading-5 text-white/40">Serás redirigido a Mercado Pago para autorizar el cobro mensual. Puedes cancelar cuando quieras.</p>
+        <button onClick={cancelSubscription} disabled={paying} className="mb-3 w-full text-xs font-medium text-amber-200/75 underline decoration-amber-200/30 underline-offset-4 disabled:cursor-wait disabled:opacity-70">
+          {paying ? 'Cancelando solicitud...' : '¿Ya iniciaste una suscripción? Cancelar solicitud pendiente'}
+        </button>
         <button onClick={downgrade} className="mb-6 w-full rounded-xl border border-white/10 bg-white/[.03] p-3.5 text-sm font-semibold text-white/80">Continuar con el Plan Emprendedor</button>
       </>}
       <button onClick={handleLogout} className="text-xs text-white/30 underline">Cerrar sesión</button>
