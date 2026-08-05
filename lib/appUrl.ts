@@ -1,4 +1,6 @@
 export function getPublicAppOrigin(requestUrl: string) {
+  if (process.env.VERCEL_ENV === 'preview') return new URL(requestUrl).origin
+
   const configured = process.env.APP_URL?.trim().replace(/\/+$/, '')
   if (configured && /^https:\/\//i.test(configured)) return configured
 
