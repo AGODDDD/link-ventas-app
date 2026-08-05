@@ -60,8 +60,14 @@ export async function POST(request: Request) {
         notification_url: `${origin}/api/webhooks/mercadopago?scope=platform`,
       }),
     })
-    const subscription = await response.json() as MercadoPagoPreapproval
+    const subscription = await response.json() as MercadoPagoPreapproval & { message?: string; error?: string; cause?: string }
     if (!response.ok || !subscription.id || !isCheckoutUrl(subscription.init_point)) {
+      console.error('Mercado Pago preapproval rejected:', {
+        status: response.status,
+        error: subscription.error,
+        message: subscription.message,
+        cause: subscription.cause,
+      })
       return NextResponse.json({ error: 'No se pudo iniciar la suscripcion.' }, { status: 400 })
     }
 
