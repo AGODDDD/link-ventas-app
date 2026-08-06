@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const migration = readFileSync(
-  new URL('../supabase/migrations/20260802163740_harden_multitenant_security.sql', import.meta.url),
+  new URL('../supabase/migrations/20260802171212_harden_multitenant_security.sql', import.meta.url),
   'utf8',
 )
 const webhookRoute = readFileSync(
