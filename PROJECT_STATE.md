@@ -1,81 +1,59 @@
 # Fuente única de verdad sobre el estado actual
 
-## Resumen Ejecutivo
-LinkVentas tiene un núcleo eCommerce funcional (tienda, carrito, pedidos, inventario, dashboard y Mercado Pago). El contrato multi-tenant y las rutas sensibles están endurecidos; el Plan Pro usa suscripciones mensuales reales de Mercado Pago, conciliadas únicamente por webhook firmado.
+Última actualización: **2026-08-08**.
 
-## Funcionalidades Completadas
-- Señal de disponibilidad limitada basada en stock real.
-- Generación de tickets térmicos (impresión optimizada con `html2canvas`).
-- Slugs dinámicos (`/tienda/[id]`) renderizados del lado del servidor.
-- Webhook de Mercado Pago para verificación de pagos automatizados.
-- RLS consolidado por `stores.owner_id`, perfiles privados y privilegios explícitos por tabla/columna.
-- Webhook Mercado Pago con firma obligatoria y fallo cerrado.
-- Leads, comprobantes, pedidos públicos, tracking e intentos de pago protegidos por APIs validadas y rate limiting atómico.
-- Persistencia del carrito offline/local vía Zustand.
-- Soporte de `product_variants` (variaciones de producto) completado en el proceso de creación.
-- **Dashboard Redesign & Theming (Fase 1 Completada):**
-  - Sistema dark/light implementado con `next-themes` ✓
-  - `app/dashboard/page.tsx` migrado con `dark:` prefix ✓
-  - `DashboardTopBar.tsx` migrado ✓
-  - `DashboardSidebar.tsx` migrado ✓
-  - Modo oscuro pixel-perfect con el diseño base de Stitch ✓
-  - Modo claro funcional adaptado con la paleta de la marca LinkVentas ✓
-  - Páginas internas del dashboard (`/pedidos`, `/productos`, `/analytics`, `/clientes`, `/configuracion`) migradas al sistema `dark:` prefix para unificar visualmente toda la experiencia ✓
-- **Dashboard SWR Architecture & Zero-Load UI (Completado):**
-  - Implementado sistema "Stale-While-Revalidate" vía Zustand (`useDashboardStore`). Las colecciones grandes (`orders`, `leads`, `abandoned_carts`, `productos`) se cachean en memoria con un flag `lastFetch`.
-  - Navegación instantánea (0ms) entre pestañas de datos del Panel de Control, eliminando re-renders intermedios.
-  - Skeletons estructurales *Pixel-Perfect* desarrollados e inyectados para *Cold Starts* en Clientes, Pedidos, Analytics y Bodega. Evaluados estrictamente bajo la regla `if (lastFetch === 0)`.
-- **Módulo Restaurante/Food (Delivery):** Flujo completo de pedidos funcionando en producción. Evidencia encontrada en el código:
-  - **Checkout completo** (`RestauranteCheckoutModal.tsx`): Formulario de dirección, selección de método de pago (WhatsApp + Mercado Pago), resumen de orden, validación de horario de tienda, y envío de pedido a Supabase.
-  - **Datos unificados**: Todas las compras de WhatsApp y Mercado Pago convergen exclusivamente en el modelo relacional `orders` y `order_items`. `delivery_orders` permanece únicamente como archivo histórico sin acceso desde la Data API.
-  - **Dashboard en tiempo real** (`DashboardTopBar.tsx`): WebSockets vía Supabase Realtime para notificaciones push + sonoras. Único canal `orders` activo, eliminando colisiones.
-  - **Timeline de 6 estados** (`pedidos/page.tsx`): `pendiente_pago → pendiente → en_preparacion → alistando → en_camino → completado`. El merchant avanza el estado un paso a la vez desde el dashboard. Auto-cancelación a las 24h para pedidos no pagados.
-  - **Tracking del cliente** (`OrderDetailModal.tsx`): Modal de seguimiento con mapa Leaflet, ruta animada en tiempo real con Realtime (filtro por UUID clave primaria) + polling cada 2s, con integración opcional a OpenRouteService para rutas reales. `REPLICA IDENTITY FULL` habilitado en tabla `orders` para transmisión completa por WebSocket.
-  - **Arquitectura Dual-ID:** Cada pedido tiene un `coreId` (UUID interno para BD/Realtime) y un `legacy_id` (código secuencial humano como `BARR-110626-0105` para tickets/clientes). Ambos se persisten en el `localStorage` del comprador vía `useCustomerStore`.
-  - **Tickets e impresión** (`ThermalReceipt`): Impresión térmica de 80mm, descarga PNG/PDF, compartir por WhatsApp o email.
+## Veredicto
 
-## Funcionalidades Parcialmente Implementadas
-- **Pagos Mercado Pago:** El checkout deja el pago en conciliación y solo el webhook firmado puede aprobarlo. Producción requiere `MP_WEBHOOK_SECRET` para los cobros del Plan Pro; cada comercio guarda cifrada su propia firma de Webhooks junto con sus credenciales.
-- **Facturación SaaS (LinkVentas a Merchants):** El Plan Pro crea una suscripción mensual (`preapproval`) en Mercado Pago. Cada factura aprobada (`subscription_authorized_payment`) extiende el acceso 30 días de forma idempotente; la cancelación detiene renovaciones sin recortar el período ya pagado.
+El núcleo de LinkVentas está implementado y tiene evidencia histórica de
+calidad, pero **no debe declararse listo al 100 % para lanzamiento público
+integral** hasta cerrar la prueba sandbox de suscripciones Pro con webhook
+firmado. El detalle verificable vive en
+[ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
 
-## Funcionalidades Pendientes
-- Renovación automática recurrente del Plan Pro.
-- Recuperación automatizada de Carritos Abandonados (actualmente solo captura leads).
+## Funcionalidades implementadas
 
-## Bugs Resueltos Recientemente
-- **Contrato de checkout, transiciones e inventario:** el alias `tarjeta_mercadopago` se normaliza al valor canónico `mercadopago`, la transición de estados usa el JWT del merchant para que `auth.uid()` valide la propiedad y la migración `20260803000000_fix_order_contract_boundaries.sql` reinicia el identificador de variante en cada línea del carrito.
-- **Checkout roto por columnas fantasma (Alta Severidad):** Se eliminó el uso de `merchant_id` y `total_amount` en el checkout estándar (`app/tienda/[id]/checkout/page.tsx`), lo cual causaba errores silenciosos y rompía el flujo de pago.
-- **Identidad del Merchant (Alta Severidad):** Se unificó la nomenclatura en el frontend para referirse consistentemente a `store_id` al hacer consultas a la tabla `orders` (eliminando `merchant_id` de stores, rutas y analíticas).
-- **FK de delivery_orders (Alta Severidad):** Se corrigió la migración local `migrations/delivery_orders.sql` para apuntar a `stores(id)` en vez de `profiles(id)`.
-- **Correlativos Seguros de Pedidos:** Se trasladó la lógica de IDs (ej. BARR-110626-4132) desde una generación aleatoria cliente a una Transacción Atómica en Supabase (`store_sequences`) garantizando números secuenciales e inmutables que se reinician cada día, y se unificó la inyección del `legacy_id` tanto en Checkout de Moda como de Restaurantes.
-- **Race Condition y Timeline (Bugfix):** Se resolvió un bug crítico donde el evento del Webhook de Mercado Pago y el evento local chocaban insertando dos órdenes idénticas en el panel. Se aplicó deduplicación por `legacy_id` en el Store de Zustand y se reparó el renderizado de progreso para estados `paid`.
-- **Desacoplamiento de doctor.ts (Alta Severidad):** Se eliminó el script manual `doctor.ts` y `seguridad_supabase.sql`. Se configuró el Supabase CLI y se consolidó el esquema en la carpeta estandarizada `supabase/migrations/*`.
-- **Refactor de Estados de Pago:** Se eliminó el hardcodeo de `status: 'pending'`. Ahora los pagos manuales por transferencia nacen en estado `pendiente_verificacion` y los pagos por Mercado Pago nacen en `pendiente_pago` respetando la Idempotencia Zero-Trust de Webhooks. Se actualizó el Dashboard para soportarlo con etiquetas y colores amigables.
-- **Moda/Boutique checkout adaptado:** Completado. Se adaptó el checkout genérico (`app/tienda/[id]/checkout/page.tsx`) para Moda, mostrando talla/color en el resumen del pedido, añadiendo validación estricta de selección de variante previa al pago y asegurando la inclusión explícita en los leads de carritos abandonados.
-- **Moda/Boutique variantes talla/color:** Resuelto. El checkout general ahora persiste `talla` y `color` dentro de `order_items.modifiers` usando la columna JSONB existente; la edición de productos Moda resincroniza `product_variants`; y el detalle de pedido muestra talla/color cuando existen en `modifiers`.
-- **Realtime del cliente Mercado Pago (Alta Severidad):** El `OrderDetailModal.tsx` escuchaba `delivery_orders` por `id`, pero Mercado Pago solo escribe en `orders`. Además, Supabase Realtime ignora filtros en columnas no-PK (`legacy_id`). Se añadió `coreId` (UUID) al store del cliente para filtrar por clave primaria. Polling reducido a 2s.
-- **Pedidos auto-cancelados al crearse:** El `RestauranteCheckoutModal.tsx` usaba el `legacy_id` como `id` en inserts a `orders` (que exige UUID). Se unificó la generación de `crypto.randomUUID()` compartido antes de ambos flujos.
-- **Historial mostraba 'Completado' al instante:** Colisión de `legacy_id` entre pruebas. Se migró la consulta a tabla `orders` con deduplicación por fecha. Status `paid` se mapea a `pendiente` para el comprador.
-- **Deduplicación de Modales (Compartir):** Los IDs públicos se toman de `legacy_id`; ya no existe una rama activa basada en fuentes legacy.
-- **Alineación PDF Ticket:** La mezcla de `fontSize` rompía el `padStart`/`padEnd`. Se reemplazó por coordenadas absolutas (`doc.text` con `x` y `align: 'right'`) en `PDFKit` para alinear precios con precisión de píxel.
-- **Error 403 PDF Ticket (Legacy):** Solucionado el bug que impedía descargar tickets de pedidos de WhatsApp. `getOrderById` omitía el `store_id` en la reconstrucción del pedido, fallando la verificación de RLS.
-- **Erradicación de la "Doble Escritura":** Se eliminó por completo la dependencia a la tabla obsoleto `delivery_orders`. Todo el ecosistema de LinkVentas (Checkout, WebSockets, Store, Analíticas y API de PDF) interactúa ahora únicamente con la tabla `orders` usando IDs UUID y `legacy_id`, resultando en un código más robusto, veloz y sin problemas de sincronización fantasmas.
+- SaaS multi-tenant: una tienda por cuenta, propiedad basada en
+  `stores.owner_id` y RLS para los datos de comerciantes.
+- Storefront, carrito, pedidos, variantes, reservas de inventario y dashboard.
+- Cálculo transaccional de precios y stock en servidor; el navegador no puede
+  confirmar pagos ni modificar estados de pedido libremente.
+- Pago de tiendas conciliado por webhook firmado y contrato de inventario
+  canónico.
+- Suscripción mensual Pro de S/ 25 mediante Mercado Pago `preapproval`, con
+  conciliación idempotente de suscripción y cargos desde webhook de plataforma.
+- Operaciones sensibles detrás de API Routes validadas, límites de intentos y
+  secretos exclusivos de servidor.
 
-## Riesgos operativos pendientes
- - La protección de contraseñas filtradas de Supabase Auth debe permanecer habilitada en producción; verificarlo en el panel de Auth después de cada cambio de configuración.
-- Ejecutar una compra controlada en sandbox que cubra pedido, webhook firmado, confirmación e inventario.
-- Ejecutar una suscripción Pro de prueba en sandbox y comprobar los eventos `subscription_preapproval` y `subscription_authorized_payment` contra el webhook firmado.
-- Posibles desajustes de hidratación en React por la carga inicial de Zustand desde `localStorage`.
+## Estado de Mercado Pago
 
-## Deuda Técnica Detectada
-- **Manejo de Base de Datos (Impacto: ALTO):** El uso de sentencias sueltas `ALTER TABLE IF EXISTS` sin un ORM (como Prisma/Drizzle) limita la trazabilidad y la seguridad en despliegues.
-- **Estilos CSS Inline (Impacto: MEDIO):** Componentes grandes (ej: `app/pendiente/page.tsx`, `app/page.tsx`) combinan Tailwind con objetos `style={{...}}` masivos.
+- **Pedidos de tiendas:** prueba controlada previa completó pedido → webhook
+  firmado → confirmación → inventario. La configuración sigue siendo
+  responsabilidad de cada comercio.
+- **Plan Pro Production:** crea el checkout; falta una compra controlada con
+  comprador real diferente del vendedor y e-mail coincidente con `payer_email`.
+- **Plan Pro Preview/sandbox:** crea `preapproval` e `init_point` con aplicación
+  y comprador de prueba. Falta autorización y webhook porque Mercado Pago no
+  habilita Confirmar mientras no coincida el e-mail del comprador de prueba.
+  Ticket abierto: `WCS-45319`.
 
-## Prioridades Sugeridas
-1. Verificar migraciones/RLS en producción y ejecutar una compra real controlada.
-2. Implementar renovación recurrente, conciliación, cancelación y reintentos para Plan Pro.
+## Pendientes de salida
 
----
-## Campos que requieren verificación manual
-- DESCONOCIDO: Estado real de despliegue en Vercel (si se ejecuta el doctor script automáticamente en pre-build).
-- DESCONOCIDO: Bugs reportados por usuarios finales en el módulo de impresoras térmicas.
+1. Resolver el requisito de e-mail de comprador de prueba con Mercado Pago y
+   ejecutar la autorización sandbox completa.
+2. Validar firma, eventos, cargo de S/ 25 en PEN, activación idempotente y
+   cancelación/limpieza de esa prueba.
+3. Ejecutar compra Production controlada con cuentas separadas, si el negocio
+   decide habilitar el cobro público inmediato.
+4. Repetir lint, pruebas unitarias, build, Vercel y Supabase antes del release
+   que cierre los puntos anteriores.
+5. Decidir explícitamente la configuración de protección contra contraseñas
+   filtradas de Supabase Auth y conservar la decisión documentada.
+
+## Deuda y límites conocidos
+
+- No modificar ni eliminar `delivery_orders` o tablas legacy sin migración y
+  política de retención aprobadas.
+- Si hay divergencia entre migraciones locales y remotas, comparar esquema y
+  datos antes de usar `migration repair` o `db push`.
+- Persisten riesgos normales de hidratación de estado cliente por `localStorage`;
+  deben revisarse con pruebas visuales al modificar el dashboard o checkout.

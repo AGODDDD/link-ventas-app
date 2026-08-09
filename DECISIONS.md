@@ -21,12 +21,15 @@
 - **Razón**: Extremadamente ligero, no requiere boilerplate y sobrevive a recargas de página.
 - **Consecuencias**: El estado del carrito vive exclusivamente en el cliente. Posibles problemas menores de hidratación si no se inicializa tras el primer render.
 
-### [INICIAL] Facturación SaaS Manual
+### [HISTÓRICA — sustituida el 2026-08-08] Facturación SaaS Manual
 - **Contexto**: Cobro mensual a los merchants por el Plan Pro de LinkVentas.
 - **Opciones evaluadas**: Stripe Billing, Cobro manual.
 - **Decisión**: Cobro manual por WhatsApp.
 - **Razón**: (Inferido) Menor fricción de implementación inicial en un mercado latinoamericano.
 - **Consecuencias**: Cuellos de botella operativos para habilitar cuentas. No automatizable masivamente.
+
+> Esta decisión ya no rige: el Plan Pro se implementa mediante suscripciones de
+> Mercado Pago. Ver la decisión del 2026-08-08 al final de este archivo.
 
 ### [INICIAL] Validación Zero-Trust Webhook Mercado Pago
 - **Contexto**: Recepción de confirmación de pagos de tarjetas.
@@ -57,10 +60,27 @@
 ### [RESUELTO] Discrepancia de Nomenclatura Vercel: link-ventas vs enlace-ventas
 
 - Contexto: Existía confusión debido al uso del repo `link-ventas-app` y la existencia de despliegues duplicados en Vercel.
-- Decisión: Se eliminó el proyecto duplicado "enlace-ventas" de Vercel (el cual apuntaba al mismo repositorio y causaba builds duplicados en cada push). 
+- Decisión: Se eliminó el proyecto duplicado "enlace-ventas" de Vercel (el cual apuntaba al mismo repositorio y causaba builds duplicados en cada push).
 - Estado Oficial: El proyecto oficial y canónico en Vercel es **"link-ventas"** bajo el dominio `link-ventas-app.vercel.app`. El codebase `AGODDDD/link-ventas-app` abastece a esta única instancia en producción.
 
 ---
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Razones exactas originales por las que no se implementó un ORM o sistema de migraciones real.
 - DESCONOCIDO: Si la persistencia del carrito con Zustand fue elegida específicamente sobre Redis/KV por un tema de costos.
+
+### [2026-08-08] Suscripciones Pro: aislamiento por entorno y cierre por webhook
+
+- **Contexto**: La validación del Plan Pro distinguió el checkout de Production
+  del sandbox de Preview y mostró que Mercado Pago bloquea el autopago del
+  vendedor.
+- **Decisión**: Mantener credenciales de plataforma separadas por entorno. En
+  Production, una compra controlada debe usar un comprador real distinto del
+  vendedor y el e-mail de Mercado Pago debe coincidir con el `payer_email` de
+  la cuenta autenticada en LinkVentas. En sandbox, usar únicamente una
+  aplicación de prueba y un comprador de prueba.
+- **Razón**: Evita mezclar fondos o secretos entre entornos y respeta la
+  validación de identidad que hace Mercado Pago en suscripciones.
+- **Consecuencias**: No se declara listo el flujo Pro hasta observar una
+  autorización sandbox y sus eventos firmados de punta a punta. El ticket
+  `WCS-45319` queda como dependencia externa para resolver el e-mail de la
+  cuenta compradora de prueba.

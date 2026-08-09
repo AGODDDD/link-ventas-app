@@ -4,6 +4,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+### Documentation
+- Actualizado el estado operativo de Mercado Pago: la configuración de
+  Production ya no es el bloqueo histórico; la autorización final de una
+  suscripción Pro en sandbox sigue pendiente de la respuesta al ticket
+  `WCS-45319` sobre el e-mail de la cuenta compradora de prueba.
+- Documentada la separación obligatoria de credenciales Production/Preview,
+  el requisito de comprador distinto del vendedor y el procedimiento de cierre
+  con webhook firmado.
+- Añadido `ESTADO_OPERATIVO_2026-08-08.md` como registro de evidencia, bloqueos
+  y limpieza pendiente de datos temporales de sandbox.
+
 ### Fixed
 - Corregida la landing: se retiró la métrica no verificable de comercios activos y el CTA final ahora inicia el registro.
 
@@ -235,7 +246,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
   - **Fix:** Convertidas a componentes `<Link href="/dashboard/pedidos">` con un `onClick` que cierra el menú y marca la notificación local como `leida = true`.
 
 ### Deprecado / Removido
-- **Tabla `delivery_orders` deprecada y erradicada:** Se eliminó por completo la estrategia de "doble escritura" implementada para compras por WhatsApp y flujos legacy. 
+- **Tabla `delivery_orders` deprecada y erradicada:** Se eliminó por completo la estrategia de "doble escritura" implementada para compras por WhatsApp y flujos legacy.
   - **Checkout:** `RestauranteCheckoutModal.tsx` ahora solo inserta en la tabla unificada relacional `orders` y `order_items`.
   - **Store:** Removidos los "fallbacks" y la búsqueda en jsonb en `useDashboardStore.ts` y las reduplicaciones innecesarias de `legacy_id`.
   - **WebSockets:** Se cerró permanentemente el segundo canal de Realtime `delivery_rx` en el `DashboardTopBar.tsx`, evitando las colisiones de recepción y race conditions del frontend.

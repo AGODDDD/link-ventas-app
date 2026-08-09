@@ -1,5 +1,9 @@
 # Esquema vigente
 
+Este documento describe el contrato lógico. Antes de cualquier cambio remoto,
+contrastar las migraciones con el esquema enlazado; no asumir que una lista de
+migraciones divergente autoriza un `db push`.
+
 `stores` identifica la única tienda de cada cuenta. `store_config` contiene configuración pública y Mercado Pago; `profiles` contiene plan y token cifrado.
 
 `products` pertenece a `stores.id`. Las combinaciones de Moda viven en `product_variants` con `talla`, `color`, `combination_key` y stock propio.

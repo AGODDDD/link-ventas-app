@@ -36,13 +36,25 @@ MP_WEBHOOK_SECRET=secreto_de_firma_entregado_por_mercado_pago
 
 `SUPABASE_SERVICE_ROLE_KEY`, `PAYMENT_ENCRYPTION_KEY`, `CRON_SECRET`, `MP_ACCESS_TOKEN` y `MP_WEBHOOK_SECRET` deben configurarse solo en el entorno del servidor/Vercel. `MP_WEBHOOK_SECRET` corresponde exclusivamente a la aplicación que cobra el Plan Pro. El Plan Pro abre el checkout alojado de Suscripciones de Mercado Pago; cada comercio configura desde su dashboard su Public Key, Access Token y firma secreta de Webhooks, y ambos secretos se cifran antes de persistirse. `APP_URL` fija el origen HTTPS usado en las notificaciones de pago. En Mercado Pago habilita los eventos `subscription_preapproval` y `subscription_authorized_payment` para el webhook de plataforma.
 
+### Entornos de Mercado Pago
+
+Production y Preview deben usar credenciales de plataforma diferentes. Nunca se
+deben copiar secretos de producción a Preview ni incluirlos en el repositorio.
+El checkout de pedidos de cada tienda es distinto del checkout de suscripción
+Pro de la plataforma. Para el estado operativo y las condiciones de salida,
+consulta [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
+
 ### 3. Configurar Base de Datos
 El esquema y RLS se administran exclusivamente con las migraciones versionadas:
 
 ```bash
 npx supabase link --project-ref TU_PROJECT_REF
-npx supabase db push
 ```
+
+Antes de ejecutar `npx supabase db push`, comprobar `supabase migration list
+--linked`. Si el historial local y remoto diverge, exportar/comparar el esquema
+y reparar únicamente versiones confirmadas; no hacer `db push` ni `migration
+repair` a ciegas.
 
 ### 4. Lanzar el Proyecto
 ```bash
@@ -56,9 +68,11 @@ npm run test:unit
 npm run build
 ```
 
-La prueba E2E de Mercado Pago solo debe ejecutarse contra sandbox y requiere
-`CHECKOUT_STORE_URL`, `MP_TEST_CARD_NUMBER`, `MP_TEST_CARD_EXPIRATION` y
-`MP_TEST_CARD_SECURITY_CODE` explícitos. No tiene un destino de producción por defecto.
+La prueba E2E de cobros de tienda solo debe ejecutarse contra sandbox y requiere
+un destino y credenciales de prueba explícitos; no tiene un destino de producción
+por defecto. La suscripción Pro es otro flujo: usa la aplicación de prueba y
+una cuenta compradora de prueba de Mercado Pago, no tarjetas genéricas. Su
+estado actual y bloqueo externo están documentados en el estado operativo.
 
 ---
 
@@ -66,6 +80,8 @@ La prueba E2E de Mercado Pago solo debe ejecutarse contra sandbox y requiere
 
 Para detalles profundos sobre la arquitectura, el modelo de datos y los módulos internos, consulta:
 👉 **[DOCUMENTACION.md](./DOCUMENTACION.md)**
+
+Estado de salida: **[ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md)**
 
 ---
 

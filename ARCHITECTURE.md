@@ -2,6 +2,12 @@
 
 LinkVentas es un SaaS multi-tenant con Next.js, Supabase y Mercado Pago.
 
+El estado operacional de la salida a público, incluida la validación pendiente
+de suscripciones Pro en sandbox, está en
+[ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md). La
+arquitectura no permite activar cobros ni planes desde el retorno del navegador:
+todo pago confirmado depende de un webhook firmado.
+
 - Una cuenta posee exactamente una tienda (`stores.owner_id` es único).
 - El catálogo pertenece a la tienda mediante `products.user_id = stores.id`.
 - `orders`, `order_items` y `order_inventory_reservations` son el único modelo de pedidos.

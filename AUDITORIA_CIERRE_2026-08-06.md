@@ -9,6 +9,14 @@ entorno Production de Vercel.
 
 No se modificó código ni datos durante esta auditoría.
 
+> **Actualización operativa — 2026-08-08.** Este informe conserva la fotografía
+> del 2026-08-06. La ausencia de credenciales de Plataforma en Production fue
+> corregida posteriormente y ya no es el bloqueo vigente. El bloqueo actual es
+> completar la autorización sandbox de una suscripción Pro y recibir sus
+> webhooks firmados; Mercado Pago debe resolver el e-mail de la cuenta
+> compradora de prueba mediante el ticket `WCS-45319`. El estado actual está en
+> [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
+
 ## Alcance y evidencia
 
 | Capa | Evidencia | Resultado |
