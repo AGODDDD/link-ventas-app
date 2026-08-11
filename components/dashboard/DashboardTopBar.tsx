@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { Bell, Check } from 'lucide-react'
+import { Bell, BookOpen, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import Link from 'next/link'
@@ -381,6 +381,16 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         </div>
                     )}
                 </div>
+
+                <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event('linkventas:start-product-tour'))}
+                    aria-label="Abrir guía de esta sección"
+                    className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 shadow-[0_6px_18px_rgba(15,23,42,0.04)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 active:scale-95 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-300"
+                >
+                    <BookOpen size={16} aria-hidden="true" />
+                    <span>Guía</span>
+                </button>
 
                 <ThemeToggle />
 

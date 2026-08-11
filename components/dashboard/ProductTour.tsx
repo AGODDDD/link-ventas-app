@@ -14,10 +14,12 @@ type TourStep = {
   description: string
   target?: string
   eyebrow: string
+  settingsTab?: string
 }
 
 type TourConfig = {
   id: string
+  version?: string
   steps: TourStep[]
 }
 
@@ -84,14 +86,18 @@ const TOUR_CONFIGS: Record<string, TourConfig> = {
   },
   settings: {
     id: 'settings',
+    version: 'v3',
     steps: [
       { eyebrow: 'Ajustes de tienda', title: 'Configura cómo se presenta y opera tu negocio', description: 'Los cambios de esta sección afectan la información pública, el checkout y la forma de atender pedidos.', target: '[data-tour="settings-header"]' },
-      { eyebrow: 'General y plantilla', title: 'Define identidad y experiencia', description: 'General y Perfil contiene nombre, enlace, descripción y logo. Plantilla y Experiencia adapta la tienda a Comercio, Restaurante o Moda.', target: '[data-tour="settings-navigation"], [data-tour="settings-mobile-navigation"]' },
-      { eyebrow: 'Diseño', title: 'Mantén una identidad reconocible', description: 'En Diseño y Apariencia eliges portada y colores. Prioriza contraste, fotografías claras y consistencia con tu marca.', target: '[data-tour="settings-diseno"], [data-tour="settings-mobile-navigation"]' },
-      { eyebrow: 'Pagos', title: 'Configura cómo vas a cobrar', description: 'Activa métodos manuales o Mercado Pago y revisa cada dato antes de recibir una venta real.', target: '[data-tour="settings-pagos"], [data-tour="settings-mobile-navigation"]' },
-      { eyebrow: 'Logística', title: 'Explica cómo entregas', description: 'Define delivery, recojo, cobertura, horarios, tiempos y condiciones específicas de tu tipo de tienda.', target: '[data-tour="settings-logistica"], [data-tour="settings-mobile-navigation"]' },
-      { eyebrow: 'Marketing', title: 'Conecta tus canales comerciales', description: 'Agrega redes sociales y configura señales que ayudan a comunicar actividad o disponibilidad.', target: '[data-tour="settings-marketing"], [data-tour="settings-mobile-navigation"]' },
-      { eyebrow: 'Contenido', title: 'Resuelve dudas antes de la compra', description: 'Usa promociones, beneficios y preguntas frecuentes para reducir fricción y dar confianza al cliente.', target: '[data-tour="settings-contenido"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Cuenta y plan', title: 'Comprueba el estado de tu cuenta', description: 'Aquí puedes consultar el correo asociado y el plan activo. El identificador técnico sirve únicamente para soporte.', target: '[data-tour="settings-account"]', settingsTab: 'general' },
+      { eyebrow: 'Identidad pública', title: 'Completa la información básica de tu tienda', description: 'Sube un logo claro, usa el nombre comercial real, define un enlace corto y explica en una frase qué vendes.', target: '[data-tour="settings-identity"]', settingsTab: 'general' },
+      { eyebrow: 'Plantilla y experiencia', title: 'Elige el modelo correcto de tienda', description: 'Comercio usa catálogo y checkout estándar; Restaurante prioriza menú y tiempos; Moda incorpora tallas, colores y políticas de cambio. Cambiar la plantilla puede requerir revisar tus productos.', target: '[data-tour="settings-panel-plantilla"]', settingsTab: 'plantilla' },
+      { eyebrow: 'Diseño y apariencia', title: 'Construye una identidad consistente', description: 'Sube una portada nítida y elige colores con buen contraste. La foto Hero se utiliza especialmente en la plantilla Moda.', target: '[data-tour="settings-panel-diseno"]', settingsTab: 'diseno' },
+      { eyebrow: 'Pagos y facturación', title: 'Define cómo recibirás el dinero', description: 'Configura los métodos manuales disponibles. Si usas Mercado Pago, activa la pasarela solo después de completar y comprobar sus credenciales.', target: '[data-tour="settings-panel-pagos"]', settingsTab: 'pagos' },
+      { eyebrow: 'Logística y horarios', title: 'Explica exactamente cómo entregas', description: 'Define delivery, recojo, cobertura, dirección, tiempos y horarios. Las opciones cambian según la plantilla de tu negocio.', target: '[data-tour="settings-panel-logistica"]', settingsTab: 'logistica' },
+      { eyebrow: 'Marketing y redes', title: 'Conecta tus canales de atención', description: 'Agrega usuarios o enlaces correctos para Instagram, TikTok, Facebook y WhatsApp. La señal de stock usa inventario real.', target: '[data-tour="settings-panel-marketing"]', settingsTab: 'marketing' },
+      { eyebrow: 'Contenido de tienda', title: 'Resuelve dudas antes de la compra', description: 'Publica promociones concretas, hasta cuatro beneficios verificables y preguntas frecuentes sobre envíos, pagos o cambios.', target: '[data-tour="settings-panel-contenido"]', settingsTab: 'contenido' },
+      { eyebrow: 'Antes de terminar', title: 'Guarda y revisa tu tienda pública', description: 'Cuando realices un cambio aparecerá la barra Guardar cambios. Después abre tu tienda pública y verifica el resultado como cliente.', target: '#tour-public-store' },
     ],
   },
   productForm: {
@@ -131,7 +137,7 @@ export default function ProductTour({ userId }: ProductTourProps) {
   const [highlight, setHighlight] = useState<HighlightRect | null>(null)
 
   const storageKey = useMemo(
-    () => config ? `linkventas:product-tour:${TOUR_VERSION}:${userId}:${config.id}` : '',
+    () => config ? `linkventas:product-tour:${config.version ?? TOUR_VERSION}:${userId}:${config.id}` : '',
     [config, userId],
   )
   const steps = config?.steps ?? []
@@ -164,6 +170,10 @@ export default function ProductTour({ userId }: ProductTourProps) {
   useEffect(() => {
     if (!open || !step) return
     let settleTimer: number | undefined
+
+    if (step.settingsTab) {
+      window.dispatchEvent(new CustomEvent('linkventas:tour-setting-tab', { detail: step.settingsTab }))
+    }
 
     const updateHighlight = () => {
       if (!step.target) {
@@ -199,7 +209,10 @@ export default function ProductTour({ userId }: ProductTourProps) {
       setHighlight({ top, left, width: right - left, height: bottom - top })
     }
 
-    const frame = window.requestAnimationFrame(updateHighlight)
+    const frame = window.requestAnimationFrame(() => {
+      if (step.settingsTab) settleTimer = window.setTimeout(updateHighlight, 220)
+      else updateHighlight()
+    })
     window.addEventListener('resize', updateHighlight)
     window.addEventListener('scroll', updateHighlight, true)
     return () => {

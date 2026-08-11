@@ -87,6 +87,15 @@ export default function ConfiguracionPage() {
 
   useEffect(() => setAppOrigin(window.location.origin), [])
 
+  useEffect(() => {
+    const handleTourTab = (event: Event) => {
+      const tabId = (event as CustomEvent<string>).detail
+      if (TABS.some(tab => tab.id === tabId)) setActiveTab(tabId)
+    }
+    window.addEventListener('linkventas:tour-setting-tab', handleTourTab)
+    return () => window.removeEventListener('linkventas:tour-setting-tab', handleTourTab)
+  }, [])
+
   const [systemData, setSystemData] = useState<SystemData>({
     userId: '',
     storeId: '',
@@ -431,9 +440,9 @@ export default function ConfiguracionPage() {
 
           {/* 1. GENERAL & PERFIL */}
           {activeTab === 'general' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-general" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+              <Card data-tour="settings-account" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
                   <CardTitle className="text-lg">Mi Cuenta y Suscripción</CardTitle>
                   <CardDescription>Información técnica y estado de facturación.</CardDescription>
@@ -467,7 +476,7 @@ export default function ConfiguracionPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
+              <Card data-tour="settings-identity" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
                   <CardTitle className="text-lg">Identidad Visual</CardTitle>
                   <CardDescription>Información pública de la tienda.</CardDescription>
@@ -514,7 +523,7 @@ export default function ConfiguracionPage() {
 
           {/* 2. PLANTILLA & EXPERIENCIA */}
           {activeTab === 'plantilla' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-plantilla" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
                   <CardTitle className="text-lg">Selección de Plantilla</CardTitle>
@@ -579,7 +588,7 @@ export default function ConfiguracionPage() {
 
           {/* 3. DISEÑO & APARIENCIA */}
           {activeTab === 'diseno' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-diseno" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
@@ -649,7 +658,7 @@ export default function ConfiguracionPage() {
 
           {/* 4. PAGOS & FACTURACIÓN */}
           {activeTab === 'pagos' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-pagos" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
               {/* Mercado Pago */}
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl overflow-hidden relative">
@@ -761,7 +770,7 @@ export default function ConfiguracionPage() {
 
           {/* 5. LOGÍSTICA & HORARIOS */}
           {activeTab === 'logistica' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-logistica" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">Operación {formData.templateType}</p>
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
@@ -873,7 +882,7 @@ export default function ConfiguracionPage() {
 
           {/* 6. MARKETING & REDES */}
           {activeTab === 'marketing' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-marketing" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
@@ -921,7 +930,7 @@ export default function ConfiguracionPage() {
 
           {/* 7. CONTENIDO DE TIENDA */}
           {activeTab === 'contenido' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div data-tour="settings-panel-contenido" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
               <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
