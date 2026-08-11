@@ -247,7 +247,7 @@ export default function CrearProducto() {
   const modaSizes = tallasInput.split(',').map((size) => size.trim()).filter(Boolean)
 
   return (
-    <div className="space-y-6 pb-12 relative w-full max-w-4xl mx-auto">
+    <div id="tour-page-product-form" className="space-y-6 pb-12 relative w-full max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
         <div>
           <button onClick={() => router.back()} className="text-primary flex items-center gap-2 mb-4 hover:brightness-125 transition-all text-sm font-bold uppercase tracking-widest">
@@ -259,7 +259,7 @@ export default function CrearProducto() {
       </div>
 
       <div className="bg-surface-container-high rounded-2xl border border-outline-variant/10 shadow-2xl p-6 md:p-8">
-        <form onSubmit={guardarProducto} className="space-y-8">
+        <form data-tour="product-form" onSubmit={guardarProducto} className="space-y-8">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6">
@@ -616,7 +616,7 @@ export default function CrearProducto() {
             <button type="button" onClick={() => router.back()} className="px-6 py-3 font-bold text-on-surface-variant hover:text-on-surface">
               Descartar
             </button>
-            <button type="submit" disabled={loading} className="px-8 py-3 bg-primary text-on-primary hover:brightness-110 font-bold rounded-xl shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center gap-2">
+            <button data-tour="product-save" type="submit" disabled={loading} className="px-8 py-3 bg-primary text-on-primary hover:brightness-110 font-bold rounded-xl shadow-[0_10px_20px_rgba(192,193,255,0.2)] hover:scale-[1.02] active:scale-95 transition-all text-sm uppercase tracking-widest flex items-center gap-2">
               {loading ? 'Guardando…' : 'Guardar producto'}
             </button>
           </div>

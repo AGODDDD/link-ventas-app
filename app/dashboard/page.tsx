@@ -173,7 +173,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section data-tour="dashboard-metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(({ label, value, detail, index }) => (
           <article
             key={label}
@@ -189,7 +189,7 @@ export default function DashboardPage() {
         ))}
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70">
+      <section data-tour="dashboard-orders" className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70">
         <div className="flex flex-col gap-4 border-b border-zinc-200/70 p-5 lg:flex-row lg:items-center lg:justify-between dark:border-zinc-800">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-white">Pedidos recientes</h2>

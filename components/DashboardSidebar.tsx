@@ -85,9 +85,8 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
   }
 
   const handleStartTour = () => {
-    router.push('/dashboard')
     onClose?.()
-    window.setTimeout(() => window.dispatchEvent(new Event('linkventas:start-product-tour')), 350)
+    window.setTimeout(() => window.dispatchEvent(new Event('linkventas:start-product-tour')), 200)
   }
 
   return (

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowRight, Check, Sparkles, X } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { ArrowLeft, ArrowRight, Check, Compass, X } from 'lucide-react'
 
 type ProductTourProps = {
   userId: string
@@ -15,6 +16,11 @@ type TourStep = {
   eyebrow: string
 }
 
+type TourConfig = {
+  id: string
+  steps: TourStep[]
+}
+
 type HighlightRect = {
   top: number
   left: number
@@ -22,90 +28,142 @@ type HighlightRect = {
   height: number
 }
 
-const TOUR_VERSION = 'v1'
+const TOUR_VERSION = 'v2'
 const SPOTLIGHT_GAP = 8
-const TOOLTIP_WIDTH = 368
+const TOOLTIP_WIDTH = 380
+const TOOLTIP_HEIGHT = 330
 
-const STEPS: TourStep[] = [
-  {
-    eyebrow: 'Bienvenido a LinkVentas',
-    title: 'Tu negocio, en un solo lugar.',
-    description: 'En menos de un minuto conocerás dónde crear productos, atender pedidos y preparar tu tienda para vender.',
+const TOUR_CONFIGS: Record<string, TourConfig> = {
+  dashboard: {
+    id: 'dashboard',
+    steps: [
+      { eyebrow: 'Panel principal', title: 'Tu operación de un vistazo', description: 'Este panel reúne lo importante del día. Aquí podrás detectar rápidamente qué necesita tu atención.' },
+      { eyebrow: 'Resumen diario', title: 'Revisa el estado del negocio', description: 'Consulta ingresos confirmados, pedidos recibidos, pendientes y oportunidades comerciales.', target: '[data-tour="dashboard-metrics"]' },
+      { eyebrow: 'Catálogo', title: 'Crea un producto cuando lo necesites', description: 'Este acceso abre el formulario para agregar fotos, precio, stock y detalles de venta.', target: '#tour-create-product' },
+      { eyebrow: 'Actividad reciente', title: 'Controla los pedidos nuevos', description: 'La bandeja resume las últimas ventas. Usa los filtros para localizar un cliente o estado específico.', target: '[data-tour="dashboard-orders"]' },
+      { eyebrow: 'Tienda pública', title: 'Comprueba la experiencia del cliente', description: 'Abre tu tienda pública antes de compartirla y verifica que productos, precios y entrega estén correctos.', target: '#tour-public-store' },
+    ],
   },
-  {
-    eyebrow: 'Tu centro de operaciones',
-    title: 'Empieza cada día desde aquí.',
-    description: 'Este resumen te muestra ingresos confirmados, pedidos pendientes y oportunidades que requieren atención.',
-    target: '#tour-dashboard-summary',
+  orders: {
+    id: 'orders',
+    steps: [
+      { eyebrow: 'Pedidos', title: 'Gestiona cada venta de principio a fin', description: 'Esta sección concentra los pedidos, pagos y entregas de tu tienda.', target: '[data-tour="orders-header"]' },
+      { eyebrow: 'Búsqueda y filtros', title: 'Encuentra un pedido rápidamente', description: 'Busca por ID, cliente o teléfono y filtra por estado cuando tengas una bandeja extensa.', target: '[data-tour="orders-filters"]' },
+      { eyebrow: 'Vistas de trabajo', title: 'Separa pedidos y oportunidades', description: 'Cambia entre delivery, otros pedidos y oportunidades captadas según el tipo de tienda.', target: '[data-tour="orders-tabs"]' },
+      { eyebrow: 'Operación', title: 'Actualiza el avance del pedido', description: 'Abre cada pedido para revisar productos, datos del cliente, comprobantes y cambiar su estado hasta completarlo.', target: '[data-tour="orders-workspace"]' },
+    ],
   },
-  {
-    eyebrow: 'Construye tu catálogo',
-    title: 'Publica tu primer producto.',
-    description: 'Agrega fotos, precio, stock y variantes. Recuerda activar el producto para que aparezca en tu tienda.',
-    target: '#tour-create-product',
+  customers: {
+    id: 'customers',
+    steps: [
+      { eyebrow: 'Clientes', title: 'Conoce quién compra y quién está interesado', description: 'Aquí se separan compradores reales de personas que todavía son oportunidades.', target: '[data-tour="customers-header"]' },
+      { eyebrow: 'Dos vistas', title: 'Clientes y oportunidades no son lo mismo', description: 'Clientes muestra compras confirmadas. Oportunidades reúne leads y carritos que puedes recuperar.', target: '[data-tour="customers-views"]' },
+      { eyebrow: 'Indicadores', title: 'Identifica clientes valiosos', description: 'Consulta compradores, recurrencia y valor acumulado para entender mejor tu base comercial.', target: '[data-tour="customers-metrics"]' },
+      { eyebrow: 'Historial', title: 'Revisa actividad y contacto', description: 'La tabla muestra pedidos, última compra, datos de contacto y valor total por cliente.', target: '[data-tour="customers-list"]' },
+      { eyebrow: 'Seguimiento', title: 'Recupera oportunidades por WhatsApp', description: 'En la vista Oportunidades puedes contactar a una persona interesada y convertirla en cliente.', target: '[data-tour="customers-views"]' },
+    ],
   },
-  {
-    eyebrow: 'Opera tus ventas',
-    title: 'Gestiona cada pedido.',
-    description: 'Revisa nuevos pedidos, confirma pagos y actualiza su estado hasta completar la entrega.',
-    target: '[data-tour="orders"]',
+  products: {
+    id: 'products',
+    steps: [
+      { eyebrow: 'Productos', title: 'Administra todo tu catálogo', description: 'Desde aquí controlas qué vendes, cuánto cuesta, el stock disponible y su visibilidad.', target: '[data-tour="products-header"]' },
+      { eyebrow: 'Acciones rápidas', title: 'Crea o importa productos', description: 'Agrega un producto individual o importa varios mediante una hoja de cálculo.', target: '[data-tour="products-actions"]' },
+      { eyebrow: 'Visibilidad', title: 'Comprueba qué está publicado', description: 'Un producto oculto no aparece en la tienda. Revisa también el stock antes de compartir tu catálogo.', target: '[data-tour="products-table"]' },
+      { eyebrow: 'Edición', title: 'Actualiza o elimina con cuidado', description: 'Usa las acciones de cada fila para editar información. La eliminación es permanente y requiere confirmación.', target: '[data-tour="products-table"]' },
+    ],
   },
-  {
-    eyebrow: 'Hazla tuya',
-    title: 'Configura la experiencia.',
-    description: 'Define identidad, plantilla, pagos, horarios y logística desde Ajustes Tienda.',
-    target: '[data-tour="settings"]',
+  analytics: {
+    id: 'analytics',
+    steps: [
+      { eyebrow: 'Analytics', title: 'Convierte tus ventas en decisiones', description: 'Este espacio resume el rendimiento comercial. Si tu plan aún no incluye Analytics, aquí verás las funciones disponibles antes de activarlo.', target: '[data-tour="analytics-header"], [data-tour="analytics-locked"]' },
+      { eyebrow: 'Periodo y exportación', title: 'Analiza el rango correcto', description: 'Compara 7 días, 30 días o todo el historial. También puedes exportar los datos a CSV.', target: '[data-tour="analytics-controls"]' },
+      { eyebrow: 'Indicadores', title: 'Lee primero los números principales', description: 'Ingresos, ticket promedio, conversión y pedidos completados muestran la salud general de la operación.', target: '[data-tour="analytics-metrics"]' },
+      { eyebrow: 'Alertas comerciales', title: 'Detecta señales que requieren atención', description: 'Las observaciones aparecen cuando existen datos suficientes y señalan riesgos u oportunidades concretas.', target: '[data-tour="analytics-insights"]' },
+      { eyebrow: 'Tendencias', title: 'Entiende cuándo y cómo te compran', description: 'Los gráficos muestran evolución de ingresos y preferencias de pago para orientar tus siguientes acciones.', target: '[data-tour="analytics-charts"]' },
+    ],
   },
-  {
-    eyebrow: 'Ya puedes comenzar',
-    title: 'Mira tu tienda como cliente.',
-    description: 'Abre tu vitrina pública, comprueba la experiencia y comparte el enlace con tus clientes.',
-    target: '#tour-public-store',
+  settings: {
+    id: 'settings',
+    steps: [
+      { eyebrow: 'Ajustes de tienda', title: 'Configura cómo se presenta y opera tu negocio', description: 'Los cambios de esta sección afectan la información pública, el checkout y la forma de atender pedidos.', target: '[data-tour="settings-header"]' },
+      { eyebrow: 'General y plantilla', title: 'Define identidad y experiencia', description: 'General y Perfil contiene nombre, enlace, descripción y logo. Plantilla y Experiencia adapta la tienda a Comercio, Restaurante o Moda.', target: '[data-tour="settings-navigation"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Diseño', title: 'Mantén una identidad reconocible', description: 'En Diseño y Apariencia eliges portada y colores. Prioriza contraste, fotografías claras y consistencia con tu marca.', target: '[data-tour="settings-diseno"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Pagos', title: 'Configura cómo vas a cobrar', description: 'Activa métodos manuales o Mercado Pago y revisa cada dato antes de recibir una venta real.', target: '[data-tour="settings-pagos"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Logística', title: 'Explica cómo entregas', description: 'Define delivery, recojo, cobertura, horarios, tiempos y condiciones específicas de tu tipo de tienda.', target: '[data-tour="settings-logistica"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Marketing', title: 'Conecta tus canales comerciales', description: 'Agrega redes sociales y configura señales que ayudan a comunicar actividad o disponibilidad.', target: '[data-tour="settings-marketing"], [data-tour="settings-mobile-navigation"]' },
+      { eyebrow: 'Contenido', title: 'Resuelve dudas antes de la compra', description: 'Usa promociones, beneficios y preguntas frecuentes para reducir fricción y dar confianza al cliente.', target: '[data-tour="settings-contenido"], [data-tour="settings-mobile-navigation"]' },
+    ],
   },
-]
+  productForm: {
+    id: 'product-form',
+    steps: [
+      { eyebrow: 'Ficha de producto', title: 'Completa la información que verá el cliente', description: 'El formulario adapta algunas opciones a Comercio, Restaurante o Moda.', target: '[data-tour="product-form"]' },
+      { eyebrow: 'Información principal', title: 'Usa un nombre y descripción claros', description: 'Escribe qué es el producto, su categoría y el beneficio principal. Evita nombres internos o descripciones ambiguas.', target: '#product-name' },
+      { eyebrow: 'Precio e inventario', title: 'Define valores listos para vender', description: 'Ingresa el precio final y controla el stock. El precio anterior solo debe usarse cuando exista una comparación real.', target: '#product-price' },
+      { eyebrow: 'Contenido visual', title: 'Sube imágenes que ayuden a decidir', description: 'Usa fotografías nítidas y ordena la galería. En Moda, completa también tallas, colores y existencias por variante.', target: '[data-tour="product-form"]' },
+      { eyebrow: 'Guardar', title: 'Revisa antes de continuar', description: 'Comprueba nombre, precio, imágenes y stock. Después de guardar, verifica la visibilidad desde Productos.', target: '[data-tour="product-save"]' },
+    ],
+  },
+}
+
+function getTourConfig(pathname: string): TourConfig | null {
+  if (pathname === '/dashboard') return TOUR_CONFIGS.dashboard
+  if (pathname === '/dashboard/pedidos') return TOUR_CONFIGS.orders
+  if (pathname === '/dashboard/clientes') return TOUR_CONFIGS.customers
+  if (pathname === '/dashboard/productos') return TOUR_CONFIGS.products
+  if (pathname === '/dashboard/analytics') return TOUR_CONFIGS.analytics
+  if (pathname === '/dashboard/configuracion') return TOUR_CONFIGS.settings
+  if (pathname === '/dashboard/crear' || pathname.startsWith('/dashboard/editar/')) return TOUR_CONFIGS.productForm
+  return null
+}
 
 function isVisibleTarget(element: Element, rect: DOMRect) {
   const style = window.getComputedStyle(element)
-  return style.visibility !== 'hidden'
-    && style.display !== 'none'
-    && rect.width > 0
-    && rect.height > 0
-    && rect.right > 0
-    && rect.left < window.innerWidth
-    && rect.bottom > 0
-    && rect.top < window.innerHeight
+  return style.visibility !== 'hidden' && style.display !== 'none' && rect.width > 0 && rect.height > 0
 }
 
 export default function ProductTour({ userId }: ProductTourProps) {
+  const pathname = usePathname()
+  const config = getTourConfig(pathname)
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [highlight, setHighlight] = useState<HighlightRect | null>(null)
 
-  const storageKey = useMemo(() => `linkventas:product-tour:${TOUR_VERSION}:${userId}`, [userId])
-  const step = STEPS[stepIndex]
+  const storageKey = useMemo(
+    () => config ? `linkventas:product-tour:${TOUR_VERSION}:${userId}:${config.id}` : '',
+    [config, userId],
+  )
+  const steps = config?.steps ?? []
+  const step = steps[stepIndex]
 
   const startTour = useCallback(() => {
+    if (!config) return
     setStepIndex(0)
     setOpen(true)
-  }, [])
+  }, [config])
+
+  useEffect(() => setMounted(true), [])
 
   useEffect(() => {
-    setMounted(true)
-    const savedState = window.localStorage.getItem(storageKey)
-    const timer = savedState ? undefined : window.setTimeout(startTour, 900)
+    setOpen(false)
+    setStepIndex(0)
+    if (!config || !storageKey) return
 
+    const savedState = window.localStorage.getItem(storageKey)
+    const timer = savedState ? undefined : window.setTimeout(startTour, 700)
+    return () => { if (timer) window.clearTimeout(timer) }
+  }, [config, startTour, storageKey])
+
+  useEffect(() => {
     const handleStart = () => startTour()
     window.addEventListener('linkventas:start-product-tour', handleStart)
-
-    return () => {
-      if (timer) window.clearTimeout(timer)
-      window.removeEventListener('linkventas:start-product-tour', handleStart)
-    }
-  }, [startTour, storageKey])
+    return () => window.removeEventListener('linkventas:start-product-tour', handleStart)
+  }, [startTour])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !step) return
+    let settleTimer: number | undefined
 
     const updateHighlight = () => {
       if (!step.target) {
@@ -113,7 +171,10 @@ export default function ProductTour({ userId }: ProductTourProps) {
         return
       }
 
-      const element = document.querySelector(step.target)
+      const element = Array.from(document.querySelectorAll(step.target)).find(candidate => {
+        const candidateRect = candidate.getBoundingClientRect()
+        return isVisibleTarget(candidate, candidateRect)
+      })
       if (!element) {
         setHighlight(null)
         return
@@ -125,12 +186,17 @@ export default function ProductTour({ userId }: ProductTourProps) {
         return
       }
 
-      setHighlight({
-        top: Math.max(8, rect.top - SPOTLIGHT_GAP),
-        left: Math.max(8, rect.left - SPOTLIGHT_GAP),
-        width: Math.min(window.innerWidth - 16, rect.width + SPOTLIGHT_GAP * 2),
-        height: Math.min(window.innerHeight - 16, rect.height + SPOTLIGHT_GAP * 2),
-      })
+      if (rect.bottom < 72 || rect.top > window.innerHeight - 40) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        settleTimer = window.setTimeout(updateHighlight, 350)
+        return
+      }
+
+      const top = Math.max(8, rect.top - SPOTLIGHT_GAP)
+      const left = Math.max(8, rect.left - SPOTLIGHT_GAP)
+      const right = Math.min(window.innerWidth - 8, rect.right + SPOTLIGHT_GAP)
+      const bottom = Math.min(window.innerHeight - 8, rect.bottom + SPOTLIGHT_GAP)
+      setHighlight({ top, left, width: right - left, height: bottom - top })
     }
 
     const frame = window.requestAnimationFrame(updateHighlight)
@@ -138,24 +204,25 @@ export default function ProductTour({ userId }: ProductTourProps) {
     window.addEventListener('scroll', updateHighlight, true)
     return () => {
       window.cancelAnimationFrame(frame)
+      if (settleTimer) window.clearTimeout(settleTimer)
       window.removeEventListener('resize', updateHighlight)
       window.removeEventListener('scroll', updateHighlight, true)
     }
-  }, [open, step.target])
+  }, [open, step])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !storageKey) return
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         window.localStorage.setItem(storageKey, 'skipped')
         setOpen(false)
       }
-      if (event.key === 'ArrowRight' && stepIndex < STEPS.length - 1) setStepIndex(current => current + 1)
+      if (event.key === 'ArrowRight' && stepIndex < steps.length - 1) setStepIndex(current => current + 1)
       if (event.key === 'ArrowLeft' && stepIndex > 0) setStepIndex(current => current - 1)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, stepIndex, storageKey])
+  }, [open, stepIndex, steps.length, storageKey])
 
   const finishTour = () => {
     window.localStorage.setItem(storageKey, 'completed')
@@ -168,84 +235,74 @@ export default function ProductTour({ userId }: ProductTourProps) {
   }
 
   const nextStep = () => {
-    if (stepIndex === STEPS.length - 1) {
-      finishTour()
-      return
-    }
-    setStepIndex(current => current + 1)
+    if (stepIndex === steps.length - 1) finishTour()
+    else setStepIndex(current => current + 1)
   }
 
   const tooltipStyle = useMemo(() => {
-    if (!highlight) return undefined
+    if (!highlight || typeof window === 'undefined') return undefined
     const width = Math.min(TOOLTIP_WIDTH, window.innerWidth - 32)
-    const belowTop = highlight.top + highlight.height + 16
-    const aboveTop = highlight.top - 16 - 300
-    const top = belowTop + 300 <= window.innerHeight
-      ? belowTop
-      : Math.max(16, aboveTop)
-    const left = Math.min(
-      Math.max(16, highlight.left + highlight.width / 2 - width / 2),
-      window.innerWidth - width - 16,
-    )
+    const spaceBelow = window.innerHeight - highlight.top - highlight.height
+    const spaceAbove = highlight.top
+    let top = Math.max(16, window.innerHeight - TOOLTIP_HEIGHT - 16)
+    if (spaceBelow >= TOOLTIP_HEIGHT + 16) top = highlight.top + highlight.height + 16
+    else if (spaceAbove >= TOOLTIP_HEIGHT + 16) top = highlight.top - TOOLTIP_HEIGHT - 16
+    const left = Math.min(Math.max(16, highlight.left + highlight.width / 2 - width / 2), window.innerWidth - width - 16)
     return { top, left, width }
   }, [highlight])
 
-  if (!mounted || !open) return null
+  if (!mounted || !open || !config || !step) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-label="Visita guiada de LinkVentas">
+    <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-label={`Guía de ${config.id}`}>
       {highlight ? (
         <>
-          <div className="fixed inset-x-0 top-0 bg-zinc-950/70 backdrop-blur-[1px]" style={{ height: highlight.top }} />
-          <div className="fixed left-0 bg-zinc-950/70 backdrop-blur-[1px]" style={{ top: highlight.top, width: highlight.left, height: highlight.height }} />
-          <div className="fixed right-0 bg-zinc-950/70 backdrop-blur-[1px]" style={{ top: highlight.top, left: highlight.left + highlight.width, height: highlight.height }} />
-          <div className="fixed inset-x-0 bottom-0 bg-zinc-950/70 backdrop-blur-[1px]" style={{ top: highlight.top + highlight.height }} />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none fixed rounded-2xl border-2 border-violet-300 shadow-[0_0_0_4px_rgba(196,181,253,0.22),0_18px_60px_rgba(76,29,149,0.28)] transition-all duration-300 ease-out"
-            style={highlight}
-          />
+          <div className="fixed inset-x-0 top-0 bg-slate-950/45" style={{ height: highlight.top }} />
+          <div className="fixed left-0 bg-slate-950/45" style={{ top: highlight.top, width: highlight.left, height: highlight.height }} />
+          <div className="fixed right-0 bg-slate-950/45" style={{ top: highlight.top, left: highlight.left + highlight.width, height: highlight.height }} />
+          <div className="fixed inset-x-0 bottom-0 bg-slate-950/45" style={{ top: highlight.top + highlight.height }} />
+          <div aria-hidden="true" className="pointer-events-none fixed rounded-2xl border-2 border-blue-500 shadow-[0_0_0_4px_rgba(37,99,235,0.16),0_18px_55px_rgba(15,23,42,0.18)] transition-all duration-300 ease-out" style={highlight} />
         </>
       ) : (
-        <div className="fixed inset-0 bg-zinc-950/76 backdrop-blur-sm" />
+        <div className="fixed inset-0 bg-slate-950/45" />
       )}
 
       <article
-        className={`${highlight ? 'fixed' : 'fixed left-1/2 top-1/2 w-[min(420px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2'} overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#171719]/95 text-white shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-300`}
+        className={`${highlight ? 'fixed' : 'fixed left-1/2 top-1/2 w-[min(430px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2'} overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.24)] animate-in fade-in zoom-in-95 duration-200`}
         style={tooltipStyle}
       >
-        <div className="h-1 bg-[linear-gradient(90deg,#a78bfa,#60a5fa,#6ee7b7)]" />
+        <div className="h-1 bg-blue-600" />
         <div className="p-6 sm:p-7">
           <div className="flex items-start justify-between gap-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-400/15 text-violet-200">
-              {stepIndex === STEPS.length - 1 ? <Check size={19} /> : <Sparkles size={18} />}
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+              {stepIndex === steps.length - 1 ? <Check size={19} /> : <Compass size={19} />}
             </div>
-            <button type="button" onClick={skipTour} aria-label="Cerrar visita guiada" className="rounded-full p-2 text-white/45 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95">
+            <button type="button" onClick={skipTour} aria-label="Cerrar guía" className="rounded-full p-2 text-slate-400 transition-all duration-300 hover:bg-slate-100 hover:text-slate-700 active:scale-95">
               <X size={17} />
             </button>
           </div>
 
-          <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.19em] text-violet-300">{step.eyebrow}</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.045em] text-white">{step.title}</h2>
-          <p className="mt-3 text-sm leading-6 text-zinc-300">{step.description}</p>
+          <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-blue-700">{step.eyebrow}</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-slate-950">{step.title}</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">{step.description}</p>
 
           <div className="mt-7 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5" aria-label={`Paso ${stepIndex + 1} de ${STEPS.length}`}>
-              {STEPS.map((tourStep, index) => (
-                <span key={tourStep.title} aria-hidden="true" className={`h-1.5 rounded-full transition-all duration-300 ${index === stepIndex ? 'w-6 bg-violet-300' : index < stepIndex ? 'w-1.5 bg-emerald-300' : 'w-1.5 bg-white/20'}`} />
+            <div className="flex items-center gap-1.5" aria-label={`Paso ${stepIndex + 1} de ${steps.length}`}>
+              {steps.map((tourStep, index) => (
+                <span key={tourStep.title} aria-hidden="true" className={`h-1.5 rounded-full transition-all duration-300 ${index === stepIndex ? 'w-6 bg-blue-600' : index < stepIndex ? 'w-1.5 bg-emerald-500' : 'w-1.5 bg-slate-200'}`} />
               ))}
             </div>
             <div className="flex items-center gap-2">
               {stepIndex === 0 ? (
-                <button type="button" onClick={skipTour} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-white/55 transition-all duration-300 hover:bg-white/5 hover:text-white active:scale-95">Ahora no</button>
+                <button type="button" onClick={skipTour} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-500 transition-all duration-300 hover:bg-slate-100 hover:text-slate-800 active:scale-95">Omitir</button>
               ) : (
-                <button type="button" onClick={() => setStepIndex(current => current - 1)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 text-white/70 transition-all duration-300 hover:bg-white/10 hover:text-white active:scale-95" aria-label="Paso anterior">
+                <button type="button" onClick={() => setStepIndex(current => current - 1)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition-all duration-300 hover:border-slate-300 hover:bg-slate-50 active:scale-95" aria-label="Paso anterior">
                   <ArrowLeft size={16} />
                 </button>
               )}
-              <button type="button" onClick={nextStep} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-zinc-950 shadow-[0_10px_28px_rgba(255,255,255,0.12)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-violet-100 active:scale-95">
-                {stepIndex === STEPS.length - 1 ? 'Terminar' : 'Siguiente'}
-                {stepIndex === STEPS.length - 1 ? <Check size={15} /> : <ArrowRight size={15} />}
+              <button type="button" onClick={nextStep} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-[0_8px_20px_rgba(37,99,235,0.20)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-blue-700 active:scale-95">
+                {stepIndex === steps.length - 1 ? 'Entendido' : 'Siguiente'}
+                {stepIndex === steps.length - 1 ? <Check size={15} /> : <ArrowRight size={15} />}
               </button>
             </div>
           </div>

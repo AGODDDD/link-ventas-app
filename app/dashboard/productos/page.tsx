@@ -116,13 +116,13 @@ export default function ProductosPage() {
     if (isInitialLoad) return <ProductosSkeleton />
 
     return (
-        <div className="space-y-6 pb-12 relative w-full">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
+        <div id="tour-page-products" className="space-y-6 pb-12 relative w-full">
+            <div data-tour="products-header" className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Productos</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Administra lo que vendes, su visibilidad y stock.</p>
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div data-tour="products-actions" className="flex items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-800 flex-1 md:w-64">
                         <Search className="text-zinc-500 dark:text-zinc-400 w-4 h-4" />
                         <input 
@@ -159,7 +159,7 @@ export default function ProductosPage() {
             />
 
             {/* VISTA DE TABLA COMPACTA (LISTA) */}
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl animate-fade-in-up delay-100">
+            <div data-tour="products-table" className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl animate-fade-in-up delay-100">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>

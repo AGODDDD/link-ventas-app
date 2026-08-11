@@ -458,7 +458,7 @@ export default function PedidosPage() {
     };
 
     return (
-        <div className="space-y-6 pb-12 relative w-full">
+        <div id="tour-page-orders" className="space-y-6 pb-12 relative w-full">
 
             {/* ── PAYWALL MODAL TICKET TÉRMICO (plan free) ─────────────────────────── */}
             {showTicketPaywall && (
@@ -557,13 +557,13 @@ export default function PedidosPage() {
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
+            <div data-tour="orders-header" className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 animate-fade-in-up">
                 <div>
                     <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Operación</p>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2">Pedidos</h1>
                     <p className="text-zinc-500 dark:text-zinc-400">Gestiona ventas, entregas y estados desde una sola bandeja.</p>
                 </div>
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div data-tour="orders-filters" className="flex flex-col gap-3 sm:flex-row">
                     <label className="relative sm:w-72">
                         <span className="sr-only">Buscar pedidos</span>
                         <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -596,7 +596,7 @@ export default function PedidosPage() {
             </div>
 
             {/* TAB NAVIGATOR */}
-            <div className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar animate-fade-in-up delay-100">
+            <div data-tour="orders-tabs" className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar animate-fade-in-up delay-100">
                 {templateType === 'restaurante' && (
                     <button
                         onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
@@ -619,7 +619,7 @@ export default function PedidosPage() {
                 </button>
             </div>
 
-            <div className="grid gap-6 animate-fade-in-up delay-200">
+            <div data-tour="orders-workspace" className="grid gap-6 animate-fade-in-up delay-200">
 
                 {/* ========== DELIVERY TAB ========== */}
                 {activeTab === 'delivery' && (

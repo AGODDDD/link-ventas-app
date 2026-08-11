@@ -383,8 +383,8 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pb-32">
-      <div className="mb-8">
+    <div id="tour-page-settings" className="max-w-6xl mx-auto pb-32">
+      <div data-tour="settings-header" className="mb-8">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-white">Ajustes de Tienda</h1>
         <p className="text-zinc-500 dark:text-zinc-400 mt-1">Configura y personaliza la experiencia de tu negocio.</p>
       </div>
@@ -394,7 +394,7 @@ export default function ConfiguracionPage() {
         {/* SIDEBAR NAVEGACIÓN */}
         <div className="md:col-span-1">
           {/* Mobile Select */}
-          <div className="md:hidden mb-6">
+          <div data-tour="settings-mobile-navigation" className="md:hidden mb-6">
             <select 
               value={activeTab}
               onChange={(e) => setActiveTab(e.target.value)}
@@ -407,13 +407,14 @@ export default function ConfiguracionPage() {
           </div>
           
           {/* Desktop Menu */}
-          <nav className="hidden md:flex flex-col space-y-1 sticky top-24">
+          <nav data-tour="settings-navigation" className="hidden md:flex flex-col space-y-1 sticky top-24">
             {TABS.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
+                  data-tour={`settings-${tab.id}`}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left ${isActive ? 'bg-primary text-white' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50'}`}
                 >

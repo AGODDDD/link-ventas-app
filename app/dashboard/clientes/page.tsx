@@ -144,8 +144,8 @@ export default function ClientesPage() {
   if (loading) return <LoadingState />
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 pb-12">
-      <header className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+    <div id="tour-page-customers" className="mx-auto max-w-7xl space-y-8 pb-12">
+      <header data-tour="customers-header" className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
         <div>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">Relación comercial</p>
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">Clientes</h1>
@@ -165,7 +165,7 @@ export default function ClientesPage() {
         </label>
       </header>
 
-      <nav className="inline-flex rounded-2xl border border-zinc-200 bg-white/80 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70" aria-label="Vistas de relación comercial">
+      <nav data-tour="customers-views" className="inline-flex rounded-2xl border border-zinc-200 bg-white/80 p-1.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/70" aria-label="Vistas de relación comercial">
         <button
           onClick={() => { setView('customers'); setSearchTerm('') }}
           className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-300 ${view === 'customers' ? 'bg-zinc-950 text-white shadow-lg dark:bg-white dark:text-zinc-950' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'}`}
@@ -182,7 +182,7 @@ export default function ClientesPage() {
 
       {view === 'customers' ? (
         <>
-          <section className="grid gap-4 sm:grid-cols-3">
+          <section data-tour="customers-metrics" className="grid gap-4 sm:grid-cols-3">
             {[
               { label: 'Clientes compradores', value: customers.length, icon: Users, tone: 'text-violet-500 bg-violet-500/10' },
               { label: 'Clientes recurrentes', value: repeatCustomers, icon: ShoppingBag, tone: 'text-emerald-500 bg-emerald-500/10' },
@@ -198,7 +198,7 @@ export default function ClientesPage() {
             ))}
           </section>
 
-          <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
+          <section data-tour="customers-list" className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[820px] text-left">
                 <thead className="bg-zinc-50/80 dark:bg-zinc-950/40">
@@ -247,7 +247,7 @@ export default function ClientesPage() {
           </section>
         </>
       ) : (
-        <section className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
+        <section data-tour="customers-opportunities" className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/80 shadow-[0_16px_50px_rgb(0,0,0,0.05)] dark:border-zinc-800 dark:bg-zinc-900/70">
           <div className="border-b border-zinc-200/70 p-6 dark:border-zinc-800">
             <h2 className="text-lg font-semibold text-zinc-950 dark:text-white">Leads y carritos por recuperar</h2>
             <p className="mt-1 text-sm text-zinc-500">Son personas interesadas; todavía no cuentan como clientes compradores.</p>
