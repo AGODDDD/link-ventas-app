@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { XIcon as AnimatedX } from '@animateicons/react/lucide'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import { CircleHelp } from 'lucide-react'
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -83,6 +84,12 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
     router.push('/')
   }
 
+  const handleStartTour = () => {
+    router.push('/dashboard')
+    onClose?.()
+    window.setTimeout(() => window.dispatchEvent(new Event('linkventas:start-product-tour')), 350)
+  }
+
   return (
     <>
       {/* FONDO OSCURO (Solo en móvil cuando está abierto) */}
@@ -121,6 +128,7 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
             return (
               <Link
                 key={item.href}
+                data-tour={item.href === '/dashboard/pedidos' ? 'orders' : item.href === '/dashboard/configuracion' ? 'settings' : undefined}
                 href={item.href}
                 onClick={onClose}
                 aria-current={isActive ? 'page' : undefined}
@@ -147,7 +155,16 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
 
         {/* FOOTER - USER PROFILE */}
         <div className="px-6 mt-auto">
+          <button
+            type="button"
+            onClick={handleStartTour}
+            className="flex w-full items-center py-2.5 text-[var(--dash-text-muted)] transition-all duration-300 ease-out hover:text-[var(--dash-accent)] active:scale-[0.98]"
+          >
+            <CircleHelp size={16} className="mr-3 w-5 shrink-0" aria-hidden="true" />
+            <span className="text-sm font-medium">Visita guiada</span>
+          </button>
           <Link
+            id="tour-public-store"
             href={storeLink ? `/tienda/${storeLink}` : '#'}
             target="_blank"
             className={`text-[var(--dash-text-muted)] hover:text-[var(--dash-accent)] flex items-center py-2.5 transition-colors ${!storeLink && 'opacity-50 pointer-events-none'}`}

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { ThemeProvider } from '@/components/dashboard/ThemeProvider'
 import { useDashboardStore } from '@/store/useDashboardStore'
+import ProductTour from '@/components/dashboard/ProductTour'
 
 // Tipos de plan válidos
 type PlanStatus = 'trial' | 'pro' | 'free' | 'inactivo' | null
@@ -28,6 +29,7 @@ export default function DashboardLayout({
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null)
   const [bannerVisible, setBannerVisible] = useState(true)
   const [dashboardReady, setDashboardReady] = useState(false)
+  const [dashboardUserId, setDashboardUserId] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function DashboardLayout({
         }
 
         if (!isMounted) return
+        setDashboardUserId(sessionData.session.user.id)
         setPlanStatus(planActual as PlanStatus)
 
       // ─── Paso 3: Calcular días para el Banner ────────────────────────
@@ -161,6 +164,7 @@ export default function DashboardLayout({
       <main className={`flex-1 md:ml-56 bg-[var(--dash-bg)] ${mostrarBanner ? 'md:pt-32 pt-20' : 'md:pt-24 pt-4'} px-4 md:px-8 pb-12 overflow-x-hidden`}>
         {children}
       </main>
+      {dashboardUserId ? <ProductTour userId={dashboardUserId} /> : null}
     </div>
     </ThemeProvider>
   )

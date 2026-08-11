@@ -148,7 +148,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-10">
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <div id="tour-dashboard-summary" className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.035em] text-zinc-950 dark:text-white sm:text-[2rem]">
             Buenos días, {merchantName}.
@@ -157,6 +157,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
+            id="tour-create-product"
             href="/dashboard/crear"
             className="inline-flex items-center justify-center rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(0,0,0,0.14)] transition-all duration-300 ease-out hover:-translate-y-0.5 hover:bg-zinc-800 active:scale-95 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
           >
