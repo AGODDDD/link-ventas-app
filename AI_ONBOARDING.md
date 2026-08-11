@@ -5,7 +5,7 @@ LinkVentas es una plataforma SaaS de e-commerce Serverless de alto rendimiento c
 
 ## 2. Lectura obligatoria antes de tocar código
 Debes leer y comprender este archivo en su totalidad. Luego, inmediatamente después, lee:
-→ ver `AGENT_RULES.md`
+→ ver `AGENTS.md`
 
 ## 3. Stack
 → ver `ARCHITECTURE.md#arquitectura-general`
@@ -34,7 +34,7 @@ El contrato es canónico: `profiles` representa la cuenta, `stores` la única ti
 3. Usar Supabase Server Client solo donde es absolutamente necesario, respetando RLS en cliente.
 4. Aplicar regla anti-alucinación (Documentar origen, Inferido, o DESCONOCIDO).
 5. Ejecutar y mostrar checklist de cierre al terminar cada tarea (archivos modificados, docs actualizadas, docs omitidas con razón).
-→ ver detalle en `AGENT_RULES.md`
+→ ver detalle en `AGENTS.md`
 
 ## 7. Estado actual
 → ver `PROJECT_STATE.md#resumen-ejecutivo`

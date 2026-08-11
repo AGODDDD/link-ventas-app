@@ -23,6 +23,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   visuales asociados a asistentes de IA.
 
 ### Documentation
+- Centralizadas las instrucciones de agentes en `AGENTS.md` raíz y añadida una
+  puerta verificable de publicación: rastreo Git, push, despliegue y validación
+  de la ruta afectada. `.agents/AGENTS.md` queda como puntero de compatibilidad.
+- Corregido el onboarding que apuntaba a `AGENT_RULES.md` inexistente y
+  alineado el nombre canónico del proyecto Vercel con `.vercel/project.json`.
+- Declarada `.vscode/` como configuración local ignorada para que no se confunda
+  con un entregable pendiente de publicación.
 - Añadido `GUIA_INCORPORACION_PRODUCTO.md` con arquitectura, cobertura,
   persistencia, accesibilidad, mantenimiento y verificación del recorrido.
 - Actualizado el estado operativo de Mercado Pago: la configuración de

@@ -61,7 +61,9 @@
 
 - Contexto: Existía confusión debido al uso del repo `link-ventas-app` y la existencia de despliegues duplicados en Vercel.
 - Decisión: Se eliminó el proyecto duplicado "enlace-ventas" de Vercel (el cual apuntaba al mismo repositorio y causaba builds duplicados en cada push).
-- Estado Oficial: El proyecto oficial y canónico en Vercel es **"link-ventas"** bajo el dominio `link-ventas-app.vercel.app`. El codebase `AGODDDD/link-ventas-app` abastece a esta única instancia en producción.
+- Estado oficial verificado en `.vercel/project.json`: el proyecto canónico de
+  Vercel es **`link-ventas-app`**. El codebase `AGODDDD/link-ventas-app`
+  abastece a esta única instancia en producción.
 
 ---
 ## Campos que requieren verificación manual
