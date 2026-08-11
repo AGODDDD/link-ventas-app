@@ -84,3 +84,21 @@
   autorización sandbox y sus eventos firmados de punta a punta. El ticket
   `WCS-45319` queda como dependencia externa para resolver el e-mail de la
   cuenta compradora de prueba.
+
+### [2026-08-10] Incorporación contextual integrada al producto
+
+- **Contexto**: Una introducción única al dashboard no enseñaba cómo operar
+  Pedidos, Clientes, Productos, Analytics ni las siete áreas de Configuración.
+- **Opciones evaluadas**: checklist estática, servicio externo de product tours
+  y recorrido nativo integrado a las rutas existentes.
+- **Decisión**: Implementar una guía nativa por sección, con objetivos semánticos
+  `data-tour`, persistencia local versionada y repetición manual desde la barra
+  superior o el menú móvil.
+- **Razón**: Mantiene el copy y la interacción alineados con el producto real,
+  evita una dependencia de terceros y permite adaptar Configuración a cada
+  pestaña sin almacenar secretos ni nuevos datos de perfil.
+- **Diseño**: Superficie clara, azul funcional, texto oscuro y verde solo para
+  progreso. Se excluyen morados, gradientes, brillos y símbolos asociados a IA.
+- **Consecuencias**: El progreso no se sincroniza entre dispositivos. Cada
+  modificación estructural del dashboard debe conservar o actualizar sus
+  selectores y pasar una revisión manual de escritorio/móvil.

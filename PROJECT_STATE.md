@@ -1,6 +1,6 @@
 # Fuente única de verdad sobre el estado actual
 
-Última actualización: **2026-08-08**.
+Última actualización: **2026-08-10**.
 
 ## Veredicto
 
@@ -23,6 +23,10 @@ firmado. El detalle verificable vive en
   conciliación idempotente de suscripción y cargos desde webhook de plataforma.
 - Operaciones sensibles detrás de API Routes validadas, límites de intentos y
   secretos exclusivos de servidor.
+- Incorporación contextual versionada por usuario y sección: 38 pasos para
+  Dashboard, Pedidos, Clientes, Productos, Analytics, Configuración y formularios
+  de producto. Configuración recorre automáticamente sus siete pestañas sin
+  guardar ni alterar valores.
 
 ## Estado de Mercado Pago
 
@@ -57,3 +61,5 @@ firmado. El detalle verificable vive en
   datos antes de usar `migration repair` o `db push`.
 - Persisten riesgos normales de hidratación de estado cliente por `localStorage`;
   deben revisarse con pruebas visuales al modificar el dashboard o checkout.
+- El progreso de la guía vive en `localStorage`; no se sincroniza entre
+  navegadores o dispositivos y no debe interpretarse como telemetría de adopción.

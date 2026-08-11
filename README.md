@@ -9,6 +9,7 @@ Plataforma SaaS de e-commerce de alto rendimiento. Convierte tus enlaces en una 
 -   **Disponibilidad real**: Señal de stock limitado basada exclusivamente en el inventario del producto.
 -   **Gestión de Órdenes**: Panel de control intuitivo con impresión de tickets térmicos.
 -   **CRM de Leads**: Captura automática de contactos para recuperación de carritos abandonados.
+-   **Incorporación contextual**: 38 pasos guiados por sección para aprender el dashboard, configurar la tienda y gestionar productos sin salir del flujo real.
 
 ## 🚀 Inicio Rápido
 
@@ -82,6 +83,8 @@ Para detalles profundos sobre la arquitectura, el modelo de datos y los módulos
 👉 **[DOCUMENTACION.md](./DOCUMENTACION.md)**
 
 Estado de salida: **[ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md)**
+
+Guía de incorporación del producto: **[GUIA_INCORPORACION_PRODUCTO.md](./GUIA_INCORPORACION_PRODUCTO.md)**
 
 ---
 

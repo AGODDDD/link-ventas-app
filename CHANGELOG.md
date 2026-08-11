@@ -4,7 +4,27 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+### Changed
+- Rediseñada la pantalla de acceso de LinkVentas con una composición editorial
+  sobre una imagen original de comercio local, panel de autenticación translúcido
+  y una experiencia coherente para inicio de sesión, registro y recuperación.
+- Refinado el acceso con un tratamiento de vidrio más transparente, campos de
+  línea y una imagen diurna más luminosa para comunicar mejor un comercio activo.
+- La incorporación dejó de ser una checklist estática y ahora ofrece 38 pasos
+  contextuales para Dashboard, Pedidos, Clientes, Productos, Analytics,
+  Configuración y formularios de producto.
+- Configuración recorre automáticamente General, Plantilla, Diseño, Pagos,
+  Logística, Marketing y Contenido, explicando los controles visibles sin
+  guardar ni alterar valores.
+- Añadido el botón **Guía** junto a Notificaciones para repetir la ayuda del
+  apartado actual; el acceso lateral se conserva para móvil.
+- Adoptada una presentación clara y profesional para la guía: blanco, azul
+  funcional, texto oscuro y verde para progreso, sin estética morada ni recursos
+  visuales asociados a asistentes de IA.
+
 ### Documentation
+- Añadido `GUIA_INCORPORACION_PRODUCTO.md` con arquitectura, cobertura,
+  persistencia, accesibilidad, mantenimiento y verificación del recorrido.
 - Actualizado el estado operativo de Mercado Pago: la configuración de
   Production ya no es el bloqueo histórico; la autorización final de una
   suscripción Pro en sandbox sigue pendiente de la respuesta al ticket

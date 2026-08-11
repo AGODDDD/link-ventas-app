@@ -18,6 +18,18 @@ todo pago confirmado depende de un webhook firmado.
 - El webhook de Mercado Pago falla cerrado y exige `MP_WEBHOOK_SECRET`.
 - RLS resuelve toda propiedad mediante `stores.owner_id`; `profiles` nunca es de lectura pública.
 
+## Ayuda contextual del dashboard
+
+El layout autenticado monta una sola instancia de
+`components/dashboard/ProductTour.tsx`. El componente selecciona un recorrido
+según la ruta, resalta objetivos semánticos `data-tour` y guarda por usuario y
+sección si la visita fue completada u omitida. En Configuración, un evento de
+cliente validado permite mostrar cada pestaña durante la explicación sin
+persistir cambios del formulario.
+
+La cobertura, contrato de interacción y criterios de verificación se mantienen
+en [GUIA_INCORPORACION_PRODUCTO.md](./GUIA_INCORPORACION_PRODUCTO.md).
+
 ## Verificación manual
 
 - Configurar en Mercado Pago el webhook `/api/webhooks/mercadopago?store_id=<uuid>` para cada tienda y `/api/webhooks/mercadopago?scope=platform` para la suscripción Pro. En este último habilitar `subscription_preapproval` y `subscription_authorized_payment`.

@@ -1,5 +1,18 @@
 # Documentación técnica
 
+## Incorporación y ayuda contextual
+
+El dashboard dispone de recorridos específicos para sus áreas operativas. Una
+instancia global montada en el layout selecciona los pasos según la ruta, resalta
+controles mediante atributos `data-tour` y conserva por usuario/sección si el
+recorrido fue completado u omitido. El botón **Guía** de la barra superior
+permite repetir siempre la ayuda del apartado actual.
+
+Configuración cambia de pestaña mediante un evento cliente validado, sin guardar
+ni descartar el formulario. La arquitectura, cobertura, accesibilidad y lista de
+verificación están en
+[GUIA_INCORPORACION_PRODUCTO.md](./GUIA_INCORPORACION_PRODUCTO.md).
+
 ## Contrato de negocio y datos
 
 El storefront carga únicamente tiendas activas. El carrito puede vivir en el

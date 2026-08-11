@@ -39,6 +39,9 @@ El contrato es canónico: `profiles` representa la cuenta, `stores` la única ti
 ## 7. Estado actual
 → ver `PROJECT_STATE.md#resumen-ejecutivo`
 
+La incorporación visible para comerciantes se documenta por separado en
+`GUIA_INCORPORACION_PRODUCTO.md`.
+
 ## 8. Prioridades hoy
 → ver `PROJECT_STATE.md#prioridades-sugeridas`
 
