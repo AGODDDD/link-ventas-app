@@ -7,8 +7,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ### Added
 - Centro de cuenta profesional con identidad editable, proveedor de acceso, estado de suscripción, identificador técnico de soporte y controles de privacidad.
 - Solicitud trazable de eliminación de cuenta, revisión de Super Admin en hasta siete días y anonimización segura de datos personales al aprobarla.
-- Páginas públicas de política de privacidad e instrucciones de eliminación de datos, enlazadas desde el acceso y la cuenta para la revisión de Facebook Login.
+- Páginas públicas de política de privacidad e instrucciones de eliminación de datos, enlazadas desde el acceso y la cuenta.
 - Ícono oficial de LinkVentas en formato cuadrado de alta resolución para la ficha de Meta Developers.
+- Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
 - Rediseñada la pantalla de acceso de LinkVentas con una composición editorial

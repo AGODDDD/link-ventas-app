@@ -22,7 +22,11 @@ export async function GET(request: Request) {
   }
 
   const identities = user.identities || []
-  const provider = identities.some((identity) => identity.provider === 'facebook') ? 'Facebook' : 'Correo y contraseña'
+  const provider = identities.some((identity) => identity.provider === 'google')
+    ? 'Google'
+    : identities.some((identity) => identity.provider === 'facebook')
+      ? 'Facebook (acceso anterior)'
+      : 'Correo y contraseña'
   return NextResponse.json({
     account: {
       id: user.id,

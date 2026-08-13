@@ -20,6 +20,11 @@ test('la cuenta permite actualizar solo el nombre visible autenticado', () => {
   assert.match(accountRoute, /auth\.admin\.updateUserById/)
 })
 
+test('la cuenta identifica Google y conserva Facebook solo como acceso anterior', () => {
+  assert.match(accountRoute, /identity\.provider === 'google'/)
+  assert.match(accountRoute, /Facebook \(acceso anterior\)/)
+})
+
 test('la eliminación exige confirmación y revisión de Super Admin', () => {
   assert.match(deletionRoute, /confirmation !== 'ELIMINAR'/)
   assert.match(adminRoute, /user\.id === process\.env\.ADMIN_USER_ID/)
