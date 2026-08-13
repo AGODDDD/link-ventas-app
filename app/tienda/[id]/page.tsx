@@ -18,8 +18,8 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
     .single();
     
   return {
-    title: store?.name ? `OFERTAS BLACK - ${store.name}` : 'OFERTAS BLACK',
-    description: store?.description || 'Encuentra las mejores ofertas.',
+    title: store?.name || 'Tienda LinkVentas',
+    description: store?.description || 'Tienda online en LinkVentas.',
   }
 }
 
