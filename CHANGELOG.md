@@ -50,6 +50,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- En Preview, las suscripciones Pro ya no envían `payer_email` al crear la
+  preaprobación. Esto permite que el comprador de prueba confirme en el
+  checkout alojado sin una restricción de correo; Producción lo conserva.
 - Corregidos los controles secundarios del dashboard en modo claro: el
   Constructor de Vitrina y el interruptor de FOMO ya no heredan superficies
   oscuras de la paleta base.

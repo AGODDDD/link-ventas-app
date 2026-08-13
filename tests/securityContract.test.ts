@@ -67,6 +67,8 @@ test('public order creation and tracking are rate limited before privileged acce
 
 test('Pro recurring billing is server-created and invoice-confirmed', () => {
   assert.match(billingRoute, /api\.mercadopago\.com\/preapproval/)
+  assert.match(billingRoute, /process\.env\.VERCEL_ENV === 'preview'/)
+  assert.match(billingRoute, /payer_email: user\.email/)
   assert.match(billingRoute, /body: JSON\.stringify\(\{ status: 'cancelled' \}\)/)
   assert.match(billingRoute, /external_reference: user\.id/)
   assert.match(billingRoute, /notification_url/)

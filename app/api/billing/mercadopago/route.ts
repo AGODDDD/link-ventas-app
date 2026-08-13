@@ -48,13 +48,17 @@ export async function POST(request: Request) {
     if (!allowed) return NextResponse.json({ error: 'Demasiados intentos. Intenta nuevamente más tarde.' }, { status: 429 })
 
     const origin = getPublicAppOrigin(request.url)
+    // Mercado Pago confirma que payer_email es opcional para Suscripciones.
+    // En Preview lo omitimos para no restringir el checkout al e-mail interno
+    // de la cuenta compradora de prueba; Production conserva esa protección.
+    const payer = process.env.VERCEL_ENV === 'preview' ? {} : { payer_email: user.email }
     const response = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({
         reason: 'LinkVentas Pro - suscripcion mensual',
         external_reference: user.id,
-        payer_email: user.email,
+        ...payer,
         auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: PRO_AMOUNT, currency_id: 'PEN' },
         back_url: `${origin}/pendiente`,
         notification_url: `${origin}/api/webhooks/mercadopago?scope=platform`,
