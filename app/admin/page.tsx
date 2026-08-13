@@ -20,6 +20,7 @@ type KPIs = {
   trialStores: number
   suspendedStores: number
   estimatedRevenue: number
+  accountsNeedingEmailSync: number
 }
 
 export default function AdminPage() {
@@ -120,6 +121,18 @@ export default function AdminPage() {
           border: 'border-violet-500/10 hover:border-violet-500/20',
           subtitle: '/mes · S/ 25 × Pro activas',
         },
+        ...(kpis.accountsNeedingEmailSync > 0
+          ? [{
+              label: 'Cuentas por revisar',
+              value: kpis.accountsNeedingEmailSync,
+              icon: AlertTriangle,
+              gradient: 'from-amber-500/20 to-orange-500/20',
+              iconBg: 'bg-amber-500/10',
+              iconColor: 'text-amber-400',
+              border: 'border-amber-500/10 hover:border-amber-500/20',
+              subtitle: 'Correo pendiente de sincronizar',
+            }]
+          : []),
       ]
     : []
 

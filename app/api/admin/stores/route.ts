@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getAdminContext } from '@/lib/admin'
 
+type EmailSource = 'profile' | 'auth' | 'unavailable'
+
+function normalizeEmail(value: string | null | undefined) {
+  const email = value?.trim().toLowerCase()
+  return email || null
+}
+
 export async function GET(req: Request) {
   try {
     const admin = await getAdminContext(req, 'stores', 60)
@@ -29,8 +36,25 @@ export async function GET(req: Request) {
       (profilesRes.data || []).map((p) => [p.id, p])
     )
 
-    const merchants = (storesRes.data || []).map((store) => {
+    const stores = storesRes.data || []
+    const missingProfileEmails = stores.filter((store) => !normalizeEmail(profilesMap.get(store.owner_id)?.email))
+    const authEmails = new Map<string, string>()
+
+    // Auth is the source of truth for login addresses. Only query it for
+    // incomplete profile rows, keeping the privileged lookup bounded.
+    await Promise.all(
+      missingProfileEmails.map(async (store) => {
+        const { data, error } = await supabase.auth.admin.getUserById(store.owner_id)
+        const email = error ? null : normalizeEmail(data.user?.email)
+        if (email) authEmails.set(store.owner_id, email)
+      }),
+    )
+
+    const merchants = stores.map((store) => {
       const profile = profilesMap.get(store.owner_id)
+      const profileEmail = normalizeEmail(profile?.email)
+      const authEmail = authEmails.get(store.owner_id) || null
+      const emailSource: EmailSource = profileEmail ? 'profile' : authEmail ? 'auth' : 'unavailable'
       return {
         store_id: store.id,
         owner_id: store.owner_id,
@@ -40,7 +64,11 @@ export async function GET(req: Request) {
         is_active: store.is_active,
         template_type: store.template_type,
         store_created_at: store.created_at,
-        email: profile?.email || null,
+        // A valid Auth email is shown even if a historical profile missed it.
+        // The client can explicitly synchronize it; this GET remains read-only.
+        email: profileEmail || authEmail,
+        email_source: emailSource,
+        email_needs_sync: !profileEmail && Boolean(authEmail),
         plan: profile?.plan || null,
         plan_expires_at: profile?.plan_expires_at || null,
       }
@@ -82,6 +110,7 @@ export async function GET(req: Request) {
         trialStores,
         suspendedStores,
         estimatedRevenue,
+        accountsNeedingEmailSync: merchants.filter((m) => m.email_needs_sync).length,
       },
     })
   } catch (error) {

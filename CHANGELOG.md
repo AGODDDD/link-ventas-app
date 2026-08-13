@@ -52,6 +52,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- El Super Admin ya recupera el correo canónico de Auth cuando un perfil
+  histórico está incompleto, identifica el desfase y permite sincronizarlo de
+  forma explícita sin aceptar direcciones enviadas desde el navegador.
 - En Preview, las suscripciones Pro ya no envían `payer_email` al crear la
   preaprobación. Esto permite que el comprador de prueba confirme en el
   checkout alojado sin una restricción de correo; Producción lo conserva.
