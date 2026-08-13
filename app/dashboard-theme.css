@@ -168,6 +168,9 @@
   --surface-container: #f5f5f4;
   --surface-container-high: #ffffff;
   --surface-container-highest: #f0f0ef;
+  /* Controles secundarios: evita heredar el gris oscuro de la paleta base. */
+  --surface-bright: #f5f5f4;
+  --surface-dim: #f0f0ef;
   --outline: #6b7280;
   --outline-variant: #d4d4d0;
   --error: #b4233c;

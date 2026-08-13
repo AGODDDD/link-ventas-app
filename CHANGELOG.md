@@ -50,6 +50,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- Corregidos los controles secundarios del dashboard en modo claro: el
+  Constructor de Vitrina y el interruptor de FOMO ya no heredan superficies
+  oscuras de la paleta base.
 - Reducida la espera del dashboard al compartir sesión, plan y tienda desde el
   layout, paralelizar consultas independientes y eliminar validaciones de red
   duplicadas en Resumen, navegación, Realtime y Configuración.
