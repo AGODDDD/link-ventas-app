@@ -76,14 +76,14 @@ export default function AdminStoresTable({
   }
 
   // ─── Suspender Tienda ────────────────────────────────────────────────
-  const suspendStore = async (storeId: string, ownerId: string) => {
+  const suspendStore = async (storeId: string) => {
     setLoadingAction(`suspend-${storeId}`)
     try {
       const headers = await getAuthHeaders()
       const res = await fetch('/api/admin/suspend', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ storeId, ownerId, action: 'suspend' }),
+        body: JSON.stringify({ storeId, action: 'suspend' }),
       })
       if (!res.ok) throw new Error('Error del servidor')
       toast.success('Tienda suspendida correctamente')
@@ -96,14 +96,14 @@ export default function AdminStoresTable({
   }
 
   // ─── Reactivar Tienda ───────────────────────────────────────────────
-  const unsuspendStore = async (storeId: string, ownerId: string) => {
+  const unsuspendStore = async (storeId: string) => {
     setLoadingAction(`unsuspend-${storeId}`)
     try {
       const headers = await getAuthHeaders()
       const res = await fetch('/api/admin/suspend', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ storeId, ownerId, action: 'unsuspend' }),
+        body: JSON.stringify({ storeId, action: 'unsuspend' }),
       })
       if (!res.ok) throw new Error('Error del servidor')
       toast.success('Tienda reactivada — asigna un plan si es necesario')
@@ -282,7 +282,7 @@ export default function AdminStoresTable({
                           </button>
                         ))}
                         <button
-                          onClick={() => suspendStore(m.store_id, m.owner_id)}
+                          onClick={() => suspendStore(m.store_id)}
                           disabled={isButtonDisabled}
                           className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-400/30 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
@@ -291,7 +291,7 @@ export default function AdminStoresTable({
                       </>
                     ) : (
                       <button
-                        onClick={() => unsuspendStore(m.store_id, m.owner_id)}
+                        onClick={() => unsuspendStore(m.store_id)}
                         disabled={isButtonDisabled}
                         className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 hover:border-emerald-400/30 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
                       >

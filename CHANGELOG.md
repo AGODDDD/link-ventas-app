@@ -521,3 +521,7 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Versión actual semántica del proyecto (usaré `[Unreleased]` hasta confirmación).
 - DESCONOCIDO: Historial anterior de cambios en ramas antiguas, ya que se inició documentando el estado actual desde cero.
+- Endurecido el panel Super Admin: todas sus rutas comparten validación de
+  identidad server-side y límites atómicos por usuario/operación; la suspensión
+  actualiza tienda y plan en una única transacción de base de datos, y los
+  planes solo aceptan UUIDs y duraciones enteras de 1 a 24 meses.

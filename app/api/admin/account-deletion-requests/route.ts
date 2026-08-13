@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
-
-async function requireAdmin(request: Request) {
-  const { user } = await getAuthenticatedUser(request)
-  return user && user.id === process.env.ADMIN_USER_ID ? user : null
-}
+import { getAdminContext, uuidPattern } from '@/lib/admin'
 
 export async function GET(request: Request) {
-  const admin = await requireAdmin(request)
+  const admin = await getAdminContext(request, 'deletion-requests', 30)
   if (!admin) return NextResponse.json({ error: 'No autorizado.' }, { status: 403 })
-  const supabase = getSupabaseServiceClient()
+  const { supabase } = admin
   const { data, error } = await supabase
     .from('account_deletion_requests')
     .select('id, user_id, status, requested_at, due_at, reviewed_at, reviewed_by, resolution_note, completed_at')
@@ -25,13 +20,13 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const admin = await requireAdmin(request)
+  const admin = await getAdminContext(request, 'deletion-requests', 20)
   if (!admin) return NextResponse.json({ error: 'No autorizado.' }, { status: 403 })
   const body = await request.json().catch(() => null)
   const requestId = typeof body?.requestId === 'string' ? body.requestId : ''
   const action = body?.action
   const note = typeof body?.note === 'string' ? body.note.trim().slice(0, 500) : ''
-  if (!requestId || !['start_review', 'reject', 'complete'].includes(action)) {
+  if (!uuidPattern.test(requestId) || !['start_review', 'reject', 'complete'].includes(action)) {
     return NextResponse.json({ error: 'Solicitud inválida.' }, { status: 400 })
   }
   if (action === 'reject' && !note) return NextResponse.json({ error: 'Indica el motivo del rechazo.' }, { status: 400 })
@@ -39,21 +34,21 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Confirma la eliminación escribiendo ELIMINAR CUENTA.' }, { status: 400 })
   }
 
-  const supabase = getSupabaseServiceClient()
+  const { supabase } = admin
   const { data: deletionRequest, error: requestError } = await supabase
     .from('account_deletion_requests').select('id, user_id, status').eq('id', requestId).maybeSingle()
   if (requestError || !deletionRequest) return NextResponse.json({ error: 'Solicitud no encontrada.' }, { status: 404 })
 
   if (action === 'start_review') {
     if (deletionRequest.status !== 'pending') return NextResponse.json({ error: 'La solicitud ya fue atendida.' }, { status: 409 })
-    const { error } = await supabase.from('account_deletion_requests').update({ status: 'in_review', reviewed_at: new Date().toISOString(), reviewed_by: admin.id }).eq('id', requestId)
+    const { error } = await supabase.from('account_deletion_requests').update({ status: 'in_review', reviewed_at: new Date().toISOString(), reviewed_by: admin.user.id }).eq('id', requestId)
     if (error) return NextResponse.json({ error: 'No se pudo iniciar la revisión.' }, { status: 500 })
     return NextResponse.json({ status: 'in_review' })
   }
 
   if (action === 'reject') {
     if (!['pending', 'in_review'].includes(deletionRequest.status)) return NextResponse.json({ error: 'La solicitud ya fue atendida.' }, { status: 409 })
-    const { error } = await supabase.from('account_deletion_requests').update({ status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: admin.id, resolution_note: note }).eq('id', requestId)
+    const { error } = await supabase.from('account_deletion_requests').update({ status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: admin.user.id, resolution_note: note }).eq('id', requestId)
     if (error) return NextResponse.json({ error: 'No se pudo rechazar la solicitud.' }, { status: 500 })
     return NextResponse.json({ status: 'rejected' })
   }
@@ -77,7 +72,7 @@ export async function PATCH(request: Request) {
 
   const { error: storageError } = await supabase.schema('storage').from('objects').delete().eq('owner_id', deletionRequest.user_id)
   if (storageError) return NextResponse.json({ error: 'No se pudieron retirar los archivos de la cuenta.' }, { status: 500 })
-  const { error: anonymizeError } = await supabase.rpc('anonymize_account_for_deletion', { p_request_id: requestId, p_reviewer_id: admin.id })
+  const { error: anonymizeError } = await supabase.rpc('anonymize_account_for_deletion', { p_request_id: requestId, p_reviewer_id: admin.user.id })
   if (anonymizeError) return NextResponse.json({ error: 'No se pudieron anonimizar los datos de la cuenta.' }, { status: 500 })
   const { error: authError } = await supabase.auth.admin.deleteUser(deletionRequest.user_id)
   if (authError) return NextResponse.json({ error: 'Los datos fueron anonimizados, pero no se pudo cerrar la cuenta de acceso. Revisa Supabase Auth.' }, { status: 500 })

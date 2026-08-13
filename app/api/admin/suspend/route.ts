@@ -1,59 +1,30 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { getAdminContext, uuidPattern } from '@/lib/admin'
 
 export async function POST(req: Request) {
   try {
-    const { user } = await getAuthenticatedUser(req)
-    if (!user || user.id !== process.env.ADMIN_USER_ID) {
+    const admin = await getAdminContext(req, 'suspend', 20)
+    if (!admin) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
-    const { storeId, ownerId, action } = await req.json()
+    const { storeId, action } = await req.json()
 
-    if (!storeId || !ownerId || (action !== 'suspend' && action !== 'unsuspend')) {
+    if (typeof storeId !== 'string' || !uuidPattern.test(storeId) || (action !== 'suspend' && action !== 'unsuspend')) {
       return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 })
     }
 
-    const supabase = getSupabaseServiceClient()
-
-    if (action === 'suspend') {
-      // 1. Marcar tienda como inactiva (oculta al público via RLS)
-      const { error: storeErr } = await supabase
-        .from('stores')
-        .update({ is_active: false })
-        .eq('id', storeId)
-
-      // 2. Desactivar plan del propietario
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({ plan: 'inactivo', plan_expires_at: null })
-        .eq('id', ownerId)
-
-      if (storeErr || profileErr) {
-        console.error('Suspend error:', storeErr, profileErr)
-        return NextResponse.json({ error: 'Error al suspender' }, { status: 500 })
-      }
-
-      return NextResponse.json({
-        is_active: false,
-        plan: 'inactivo',
-        plan_expires_at: null,
-      })
+    const { data, error } = await admin.supabase.rpc('set_admin_store_suspension', {
+      p_store_id: storeId,
+      p_suspend: action === 'suspend',
+    })
+    if (error?.code === 'P0002') return NextResponse.json({ error: 'Tienda no encontrada' }, { status: 404 })
+    if (error || !data?.[0]) {
+      console.error('Admin suspend error:', error)
+      return NextResponse.json({ error: 'No se pudo actualizar la tienda.' }, { status: 500 })
     }
 
-    // ─── Unsuspend: solo reactivar la visibilidad de la tienda ────────
-    // El plan debe ser reactivado de forma separada con /api/admin/plans
-    const { error: storeErr } = await supabase
-      .from('stores')
-      .update({ is_active: true })
-      .eq('id', storeId)
-
-    if (storeErr) {
-      console.error('Unsuspend error:', storeErr)
-      return NextResponse.json({ error: 'Error al reactivar' }, { status: 500 })
-    }
-
-    return NextResponse.json({ is_active: true })
+    return NextResponse.json(data[0])
   } catch (error) {
     console.error('Admin suspend error:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })

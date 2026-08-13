@@ -26,6 +26,22 @@ const billingRoute = readFileSync(
   new URL('../app/api/billing/mercadopago/route.ts', import.meta.url),
   'utf8',
 )
+const adminAuth = readFileSync(
+  new URL('../lib/admin.ts', import.meta.url),
+  'utf8',
+)
+const adminSuspendRoute = readFileSync(
+  new URL('../app/api/admin/suspend/route.ts', import.meta.url),
+  'utf8',
+)
+const adminPlansRoute = readFileSync(
+  new URL('../app/api/admin/plans/route.ts', import.meta.url),
+  'utf8',
+)
+const adminSuspensionMigration = readFileSync(
+  new URL('../supabase/migrations/20260813202512_admin_atomic_store_suspension.sql', import.meta.url),
+  'utf8',
+)
 
 test('security migration removes public profile access and legacy order policies', () => {
   assert.match(migration, /REVOKE ALL ON TABLE public\.profiles FROM anon, authenticated/)
@@ -77,4 +93,16 @@ test('Pro recurring billing is server-created and invoice-confirmed', () => {
   assert.match(webhookRoute, /record_platform_pro_subscription_charge/)
   assert.match(recurringSubscriptionMigration, /REVOKE ALL ON TABLE public\.platform_billing_subscriptions FROM PUBLIC, anon, authenticated/)
   assert.match(recurringSubscriptionMigration, /REVOKE ALL ON FUNCTION public\.record_platform_pro_subscription_charge/)
+})
+
+test('admin mutations derive ownership on the server and are bounded', () => {
+  assert.match(adminAuth, /getAuthenticatedUser\(request\)/)
+  assert.match(adminAuth, /consume_abandoned_cart_rate_limit/)
+  assert.match(adminSuspendRoute, /set_admin_store_suspension/)
+  assert.match(adminSuspensionMigration, /SECURITY DEFINER/)
+  assert.match(adminSuspensionMigration, /SET search_path = ''/)
+  assert.match(adminSuspensionMigration, /REVOKE ALL ON FUNCTION public\.set_admin_store_suspension\(UUID, BOOLEAN\) FROM PUBLIC, anon, authenticated/)
+  assert.doesNotMatch(adminSuspendRoute, /const \{ storeId, ownerId, action \}/)
+  assert.match(adminPlansRoute, /MAX_PLAN_MONTHS = 24/)
+  assert.match(adminPlansRoute, /Number\.isInteger\(duration\)/)
 })

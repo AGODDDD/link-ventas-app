@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server'
-import { getAuthenticatedUser, getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { getAdminContext, uuidPattern } from '@/lib/admin'
+
+const MAX_PLAN_MONTHS = 24
 
 export async function POST(req: Request) {
   try {
-    const { user } = await getAuthenticatedUser(req)
-    if (!user || user.id !== process.env.ADMIN_USER_ID) {
+    const admin = await getAdminContext(req, 'plans', 20)
+    if (!admin) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
     const { merchantId, action, months } = await req.json()
-    if (!merchantId || (action !== 'activate' && action !== 'deactivate')) {
+    if (typeof merchantId !== 'string' || !uuidPattern.test(merchantId) || (action !== 'activate' && action !== 'deactivate')) {
       return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 })
     }
 
-    const supabase = getSupabaseServiceClient()
+    const { supabase } = admin
 
     if (action === 'deactivate') {
       const { error } = await supabase
@@ -25,7 +27,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ plan: 'inactivo', plan_expires_at: null })
     }
 
-    const duration = Number.isFinite(Number(months)) ? Math.max(1, Number(months)) : 1
+    const duration = Number(months)
+    if (!Number.isInteger(duration) || duration < 1 || duration > MAX_PLAN_MONTHS) {
+      return NextResponse.json({ error: `La duración debe ser un número entero entre 1 y ${MAX_PLAN_MONTHS} meses.` }, { status: 400 })
+    }
     const expires = new Date()
     expires.setMonth(expires.getMonth() + duration)
 
