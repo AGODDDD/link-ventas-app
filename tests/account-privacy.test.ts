@@ -7,6 +7,7 @@ const accountRoute = readFileSync('app/api/account/route.ts', 'utf8')
 const deletionRoute = readFileSync('app/api/account/deletion-request/route.ts', 'utf8')
 const adminRoute = readFileSync('app/api/admin/account-deletion-requests/route.ts', 'utf8')
 const adminAuth = readFileSync('lib/admin.ts', 'utf8')
+const loginPage = readFileSync('app/login/page.tsx', 'utf8')
 
 test('las solicitudes de eliminación están cerradas a Data API y vencen en siete días', () => {
   assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.account_deletion_requests/)
@@ -24,6 +25,13 @@ test('la cuenta permite actualizar solo el nombre visible autenticado', () => {
 test('la cuenta identifica Google y conserva Facebook solo como acceso anterior', () => {
   assert.match(accountRoute, /identity\.provider === 'google'/)
   assert.match(accountRoute, /Facebook \(acceso anterior\)/)
+})
+
+test('Google permite elegir una cuenta distinta sin cerrar la sesión por visitar login', () => {
+  assert.match(loginPage, /setHasExistingSession\(Boolean\(session\)\)/)
+  assert.doesNotMatch(loginPage, /if \(session\) router\.push\('\/dashboard'\)/)
+  assert.match(loginPage, /queryParams: \{ prompt: 'select_account' \}/)
+  assert.match(loginPage, /Usar otra cuenta de Google/)
 })
 
 test('la eliminación exige confirmación y revisión de Super Admin', () => {

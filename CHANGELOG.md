@@ -12,6 +12,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- El acceso con Google ahora muestra el selector de cuenta y permite cambiar de
+  vendedor desde `/login` sin redirigir automáticamente a la sesión existente.
 - Rediseñada la pantalla de acceso de LinkVentas con una composición editorial
   sobre una imagen original de comercio local, panel de autenticación translúcido
   y una experiencia coherente para inicio de sesión, registro y recuperación.
@@ -65,6 +67,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Corregida la landing: se retiró la métrica no verificable de comercios activos y el CTA final ahora inicia el registro.
 
 ### Security
+- Endurecido el panel Super Admin: todas sus rutas comparten validación de
+  identidad server-side y límites atómicos por usuario/operación; la suspensión
+  actualiza tienda y plan en una única transacción de base de datos, y los
+  planes solo aceptan UUIDs y duraciones enteras de 1 a 24 meses.
 - Actualizado Next.js y `eslint-config-next` a 16.2.11 para eliminar los avisos altos que afectaban a la versión anterior.
 - La creación pública de pedidos, el tracking y los intentos de pago ahora tienen límites atómicos por cliente y alcance; ya no pueden reservar inventario ilimitadamente.
 - Las funciones SQL `SECURITY DEFINER` del contrato de pedidos ahora ejecutan con `search_path` cerrado y los RPCs internos mantienen sus privilegios explícitos.
@@ -521,7 +527,3 @@ y este proyecto se adhiere vagamente a Semantic Versioning.
 ## Campos que requieren verificación manual
 - DESCONOCIDO: Versión actual semántica del proyecto (usaré `[Unreleased]` hasta confirmación).
 - DESCONOCIDO: Historial anterior de cambios en ramas antiguas, ya que se inició documentando el estado actual desde cero.
-- Endurecido el panel Super Admin: todas sus rutas comparten validación de
-  identidad server-side y límites atómicos por usuario/operación; la suspensión
-  actualiza tienda y plan en una única transacción de base de datos, y los
-  planes solo aceptan UUIDs y duraciones enteras de 1 a 24 meses.

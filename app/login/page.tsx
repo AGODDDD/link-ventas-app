@@ -29,6 +29,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'error' | 'success'>('error')
+  const [hasExistingSession, setHasExistingSession] = useState(false)
 
   const changeView = (nextView: View) => {
     setView(nextView)
@@ -42,7 +43,7 @@ export default function LoginPage() {
       try {
         const { supabase } = await import('@/lib/supabase')
         const { data: { session } } = await supabase.auth.getSession()
-        if (session) router.push('/dashboard')
+        setHasExistingSession(Boolean(session))
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
           if (currentSession) {
@@ -64,11 +65,20 @@ export default function LoginPage() {
 
   const handleGoogleOAuth = async () => {
     setLoading(true)
+    setMessage('')
     try {
       const { supabase } = await import('@/lib/supabase')
+      if (hasExistingSession) {
+        const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' })
+        if (signOutError) throw signOutError
+        document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax; secure'
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${location.origin}/auth/callback`,
+          queryParams: { prompt: 'select_account' },
+        },
       })
       if (error) throw error
     } catch (err) {
@@ -178,6 +188,16 @@ export default function LoginPage() {
               </div>
 
               <form className="space-y-4" onSubmit={handleAuth}>
+                {hasExistingSession && view === 'login' && (
+                  <div className="rounded-2xl border border-[#195dc3]/20 bg-[#195dc3]/[0.07] px-4 py-3 text-sm leading-5 text-[#17261d]/80">
+                    <p className="font-semibold text-[#17261d]">Ya tienes una sesión iniciada.</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button className="font-semibold text-[#195dc3] underline underline-offset-4" type="button" onClick={() => router.push('/dashboard')}>Volver al panel</button>
+                      <span aria-hidden="true" className="text-[#17261d]/35">·</span>
+                      <span>O continúa con otra cuenta.</span>
+                    </div>
+                  </div>
+                )}
                 {view === 'register' && (
                   <label className="block">
                     <span className="mb-2 block text-xs font-medium text-[#17261d]/75">Nombre completo</span>
@@ -214,7 +234,7 @@ export default function LoginPage() {
               {view !== 'forgot' && <>
                 <div className="my-7 flex items-center gap-3"><div className="h-px flex-1 bg-[#17261d]/20" /><span className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#17261d]/50">o continúa con</span><div className="h-px flex-1 bg-[#17261d]/20" /></div>
                 <div className="grid gap-3">
-                  <button className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/[0.16] text-sm font-medium text-[#17261d] transition-all duration-300 hover:bg-white/[0.34] active:scale-[0.98] disabled:opacity-50" disabled={loading} type="button" onClick={handleGoogleOAuth}><GoogleIcon />Continuar con Google</button>
+                  <button className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/50 bg-white/[0.16] text-sm font-medium text-[#17261d] transition-all duration-300 hover:bg-white/[0.34] active:scale-[0.98] disabled:opacity-50" disabled={loading} type="button" onClick={handleGoogleOAuth}><GoogleIcon />{hasExistingSession ? 'Usar otra cuenta de Google' : 'Continuar con Google'}</button>
                 </div>
               </>}
 
