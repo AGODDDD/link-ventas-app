@@ -51,8 +51,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ### Fixed
 - El título de las tiendas públicas ahora usa el nombre real de cada comercio,
-  en lugar del texto fijo “OFERTAS BLACK”; el favicon global usa la identidad
-  visual de LinkVentas en vez del ícono predeterminado de Vercel.
+  en lugar del texto fijo “OFERTAS BLACK”; cada tienda usa su propio logo como
+  favicon y recurre al ícono de LinkVentas solo si aún no tiene uno configurado.
 - Corregida la landing: se retiró la métrica no verificable de comercios activos y el CTA final ahora inicia el registro.
 
 ### Security
