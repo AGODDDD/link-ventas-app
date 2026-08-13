@@ -45,3 +45,22 @@ test('cerrar sesión elimina el propietario y todos los datos cacheados', async 
   assert.deepEqual(cleared.orders, [])
   assert.deepEqual(cleared.abandonedCarts, [])
 })
+
+test('la tienda resuelta por el layout queda disponible para las demás vistas', async () => {
+  const { useDashboardStore } = await import('../store/useDashboardStore')
+  const store = {
+    id: 'store-a',
+    owner_id: 'user-a',
+    slug: 'tienda-a',
+    name: 'Tienda A',
+    template_type: 'comercio' as const,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
+  useDashboardStore.getState().establecerStoreInfo('user-a', store)
+
+  assert.equal(useDashboardStore.getState().dashboardOwnerId, 'user-a')
+  assert.equal(useDashboardStore.getState().storeInfo?.id, 'store-a')
+})

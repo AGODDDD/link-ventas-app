@@ -16,6 +16,7 @@ import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
 import { DEFAULT_SCHEDULE, StoreSchedule } from '@/lib/storeSchedule'
 import FomoConfigModal from '@/components/dashboard/FomoConfigModal'
 import { toast } from 'sonner'
+import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
 
 interface SettingsFormData {
   storeName: string;
@@ -79,6 +80,7 @@ const TABS = [
 ]
 
 export default function ConfiguracionPage() {
+  const dashboardSession = useDashboardSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -114,15 +116,8 @@ export default function ConfiguracionPage() {
 
   useEffect(() => {
     const cargarPerfil = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const [{ data: store, error: storeError }, { data: profile }] = await Promise.all([
-        supabase.from('stores').select('*').eq('owner_id', user.id).single(),
-        supabase.from('profiles').select('plan, plan_expires_at').eq('id', user.id).single(),
-      ])
-
-      if (storeError || !store) {
+      const { userId, userEmail, planStatus, planExpiresAt, store } = dashboardSession
+      if (!store) {
         toast.error('No se encontró la tienda principal.')
         setLoading(false)
         return
@@ -136,11 +131,11 @@ export default function ConfiguracionPage() {
       if (config) {
         const operations = config.operations_config || {}
         setSystemData({
-          userId: user.id,
+          userId,
           storeId: store.id,
-          userEmail: user.email || '',
-          planStatus: profile?.plan ?? null,
-          planExpiresAt: profile?.plan_expires_at ?? null
+          userEmail,
+          planStatus,
+          planExpiresAt
         })
 
         const fetchedData: SettingsFormData = {
@@ -190,8 +185,8 @@ export default function ConfiguracionPage() {
       }
       setLoading(false)
     }
-    cargarPerfil()
-  }, [])
+    void cargarPerfil()
+  }, [dashboardSession])
 
   const hasChanges = initialData && formData ? JSON.stringify(initialData) !== JSON.stringify(formData) : false
 

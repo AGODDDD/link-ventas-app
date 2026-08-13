@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 import { getOrderStatusBadgeStyle, getOrderStatusLabel, ORDER_STATUS_LABELS } from '@/lib/orderStatus'
+import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
 
 const INGRESO_STATUSES = new Set(['completado', 'en_camino'])
 const ATTENTION_STATUSES = new Set(['pendiente', 'pendiente_pago', 'pendiente_verificacion'])
@@ -26,36 +27,31 @@ function paymentLabel(order: any) {
 
 export default function DashboardPage() {
   const { orders, cargarOrders } = useDashboardStore()
+  const { userId, userDisplayName, store } = useDashboardSession()
   const [leadsCount, setLeadsCount] = useState(0)
-  const [merchantName, setMerchantName] = useState('Administrador')
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     async function loadStats() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const fullName = String(user.user_metadata?.full_name || '').trim()
-      const emailName = String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ').trim()
-      const displayName = fullName || emailName || 'Administrador'
-      setMerchantName(displayName.split(/\s+/)[0])
-
-      const { data: store } = await supabase.from('stores').select('id').eq('owner_id', user.id).single()
       if (!store) return
 
-      await cargarOrders(user.id)
-      const { count } = await supabase
-        .from('store_leads')
-        .select('id', { count: 'exact', head: true })
-        .eq('store_id', store.id)
+      const [, leadsResult] = await Promise.all([
+        cargarOrders(userId),
+        supabase
+          .from('store_leads')
+          .select('id', { count: 'exact', head: true })
+          .eq('store_id', store.id),
+      ])
 
-      setLeadsCount(count ?? 0)
+      setLeadsCount(leadsResult.count ?? 0)
     }
 
     void loadStats()
-  }, [cargarOrders])
+  }, [cargarOrders, store, userId])
+
+  const merchantName = userDisplayName.split(/\s+/)[0]
 
   const ingresosTotales = useMemo(
     () => orders

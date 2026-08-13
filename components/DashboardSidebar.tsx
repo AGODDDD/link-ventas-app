@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import { XIcon as AnimatedX } from '@animateicons/react/lucide'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { CircleHelp } from 'lucide-react'
+import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -45,38 +45,13 @@ const menuItems = [
 export default function DashboardSidebar({ isOpen, onClose, hasBanner }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [storeLink, setStoreLink] = useState<string | null>(null)
-  const [userEmail, setUserEmail] = useState<string>('')
-  const [storeName, setStoreName] = useState<string>('Administrador')
-  const [initials, setInitials] = useState<string>('LV')
-
-  useEffect(() => {
-    const obtenerUsuario = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setUserEmail(user.email || '')
-        
-        const { data } = await supabase
-          .from('stores')
-          .select('slug, name')
-          .eq('owner_id', user.id)
-          .single()
-          
-        if (data) {
-          setStoreLink(data.slug || user.id)
-          if (data.name) {
-            setStoreName(data.name)
-            const parts = data.name.trim().split(/\s+/)
-            const initialsText = parts.length >= 2
-              ? (parts[0][0] + parts[1][0]).toUpperCase()
-              : data.name.substring(0, 2).toUpperCase()
-            setInitials(initialsText || 'LV')
-          }
-        }
-      }
-    }
-    obtenerUsuario()
-  }, [])
+  const { userEmail, userId, store } = useDashboardSession()
+  const storeLink = store?.slug || store?.id || userId
+  const storeName = store?.name || 'Administrador'
+  const nameParts = storeName.trim().split(/\s+/)
+  const initials = (nameParts.length >= 2
+    ? `${nameParts[0][0]}${nameParts[1][0]}`
+    : storeName.substring(0, 2)).toUpperCase() || 'LV'
 
   const handleLogout = async () => {
     useDashboardStore.getState().limpiarDashboard()

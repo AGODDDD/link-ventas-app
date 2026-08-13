@@ -50,6 +50,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- Reducida la espera del dashboard al compartir sesión, plan y tienda desde el
+  layout, paralelizar consultas independientes y eliminar validaciones de red
+  duplicadas en Resumen, navegación, Realtime y Configuración.
 - El título de las tiendas públicas ahora usa el nombre real de cada comercio,
   en lugar del texto fijo “OFERTAS BLACK”; cada tienda usa su propio logo como
   favicon y recurre al ícono de LinkVentas solo si aún no tiene uno configurado.

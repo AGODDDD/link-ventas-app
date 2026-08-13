@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import ThemeToggle from '@/components/dashboard/ThemeToggle'
+import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
 
 interface Notificacion {
     id: string;
@@ -93,7 +94,7 @@ interface TopBarProps {
 }
 
 export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
-    const [userId, setUserId] = useState<string | null>(null)
+    const { userId, store: dashboardStore } = useDashboardSession()
     const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [todayLabel, setTodayLabel] = useState('Hoy')
@@ -108,15 +109,6 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
             timeZone: 'America/Lima',
         }).format(new Date()).replace('.', '')
         setTodayLabel(`Hoy, ${formattedDate}`)
-    }, [])
-
-    // Cargar Usuario
-    useEffect(() => {
-        const obtenerUsuario = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) setUserId(user.id)
-        }
-        obtenerUsuario()
     }, [])
 
     // Habilitar Audio en interacción del usuario para burlar las restricciones de Autoplay
@@ -145,12 +137,9 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
 
     // Configurar Radar WebSockets
     useEffect(() => {
-        if (!userId) return
-
         let channelOrders: any
         const setupRealtime = async () => {
-            const { data: storeData } = await supabase.from('stores').select('id').eq('owner_id', userId).single()
-            const targetId = storeData?.id || userId;
+            const targetId = dashboardStore?.id || userId;
 
             // ── CANAL 1: NUEVO CORE (ORDERS) ──
             const channelNameOrd = `orders_rx_${userId}_${Math.random().toString(36).substring(7)}`
@@ -282,7 +271,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
         return () => {
              if (channelOrders) supabase.removeChannel(channelOrders)
         }
-    }, [userId])
+    }, [dashboardStore?.id, userId])
 
     const unreadCount = notificaciones.filter(n => !n.leida).length
 

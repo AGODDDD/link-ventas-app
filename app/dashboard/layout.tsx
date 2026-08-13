@@ -9,6 +9,11 @@ import { useRouter } from 'next/navigation'
 import { ThemeProvider } from '@/components/dashboard/ThemeProvider'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import ProductTour from '@/components/dashboard/ProductTour'
+import {
+  DashboardSessionProvider,
+  type DashboardSession,
+} from '@/components/dashboard/DashboardSessionContext'
+import type { Store } from '@/types/core'
 
 // Tipos de plan válidos
 type PlanStatus = 'trial' | 'pro' | 'free' | 'inactivo' | null
@@ -29,7 +34,7 @@ export default function DashboardLayout({
   const [diasRestantes, setDiasRestantes] = useState<number | null>(null)
   const [bannerVisible, setBannerVisible] = useState(true)
   const [dashboardReady, setDashboardReady] = useState(false)
-  const [dashboardUserId, setDashboardUserId] = useState('')
+  const [dashboardSession, setDashboardSession] = useState<DashboardSession | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -46,13 +51,18 @@ export default function DashboardLayout({
           return
         }
 
-        // Una entrada nueva al panel debe consultar una fotografía fresca. El
-        // cache se conserva únicamente durante la navegación interna.
-        useDashboardStore.getState().prepararParaUsuario(sessionData.session.user.id, true)
+        const user = sessionData.session.user
+        const dashboardStore = useDashboardStore.getState()
+        dashboardStore.prepararParaUsuario(user.id)
 
-        const statusRes = await fetch('/api/billing/status', {
-          headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
-        })
+        // Billing y la identidad de la tienda son independientes. Resolverlos
+        // juntos evita que todo el panel espere dos viajes de red consecutivos.
+        const [statusRes, storeResult] = await Promise.all([
+          fetch('/api/billing/status', {
+            headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+          }),
+          supabase.from('stores').select('*').eq('owner_id', user.id).single(),
+        ])
         if (!statusRes.ok) {
           router.replace('/pendiente')
           return
@@ -72,7 +82,19 @@ export default function DashboardLayout({
         }
 
         if (!isMounted) return
-        setDashboardUserId(sessionData.session.user.id)
+        const store = storeResult.data as Store | null
+        if (store) dashboardStore.establecerStoreInfo(user.id, store)
+
+        const fullName = String(user.user_metadata?.full_name || '').trim()
+        const emailName = String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ').trim()
+        setDashboardSession({
+          userId: user.id,
+          userEmail: user.email || '',
+          userDisplayName: fullName || emailName || 'Administrador',
+          planStatus: planActual as PlanStatus,
+          planExpiresAt: expiresAt,
+          store,
+        })
         setPlanStatus(planActual as PlanStatus)
 
       // ─── Paso 3: Calcular días para el Banner ────────────────────────
@@ -100,7 +122,7 @@ export default function DashboardLayout({
 
   const trialUrgent = diasRestantes !== null && diasRestantes <= 3
 
-  if (!dashboardReady) {
+  if (!dashboardReady || !dashboardSession) {
     return (
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
         <div className="dashboard-theme flex min-h-screen items-center justify-center bg-[var(--dash-bg)] text-[var(--dash-text-muted)]">
@@ -111,6 +133,7 @@ export default function DashboardLayout({
   }
 
   return (
+    <DashboardSessionProvider value={dashboardSession}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <div className="dashboard-theme antialiased font-body selection:bg-primary/30 min-h-screen bg-[var(--dash-bg)] flex flex-col text-[var(--dash-text-primary)]">
 
@@ -164,8 +187,9 @@ export default function DashboardLayout({
       <main className={`flex-1 md:ml-56 bg-[var(--dash-bg)] ${mostrarBanner ? 'md:pt-32 pt-20' : 'md:pt-24 pt-4'} px-4 md:px-8 pb-12 overflow-x-hidden`}>
         {children}
       </main>
-      {dashboardUserId ? <ProductTour userId={dashboardUserId} /> : null}
+      <ProductTour userId={dashboardSession.userId} />
     </div>
     </ThemeProvider>
+    </DashboardSessionProvider>
   )
 }
