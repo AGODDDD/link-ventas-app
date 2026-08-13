@@ -1,6 +1,6 @@
 # Fuente única de verdad sobre el estado actual
 
-Última actualización: **2026-08-10**.
+Última actualización: **2026-08-13**.
 
 ## Veredicto
 
@@ -35,15 +35,18 @@ firmado. El detalle verificable vive en
   responsabilidad de cada comercio.
 - **Plan Pro Production:** crea el checkout; falta una compra controlada con
   comprador real diferente del vendedor y e-mail coincidente con `payer_email`.
-- **Plan Pro Preview/sandbox:** crea `preapproval` e `init_point` con aplicación
-  y comprador de prueba. Falta autorización y webhook porque Mercado Pago no
-  habilita Confirmar mientras no coincida el e-mail del comprador de prueba.
-  Ticket abierto: `WCS-45319`.
+- **Plan Pro Preview/sandbox:** crea `preapproval`, abre `init_point` y permite
+  Confirmar con comprador TEST cuando Preview omite `payer_email`. Mercado Pago
+  rechaza el paso final antes del cargo por una incompatibilidad de entorno
+  (“una de las partes ... es de prueba”); no hay webhook ni activación. El ticket
+  `WCS-45319` fue actualizado y espera aclaración sobre `APP_USR`, credenciales
+  `TEST-` y el vendedor TEST. Ver
+  [registro de validación](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
 
 ## Pendientes de salida
 
-1. Resolver el requisito de e-mail de comprador de prueba con Mercado Pago y
-   ejecutar la autorización sandbox completa.
+1. Resolver con Mercado Pago la combinación soportada de credencial, vendedor
+   TEST y comprador TEST para Suscripciones en Perú.
 2. Validar firma, eventos, cargo de S/ 25 en PEN, activación idempotente y
    cancelación/limpieza de esa prueba.
 3. Ejecutar compra Production controlada con cuentas separadas, si el negocio

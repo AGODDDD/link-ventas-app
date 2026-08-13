@@ -1,5 +1,14 @@
 # Documentación técnica
 
+## Sistema de marca
+
+La identidad visual y verbal de LinkVentas se mantiene en
+[BRAND_SYSTEM.md](./BRAND_SYSTEM.md). Define el nombre canónico, tokens,
+tipografía, uso semántico del color y las reglas de evidencia para copy
+comercial. El sistema ya incluye el símbolo vectorial de eslabones ascendentes,
+sus versiones clara/oscura y el lockup estático en `public/brand/`; los
+componentes reutilizables viven en `components/brand/LinkVentasLogo.tsx`.
+
 ## Incorporación y ayuda contextual
 
 El dashboard dispone de recorridos específicos para sus áreas operativas. Una
@@ -42,6 +51,10 @@ Las credenciales de Plataforma se mantienen únicamente en servidor y separadas
 por entorno. Cada comercio conserva sus propias credenciales de cobro cifradas
 en servidor. La evidencia de pruebas y el bloqueo actual de sandbox están en
 [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
+La validación del 2026-08-13 alcanzó la autorización del checkout TEST, pero
+Mercado Pago la rechazó antes del cobro por incompatibilidad de entorno; el
+registro, limpieza y escalamiento están en
+[VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
 
 ## Operación segura
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { LayoutDashboard, ArrowLeft, LogOut, Shield, Trash2 } from 'lucide-react'
+import { LinkVentasMark } from '@/components/brand/LinkVentasLogo'
 
 interface AdminSidebarProps {
   isOpen?: boolean
@@ -46,8 +47,8 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* ─── Cabecera ─────────────────────────────────────────────────── */}
         <div className="px-6 mb-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/20">
-              <Shield className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-lg shadow-blue-500/10">
+              <LinkVentasMark className="size-6" />
             </div>
             <div>
               <h1 className="text-sm font-bold tracking-tight text-white uppercase">

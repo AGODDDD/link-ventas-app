@@ -1,6 +1,8 @@
 # Mapa del proyecto
 
 Estado operativo y pruebas de pagos: [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
+Registro de la última validación sandbox de Suscripciones Pro y escalamiento:
+[VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
 
 - `app/api/orders`: crea pedidos y reservas.
 - `app/api/checkout/mercadopago`: inicia cobros de tiendas.
@@ -15,6 +17,10 @@ Estado operativo y pruebas de pagos: [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_O
   recorrido del apartado actual en escritorio.
 - `components/DashboardSidebar.tsx`: acceso de respaldo a la guía, incluida la
   navegación móvil.
+- `components/brand/LinkVentasLogo.tsx`: símbolo vectorial y lockup reutilizable
+  de la marca; sus exportaciones estáticas están en `public/brand/`.
+- `app/manifest.ts` y `app/opengraph-image.tsx`: metadatos de instalación y
+  previsualización social de LinkVentas.
 - `app/dashboard/configuracion/page.tsx`: siete áreas de configuración y receptor
   validado del evento `linkventas:tour-setting-tab` usado durante el recorrido.
 

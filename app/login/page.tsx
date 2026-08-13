@@ -3,7 +3,8 @@
 import Image from 'next/image'
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Store, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, UserRound } from 'lucide-react'
+import { LinkVentasLogo } from '@/components/brand/LinkVentasLogo'
 
 type View = 'login' | 'register' | 'forgot'
 
@@ -147,11 +148,8 @@ export default function LoginPage() {
 
       <div className="relative mx-auto grid min-h-[100dvh] max-w-[1600px] lg:grid-cols-[minmax(0,1fr)_minmax(460px,0.92fr)]">
         <section className="hidden flex-col justify-between p-8 lg:flex xl:p-12">
-          <a className="group inline-flex w-fit items-center gap-3 transition-opacity duration-300 hover:opacity-80" href="/">
-            <span className="grid size-11 place-items-center rounded-2xl border border-white/20 bg-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.18)] backdrop-blur-md">
-              <Store className="size-5 text-[#b8d0ff]" strokeWidth={2.2} />
-            </span>
-            <span className="text-xl font-semibold tracking-[-0.05em]">LinkVentas</span>
+          <a aria-label="LinkVentas, inicio" className="group inline-flex w-fit transition-opacity duration-300 hover:opacity-80" href="/">
+            <LinkVentasLogo tone="light" wordmarkClassName="text-xl" />
           </a>
 
           <div className="max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -175,9 +173,8 @@ export default function LoginPage() {
 
         <section className="flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-7 lg:px-12 xl:px-20">
           <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <a className="mb-10 flex items-center justify-center gap-2.5 lg:hidden" href="/">
-              <span className="grid size-10 place-items-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md"><Store className="size-5 text-[#b8d0ff]" /></span>
-              <span className="text-xl font-semibold tracking-[-0.05em]">LinkVentas</span>
+            <a aria-label="LinkVentas, inicio" className="mb-10 flex items-center justify-center lg:hidden" href="/">
+              <LinkVentasLogo tone="light" wordmarkClassName="text-xl" />
             </a>
 
             <div className="rounded-[2rem] border border-white/55 bg-white/[0.13] p-6 shadow-[0_24px_70px_rgba(44,52,32,0.18)] backdrop-blur-xl sm:p-9">

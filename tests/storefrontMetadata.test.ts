@@ -16,5 +16,5 @@ test('cada tienda pública usa su logo como favicon y conserva un respaldo de Li
   const source = await readFile(storefrontLayoutPath, 'utf8')
 
   assert.match(source, /select\('avatar_url'\)/)
-  assert.match(source, /icon: store\?\.avatar_url \|\| '\/icon\.png'/)
+  assert.match(source, /icon: store\?\.avatar_url \|\| '\/brand\/linkventas-mark\.svg'/)
 })

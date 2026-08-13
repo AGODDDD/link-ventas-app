@@ -87,6 +87,23 @@
   `WCS-45319` queda como dependencia externa para resolver el e-mail de la
   cuenta compradora de prueba.
 
+### [2026-08-13] Suscripciones Pro: no inferir la compatibilidad sandbox
+
+- **Contexto**: La prueba Preview alcanzó Confirmar con comprador TEST y saldo
+  ficticio, pero Mercado Pago rechazó el flujo antes del cobro por una mezcla de
+  entornos. El panel de la aplicación muestra credenciales `TEST-`, mientras
+  soporte pide `APP_USR` para Suscripciones.
+- **Decisión**: No sustituir ni probar secretos por conjetura. Mantener Preview
+  aislado, conservar la preaprobación fallida como cancelada y pedir la
+  configuración exacta al proveedor mediante `WCS-45319`.
+- **Razón**: Un prefijo de credencial no prueba por sí mismo que esté asociado
+  al vendedor TEST correcto; un cambio especulativo puede mezclar sandbox y
+  Production o repetir rechazos sin generar evidencia útil.
+- **Consecuencias**: No se puede declarar E2E Pro ni promover cambios de
+  facturación hasta verificar webhook firmado, cargo PEN aprobado, activación
+  idempotente y cancelación. El detalle operativo está en
+  `VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md`.
+
 ### [2026-08-10] Incorporación contextual integrada al producto
 
 - **Contexto**: Una introducción única al dashboard no enseñaba cómo operar

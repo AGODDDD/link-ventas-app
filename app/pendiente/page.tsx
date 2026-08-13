@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { CreditCard, LockKeyhole } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { LinkVentasLogo } from '@/components/brand/LinkVentasLogo'
 
 export default function PendientePage() {
   const [nombre, setNombre] = useState('')
@@ -86,22 +88,22 @@ export default function PendientePage() {
         ? 'Elige el plan que impulsa tu negocio'
         : 'Activa tu cuenta'
 
-  return <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(109,40,217,0.15)_0%,#0a0a0f_60%)] p-6 font-sans">
-    <div className="mb-10 text-center"><div className="text-2xl font-extrabold text-white">⚡ LinkVentas</div><p className="mt-1 text-xs uppercase tracking-[0.1em] text-white/30">Panel de control comercial</p></div>
-    <div className="w-full max-w-[460px] rounded-[20px] border border-violet-400/20 bg-[#13131ae6] px-9 py-10 text-center shadow-[0_40px_80px_rgba(0,0,0,0.5)] backdrop-blur-[20px]">
-      <div className="mx-auto mb-6 flex size-[68px] items-center justify-center rounded-full border border-violet-400/35 bg-violet-700/15 text-[28px]">{trialExpired ? '⏰' : '🔐'}</div>
+  return <div className="flex min-h-screen flex-col items-center justify-center bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(47,126,218,0.22)_0%,#0a0f18_60%)] p-6 font-sans">
+    <div className="mb-10 text-center"><LinkVentasLogo tone="light" wordmarkClassName="text-2xl" /><p className="mt-2 text-xs uppercase tracking-[0.1em] text-white/40">Panel de control comercial</p></div>
+    <div className="w-full max-w-[460px] rounded-[20px] border border-blue-300/20 bg-[#101923e6] px-9 py-10 text-center shadow-[0_40px_80px_rgba(0,0,0,0.5)] backdrop-blur-[20px]">
+      <div className="mx-auto mb-6 flex size-[68px] items-center justify-center rounded-full border border-blue-300/30 bg-blue-400/10 text-blue-200">{trialExpired ? <CreditCard size={26} /> : <LockKeyhole size={25} />}</div>
       <h1 className="mb-3 text-[22px] font-bold text-white">{title}</h1>
       <p className="mb-8 text-sm leading-[1.7] text-white/45">
         {isFree
-          ? <>Tu tienda{nombre ? ` ${nombre}` : ''} ya funciona con el plan Emprendedor. Activa <strong className="text-violet-400">Pro por S/ 25/mes</strong> cuando necesites analíticas, Mercado Pago y tickets.</>
-          : <>Activa el <strong className="text-violet-400">Plan Pro por S/ 25/mes</strong>{nombre ? `, ${nombre}` : ''}, o continúa con el plan gratuito.</>}
+          ? <>Tu tienda{nombre ? ` ${nombre}` : ''} ya funciona con el plan Emprendedor. Activa <strong className="text-blue-300">Pro por S/ 25/mes</strong> cuando necesites analíticas, Mercado Pago y tickets.</>
+          : <>Activa el <strong className="text-blue-300">Plan Pro por S/ 25/mes</strong>{nombre ? `, ${nombre}` : ''}, o continúa con el plan gratuito.</>}
       </p>
-      <div className="mb-7 grid grid-cols-2 gap-3 text-left"><div className="rounded-[14px] border border-white/8 bg-white/[.03] p-3.5"><p className="text-xs font-bold uppercase text-white/35">Emprendedor</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 0</p><p className="mt-2 text-xs text-white/40">Catálogo y panel básico</p></div><div className="rounded-[14px] border border-violet-400/40 bg-violet-700/15 p-3.5"><p className="text-xs font-bold uppercase text-violet-400">Pro</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 25</p><p className="mt-2 text-xs text-white/60">Mercado Pago, tickets y analíticas</p></div></div>
+      <div className="mb-7 grid grid-cols-2 gap-3 text-left"><div className="rounded-[14px] border border-white/8 bg-white/[.03] p-3.5"><p className="text-xs font-bold uppercase text-white/35">Emprendedor</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 0</p><p className="mt-2 text-xs text-white/40">Catálogo y panel básico</p></div><div className="rounded-[14px] border border-blue-300/35 bg-blue-500/10 p-3.5"><p className="text-xs font-bold uppercase text-blue-300">Pro</p><p className="mt-1 text-2xl font-extrabold text-white">S/ 25</p><p className="mt-2 text-xs text-white/60">Mercado Pago, tickets y analíticas</p></div></div>
       {plan === 'pro' ? <>
         <button onClick={cancelSubscription} disabled={paying} className="mb-3 w-full rounded-xl border border-amber-400/30 bg-amber-400/10 p-3.5 text-sm font-semibold text-amber-100 disabled:cursor-wait disabled:opacity-70">{paying ? 'Cancelando...' : 'Cancelar renovación automática'}</button>
         <p className="mb-6 text-xs leading-5 text-white/40">Conservarás Pro hasta que termine tu período ya pagado.</p>
       </> : <>
-        <button onClick={subscribe} disabled={paying} className="mb-3 w-full rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 p-3.5 text-[15px] font-bold text-white shadow-[0_12px_30px_rgba(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95 disabled:cursor-wait disabled:opacity-70">
+        <button onClick={subscribe} disabled={paying} className="mb-3 w-full rounded-xl bg-gradient-to-br from-[#2f7eda] to-[#245da8] p-3.5 text-[15px] font-bold text-white shadow-[0_12px_30px_rgba(47,126,218,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95 disabled:cursor-wait disabled:opacity-70">
           {paying ? 'Abriendo Mercado Pago...' : 'Suscribirme a Pro — S/ 25/mes'}
         </button>
         <p className="mb-3 text-xs leading-5 text-white/40">Serás redirigido a Mercado Pago para autorizar el cobro mensual. Puedes cancelar cuando quieras.</p>

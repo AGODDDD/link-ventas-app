@@ -185,7 +185,7 @@ export default function AdminStoresTable({
 
     if (m.plan === 'trial' && !expired) {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 select-none">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 select-none">
           TRIAL
         </span>
       )
@@ -279,8 +279,8 @@ export default function AdminStoresTable({
                 {/* Tienda */}
                 <td className="px-4 py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-white/[0.06] flex items-center justify-center shrink-0">
-                      <Store className="h-4 w-4 text-indigo-400" />
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-sky-500/20 border border-white/[0.06] flex items-center justify-center shrink-0">
+                      <Store className="h-4 w-4 text-blue-400" />
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-white truncate text-[13px]">

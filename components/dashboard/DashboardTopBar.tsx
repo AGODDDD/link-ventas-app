@@ -205,7 +205,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                             new Notification('Nueva Venta Recibida', {
                                 body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
-                                icon: '/favicon.ico' 
+                                icon: '/brand/linkventas-mark.svg'
                             })
                         }
                     }
@@ -246,7 +246,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                                 new Notification('Nueva Venta Pagada (Mercado Pago)', {
                                     body: `${nuevaOrden.customer_name} — S/ ${parseFloat(nuevaOrden.total || 0).toFixed(2)}`,
-                                    icon: '/favicon.ico' 
+                                    icon: '/brand/linkventas-mark.svg'
                                 })
                             }
                         } else if (exists) {

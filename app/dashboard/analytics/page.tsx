@@ -238,12 +238,12 @@ export default function AnalyticsPage() {
     if (planStatus === 'free') {
         return (
             <section data-tour="analytics-locked" className="mx-auto flex min-h-[65vh] max-w-5xl items-center justify-center py-10">
-                <div className="w-full overflow-hidden rounded-[28px] border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-white to-white p-8 shadow-[0_32px_90px_rgb(76,29,149,0.12)] dark:via-zinc-950 dark:to-zinc-950 sm:p-12">
+                <div className="w-full overflow-hidden rounded-[28px] border border-blue-400/20 bg-gradient-to-br from-blue-500/10 via-white to-white p-8 shadow-[0_32px_90px_rgb(30,93,168,0.12)] dark:via-zinc-950 dark:to-zinc-950 sm:p-12">
                     <div className="mx-auto max-w-2xl text-center">
-                        <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-violet-400/30 bg-violet-500/10 text-violet-500">
+                        <span className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/30 bg-blue-500/10 text-blue-600">
                             <BarChart3 size={28} />
                         </span>
-                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-violet-500">Plan Pro</p>
+                        <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-blue-600">Plan Pro</p>
                         <h1 className="text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white sm:text-4xl">Decisiones respaldadas por tus ventas</h1>
                         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-zinc-500 dark:text-zinc-400">
                             Analiza ingresos por periodo, productos más vendidos, clientes recurrentes y métodos de pago sin hojas de cálculo.
@@ -256,14 +256,14 @@ export default function AnalyticsPage() {
                                 'Distribución real de métodos de pago',
                             ].map(feature => (
                                 <div key={feature} className="flex items-center gap-3 rounded-xl border border-zinc-200/80 bg-white/70 p-4 text-sm font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-300">
-                                    <CheckCircle2 size={17} className="shrink-0 text-violet-500" />
+                                    <CheckCircle2 size={17} className="shrink-0 text-blue-600" />
                                     {feature}
                                 </div>
                             ))}
                         </div>
                         <a
                             href="/pendiente"
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-violet-600 to-violet-700 px-6 py-3.5 text-sm font-bold text-white shadow-[0_14px_35px_rgb(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#2f7eda] to-[#245da8] px-6 py-3.5 text-sm font-bold text-white shadow-[0_14px_35px_rgb(30,93,168,0.3)] transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
                         >
                             <Zap size={16} />
                             Activar Plan Pro — S/ 25/mes

@@ -48,10 +48,10 @@
       DARK PREMIUM PALETTE 
       Isolates the dashboard strictly from the rest of the generic storefront tailwind settings
     */
-    --primary: #c0c1ff;
-    --on-primary: #2724b8;
-    --primary-container: #2f2ebe;
-    --on-primary-container: #ccccff;
+    --primary: #8fc5ff;
+    --on-primary: #062d55;
+    --primary-container: #0d477e;
+    --on-primary-container: #d9ecff;
     
     --secondary: #06b77f;
     --on-secondary: #002919;
@@ -88,23 +88,23 @@
 
     /* Additional specific tailwind V4 variants for the design */
     --tertiary-fixed: #f8a010;
-    --inverse-primary: #494bd7;
+    --inverse-primary: #2f7eda;
     --on-tertiary-fixed: #2a1700;
     --tertiary-fixed-dim: #e79400;
     --tertiary-dim: #e79400;
     --on-secondary-fixed: #004930;
-    --primary-fixed-dim: #d1d0ff;
+    --primary-fixed-dim: #b8dcff;
     --secondary-dim: #00b47d;
     --on-tertiary-fixed-variant: #563400;
-    --primary-fixed: #e1e0ff;
+    --primary-fixed: #e3f2ff;
     --on-secondary-fixed-variant: #006947;
-    --primary-dim: #b0b2ff;
+    --primary-dim: #75b7f5;
     --error-dim: #b95463;
-    --on-primary-fixed-variant: #4647d3;
+    --on-primary-fixed-variant: #1e5f9e;
     --inverse-surface: #fcf8fd;
-    --surface-tint: #c0c1ff;
+    --surface-tint: #8fc5ff;
     --secondary-fixed-dim: #5fedb0;
-    --on-primary-fixed: #2622b7;
+    --on-primary-fixed: #062d55;
     --secondary-fixed: #6ffbbe;
     --inverse-on-surface: #555458;
 
@@ -119,8 +119,8 @@
 
 /* DASHBOARD — MODO OSCURO (Stitch design) */
 .dark .dashboard-theme {
-  --primary: #a5b4fc;
-  --on-primary: #17143f;
+  --primary: #8fc5ff;
+  --on-primary: #062d55;
   --secondary: #5ee0b0;
   --on-secondary: #07271c;
   --background: #0f0f11;
@@ -138,11 +138,11 @@
   --dash-border: rgba(255,255,255,0.08);
   --dash-text-primary: #ffffff;
   --dash-text-muted: #a1a1aa;
-  --dash-accent: #a5b4fc;
-  --dash-accent-hover: #c7d2fe;
+  --dash-accent: #8fc5ff;
+  --dash-accent-hover: #d9ecff;
   --dash-success: #10b981;
   --dash-success-soft: rgba(16,185,129,0.1);
-  --dash-gradient: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+  --dash-gradient: linear-gradient(90deg, #2f7eda 0%, #75b7f5 100%);
 }
 
 /* DASHBOARD — MODO CLARO (LinkVentas oficial) */
@@ -186,7 +186,7 @@
   --dash-accent-hover: #1e4d8c;
   --dash-success: #10b981;
   --dash-success-soft: rgba(16,185,129,0.1);
-  --dash-gradient: linear-gradient(90deg, #2F7EDA 0%, #4648d4 100%);
+  --dash-gradient: linear-gradient(90deg, #2f7eda 0%, #75b7f5 100%);
 }
 
 /* =========================================================

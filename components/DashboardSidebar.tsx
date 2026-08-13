@@ -8,6 +8,7 @@ import { XIcon as AnimatedX } from '@animateicons/react/lucide'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import { CircleHelp } from 'lucide-react'
 import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
+import { LinkVentasLogo } from '@/components/brand/LinkVentasLogo'
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -85,7 +86,9 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
       `}>
 
         <div className="mb-8 flex items-center justify-between px-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--dash-text-muted)]">Workspace</p>
+            <Link href="/dashboard" aria-label="LinkVentas, dashboard" onClick={onClose}>
+              <LinkVentasLogo compact className="transition-opacity hover:opacity-70" />
+            </Link>
             <button
               onClick={onClose}
               aria-label="Cerrar navegación"

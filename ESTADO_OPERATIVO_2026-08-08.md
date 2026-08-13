@@ -1,4 +1,4 @@
-# Estado operativo y cierre de pagos — 2026-08-08
+# Estado operativo y cierre de pagos — actualizado 2026-08-13
 
 ## Veredicto actual
 
@@ -20,8 +20,8 @@ cobrar a clientes reales sin una prueba controlada separada.
 | Configuración de plataforma en Production | Configurada | Las credenciales de plataforma y la firma de webhook fueron cargadas por entorno; no se documentan sus valores. |
 | Creación de suscripción Pro en Production | Verificada parcialmente | La API crea `preapproval` y abre el checkout alojado de Mercado Pago. No se autorizó ningún cobro real durante esta validación. |
 | Confirmación Production | Pendiente | Debe pagar una cuenta compradora real distinta de la cuenta vendedora y con el mismo e-mail que usa en LinkVentas. Mercado Pago bloquea el autopago del vendedor. |
-| Creación de suscripción Pro en Preview/sandbox | Verificada | Con credenciales de aplicación de prueba `APP_USR` y una cuenta compradora de prueba, Mercado Pago creó el `preapproval` y abrió `init_point`. El error HTTP 500 inicial quedó resuelto. |
-| Autorización sandbox y webhook de plataforma | Bloqueado externamente | El botón Confirmar sigue deshabilitado porque el `payer_email` de LinkVentas no coincide con el e-mail de la cuenta compradora de prueba. Mercado Pago debe indicar cómo obtener/configurar ese e-mail. Ticket `WCS-45319` sigue pendiente. |
+| Creación de suscripción Pro en Preview/sandbox | Verificada | Preview crea `preapproval` y abre `init_point`; con `payer_email` omitido, un comprador TEST llega a Confirmar. |
+| Autorización sandbox y webhook de plataforma | Bloqueado externamente | Mercado Pago rechaza Confirmar antes del cobro con “Una de las partes con la que intentas hacer el pago es de prueba”. No hubo cobro ni webhook. El ticket `WCS-45319` recibió nueva evidencia y espera aclaración sobre la combinación de credenciales y vendedor TEST. |
 | Calidad de código y build | Evidencia histórica | La auditoría del 2026-08-06 registró lint correcto, 30/30 pruebas unitarias, build correcto y auditoría de dependencias sin vulnerabilidades altas. Deben repetirse antes de un release posterior. |
 
 ## Qué se corrigió durante esta validación
@@ -31,24 +31,29 @@ cobrar a clientes reales sin una prueba controlada separada.
 - Se separaron las credenciales de Production y Preview; las pruebas sandbox
   no deben reutilizar credenciales productivas.
 - La falla inicial `500 Internal server error` al crear la suscripción de
-  prueba se resolvió al usar una aplicación de prueba y comprador de prueba
-  válidos, tal como indicó soporte de Mercado Pago.
+  prueba quedó superada: Preview crea la preaprobación y abre el checkout.
+- Omitir `payer_email` en Preview quitó la restricción de e-mail y permitió que
+  el comprador TEST llegue al paso Confirmar.
 - Se confirmó que el checkout bloqueado con la cuenta del vendedor en
   Production es una restricción de Mercado Pago contra el autopago, no un error
   de CSP ni de la interfaz de LinkVentas.
 
 ## Próximo procedimiento obligatorio
 
-1. Esperar la respuesta del ticket `WCS-45319` sobre el e-mail de la cuenta
-   compradora de prueba o el mecanismo equivalente para suscripciones.
-2. En Preview, iniciar sesión con la cuenta compradora de prueba y hacer que su
-   e-mail coincida con el `payer_email` de la cuenta temporal de LinkVentas.
-3. Autorizar una suscripción de prueba y verificar, sin confiar en el retorno
+1. Esperar la respuesta del ticket `WCS-45319` sobre el origen de `APP_USR` y
+   cómo asociar la credencial soportada al vendedor TEST de Perú. El panel actual
+   muestra credenciales `TEST-`, incompatibles con la indicación recibida para
+   Suscripciones.
+2. Aplicar la respuesta únicamente en Preview; no copiar ni alternar secretos
+   por ensayo y error entre Preview y Production.
+3. Crear una nueva preaprobación y autorizar una suscripción de prueba,
+   verificando, sin confiar en el retorno
    del navegador: evento `subscription_preapproval`, evento
    `subscription_authorized_payment`, firma válida de webhook, registro de
    cargo en PEN por S/ 25 y activación idempotente del plan.
-4. Cancelar la suscripción de prueba y eliminar la cuenta/tienda temporal de
-   sandbox que quedó creada para este intento (`sandbox-suscripcion-20260809-001`).
+4. Cancelar la suscripción de prueba autorizada y limpiar los datos temporales
+   recuperables de LinkVentas al cerrar el flujo. La preaprobación fallida del
+   2026-08-13 ya quedó cancelada; no generó cargo ni activación.
 5. Solo después de lo anterior, ejecutar una compra Production controlada con
    un comprador real distinto del vendedor y volver a comprobar el webhook.
 6. Repetir `npm run lint`, `npm run test:unit`, `npm run build` y las revisiones
@@ -56,10 +61,11 @@ cobrar a clientes reales sin una prueba controlada separada.
 
 ## Contrato técnico de suscripciones
 
-`POST /api/billing/mercadopago` crea un `preapproval` mensual de S/ 25 en PEN,
-asocia `external_reference` al usuario autenticado y envía `payer_email` con el
-e-mail de ese usuario. Solo persiste la suscripción si Mercado Pago responde
-correctamente con identificador e `init_point` válidos.
+`POST /api/billing/mercadopago` crea un `preapproval` mensual de S/ 25 en PEN y
+asocia `external_reference` al usuario autenticado. En Preview omite
+`payer_email` para no restringir al comprador TEST; Production conserva ese
+campo. Solo persiste la suscripción si Mercado Pago responde correctamente con
+identificador e `init_point` válidos.
 
 `/api/webhooks/mercadopago?scope=platform` valida la firma con
 `MP_WEBHOOK_SECRET`. Los eventos de suscripción no activan el plan desde el
@@ -74,3 +80,4 @@ aprobado, es PEN y coincide con S/ 25.
   explícita de configuración; no se modificó durante esta validación.
 - Las tablas legacy, en especial `delivery_orders`, permanecen preservadas hasta
   contar con un plan de retención y migración de datos.
+- Registro detallado de la validación y del escalamiento: [VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).

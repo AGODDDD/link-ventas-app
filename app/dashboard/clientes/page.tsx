@@ -184,7 +184,7 @@ export default function ClientesPage() {
         <>
           <section data-tour="customers-metrics" className="grid gap-4 sm:grid-cols-3">
             {[
-              { label: 'Clientes compradores', value: customers.length, icon: Users, tone: 'text-violet-500 bg-violet-500/10' },
+              { label: 'Clientes compradores', value: customers.length, icon: Users, tone: 'text-blue-600 bg-blue-500/10' },
               { label: 'Clientes recurrentes', value: repeatCustomers, icon: ShoppingBag, tone: 'text-emerald-500 bg-emerald-500/10' },
               { label: 'Valor acumulado', value: `S/ ${totalCustomerRevenue.toFixed(2)}`, icon: Sparkles, tone: 'text-amber-500 bg-amber-500/10' },
             ].map(({ label, value, icon: Icon, tone }) => (
@@ -266,7 +266,7 @@ export default function ClientesPage() {
                       {lead.phone && <span className="flex items-center gap-1"><Phone size={12} />{lead.phone}</span>}
                       <span className="flex items-center gap-1"><Calendar size={12} />{new Date(lead.created_at).toLocaleDateString('es-PE')}</span>
                     </div>
-                    {lead.preference && <span className="mt-2 inline-flex rounded-full bg-violet-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">{lead.preference}</span>}
+                    {lead.preference && <span className="mt-2 inline-flex rounded-full bg-blue-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">{lead.preference}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 self-end sm:self-auto">

@@ -12,6 +12,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Unificado el nombre visible y los metadatos bajo **LinkVentas**; se incorporó
+  Inter y Space Grotesk como tipografías reales de interfaz y titulares.
+- Sustituido el monograma transitorio `LV` por el símbolo vectorial de
+  eslabones ascendentes; se integró en landing, acceso, dashboard, plan Pro,
+  administración, manifest, favicon y vista previa social.
+- Centralizados los tokens de confianza azul y éxito verde, y alineada la
+  pantalla de plan Pro con esa semántica en lugar de una identidad violeta
+  independiente.
+- La landing identifica escenarios ilustrativos y los supuestos de su
+  calculadora; ya no presenta testimonios/casos no verificables ni mezcla el
+  precio Pro de S/ 25 con un cálculo de S/ 29.
 - El acceso con Google ahora muestra el selector de cuenta y permite cambiar de
   vendedor desde `/login` sin redirigir automáticamente a la sesión existente.
 - Rediseñada la pantalla de acceso de LinkVentas con una composición editorial
@@ -32,6 +43,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   visuales asociados a asistentes de IA.
 
 ### Documentation
+- Registrada la validación de Suscripciones Pro en Preview del 2026-08-13:
+  comprador TEST llega a Confirmar al omitir `payer_email`, pero Mercado Pago
+  rechaza antes del cobro por incompatibilidad de entorno. La preaprobación se
+  canceló sin cargo ni webhook y `WCS-45319` fue actualizado sin secretos.
+- Actualizados estado operativo, estado del proyecto y decisiones para sustituir
+  el bloqueo histórico del e-mail por la dependencia vigente de configuración
+  sandbox de Mercado Pago (`APP_USR`, credenciales `TEST-` y vendedor TEST).
 - Centralizadas las instrucciones de agentes en `AGENTS.md` raíz y añadida una
   puerta verificable de publicación: rastreo Git, push, despliegue y validación
   de la ruta afectada. `.agents/AGENTS.md` queda como puntero de compatibilidad.

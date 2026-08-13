@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: StoreLayoutProps): Promise<Me
 
   return {
     icons: {
-      icon: store?.avatar_url || '/icon.png',
+      icon: store?.avatar_url || '/brand/linkventas-mark.svg',
     },
   }
 }

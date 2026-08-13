@@ -7,6 +7,10 @@ de suscripciones Pro en sandbox, está en
 [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md). La
 arquitectura no permite activar cobros ni planes desde el retorno del navegador:
 todo pago confirmado depende de un webhook firmado.
+El intento sandbox del 2026-08-13 llegó al checkout de autorización, pero no al
+webhook: Mercado Pago lo rechazó antes del cobro por una incompatibilidad de
+entorno. La evidencia y el procedimiento de reanudación están en
+[VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
 
 - Una cuenta posee exactamente una tienda (`stores.owner_id` es único).
 - El catálogo pertenece a la tienda mediante `products.user_id = stores.id`.
