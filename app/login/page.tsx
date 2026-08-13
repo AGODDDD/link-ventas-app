@@ -232,6 +232,7 @@ export default function LoginPage() {
                 {view === 'register' && <>¿Ya tienes una cuenta? <button className="font-semibold text-[#195dc3] transition-colors hover:text-[#0d3f93]" type="button" onClick={() => changeView('login')}>Inicia sesión</button></>}
                 {view === 'forgot' && <button className="inline-flex items-center gap-2 font-semibold text-[#195dc3] transition-colors hover:text-[#0d3f93]" type="button" onClick={() => changeView('login')}><ArrowLeft className="size-4" />Volver al inicio de sesión</button>}
               </div>
+              <p className="mt-5 text-center text-[11px] leading-5 text-[#17261d]/50">Al continuar, consultas nuestra <a className="font-semibold text-[#195dc3] underline decoration-[#195dc3]/30 underline-offset-4" href="/privacidad">Política de privacidad</a> y las <a className="font-semibold text-[#195dc3] underline decoration-[#195dc3]/30 underline-offset-4" href="/eliminacion-de-datos">instrucciones de eliminación de datos</a>.</p>
             </div>
 
             <p className="mt-6 flex items-center justify-center gap-2 text-center text-xs text-white/45 lg:hidden"><ShieldCheck className="size-4 text-[#9cc0ff]" />Conexión protegida para tu negocio</p>

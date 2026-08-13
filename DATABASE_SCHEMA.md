@@ -15,3 +15,7 @@ No existen columnas alternativas de pedidos. Las migraciones de `supabase/migrat
 `delivery_orders` puede mantenerse temporalmente como archivo histórico, sin permisos para `anon` ni `authenticated`. Ningún flujo activo consulta o escribe esa tabla.
 
 Las reseñas guardan `order_id` y solo se crean desde la API después de verificar pedido completado, teléfono, correo y producto comprado. Los campos privados de verificación no tienen privilegio de lectura pública.
+
+## Privacidad de cuentas
+
+`account_deletion_requests` registra solicitudes de eliminación con plazo de siete días. No se expone por la Data API: la solicitud y la revisión usan rutas de servidor autenticadas. Al aprobarse, se cancela cualquier suscripción recurrente activa, se anonimizan los datos personales de pedidos y se desactiva la tienda; los registros operativos se conservan sin datos personales.

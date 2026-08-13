@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Loader2, Save, Upload, QrCode, Palette, Share2, Image as ImageIcon, Store, ShoppingBag, Shirt, Lock, Zap, Flame, LayoutDashboard, CreditCard, MapPin, CheckCircle2, AlertTriangle, X, LayoutList, Trash2, Plus } from 'lucide-react'
 import CatalogBuilder from '@/components/dashboard/CatalogBuilder'
+import AccountCenter from '@/components/dashboard/AccountCenter'
 import dynamic from 'next/dynamic'
 const StoreMapPicker = dynamic(() => import('@/components/dashboard/StoreMapPicker'), { ssr: false })
 import ScheduleEditor from '@/components/dashboard/ScheduleEditor'
@@ -442,39 +443,7 @@ export default function ConfiguracionPage() {
           {activeTab === 'general' && (
             <div data-tour="settings-panel-general" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              <Card data-tour="settings-account" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
-                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
-                  <CardTitle className="text-lg">Mi Cuenta y Suscripción</CardTitle>
-                  <CardDescription>Información técnica y estado de facturación.</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-100 dark:border-zinc-800/50">
-                    <div>
-                      <Label className="text-zinc-500 text-xs">Correo Electrónico</Label>
-                      <p className="font-medium text-sm mt-1 text-zinc-900 dark:text-zinc-100">{systemData.userEmail}</p>
-                    </div>
-                    <div>
-                      <Label className="text-zinc-500 text-xs">ID de Usuario (UUID)</Label>
-                      <p className="text-xs font-mono text-zinc-400 mt-1 select-all">{systemData.userId}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-lg border border-zinc-100 dark:border-zinc-800/50 flex flex-col justify-between">
-                    <div>
-                      <Label className="text-zinc-500 text-xs block mb-2">Estado de Suscripción</Label>
-                      {systemData.planStatus === 'pro' && <span className="inline-block px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold rounded">PLAN PRO ACTIVO</span>}
-                      {systemData.planStatus === 'trial' && <span className="inline-block px-3 py-1 bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 text-xs font-semibold rounded">PRUEBA PRO</span>}
-                      {systemData.planStatus === 'free' && <span className="inline-block px-3 py-1 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-semibold rounded">PLAN EMPRENDEDOR</span>}
-                      {systemData.planStatus === 'inactivo' && <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">INACTIVO</span>}
-                    </div>
-                    {(systemData.planStatus === 'free' || systemData.planStatus === 'trial') && (
-                      <a href="/pendiente" target="_blank" rel="noopener noreferrer" className="block text-center w-full py-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-md text-sm font-semibold transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200">
-                        Mejorar Plan
-                      </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+              <AccountCenter />
 
               <Card data-tour="settings-identity" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">

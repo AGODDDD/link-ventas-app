@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, ArrowLeft, LogOut, Shield } from 'lucide-react'
+import { LayoutDashboard, ArrowLeft, LogOut, Shield, Trash2 } from 'lucide-react'
 
 interface AdminSidebarProps {
   isOpen?: boolean
@@ -12,6 +12,7 @@ interface AdminSidebarProps {
 
 const navItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Eliminación de cuentas', href: '/admin/eliminacion-de-cuentas', icon: Trash2 },
 ]
 
 export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
