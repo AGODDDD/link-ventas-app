@@ -46,6 +46,23 @@ Relaciones calculadas con WCAG sobre los tokens publicados:
 la identidad aprobada. La evaluación de composición visual autenticada queda
 pendiente de una sesión de negocio; no se declara realizada por inferencia.
 
+## Kit externo publicado
+
+El commit `b7a8d15` publicó el kit externo en Producción. El despliegue
+`dpl_CpGwaVapW1WroRrbkbgutHyinPes` terminó en estado `Ready` y conserva el
+alias `https://link-ventas-app.vercel.app`.
+
+| Recurso validado en Producción | Resultado |
+| --- | --- |
+| `/` | HTTP 200, `text/html` |
+| `/brand/linkventas-cover.png` | HTTP 200, `image/png`, 40,713 bytes |
+| `/brand/linkventas-post-template.png` | HTTP 200, `image/png`, 68,352 bytes |
+| `/brand/linkventas-avatar.png` | HTTP 200, `image/png`, 1,234,544 bytes |
+
+El origen remoto `main` quedó en `b7a8d1575cbd7a94f028d50416d6dea3aac582ce`.
+La portada y plantilla también se inspeccionaron localmente antes de la
+publicación; sus medidas son respectivamente 1584×396 y 1080×1080 px.
+
 ## Verificación manual pendiente
 
 1. Revisar home y login en 360, 768, 1024 y 1440 px.
