@@ -85,9 +85,17 @@ export default function DashboardSidebar({ isOpen, onClose, hasBanner }: Sidebar
         md:translate-x-0 
       `}>
 
-        <div className="mb-8 flex items-center justify-between px-6">
-            <Link href="/dashboard" aria-label="LinkVentas, dashboard" onClick={onClose}>
-              <LinkVentasLogo compact className="transition-opacity hover:opacity-70" />
+        <div className="mb-10 flex items-center justify-between px-6">
+            <Link
+              href="/dashboard"
+              aria-label="LinkVentas, dashboard"
+              onClick={onClose}
+              className="group"
+            >
+              <LinkVentasLogo className="transition-opacity duration-300 group-hover:opacity-70" />
+              <span className="mt-1.5 block pl-10 text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--dash-text-muted)]">
+                Operaciones
+              </span>
             </Link>
             <button
               onClick={onClose}
