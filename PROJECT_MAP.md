@@ -3,6 +3,8 @@
 Estado operativo y pruebas de pagos: [ESTADO_OPERATIVO_2026-08-08.md](./ESTADO_OPERATIVO_2026-08-08.md).
 Registro de la última validación sandbox de Suscripciones Pro y escalamiento:
 [VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
+Evidencia del despliegue y revisión de la identidad visual:
+[VERIFICACION_BRANDING_2026-08-13.md](./VERIFICACION_BRANDING_2026-08-13.md).
 
 - `app/api/orders`: crea pedidos y reservas.
 - `app/api/checkout/mercadopago`: inicia cobros de tiendas.

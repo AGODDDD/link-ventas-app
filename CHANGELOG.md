@@ -43,6 +43,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   visuales asociados a asistentes de IA.
 
 ### Documentation
+- Añadida la verificación posterior al despliegue del sistema de marca:
+  disponibilidad de assets, metadata social, contraste calculado, límites de
+  la revisión y checklist visual autenticado pendiente.
 - Registrada la validación de Suscripciones Pro en Preview del 2026-08-13:
   comprador TEST llega a Confirmar al omitir `payer_email`, pero Mercado Pago
   rechaza antes del cobro por incompatibilidad de entorno. La preaprobación se

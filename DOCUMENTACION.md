@@ -8,6 +8,9 @@ tipografía, uso semántico del color y las reglas de evidencia para copy
 comercial. El sistema ya incluye el símbolo vectorial de eslabones ascendentes,
 sus versiones clara/oscura y el lockup estático en `public/brand/`; los
 componentes reutilizables viven en `components/brand/LinkVentasLogo.tsx`.
+La evidencia posterior al despliegue, límites de la revisión y el checklist
+manual se conservan en
+[VERIFICACION_BRANDING_2026-08-13.md](./VERIFICACION_BRANDING_2026-08-13.md).
 
 ## Incorporación y ayuda contextual
 
