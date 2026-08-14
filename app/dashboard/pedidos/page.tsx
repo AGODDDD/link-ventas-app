@@ -27,6 +27,100 @@ type Order = {
     order_items: any[]
 }
 
+const isClosedOrder = (status: string) => status === 'completado' || status === 'cancelado'
+
+const getOrderReference = (order: any) => order.legacy_id || `#${String(order.id).split('-')[0].toUpperCase()}`
+
+type ClosedOrderCardProps = {
+    order: any
+    storeName: string
+    onPrint: (order: any) => void
+    onShare: (order: any) => void
+    receiptRef: (element: HTMLDivElement | null) => void
+}
+
+const ClosedOrderCard = ({ order, storeName, onPrint, onShare, receiptRef }: ClosedOrderCardProps) => {
+    const isCompleted = order.status === 'completado'
+    const items = order.order_items || []
+    const itemCount = items.reduce((total: number, item: any) => total + (Number(item.quantity) || 0), 0)
+
+    return (
+        <article className="group overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="grid gap-4 px-4 py-4 sm:grid-cols-[minmax(0,1.4fr)_auto_auto] sm:items-center sm:px-5">
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[11px] font-bold tracking-wider text-primary">{getOrderReference(order)}</span>
+                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${getOrderStatusBadgeStyle(order.status)}`}>
+                            {getOrderStatusLabel(order.status)}
+                        </span>
+                    </div>
+                    <div className="mt-2 flex min-w-0 items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        <User size={14} className="shrink-0 text-zinc-400" />
+                        <span className="truncate">{order.customer_name || 'Cliente sin nombre'}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        {new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(order.created_at))} · {itemCount || items.length} {itemCount === 1 ? 'artículo' : 'artículos'}
+                    </p>
+                </div>
+
+                <div className="text-left sm:text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Total</p>
+                    <p className="mt-1 text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-100">S/ {parseFloat(order.total || 0).toFixed(2)}</p>
+                </div>
+
+                {isCompleted && (
+                    <div className="flex gap-2 sm:justify-end">
+                        <button onClick={() => onPrint(order)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition-colors hover:border-primary/30 hover:text-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" title="Imprimir ticket">
+                            <Printer size={14} /> <span className="sm:hidden">Imprimir</span>
+                        </button>
+                        <button onClick={() => onShare(order)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition-colors hover:border-primary/30 hover:text-primary dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200" title="Compartir ticket">
+                            <Share2 size={14} /> <span className="sm:hidden">Compartir</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            <details className="group/details border-t border-zinc-100 dark:border-zinc-800">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-100 sm:px-5">
+                    <span>Ver detalle e historial</span>
+                    <ChevronRight size={16} className="transition-transform duration-300 group-open/details:rotate-90" />
+                </summary>
+                <div className="grid gap-5 border-t border-zinc-100 px-4 py-4 text-sm dark:border-zinc-800 sm:grid-cols-2 sm:px-5">
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Contacto</p>
+                            <p className="mt-1 flex items-center gap-2 font-medium text-zinc-800 dark:text-zinc-200"><Phone size={13} className="text-zinc-400" /> {order.customer_phone || 'Sin teléfono'}</p>
+                        </div>
+                        {order.direccion && (
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Dirección</p>
+                                <p className="mt-1 flex items-start gap-2 text-zinc-600 dark:text-zinc-300"><MapPin size={13} className="mt-0.5 shrink-0 text-zinc-400" /> {order.direccion}</p>
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Productos</p>
+                        <div className="mt-2 space-y-2">
+                            {items.length > 0 ? items.map((item: any, index: number) => (
+                                <div key={index} className="flex items-start justify-between gap-3 text-xs text-zinc-600 dark:text-zinc-300">
+                                    <span className="min-w-0"><b className="mr-1 text-zinc-900 dark:text-zinc-100">{item.quantity || 1}×</b>{item.products?.name || item.name || 'Producto'}</span>
+                                    <span className="shrink-0 font-semibold text-zinc-800 dark:text-zinc-200">S/ {parseFloat(item.price || item.unitPrice || item.subtotal || 0).toFixed(2)}</span>
+                                </div>
+                            )) : <p className="text-xs italic text-zinc-400">Sin detalle de productos</p>}
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            {isCompleted && (
+                <div className="pointer-events-none fixed z-[-999] h-0 w-0 overflow-hidden opacity-0" style={{ left: '-9999px', top: '-9999px' }}>
+                    <ThermalReceipt ref={receiptRef} order={order} storeName={storeName} />
+                </div>
+            )}
+        </article>
+    )
+}
+
 const PedidosSkeleton = () => (
     <div className="space-y-6 pb-12 relative w-full">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
@@ -411,13 +505,22 @@ export default function PedidosPage() {
         return matchesSearch && matchesStatus
     }
 
-    const filteredDelivery = orders.filter(o => o.order_type === 'delivery' && matchesFilters(o));
+    const prioritizeOperationalOrders = (ordersToSort: any[]) => [...ordersToSort].sort((first, second) => {
+        const closedDifference = Number(isClosedOrder(first.status)) - Number(isClosedOrder(second.status))
+        if (closedDifference !== 0) return closedDifference
+        return new Date(second.created_at).getTime() - new Date(first.created_at).getTime()
+    })
+
+    const filteredDelivery = prioritizeOperationalOrders(orders.filter(o => o.order_type === 'delivery' && matchesFilters(o)));
     const totalDeliveryPages = Math.ceil(filteredDelivery.length / ITEMS_PER_PAGE);
     const paginatedDelivery = filteredDelivery.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-    const filteredStandard = orders.filter(o => o.order_type !== 'delivery' && matchesFilters(o));
+    const filteredStandard = prioritizeOperationalOrders(orders.filter(o => o.order_type !== 'delivery' && matchesFilters(o)));
     const totalStandardPages = Math.ceil(filteredStandard.length / ITEMS_PER_PAGE);
     const paginatedStandard = filteredStandard.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+    const firstClosedDeliveryIndex = paginatedDelivery.findIndex(order => isClosedOrder(order.status))
+    const firstClosedStandardIndex = paginatedStandard.findIndex(order => isClosedOrder(order.status))
 
     const filteredLeads = leads;
     const totalLeadsPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
@@ -436,7 +539,10 @@ export default function PedidosPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
                 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                {Array.from(new Set([1, currentPage - 1, currentPage, currentPage + 1, totalPages]))
+                    .filter(page => page >= 1 && page <= totalPages)
+                    .sort((first, second) => first - second)
+                    .map(page => (
                     <button
                         key={page}
                         onClick={() => { setCurrentPage(page); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
@@ -477,7 +583,7 @@ export default function PedidosPage() {
                         style={{
                             maxWidth: '380px', width: '100%',
                             background: 'rgba(19,19,26,0.98)',
-                            border: '1px solid rgba(139,92,246,0.35)',
+                            border: '1px solid rgba(47,126,218,0.38)',
                             borderRadius: '24px',
                             padding: '36px 28px',
                             textAlign: 'center',
@@ -499,13 +605,13 @@ export default function PedidosPage() {
 
                         <div style={{
                             width: '60px', height: '60px',
-                            background: 'rgba(124,58,237,0.15)',
-                            border: '1px solid rgba(139,92,246,0.4)',
+                            background: 'rgba(47,126,218,0.15)',
+                            border: '1px solid rgba(47,126,218,0.4)',
                             borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             margin: '0 auto 20px',
                         }}>
-                            <Printer size={26} style={{ color: '#a78bfa' }} />
+                            <Printer size={26} style={{ color: '#66a7f0' }} />
                         </div>
 
                         <p style={{ fontSize: '19px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
@@ -513,7 +619,7 @@ export default function PedidosPage() {
                         </p>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px' }}>
                             La impresión de tickets PDF de <strong style={{ color: '#fff' }}>80mm estilo térmico</strong> es exclusiva del Plan Pro.
-                            Profesionaliza tu operación por solo <strong style={{ color: '#a78bfa' }}>S/ 25/mes</strong>.
+                            Profesionaliza tu operación por solo <strong style={{ color: '#66a7f0' }}>S/ 25/mes</strong>.
                         </p>
 
                         <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
@@ -524,7 +630,7 @@ export default function PedidosPage() {
                                 'Productos ilimitados y Mercado Pago incluidos',
                             ].map((f, i) => (
                                 <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-                                    <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                    <span style={{ color: '#66a7f0', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                                 </div>
                             ))}
                         </div>
@@ -536,11 +642,11 @@ export default function PedidosPage() {
                             style={{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                 width: '100%', padding: '14px',
-                                background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                background: 'linear-gradient(135deg, #2F7EDA, #245DA8)',
                                 borderRadius: '12px',
                                 fontSize: '14px', fontWeight: 700, color: '#fff',
                                 textDecoration: 'none',
-                                boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                                boxShadow: '0 8px 24px rgba(47,126,218,0.35)',
                             }}
                             onClick={() => setShowTicketPaywall(false)}
                         >
@@ -596,24 +702,24 @@ export default function PedidosPage() {
             </div>
 
             {/* TAB NAVIGATOR */}
-            <div data-tour="orders-tabs" className="flex gap-4 mb-6 border-b border-zinc-200 dark:border-zinc-800 pb-2 overflow-x-auto custom-scrollbar animate-fade-in-up delay-100">
+            <div data-tour="orders-tabs" className="mb-6 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-2 pr-4 scrollbar-none dark:border-zinc-800 sm:gap-4 animate-fade-in-up delay-100">
                 {templateType === 'restaurante' && (
                     <button
                         onClick={() => { setActiveTab('delivery'); setCurrentPage(1); }}
-                        className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
+                        className={`font-headline flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-xs font-black uppercase transition-colors sm:px-4 sm:text-sm ${activeTab === 'delivery' ? 'border-green-500 text-green-600' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                     >
-                        Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => o.order_type === 'delivery' && o.status !== 'completado').length}</span>
+                        Delivery <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-[10px]">{orders.filter(o => o.order_type === 'delivery' && !isClosedOrder(o.status)).length}</span>
                     </button>
                 )}
                 <button 
                     onClick={() => { setActiveTab('orders'); setCurrentPage(1); }}
-                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
+                    className={`font-headline whitespace-nowrap border-b-2 px-3 py-2 text-xs font-black uppercase transition-colors sm:px-4 sm:text-sm ${activeTab === 'orders' ? 'border-primary text-primary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
                     {templateType === 'restaurante' ? 'Recojo y otros' : 'Todos los pedidos'} ({orders.filter(o => o.order_type !== 'delivery').length})
                 </button>
                 <button 
                     onClick={() => { setActiveTab('leads'); setCurrentPage(1); }}
-                    className={`font-headline font-black uppercase text-sm px-4 py-2 border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'leads' ? 'border-tertiary text-tertiary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
+                    className={`font-headline flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-xs font-black uppercase transition-colors sm:px-4 sm:text-sm ${activeTab === 'leads' ? 'border-tertiary text-tertiary' : 'border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100'}`}
                 >
                     Oportunidades <span className="bg-tertiary text-on-tertiary px-2 py-0.5 rounded-full text-[10px]">{leads.length}</span>
                 </button>
@@ -631,13 +737,36 @@ export default function PedidosPage() {
                             </div>
                         ) : (
                             <>
-                                {paginatedDelivery.map(order => {
+                                {paginatedDelivery.map((order, index) => {
                                 const statusIdx = DELIVERY_STATUSES.indexOf(order.status)
                                 const isCompleted = order.status === 'completado'
                                 const items = order.order_items || []
 
+                                if (isClosedOrder(order.status)) {
+                                    return (
+                                        <section key={order.id} className="contents">
+                                            {index === firstClosedDeliveryIndex && (
+                                                <div className="mb-1 mt-3 flex items-end justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Historial cerrado</p>
+                                                        <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Pedidos finalizados y cancelados, listos para consulta.</p>
+                                                    </div>
+                                                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{filteredDelivery.filter(order => isClosedOrder(order.status)).length}</span>
+                                                </div>
+                                            )}
+                                            <ClosedOrderCard
+                                                order={order}
+                                                storeName={perfil?.store_name || 'TU TIENDA'}
+                                                onPrint={imprimirTicketNativo}
+                                                onShare={abrirCompartir}
+                                                receiptRef={element => { receiptRefs.current[order.id] = element }}
+                                            />
+                                        </section>
+                                    )
+                                }
+
                                 return (
-                                    <div key={order.id} className={`bg-zinc-50 dark:bg-zinc-900 rounded-2xl border overflow-hidden shadow-xl ${isCompleted ? 'border-zinc-200 dark:border-zinc-800/50 opacity-60' : 'border-green-300/30'}`}>
+                                    <div key={order.id} className="overflow-hidden rounded-2xl border border-green-300/30 bg-zinc-50 shadow-xl dark:bg-zinc-900">
 
                                         {/* Header */}
                                         <div className="bg-zinc-50 dark:bg-[#131317] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/50 gap-3">
@@ -857,7 +986,26 @@ export default function PedidosPage() {
                             </div>
                         ) : (
                             <>
-                                {paginatedStandard.map((order) => (
+                                {paginatedStandard.map((order, index) => isClosedOrder(order.status) ? (
+                                    <section key={order.id} className="contents">
+                                        {index === firstClosedStandardIndex && (
+                                            <div className="mb-1 mt-3 flex items-end justify-between gap-4 border-b border-zinc-200 pb-3 dark:border-zinc-800">
+                                                <div>
+                                                    <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Historial cerrado</p>
+                                                    <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Pedidos finalizados y cancelados, listos para consulta.</p>
+                                                </div>
+                                                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-bold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{filteredStandard.filter(order => isClosedOrder(order.status)).length}</span>
+                                            </div>
+                                        )}
+                                        <ClosedOrderCard
+                                            order={order}
+                                            storeName={perfil?.store_name || 'TU TIENDA'}
+                                            onPrint={imprimirTicketNativo}
+                                            onShare={abrirCompartir}
+                                            receiptRef={element => { receiptRefs.current[order.id] = element }}
+                                        />
+                                    </section>
+                                ) : (
                                 <div key={order.id} className="bg-zinc-50 dark:bg-zinc-900 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-2xl overflow-hidden group">
 
                                     {/* Order Header */}

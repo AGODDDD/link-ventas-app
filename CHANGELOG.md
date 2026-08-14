@@ -14,6 +14,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
+  convertir el historial completado o cancelado en registros compactos,
+  expandibles y legibles en móvil y escritorio. La vista conserva impresión y
+  compartición de tickets para pedidos entregados, sin exponer acciones de
+  transición en el historial.
+- Ajustadas las pestañas y la paginación de Pedidos para que se mantengan
+  utilizables en pantallas estrechas, sin filas de páginas que desborden la
+  vista.
 - Unificados el upsell Pro del constructor de catálogo y los acentos del Centro
   de Cuenta con los azules oficiales de LinkVentas, eliminando los últimos
   acentos violetas de esas superficies de producto.
