@@ -11,6 +11,8 @@ componentes reutilizables viven en `components/brand/LinkVentasLogo.tsx`.
 La evidencia posterior al despliegue, límites de la revisión y el checklist
 manual se conservan en
 [VERIFICACION_BRANDING_2026-08-13.md](./VERIFICACION_BRANDING_2026-08-13.md).
+Las exportaciones listas para perfiles sociales, favicon y publicaciones, con
+sus dimensiones y límites de uso, están en [BRAND_KIT.md](./BRAND_KIT.md).
 
 ## Incorporación y ayuda contextual
 

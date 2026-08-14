@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" fill="none">
+  <rect width="1080" height="1080" fill="#FCFCFC"/>
+  <circle cx="958" cy="115" r="252" fill="#DCE9FA"/>
+  <circle cx="1018" cy="64" r="171" fill="#2F7EDA" fill-opacity=".12"/>
+  <rect x="82" y="82" width="916" height="916" rx="48" fill="#fff" stroke="#DCE9FA" stroke-width="3"/>
+  <path d="m145 151-27 27a18 18 0 0 0 0 26l14 14a18 18 0 0 0 26 0l12-12" stroke="#102A4C" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m153 223 27-27a18 18 0 0 0 0-26l-14-14a18 18 0 0 0-26 0l-12 12" stroke="#2F7EDA" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m167 149 24 1-1 24-9-9-18 18-9-9 18-18-9-7Z" fill="#2F7EDA"/>
+  <text x="218" y="199" fill="#102A4C" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="-3">Link<tspan fill="#2F7EDA">Ventas</tspan></text>
+  <text x="140" y="367" fill="#2F7EDA" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700" letter-spacing="2">OPERACIÓN SIN COMPLICACIONES</text>
+  <text x="136" y="500" fill="#102A4C" font-family="Space Grotesk, Inter, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="-5">Tu operación,</text>
+  <text x="136" y="591" fill="#102A4C" font-family="Space Grotesk, Inter, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="-5">clara y bajo</text>
+  <text x="136" y="682" fill="#2F7EDA" font-family="Space Grotesk, Inter, Arial, sans-serif" font-size="82" font-weight="700" letter-spacing="-5">control.</text>
+  <rect x="136" y="779" width="808" height="2" fill="#DCE9FA"/>
+  <text x="136" y="849" fill="#4B5563" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="500">Reemplaza este texto por un beneficio comprobable.</text>
+  <text x="136" y="910" fill="#102A4C" font-family="Inter, Arial, sans-serif" font-size="25" font-weight="700">linkventas.pe</text>
+  <text x="859" y="910" fill="#2F7EDA" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">01 / 01</text>
+</svg>

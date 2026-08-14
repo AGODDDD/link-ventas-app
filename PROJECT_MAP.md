@@ -5,6 +5,8 @@ Registro de la última validación sandbox de Suscripciones Pro y escalamiento:
 [VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md](./VALIDACION_SANDBOX_MERCADO_PAGO_2026-08-13.md).
 Evidencia del despliegue y revisión de la identidad visual:
 [VERIFICACION_BRANDING_2026-08-13.md](./VERIFICACION_BRANDING_2026-08-13.md).
+El kit externo descargable y sus reglas de aplicación están en
+[BRAND_KIT.md](./BRAND_KIT.md).
 
 - `app/api/orders`: crea pedidos y reservas.
 - `app/api/checkout/mercadopago`: inicia cobros de tiendas.

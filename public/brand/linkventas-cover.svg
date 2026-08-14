@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1584 396" fill="none">
+  <rect width="1584" height="396" fill="#102A4C"/>
+  <path d="M1268 35c184 32 247 122 316 269" stroke="#2F7EDA" stroke-opacity=".22" stroke-width="96" stroke-linecap="round"/>
+  <path d="m141 135-54 54a36 36 0 0 0 0 51l28 28a36 36 0 0 0 51 0l24-24" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m156 279 54-54a36 36 0 0 0 0-51l-28-28a36 36 0 0 0-51 0l-24 24" stroke="#2F7EDA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m184 130 49 2-2 49-18-18-36 36-18-18 36-36-18-15Z" fill="#2F7EDA"/>
+  <text x="282" y="191" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="700" letter-spacing="-4">Link<tspan fill="#6CA8F1">Ventas</tspan></text>
+  <text x="286" y="252" fill="#DCE9FA" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="500" letter-spacing="-.5">Tu operación, clara y bajo control.</text>
+  <rect x="1176" y="72" width="248" height="252" rx="42" fill="#FCFCFC" fill-opacity=".08" stroke="#fff" stroke-opacity=".14"/>
+  <path d="M1235 220h130" stroke="#6CA8F1" stroke-width="14" stroke-linecap="round"/>
+  <path d="m1322 163 57 57-57 57" stroke="#6CA8F1" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1231" y="136" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="2">LINKVENTAS</text>
+</svg>
