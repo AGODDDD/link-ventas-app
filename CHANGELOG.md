@@ -14,6 +14,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Unificados el upsell Pro del constructor de catálogo y los acentos del Centro
+  de Cuenta con los azules oficiales de LinkVentas, eliminando los últimos
+  acentos violetas de esas superficies de producto.
 - El Resumen aprovecha hasta 1440 px en escritorio y el lateral incorpora el
   lockup de LinkVentas con contexto de operaciones, reforzando la marca sin
   perder la densidad de trabajo.

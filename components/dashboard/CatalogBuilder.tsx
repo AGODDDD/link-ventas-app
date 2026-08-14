@@ -218,7 +218,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                             style={{
                                 maxWidth: '380px', width: '100%',
                                 background: 'rgba(19,19,26,0.98)',
-                                border: '1px solid rgba(139,92,246,0.35)',
+                                border: '1px solid rgba(47,126,218,0.4)',
                                 borderRadius: '24px',
                                 padding: '36px 28px',
                                 textAlign: 'center',
@@ -240,13 +240,13 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
 
                             <div style={{
                                 width: '60px', height: '60px',
-                                background: 'rgba(124,58,237,0.15)',
-                                border: '1px solid rgba(139,92,246,0.4)',
+                                background: 'rgba(47,126,218,0.14)',
+                                border: '1px solid rgba(47,126,218,0.42)',
                                 borderRadius: '50%',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 margin: '0 auto 20px',
                             }}>
-                                <Lock size={26} style={{ color: '#a78bfa' }} />
+                                <Lock size={26} style={{ color: '#2F7EDA' }} />
                             </div>
 
                             <p style={{ fontSize: '19px', fontWeight: 700, color: '#ffffff', marginBottom: '10px' }}>
@@ -254,7 +254,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                             </p>
                             <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: '1.7', marginBottom: '24px' }}>
                                 En el Plan Emprendedor puedes tener hasta <strong style={{ color: '#fff' }}>10 productos activos</strong> en vitrina.
-                                Actualiza a Pro para agregar <strong style={{ color: '#a78bfa' }}>productos ilimitados</strong>.
+                                Actualiza a Pro para agregar <strong style={{ color: '#2F7EDA' }}>productos ilimitados</strong>.
                             </p>
 
                             <div style={{ display: 'grid', gap: '8px', marginBottom: '24px', textAlign: 'left' }}>
@@ -265,7 +265,7 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                                     'Analíticas avanzadas en tiempo real',
                                 ].map((f, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '12px', color: 'rgba(255,255,255,0.55)' }}>
-                                        <span style={{ color: '#a78bfa', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                                        <span style={{ color: '#2F7EDA', fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
                                     </div>
                                 ))}
                             </div>
@@ -277,11 +277,11 @@ export default function CatalogBuilder({ userId }: { userId: string }) {
                                 style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                     width: '100%', padding: '14px',
-                                    background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                                    background: 'linear-gradient(135deg, #2F7EDA, #245DA8)',
                                     borderRadius: '12px',
                                     fontSize: '14px', fontWeight: 700, color: '#fff',
                                     textDecoration: 'none',
-                                    boxShadow: '0 8px 24px rgba(124,58,237,0.35)',
+                                    boxShadow: '0 8px 24px rgba(47,126,218,0.35)',
                                 }}
                                 onClick={() => setShowPaywallModal(false)}
                             >
