@@ -143,7 +143,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 pb-10">
+    <div className="mx-auto max-w-[1440px] space-y-8 pb-10">
       <div id="tour-dashboard-summary" className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.035em] text-zinc-950 dark:text-white sm:text-[2rem]">

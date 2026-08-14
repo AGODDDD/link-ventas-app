@@ -14,6 +14,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- El Resumen aprovecha hasta 1440 px en escritorio y el lateral incorpora el
+  lockup de LinkVentas con contexto de operaciones, reforzando la marca sin
+  perder la densidad de trabajo.
 - Unificado el nombre visible y los metadatos bajo **LinkVentas**; se incorporó
   Inter y Space Grotesk como tipografías reales de interfaz y titulares.
 - Sustituido el monograma transitorio `LV` por el símbolo vectorial de
