@@ -7,6 +7,11 @@ import Link from 'next/link'
 import { useDashboardStore } from '@/store/useDashboardStore'
 import ThemeToggle from '@/components/dashboard/ThemeToggle'
 import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
+import {
+    DASHBOARD_REALTIME_COPY,
+    getRealtimeStatus,
+    type DashboardRealtimeStatus,
+} from '@/lib/dashboardStatus'
 
 interface Notificacion {
     id: string;
@@ -98,7 +103,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [todayLabel, setTodayLabel] = useState('Hoy')
-    const [realtimeConnected, setRealtimeConnected] = useState(false)
+    const [realtimeStatus, setRealtimeStatus] = useState<DashboardRealtimeStatus>('connecting')
     const menuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -138,8 +143,19 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
     // Configurar Radar WebSockets
     useEffect(() => {
         let channelOrders: any
-        const setupRealtime = async () => {
-            const targetId = dashboardStore?.id || userId;
+        const targetId = dashboardStore?.id
+
+        if (!targetId || !userId) {
+            setRealtimeStatus('disconnected')
+            return
+        }
+
+        const handleOffline = () => setRealtimeStatus('disconnected')
+        const handleOnline = () => setRealtimeStatus('reconnecting')
+        window.addEventListener('offline', handleOffline)
+        window.addEventListener('online', handleOnline)
+
+        const setupRealtime = () => {
 
             // ── CANAL 1: NUEVO CORE (ORDERS) ──
             const channelNameOrd = `orders_rx_${userId}_${Math.random().toString(36).substring(7)}`
@@ -261,7 +277,7 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                     }
                 )
                 .subscribe(status => {
-                    setRealtimeConnected(status === 'SUBSCRIBED')
+                    setRealtimeStatus(getRealtimeStatus(status))
                 })
 
         }
@@ -269,6 +285,8 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
         setupRealtime();
 
         return () => {
+             window.removeEventListener('offline', handleOffline)
+             window.removeEventListener('online', handleOnline)
              if (channelOrders) supabase.removeChannel(channelOrders)
         }
     }, [dashboardStore?.id, userId])
@@ -294,12 +312,14 @@ export default function DashboardTopBar({ hasBanner }: TopBarProps = {}) {
                         <span
                             aria-hidden="true"
                             className={`h-2 w-2 rounded-full transition-colors duration-300 ${
-                                realtimeConnected
+                                realtimeStatus === 'connected'
                                     ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.10)]'
-                                    : 'bg-amber-400'
+                                    : realtimeStatus === 'error' || realtimeStatus === 'disconnected'
+                                        ? 'bg-red-400'
+                                        : 'bg-amber-400'
                             }`}
                         />
-                        {realtimeConnected ? 'Sincronizado' : 'Sincronizando'}
+                        {DASHBOARD_REALTIME_COPY[realtimeStatus]}
                     </span>
                 </div>
                 

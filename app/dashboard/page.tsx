@@ -9,6 +9,7 @@ import { useDashboardStore } from '@/store/useDashboardStore'
 import { jsonToCSV, downloadFile } from '@/lib/csvUtils'
 import { getOrderStatusBadgeStyle, getOrderStatusLabel, ORDER_STATUS_LABELS } from '@/lib/orderStatus'
 import { useDashboardSession } from '@/components/dashboard/DashboardSessionContext'
+import { getDashboardGreeting } from '@/lib/dashboardStatus'
 
 const INGRESO_STATUSES = new Set(['completado', 'en_camino'])
 const ATTENTION_STATUSES = new Set(['pendiente', 'pendiente_pago', 'pendiente_verificacion'])
@@ -32,6 +33,16 @@ export default function DashboardPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [greeting, setGreeting] = useState('Hola')
+
+  useEffect(() => {
+    const updateGreeting = () => setGreeting(getDashboardGreeting())
+    updateGreeting()
+
+    const timer = window.setInterval(updateGreeting, 60_000)
+
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     async function loadStats() {
@@ -147,7 +158,7 @@ export default function DashboardPage() {
       <div id="tour-dashboard-summary" className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-[-0.035em] text-zinc-950 dark:text-white sm:text-[2rem]">
-            Buenos días, {merchantName}.
+            {greeting}, {merchantName}.
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aquí tienes el resumen de tu operación.</p>
         </div>

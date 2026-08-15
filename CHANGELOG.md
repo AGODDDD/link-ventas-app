@@ -89,6 +89,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- El saludo del Resumen ahora se adapta a la hora de Lima y se actualiza sin
+  recargar; la barra superior distingue conexión, reconexión, desconexión y
+  errores de Supabase Realtime en vez de mostrar siempre “Sincronizando”.
 - El Super Admin ya recupera el correo canónico de Auth cuando un perfil
   histórico está incompleto, identifica el desfase y permite sincronizarlo de
   forma explícita sin aceptar direcciones enviadas desde el navegador.
