@@ -21,6 +21,10 @@ derivándose de `stores`, `store_config`, `products`, `delivery_settings` y
   `app/api/orders/route.ts` en servidor.
 - Se retiró el patrón remoto de Unsplash que ya no correspondía a recursos
   usados por la aplicación.
+- La tarjeta de WhatsApp usa la primera imagen disponible del catálogo (o la
+  portada del comercio) como apoyo visual, sin fijar imágenes de una tienda
+  particular. La franja de confianza conserva la composición de tres mensajes
+  y marcas de pago de la referencia.
 
 ## Validación técnica
 

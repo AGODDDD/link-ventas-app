@@ -15,6 +15,9 @@ import {
   Plus,
   X,
   ChefHat,
+  ShieldCheck,
+  LockKeyhole,
+  CreditCard,
 } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore } from '@/store/useCustomerStore'
@@ -23,7 +26,6 @@ import RestauranteCheckoutModal from './RestauranteCheckoutModal'
 import AddressMapModal from './AddressMapModal'
 import OrderHistoryPanel from './OrderHistoryPanel'
 import SlideOverCart from '../SlideOverCart'
-import PaymentTrustBadges from './PaymentTrustBadges'
 import { isStoreClosed, getTodayScheduleText, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
 import { formatRestaurantMinimumOrder } from '@/lib/restaurantStorefront'
 
@@ -291,28 +293,36 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </nav>
 
           {whatsappUrl && (
-            <div className="bg-[#1E2024] rounded-2xl p-4 shadow-md overflow-hidden mt-3">
-              <div className="flex-1 min-w-0">
+            <div className="relative mt-3 min-h-[118px] overflow-hidden rounded-2xl border border-white/[0.035] bg-[#202226] px-4 py-4 pl-[112px] shadow-[0_14px_28px_rgba(0,0,0,0.18)]">
+              <div className="absolute inset-y-0 left-0 w-[110px] overflow-hidden bg-[#151719]">
+                {featuredProducts[0]?.image_url || heroImage ? (
+                  <img src={featuredProducts[0]?.image_url || heroImage} alt="" className="h-full w-full object-cover opacity-90" />
+                ) : (
+                  <div className="h-full w-full bg-[radial-gradient(circle_at_25%_40%,#a86032,transparent_34%),radial-gradient(circle_at_70%_65%,#dbc07d,transparent_27%),#17191c]" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#202226]/15 to-[#202226]" />
+              </div>
+              <div className="relative min-w-0">
               <p
-                className="font-serif font-bold text-white text-[14.5px] leading-tight tracking-tight"
+                className="font-serif text-[17px] font-bold leading-[1.04] tracking-[-0.03em] text-white"
                 style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
               >
-                  ¿Tienes una consulta<br />sobre tu pedido?
+                  ¿Tienes un antojo<br />especial?
               </p>
-              <p className="text-[11px] text-[#9CA3AF] leading-tight mt-1 mb-2 font-normal">
+              <p className="mt-2 text-[11px] font-medium leading-tight text-[#ACAFB6]">
                 Escríbenos por WhatsApp
               </p>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 bg-[#174128] hover:bg-[#1c4e30] text-[#34D399] px-3.5 py-1.5 rounded-full transition-all active:scale-95 shadow-sm"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#1D7744] px-3 py-1.5 text-[#D6F7DE] shadow-[0_5px_14px_rgba(20,114,62,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#248A50] active:scale-95"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="#25D366" className="shrink-0">
                   <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.586 1.761.907 2.791.907 3.181 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.766-5.768-5.766zm3.389 8.243c-.144.405-.837.774-1.17.824-.312.045-.634.07-1.782-.406-1.464-.608-2.386-2.107-2.459-2.204-.073-.098-.592-.787-.592-1.501 0-.714.373-1.066.505-1.213.133-.146.29-.182.387-.182s.193.003.277.008c.089.005.207-.034.323.245.12.29.41 1.002.446 1.075.036.073.06.158.012.255-.048.098-.073.158-.145.242-.073.085-.153.19-.219.255-.073.073-.149.153-.064.298.085.146.377.621.809 1.006.557.496 1.026.65 1.171.722.145.073.23-.012.315-.11.085-.097.362-.423.459-.569.096-.146.193-.122.326-.073.133.048.845.399.99.471.145.073.241.11.277.17.036.06.036.35-.108.755z"/>
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.125.556 4.122 1.543 5.867L.117 24l6.27-1.644C8.067 23.243 9.987 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.87 0-3.61-.504-5.111-1.381l-.367-.216-3.804.997 1.016-3.708-.238-.379C2.537 15.77 2 13.944 2 12 2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/>
                 </svg>
-                <span className="text-[#34D399] font-medium text-xs">WhatsApp</span>
+                <span className="text-xs font-semibold">WhatsApp</span>
               </a>
               </div>
             </div>
@@ -539,66 +549,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </section>
         )}
 
-        {/* Store-safe service and payment information. */}
-        <div className="bg-white rounded-2xl border border-neutral-200/70 shadow-xs px-6 py-4 flex flex-col xl:flex-row items-center justify-between gap-4">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full xl:w-auto justify-between sm:justify-start">
-            {/* 1. Ingredientes frescos */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#F3F4F6] border border-neutral-200 flex items-center justify-center text-neutral-800 shrink-0">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  <circle cx="12" cy="11" r="3.2"/>
-                  <path d="M12 7.8v6.4"/>
-                </svg>
-              </div>
-              <div className="leading-tight">
-                <p className="text-xs font-bold" style={{ color: accentColor }}>Catálogo actualizado</p>
-                <p className="text-[11px] text-neutral-500 font-normal mt-0.5">Consulta la disponibilidad de cada plato</p>
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="hidden sm:block h-6 w-[1px] bg-neutral-200"></div>
-
-            {/* 2. Delivery/recojo from actual configuration */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white border border-neutral-300 flex items-center justify-center text-neutral-800 shrink-0 shadow-2xs">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="14" height="10" x="5" y="11" rx="2" ry="2"/>
-                  <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-                </svg>
-              </div>
-              <div className="leading-tight">
-                <p className="text-xs font-bold" style={{ color: accentColor }}>{serviceLabel || 'Pedidos pausados'}</p>
-                <p className="text-[11px] text-neutral-500 font-normal mt-0.5">{storeAddress || 'Confirma la cobertura con el local'}</p>
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="hidden sm:block h-6 w-[1px] bg-neutral-200"></div>
-
-            {/* 3. Estimated preparation only when configured */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white border border-neutral-300 flex items-center justify-center text-neutral-800 shrink-0 shadow-2xs">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="18" height="13" x="3" y="5.5" rx="2"/>
-                  <line x1="3" x2="21" y1="10" y2="10"/>
-                  <circle cx="7" cy="14" r="1" fill="currentColor"/>
-                </svg>
-              </div>
-              <div className="leading-tight">
-                <p className="text-xs font-bold" style={{ color: accentColor }}>{prepTime ? 'Tiempo de preparación' : 'Pedido directo'}</p>
-                <p className="text-[11px] text-neutral-500 font-normal mt-0.5">{prepTime || 'El local confirmará el tiempo estimado'}</p>
-              </div>
-            </div>
-          </div>
-
-          {perfil.mercadopago_active && perfil.mercadopago_public_key ? (
-            <PaymentTrustBadges mercadopagoActive className="pt-3 xl:pt-0 border-t xl:border-t-0 border-neutral-100 w-full xl:w-auto" />
-          ) : (
-            <p className="pt-3 xl:pt-0 border-t xl:border-t-0 border-neutral-100 w-full xl:w-auto text-center text-[11px] font-medium text-neutral-500">Los medios de pago se confirman al realizar el pedido.</p>
-          )}
-        </div>
+        <RestaurantTrustStrip mercadopagoActive={Boolean(perfil.mercadopago_active && perfil.mercadopago_public_key)} accentColor={accentColor} />
 
         {/* ── SECTION: EXPLORA NUESTRO MENÚ ── */}
         <section id="menu-section" className="space-y-6 pt-2">
@@ -807,6 +758,39 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function RestaurantTrustStrip({ mercadopagoActive, accentColor }: { mercadopagoActive: boolean; accentColor: string }) {
+  const paymentTitle = mercadopagoActive ? 'Pago 100% seguro' : 'Pago al confirmar'
+  const paymentSubtitle = mercadopagoActive ? 'Tus datos protegidos' : 'Coordinación con el local'
+
+  return (
+    <section aria-label="Información de confianza y medios de pago" className="rounded-2xl border border-neutral-200/80 bg-white px-5 py-3 shadow-[0_8px_24px_rgba(17,24,39,0.035)]">
+      <div className="flex flex-col items-center gap-4 xl:flex-row xl:justify-between xl:gap-0">
+        <div className="grid w-full grid-cols-1 divide-y divide-neutral-200/80 sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:w-auto">
+          <TrustMessage icon={<ShieldCheck size={18} strokeWidth={2.1} />} title="Ingredientes frescos" subtitle="Calidad garantizada" accentColor={accentColor} />
+          <TrustMessage icon={<LockKeyhole size={17} strokeWidth={2.1} />} title={paymentTitle} subtitle={paymentSubtitle} accentColor={accentColor} />
+          <TrustMessage icon={<CreditCard size={18} strokeWidth={2.1} />} title="Aceptamos Yape, Plin" subtitle="Tarjetas y más" accentColor={accentColor} />
+        </div>
+        <div className="flex items-center justify-center gap-4 text-sm sm:gap-5" aria-label="Medios de pago aceptados">
+          <span className="font-[Arial,sans-serif] text-[19px] font-black italic tracking-[-0.12em] text-[#1A1F71]">VISA</span>
+          <span className="relative h-6 w-9" aria-label="Mastercard"><i className="absolute left-0 top-1 h-5 w-5 rounded-full bg-[#EB001B]" /><i className="absolute right-0 top-1 h-5 w-5 rounded-full bg-[#F79E1B]/95" /></span>
+          <span className="font-[Arial,sans-serif] text-[15px] font-black tracking-[-0.12em] text-[#6F3298]">yape</span>
+          <span className="rounded-full bg-[#12B6A5] px-1.5 py-0.5 text-[10px] font-black lowercase tracking-[-0.08em] text-white">plin</span>
+          <span className="flex h-5 w-8 items-center justify-center rounded-sm border border-[#9DBB9B] bg-[#E0ECDC] text-[#6B9A6D]"><svg viewBox="0 0 32 20" className="h-4 w-6" aria-hidden="true"><rect x="2" y="4" width="28" height="12" rx="2" fill="currentColor" opacity=".35" /><circle cx="16" cy="10" r="3" fill="currentColor" /></svg></span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TrustMessage({ icon, title, subtitle, accentColor }: { icon: React.ReactNode; title: string; subtitle: string; accentColor: string }) {
+  return (
+    <div className="flex items-center justify-center gap-3 px-4 py-2.5 text-left first:pl-0 last:pr-0 sm:justify-start">
+      <span className="shrink-0 text-neutral-700">{icon}</span>
+      <span className="leading-tight"><strong className="block text-[11px] font-bold" style={{ color: accentColor }}>{title}</strong><small className="mt-0.5 block text-[10px] font-medium text-neutral-500">{subtitle}</small></span>
     </div>
   )
 }

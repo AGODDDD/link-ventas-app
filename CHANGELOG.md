@@ -91,6 +91,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- La tarjeta lateral de WhatsApp y la franja de confianza de la plantilla
+  Restaurante se alinean con la composición editorial aprobada: imagen lateral,
+  CTA verde, tres mensajes de confianza y medios de pago en una sola banda.
 - La plantilla de restaurante recupera el acceso persistente a **Mis pedidos**
   en escritorio y móvil. El pedido mínimo solo se muestra cuando está
   configurado, y la dirección, tarjetas y carrito recuperan controles
