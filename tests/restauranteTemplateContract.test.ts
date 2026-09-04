@@ -23,6 +23,8 @@ test('la interfaz restaurante deriva identidad y operación de la configuración
   assert.match(source, /const heroImage = perfil\.hero_image_url \|\| perfil\.banner_url \|\| perfil\.avatar_url/)
   assert.match(source, /logoUrl=\{perfil\.avatar_url\}/)
   assert.match(source, /md:ml-\[266px\]/)
+  assert.match(source, /<main className="flex-1 md:ml-\[266px\]/)
+  assert.doesNotMatch(source, /<main className="flex-1 w-full md:ml-\[266px\]/)
   assert.match(source, /aria-label="Medios de pago aceptados"/)
   assert.match(source, /const handleScrollToMenu/)
   assert.match(source, /left: 0/)

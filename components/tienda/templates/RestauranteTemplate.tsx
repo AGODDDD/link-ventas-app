@@ -396,7 +396,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       </div>
 
       {/* ── 3. MAIN CONTENT (RIGHT AREA) ── */}
-      <main className="flex-1 w-full md:ml-[266px] min-h-[calc(100vh-60px)] pb-32">
+      <main className="flex-1 md:ml-[266px] min-h-[calc(100vh-60px)] pb-32">
 
 
         {/* Closed Store Notice */}
