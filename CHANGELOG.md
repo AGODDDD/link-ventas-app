@@ -5,6 +5,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 ## [Unreleased]
 
 ### Added
+- Rediseño adaptable de la plantilla de restaurantes (`RestauranteTemplate`) con navegación editorial, búsqueda, carrito flotante y tarjeta de producto premium, todos alimentados por la identidad, catálogo y configuración operacional de cada comercio.
+- La plantilla muestra sólo los canales, horarios, modalidades de entrega, tiempo de preparación y pagos realmente configurados por cada restaurante; no añade demos públicas, catálogos ficticios ni información comercial fija.
 - Kit externo de LinkVentas con favicon, avatar, portada y plantilla social,
   construido a partir del símbolo aprobado y con reglas de aplicación.
 - Centro de cuenta profesional con identidad editable, proveedor de acceso, estado de suscripción, identificador técnico de soporte y controles de privacidad.
