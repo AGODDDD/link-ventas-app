@@ -761,19 +761,19 @@ function RestaurantTrustStrip({ mercadopagoActive, accentColor }: { mercadopagoA
   const paymentSubtitle = mercadopagoActive ? 'Tus datos protegidos' : 'Coordinación con el local'
 
   return (
-    <section aria-label="Información de confianza y medios de pago" className="rounded-2xl border border-neutral-200/80 bg-white px-5 py-3 shadow-[0_8px_24px_rgba(17,24,39,0.035)]">
-      <div className="flex flex-col items-center gap-4 xl:flex-row xl:justify-between xl:gap-0">
-        <div className="grid w-full grid-cols-1 divide-y divide-neutral-200/80 sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:w-auto">
+    <section aria-label="Información de confianza y medios de pago" className="rounded-2xl border border-neutral-200/80 bg-white px-5 py-3.5 shadow-[0_8px_24px_rgba(17,24,39,0.035)] sm:px-6">
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:gap-7">
+        <div className="grid w-full grid-cols-1 divide-y divide-neutral-200/80 sm:grid-cols-3 sm:divide-x sm:divide-y-0 2xl:w-auto">
           <TrustMessage icon={<ShieldCheck size={18} strokeWidth={2.1} />} title="Ingredientes frescos" subtitle="Calidad garantizada" accentColor={accentColor} />
           <TrustMessage icon={<LockKeyhole size={17} strokeWidth={2.1} />} title={paymentTitle} subtitle={paymentSubtitle} accentColor={accentColor} />
           <TrustMessage icon={<CreditCard size={18} strokeWidth={2.1} />} title="Aceptamos Yape, Plin" subtitle="Tarjetas y más" accentColor={accentColor} />
         </div>
-        <div className="flex items-center justify-center gap-4 text-sm sm:gap-5" aria-label="Medios de pago aceptados">
-          <span className="font-[Arial,sans-serif] text-[19px] font-black italic tracking-[-0.12em] text-[#1A1F71]">VISA</span>
+        <div className="flex shrink-0 items-center justify-center gap-4 border-t border-neutral-100 pt-3.5 sm:gap-5 2xl:border-l 2xl:border-t-0 2xl:pl-7 2xl:pt-0" aria-label="Medios de pago aceptados">
+          <span aria-label="Visa" className="font-[Arial,sans-serif] text-[19px] font-black italic tracking-[-0.12em] text-[#1A1F71]">VISA</span>
           <span className="relative h-6 w-9" aria-label="Mastercard"><i className="absolute left-0 top-1 h-5 w-5 rounded-full bg-[#EB001B]" /><i className="absolute right-0 top-1 h-5 w-5 rounded-full bg-[#F79E1B]/95" /></span>
-          <span className="font-[Arial,sans-serif] text-[15px] font-black tracking-[-0.12em] text-[#6F3298]">yape</span>
-          <span className="rounded-full bg-[#12B6A5] px-1.5 py-0.5 text-[10px] font-black lowercase tracking-[-0.08em] text-white">plin</span>
-          <span className="flex h-5 w-8 items-center justify-center rounded-sm border border-[#9DBB9B] bg-[#E0ECDC] text-[#6B9A6D]"><svg viewBox="0 0 32 20" className="h-4 w-6" aria-hidden="true"><rect x="2" y="4" width="28" height="12" rx="2" fill="currentColor" opacity=".35" /><circle cx="16" cy="10" r="3" fill="currentColor" /></svg></span>
+          <span aria-label="Yape" className="font-[Arial,sans-serif] text-[15px] font-black tracking-[-0.12em] text-[#6F3298]">yape</span>
+          <span aria-label="Plin" className="rounded-full bg-[#12B6A5] px-1.5 py-0.5 text-[10px] font-black lowercase tracking-[-0.08em] text-white">plin</span>
+          <span aria-label="Efectivo" className="flex h-5 w-8 items-center justify-center rounded-sm border border-[#9DBB9B] bg-[#E0ECDC] text-[#6B9A6D]"><svg viewBox="0 0 32 20" className="h-4 w-6" aria-hidden="true"><rect x="2" y="4" width="28" height="12" rx="2" fill="currentColor" opacity=".35" /><circle cx="16" cy="10" r="3" fill="currentColor" /></svg></span>
         </div>
       </div>
     </section>

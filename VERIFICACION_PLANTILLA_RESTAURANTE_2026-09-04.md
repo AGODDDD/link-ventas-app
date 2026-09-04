@@ -32,6 +32,10 @@ derivándose de `stores`, `store_config`, `products`, `delivery_settings` y
   para el carrito flotante en escritorio amplio.
 - **Mis pedidos** se mantiene como acción secundaria en el lateral y en móvil;
   no se eliminó al simplificar la navegación principal.
+- La franja de confianza presenta las garantías y los medios de pago como dos
+  grupos independientes: se conservan los distintivos visuales de Visa,
+  Mastercard, Yape y Plin, con nombres accesibles, sin sustituirlos por iconos
+  genéricos ni recursos remotos.
 
 ## Validación técnica
 

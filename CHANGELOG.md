@@ -21,6 +21,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   composición de escritorio (lateral de 266 px, hero de ancho disponible y
   franja de confianza sin choque con el carrito). El acceso a **Mis pedidos**
   se conserva como acción secundaria.
+- Plantilla Restaurante: reagrupados los mensajes de confianza y los medios de
+  pago para una lectura más ordenada; Visa, Mastercard, Yape y Plin conservan
+  su distintivo visual y etiquetas accesibles.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
