@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Profile, Product } from '@/types/tienda'
-import { Search, ShoppingCart, User, ClipboardList, MapPin, Clock3, Bike, Store, MessageCircle, Sparkles, ChevronRight } from 'lucide-react'
+import { Search, ShoppingCart, User, ClipboardList, MapPin, Clock3, Bike, Store, MessageCircle, Sparkles, ChevronRight, House, List, Info, FileText, CircleHelp, Instagram, Plus } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore } from '@/store/useCustomerStore'
 import RestauranteProductModal from './RestauranteProductModal'
@@ -47,10 +47,11 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0
   const storeIsClosed = shouldEnforceStoreSchedule(perfil.operations_config?.acceptsOrdersAlways)
     && isStoreClosed(perfil.store_schedule ?? null)
-  const heroImage = perfil.banner_url || perfil.hero_image_url || productos.find((product) => product.image_url)?.image_url
+  const heroImage = perfil.banner_url || perfil.hero_image_url
   const preparationTime = perfil.operations_config?.defaultPreparationTime || '30–45 min'
   const deliveryEnabled = perfil.operations_config?.deliveryEnabled !== false
   const pickupEnabled = perfil.operations_config?.pickupEnabled === true
+  const totalPrice = cartStore.getTotalPrice(perfil.id)
 
   useEffect(() => {
     setMounted(true)
@@ -185,139 +186,38 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const setProfileEmail = (v: string) => customerStore.setProfile({ correo: v })
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] font-body flex flex-col relative pt-[60px]"> {/* Main Background */}
-      
-      {/* GLOBAL TOP NAVBAR (Black with white pill for name) */}
-      <header className="fixed top-0 left-0 w-full h-[60px] bg-black flex items-center justify-between px-3 z-50 shadow-md">
-        <div className="flex items-center gap-2 bg-white rounded-full pl-1 pr-4 py-1">
-          {perfil.avatar_url ? (
-            <img src={perfil.avatar_url} alt="Logo" className="w-9 h-9 rounded-full object-cover border border-neutral-200 bg-white" />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
-              {perfil.store_name?.charAt(0) || 'R'}
-            </div>
-          )}
-          <span className="font-bold text-base text-[#444] tracking-wide">{perfil.store_name}</span>
+    <div className="min-h-screen bg-[#f8f7f5] font-body pt-[60px] text-[#241d19]">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-[60px] items-center justify-between bg-black px-3 shadow-md">
+        <div className="flex items-center gap-2 rounded-full bg-white py-1 pl-1 pr-4">
+          {perfil.avatar_url ? <img src={perfil.avatar_url} alt="Logo" className="h-9 w-9 rounded-full object-cover" /> : <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#17120f] text-sm font-black text-white">{perfil.store_name?.charAt(0) || 'R'}</span>}
+          <span className="text-sm font-bold text-neutral-700">{perfil.store_name || 'Restaurante'}</span>
         </div>
-        <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-white/30 transition-colors">
-          <Search size={17} strokeWidth={2.5} />
-        </div>
+        <button aria-label="Buscar" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white"><Search size={17} /></button>
       </header>
 
-      {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-[320px] lg:w-[350px] bg-white border-r border-neutral-200 fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40">
-        
-        {/* Banner with Address Card overlapping */}
-        <div className="relative pb-6">
-          <div className="w-full h-[180px] bg-neutral-200 overflow-hidden relative">
-            {(perfil.banner_url || perfil.avatar_url) ? (
-              <img src={perfil.banner_url || perfil.avatar_url || ''} className="w-full h-full object-cover opacity-90" alt="Banner" />
-            ) : (
-              <div className="w-full h-full flex justify-center items-center text-neutral-400 text-xs">Sin Banner</div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/0 to-black/30"></div>
-          </div>
-
-          {/* Floating Address Card */}
-          <div className="relative -mt-10 px-4 z-10 w-full">
-            <div className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.10)]">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">Entregar en</p>
-              <p className="mt-1 truncate text-sm font-bold text-neutral-900">
-                {savedAddress ? savedAddress.direccion : 'Elige tu ubicación'}
-              </p>
-              <button onClick={handleOpenAddressFromSidebar} className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#b94e28] transition-colors hover:text-[#8f3518]">
-                <MapPin size={14} /> {savedAddress ? 'Cambiar ubicación' : 'Agregar ubicación'} <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* ── Aviso CERRADO — debajo de la tarjeta, limpio y centrado ── */}
-          {storeIsClosed && (
-            <div className="mx-4 mt-4">
-              <div className="bg-white border border-red-200 rounded-2xl px-5 py-4 text-center shadow-sm">
-                <p className="text-[22px] mb-1">🔒</p>
-                <p className="font-bold text-[15px] text-[#111] leading-snug">
-                  Lo sentimos, nuestra tienda se encuentra cerrada.
-                </p>
-                <p className="text-sm text-neutral-500 mt-1">
-                  {getTodayScheduleText(perfil.store_schedule ?? null) === 'Cerrado hoy'
-                    ? 'Hoy no tenemos servicio de delivery.'
-                    : `Nuestro horario de hoy es de ${getTodayScheduleText(perfil.store_schedule ?? null).replace(' - ', ' a ')}.`
-                  }
-                </p>
-              </div>
-            </div>
-          )}
+      <aside className="fixed bottom-0 left-0 top-[60px] z-40 hidden w-[290px] flex-col overflow-y-auto bg-[linear-gradient(160deg,#11100f,#26211d)] text-white md:flex">
+        <div className="flex flex-col items-center px-5 pb-5 pt-7 text-center">
+          {perfil.avatar_url ? <img src={perfil.avatar_url} alt="Logo" className="h-20 w-20 rounded-full object-cover shadow-lg" /> : <span className="flex h-20 w-20 items-center justify-center rounded-full border border-white/20 text-3xl font-black">{perfil.store_name?.charAt(0) || 'R'}</span>}
+          <h1 className="mt-3 font-serif text-3xl font-semibold tracking-wide">{perfil.store_name || 'Tu restaurante'}</h1>
+          {perfil.description && <p className="mt-2 max-w-[220px] text-xs leading-5 text-white/65">{perfil.description}</p>}
         </div>
-
-        {/* Category List */}
-        <div className="flex-1 overflow-y-auto px-4 pb-20 custom-scrollbar">
-          <nav className="space-y-1">
-            {catNames.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleScrollToCategory(cat)}
-                className={`w-full text-left px-4 py-3 text-[13px] uppercase transition-all tracking-wider font-semibold rounded-lg ${
-                  activeCategory === cat 
-                    ? 'text-black font-bold bg-neutral-100/80 shadow-sm' 
-                    : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </nav>
+        <div className="mx-4 rounded-2xl bg-white px-4 py-4 text-left text-[#2b2622] shadow-xl">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">Entregar a</p>
+          <button onClick={handleOpenAddressFromSidebar} className="mt-2 flex w-full items-center gap-2 text-left"><MapPin size={17} className="shrink-0 text-[#a8522d]" /><span className="truncate text-sm font-bold">{savedAddress ? savedAddress.direccion : 'Elige tu ubicación'}</span><ChevronRight size={15} className="ml-auto text-neutral-400" /></button>
+          <button onClick={handleOpenAddressFromSidebar} className="mt-3 text-xs font-semibold text-[#bf5b32]">Cambiar ubicación</button>
         </div>
-
-        {/* Bottom Nav Icons inside Sidebar */}
-        <div className="absolute bottom-0 left-0 w-full bg-black text-white h-14 flex items-center justify-around px-4">
-           <button onClick={() => setIsProfileOpen(true)} className="hover:text-neutral-300 cursor-pointer"><User size={20} /></button>
-           <button onClick={() => setIsOrderHistoryOpen(true)} className="relative hover:text-neutral-300 cursor-pointer">
-             <ClipboardList size={20} />
-             {mounted && customerStore.orders.filter(o => o.storeId === perfil.id).length > 0 && (
-               <div className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                 {customerStore.orders.filter(o => o.storeId === perfil.id).length}
-               </div>
-             )}
-           </button>
-           <svg onClick={() => setIsOrderHistoryOpen(true)} className="w-5 h-5 hover:text-neutral-300 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-        </div>
+        <nav className="mt-5 space-y-2 px-4">
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex w-full items-center gap-3 rounded-xl bg-[#bd572f] px-4 py-3.5 text-sm font-bold shadow-[0_8px_20px_rgba(189,87,47,0.24)]"><House size={19} /> Inicio</button>
+          <button onClick={() => catNames[0] && handleScrollToCategory(catNames[0])} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white"><List size={19} /> Menú</button>
+        </nav>
+        {perfil.whatsapp_phone && <div className="mx-4 mt-8 rounded-2xl border border-white/5 bg-white/[0.06] p-4"><p className="font-serif text-lg font-semibold leading-5">¿Tienes un antojo especial?</p><p className="mt-2 text-xs text-white/55">Escríbenos por WhatsApp</p><a href={`https://wa.me/${perfil.whatsapp_phone}`} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#2a9e5d] px-3 py-2 text-xs font-bold"><MessageCircle size={14} /> WhatsApp</a></div>}
+        <div className="mt-auto border-t border-white/10 px-5 py-5 text-xs text-white/45"><button className="flex items-center gap-2 py-2"><Info size={14} /> Sobre nosotros</button><button className="flex items-center gap-2 py-2"><FileText size={14} /> Términos y condiciones</button><button className="flex items-center gap-2 py-2"><CircleHelp size={14} /> Preguntas frecuentes</button><div className="mt-3 flex gap-4"><Instagram size={16} /><button onClick={() => setIsProfileOpen(true)}><User size={16} /></button><button onClick={() => setIsOrderHistoryOpen(true)}><ClipboardList size={16} /></button></div></div>
       </aside>
 
-      {/* MOBILE LAYOUT SUPPORT (Banner & Horizontal nav) */}
-      <div className="md:hidden">
-        <div className="w-full h-40 relative">
-           {(perfil.banner_url || perfil.avatar_url) ? (
-              <img src={perfil.banner_url || perfil.avatar_url || ''} className="w-full h-full object-cover" alt="Banner" />
-            ) : (
-              <div className="w-full h-full bg-neutral-200"></div>
-            )}
-        </div>
-        <div className="bg-white p-4 -mt-4 relative rounded-t-2xl shadow-sm z-10 border-b border-neutral-100 flex flex-col items-center text-center">
-            <span className="font-bold text-sm text-neutral-800 leading-tight">{savedAddress ? savedAddress.direccion : 'Agrega tu dirección para activar promociones'}</span>
-            <button onClick={handleOpenAddressFromSidebar} className="flex items-center gap-2 text-xs font-medium text-neutral-500 mt-2"><MapPin size={14}/> {savedAddress ? 'Cambiar dirección' : 'Agregar dirección'}</button>
-        </div>
-        <div className="w-full overflow-x-auto whitespace-nowrap px-4 py-3 bg-white sticky top-[60px] z-30 shadow-sm hide-scrollbar">
-           <div className="flex gap-2">
-             {catNames.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => handleScrollToCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-colors ${
-                    activeCategory === cat ? 'bg-black text-white' : 'bg-neutral-100 text-neutral-600'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-           </div>
-        </div>
-      </div>
+      <div className="md:hidden"><div className="bg-[#201713] px-5 pb-5 pt-7 text-white"><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#f5b894]">Pide directo</p><h1 className="mt-2 font-serif text-3xl">{perfil.store_name || 'Tu restaurante'}</h1><button onClick={handleOpenAddressFromSidebar} className="mt-4 flex items-center gap-2 text-xs font-semibold text-white/75"><MapPin size={14} /> {savedAddress ? savedAddress.direccion : 'Elige tu ubicación'}</button></div></div>
 
-      {/* RIGHT MAIN CONTENT */}
-      <main className="flex-1 md:ml-[320px] lg:ml-[350px] p-4 sm:p-6 lg:p-8 pb-32 max-w-6xl w-full mx-auto self-start">
-         <div className="space-y-10">
-            <section className="relative min-h-[310px] overflow-hidden rounded-[28px] bg-[#20130f] px-6 py-8 text-white shadow-[0_24px_70px_rgba(32,19,15,0.22)] sm:min-h-[340px] sm:px-10 sm:py-10">
+      <main className="md:ml-[290px]">
+        <section className="relative min-h-[250px] overflow-hidden bg-[#20130f] px-6 py-9 text-white sm:min-h-[285px] md:px-10">
               {heroImage ? (
                 <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" />
               ) : (
@@ -342,114 +242,20 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
               </div>
             </section>
 
-            <section className="grid gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 sm:grid-cols-3">
-              <div className="flex items-center gap-3 bg-white px-4 py-4"><Bike className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">{deliveryEnabled ? 'Delivery disponible' : 'Recojo en tienda'}</p><p className="mt-0.5 text-[11px] text-neutral-500">{deliveryFee > 0 ? `Envío desde S/ ${deliveryFee.toFixed(2)}` : 'Coordina tu pedido fácilmente'}</p></div></div>
-              <div className="flex items-center gap-3 bg-white px-4 py-4"><Clock3 className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">Preparado al momento</p><p className="mt-0.5 text-[11px] text-neutral-500">Tiempo estimado: {preparationTime}</p></div></div>
-              <div className="flex items-center gap-3 bg-white px-4 py-4"><Store className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">Compra con confianza</p><p className="mt-0.5 text-[11px] text-neutral-500">Pagos y atención directa</p></div></div>
-            </section>
+          <div className="mx-auto max-w-[1180px] px-4 py-6 sm:px-7 md:px-9">
+            {catNames.length > 1 && <div className="flex gap-3 overflow-x-auto pb-6 hide-scrollbar">{catNames.map((cat) => <button key={cat} onClick={() => handleScrollToCategory(cat)} className={`shrink-0 rounded-full border px-5 py-2.5 text-xs font-bold transition-all ${activeCategory === cat ? 'border-[#bd572f] bg-[#bd572f] text-white shadow-md' : 'border-[#e7dfd9] bg-white text-neutral-600 hover:border-[#bd572f]/40'}`}>{cat}</button>)}</div>}
 
-            {catNames.length > 1 && <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-              {catNames.map((cat) => <button key={cat} onClick={() => handleScrollToCategory(cat)} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition-all duration-300 active:scale-95 ${activeCategory === cat ? 'border-[#c6532b] bg-[#c6532b] text-white shadow-[0_8px_20px_rgba(198,83,43,0.22)]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#c6532b]/35 hover:text-[#a94320]'}`}>{cat}</button>)}
-            </div>}
+            {productos.length > 1 && <section className="mb-9"><div className="mb-5"><p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#bd572f]"><Sparkles size={14} /> Para pedir ahora</p><h2 className="mt-2 font-serif text-3xl font-semibold">Favoritos del menú</h2><p className="mt-1 text-xs text-neutral-500">Nuestros platos más pedidos, preparados al momento.</p></div><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{productos.slice(0, 4).map((item) => <button key={`featured-${item.id}`} onClick={() => setSelectedProduct(item)} className="group overflow-hidden rounded-xl border border-[#e9e2dc] bg-white text-left shadow-[0_5px_16px_rgba(44,30,20,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(44,30,20,0.12)]"><div className="relative aspect-[16/10] overflow-hidden bg-[#eee9e4]">{item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs font-bold text-neutral-400">Sin foto</div>}<span className="absolute left-3 top-3 rounded-full bg-[#5b3716]/90 px-3 py-1 text-[10px] font-bold text-white">Más pedido</span></div><div className="p-3"><h3 className="line-clamp-1 text-sm font-bold">{item.name}</h3><p className="mt-1 line-clamp-2 min-h-9 text-xs leading-4 text-neutral-500">{item.description || 'Disponible para pedir ahora.'}</p><div className="mt-3 flex items-center justify-between text-[#bd572f]"><strong className="text-sm">S/ {item.price.toFixed(2)}</strong><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#bd572f] text-white"><Plus size={16} /></span></div></div></button>)}</div></section>}
 
-            {productos.length > 0 && <section>
-              <div className="mb-5 flex items-end justify-between gap-4"><div><p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6532b]"><Sparkles size={14} /> Para pedir ahora</p><h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-neutral-900">Favoritos del menú</h2></div><button onClick={() => catNames[0] && handleScrollToCategory(catNames[0])} className="hidden items-center gap-1 text-xs font-bold text-[#b94e28] sm:inline-flex">Ver todo <ChevronRight size={15} /></button></div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {productos.slice(0, 4).map((item) => <button key={`featured-${item.id}`} onClick={() => setSelectedProduct(item)} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)] active:scale-[0.99]"><div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">{item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs font-bold uppercase tracking-widest text-neutral-400">Próximamente</div>}<span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1.5 text-xs font-black text-neutral-900 shadow-sm">S/ {item.price.toFixed(2)}</span></div><div className="p-4"><h3 className="line-clamp-1 text-sm font-bold text-neutral-900">{item.name}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">{item.description || 'Preparado especialmente para ti.'}</p></div></button>)}
-              </div>
-            </section>}
-            {catNames.map((categoria) => (
-              <section key={categoria} id={categoria} className="scroll-mt-28 md:scroll-mt-[100px]">
-                
-                {/* Section Title with Lines */}
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-[2px] flex-1 bg-neutral-200 rounded-full"></div>
-                  <h2 className="font-bold text-[15px] md:text-lg text-[#555761] uppercase tracking-widest whitespace-nowrap px-2">
-                    {categoria}
-                  </h2>
-                  <div className="h-[2px] flex-1 bg-neutral-200 rounded-full"></div>
-                </div>
-                
-                {/* Product Grid */}
-                <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-5 ${categorias[categoria].length === 1 ? 'max-w-sm' : ''}`}>
-                  {categorias[categoria].map((item) => {
-                    const priceDiscount = item.original_price && item.original_price > item.price 
-                        ? item.original_price - item.price : null;
+            <section className="mb-8 grid overflow-hidden rounded-xl border border-[#e7dfd9] bg-white sm:grid-cols-3"><div className="flex items-center gap-3 border-b border-[#eee7e2] p-4 sm:border-b-0 sm:border-r"><Bike size={19} className="text-[#bd572f]" /><div><p className="text-xs font-bold">{deliveryEnabled ? 'Delivery disponible' : 'Recojo disponible'}</p><p className="text-[11px] text-neutral-500">{deliveryFee > 0 ? `Envío desde S/ ${deliveryFee.toFixed(2)}` : 'Coordina tu pedido fácilmente'}</p></div></div><div className="flex items-center gap-3 border-b border-[#eee7e2] p-4 sm:border-b-0 sm:border-r"><Clock3 size={19} className="text-[#bd572f]" /><div><p className="text-xs font-bold">Preparado al momento</p><p className="text-[11px] text-neutral-500">Tiempo estimado: {preparationTime}</p></div></div><div className="flex items-center gap-3 p-4"><Store size={19} className="text-[#bd572f]" /><div><p className="text-xs font-bold">Compra con confianza</p><p className="text-[11px] text-neutral-500">Pagos y atención directa</p></div></div></section>
 
-                    return (
-                    <button 
-                      key={item.id}
-                      onClick={() => setSelectedProduct(item)}
-                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left flex flex-col relative w-full h-full"
-                    >
-                      <div className="relative w-full aspect-[4/3] bg-neutral-100">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-300 bg-neutral-50 font-bold uppercase tracking-widest text-xs">Sin foto</div>
-                        )}
-                        
-                        {/* Status overlays */}
-                        {item.is_available === false && (
-                          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10">
-                            <span className="bg-red-500 text-white font-bold uppercase tracking-widest px-3 py-1 text-[10px] rounded-full">AGOTADO</span>
-                          </div>
-                        )}
+            {catNames.map((categoria) => <section key={categoria} id={categoria} className="mb-12 scroll-mt-24"><div className="mb-5 flex items-end justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#bd572f]">Menú</p><h2 className="mt-1 font-serif text-3xl font-semibold">{productos.length === 1 ? categoria : `Explora ${categoria}`}</h2></div></div><div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 ${categorias[categoria].length === 1 ? 'max-w-[260px]' : ''}`}>{categorias[categoria].map((item) => <button key={item.id} onClick={() => setSelectedProduct(item)} className="group overflow-hidden rounded-xl border border-[#e9e2dc] bg-white text-left shadow-[0_5px_16px_rgba(44,30,20,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_14px_28px_rgba(44,30,20,0.12)]"><div className="relative aspect-[16/10] overflow-hidden bg-[#eee9e4]">{item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs font-bold text-neutral-400">Sin foto</div>}{item.is_available === false && <div className="absolute inset-0 flex items-center justify-center bg-black/45"><span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold">AGOTADO</span></div>}</div><div className="p-3"><h3 className="line-clamp-1 text-sm font-bold">{item.name}</h3><p className="mt-1 line-clamp-2 min-h-9 text-xs leading-4 text-neutral-500">{item.description || 'Disponible para pedir ahora.'}</p><div className="mt-3 flex items-center justify-between text-[#bd572f]"><strong className="text-sm">S/ {item.price.toFixed(2)}</strong><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#bd572f] text-white"><Plus size={16} /></span></div></div></button>)}</div></section>)}
 
-                        {/* White Price Pill (Top Left) */}
-                        <div className="absolute top-2 left-2 z-10 flex items-center bg-white rounded-full pl-3 pr-2 py-1 shadow-sm border border-neutral-100 gap-2 h-7 group">
-                          {item.original_price && item.original_price > item.price && (
-                             <span className="text-neutral-400 text-[10px] line-through font-medium">S/ {item.original_price.toFixed(2)}</span>
-                          )}
-                          <span className="font-black text-black text-[13px] tracking-tight">S/ {item.price.toFixed(2)}</span>
-                        </div>
-
-                        {/* Black Discount Pill (Top Right) */}
-                        {priceDiscount && (
-                           <div className="absolute top-2 right-2 z-10 bg-black text-white h-7 px-3 rounded-full flex items-center justify-center font-bold text-[11px] shadow-sm">
-                             -S/ {priceDiscount.toFixed(2)}
-                           </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-4 flex-1 flex flex-col bg-white">
-                        <h3 className="font-bold text-black text-[15px] leading-tight mb-2 line-clamp-2">{item.name}</h3>
-                        {item.description && (
-                          <p className="text-neutral-600 text-[12px] leading-snug line-clamp-3">{item.description}</p>
-                        )}
-                      </div>
-                    </button>
-                    )
-                  })}
-                </div>
-              </section>
-            ))}
-         </div>
+            <footer className="border-t border-[#e7dfd9] py-8 text-center"><PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto mb-4 text-neutral-800" /><p className="text-xs text-neutral-500">© {new Date().getFullYear()} {perfil.store_name || 'Restaurante'}. Todos los derechos reservados.</p></footer>
+          </div>
       </main>
 
-      <footer className="md:ml-[320px] lg:ml-[350px] px-4 pb-28 pt-4 text-center text-neutral-500">
-        <PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto mb-6 text-neutral-800" />
-        <div className="flex flex-col items-center gap-3"><p className="text-xs">© {new Date().getFullYear()} {perfil.store_name || 'Restaurante'}. Todos los derechos reservados.</p>{perfil.whatsapp_phone && <a href={`https://wa.me/${perfil.whatsapp_phone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-semibold text-[#b94e28] transition-colors hover:text-[#8f3518]"><MessageCircle size={15} /> ¿Necesitas ayuda con tu pedido?</a>}</div>
-      </footer>
-
-      {/* FLOATING CART BUBBLE BUTTON */}
-      {!isReadOnly && (
-      <button
-        onClick={() => setIsCartOpen(true)}
-        aria-label="Abrir carrito"
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-full bg-[#17110f] py-3 pl-4 pr-5 text-white shadow-[0_16px_38px_rgba(23,17,15,0.30)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(23,17,15,0.38)] active:scale-95"
-      >
-        <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#df6438]">
-          <ShoppingCart size={20} className="text-white" strokeWidth={2} />
-          {mounted && totalItems > 0 && (
-            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#17110f] shadow-md">
-              {totalItems}
-            </span>
-          )}
-        </span>
-        <span className="text-left"><span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">Tu pedido</span><span className="block text-sm font-bold">Ver carrito</span></span>
-      </button>
-      )}
+      {!isReadOnly && <><button onClick={() => setIsCartOpen(true)} aria-label="Abrir carrito" className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-full bg-[#201713] py-3 pl-4 pr-5 text-white shadow-xl md:hidden"><span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[#bd572f]"><ShoppingCart size={18} />{mounted && totalItems > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#201713]">{totalItems}</span>}</span><span className="text-left text-sm font-bold">Ver carrito</span></button>{totalItems > 0 && <aside className="fixed bottom-5 right-5 z-50 hidden w-[300px] rounded-[24px] border border-[#e8e0da] bg-white p-5 shadow-[0_16px_44px_rgba(44,30,20,0.18)] md:block"><button onClick={() => setIsCartOpen(true)} className="w-full text-left"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5e4dc] text-[#bd572f]"><ShoppingCart size={20} /></span><div><p className="font-bold">Tu pedido <span className="ml-1 rounded-full bg-[#bd572f] px-2 py-0.5 text-xs text-white">{totalItems}</span></p><p className="text-xs text-neutral-500">{totalItems} {totalItems === 1 ? 'producto' : 'productos'}</p></div></div><div className="my-4 border-t border-[#eee7e2]" /><div className="flex justify-between text-sm font-bold"><span>Total</span><span>S/ {totalPrice.toFixed(2)}</span></div><span className="mt-4 block rounded-xl bg-[#bd572f] py-3 text-center text-sm font-bold text-white">Ver carrito</span></button></aside>}</>}
 
       {/* PROFILE PANEL */}
       {isProfileOpen && (
