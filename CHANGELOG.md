@@ -18,6 +18,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   portada con estado operativo, delivery o recojo, tiempo estimado, favoritos,
   categorías visibles, señales de confianza y un carrito compacto. El cambio
   conserva el contrato existente de productos, checkout, pedidos y pagos.
+- La plantilla de Restaurante ahora incluye una portada gastronómica de
+  respaldo para tiendas sin banner, un carrito de escritorio informativo aun
+  vacío y una tarjeta de producto de ancho estable en catálogos pequeños.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
