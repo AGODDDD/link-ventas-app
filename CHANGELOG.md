@@ -24,6 +24,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Plantilla Restaurante: reagrupados los mensajes de confianza y los medios de
   pago para una lectura más ordenada; Visa, Mastercard, Yape y Plin conservan
   su distintivo visual y etiquetas accesibles.
+- Plantilla Restaurante: afinados los distintivos de pago para respetar la
+  referencia visual de Visa, Mastercard, Yape, Plin y efectivo, manteniéndolos
+  como recursos locales accesibles.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
