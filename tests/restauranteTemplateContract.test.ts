@@ -28,6 +28,7 @@ test('la interfaz restaurante deriva identidad y operación de la configuración
   assert.match(source, /<PaymentBrandMark brand="mastercard"/)
   assert.match(source, /<PaymentBrandMark brand="yape"/)
   assert.match(source, /<PaymentBrandMark brand="plin"/)
+  assert.match(source, /<PaymentBrandMark brand="cash"/)
   assert.doesNotMatch(source, /perfil\.store_name\?\.charAt\(0\)/)
   assert.doesNotMatch(source, /Pucusana|51999999999|Av\. La Mar|images\.unsplash\.com/)
   assert.match(source, /setIsOrderHistoryOpen\(true\)/)
