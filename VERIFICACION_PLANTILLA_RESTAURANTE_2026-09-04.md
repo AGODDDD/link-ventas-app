@@ -25,6 +25,13 @@ derivándose de `stores`, `store_config`, `products`, `delivery_settings` y
   portada del comercio) como apoyo visual, sin fijar imágenes de una tienda
   particular. La franja de confianza conserva la composición de tres mensajes
   y marcas de pago de la referencia.
+- El nombre del comercio ya no se repite en una ficha fija de la barra superior:
+  el lateral usa `avatar_url` como logo propio y conserva un monograma de
+  respaldo sólo para tiendas que aún no configuraron logo. El lateral mide 266
+  px, el hero ocupa el ancho disponible y la franja de confianza deja espacio
+  para el carrito flotante en escritorio amplio.
+- **Mis pedidos** se mantiene como acción secundaria en el lateral y en móvil;
+  no se eliminó al simplificar la navegación principal.
 
 ## Validación técnica
 

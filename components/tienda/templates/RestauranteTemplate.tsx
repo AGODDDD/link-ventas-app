@@ -180,18 +180,8 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
     <div className="min-h-screen bg-[#F5F6F8] font-body flex flex-col relative pt-[60px] select-text" style={{ '--restaurant-accent': accentColor } as React.CSSProperties}>
       
       {/* ── 1. GLOBAL TOP NAVBAR ── */}
-      <header className="fixed top-0 left-0 w-full h-[60px] bg-black flex items-center justify-between px-4 z-50 shadow-md">
-        {/* Left Pill (Nueva tienda / Store Name) */}
-        <div className="flex items-center gap-2.5 bg-white rounded-full pl-1.5 pr-4 py-1 shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm tracking-wide">
-            {perfil.store_name?.charAt(0) || 'R'}
-          </div>
-          <span className="font-bold text-sm text-[#222] tracking-normal">
-            {perfil.store_name || 'Restaurante'}
-          </span>
-        </div>
-
-        {/* Right Search Button */}
+      <header className="fixed top-0 left-0 w-full h-[60px] bg-black flex items-center justify-end px-4 sm:px-6 z-50 shadow-md">
+        {/* The merchant identity belongs to the storefront itself, not a duplicate global pill. */}
         <div className="flex items-center gap-3">
           {isSearchOpen ? (
             <div className="flex items-center bg-white/10 rounded-full px-3 py-1 border border-white/20">
@@ -221,13 +211,13 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       </header>
 
       {/* ── 2. DESKTOP SIDEBAR ── */}
-      <aside className="hidden md:flex flex-col w-[300px] lg:w-[320px] bg-[#111315] text-white fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40 border-r border-white/5 overflow-y-auto custom-scrollbar p-4 justify-between">
+      <aside className="hidden md:flex flex-col w-[266px] bg-[#111315] text-white fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40 border-r border-white/5 overflow-y-auto custom-scrollbar p-4 justify-between">
         
         {/* Top Group */}
         <div className="space-y-4">
           {/* Logo / Emblem */}
           <div className="py-2">
-            <RestaurantWordmark storeName={perfil.store_name} accentColor={accentColor} />
+            <RestaurantWordmark storeName={perfil.store_name} logoUrl={perfil.avatar_url} accentColor={accentColor} />
           </div>
 
           {/* Floating Address Card */}
@@ -282,14 +272,6 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
               </svg>
               <span className="text-white font-medium text-sm">Menú</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setIsOrderHistoryOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-white hover:bg-white/5 font-medium text-sm transition-all cursor-pointer select-none"
-            >
-              <ShoppingBag size={18} className="shrink-0" />
-              <span>Mis pedidos</span>
-            </button>
           </nav>
 
           {whatsappUrl && (
@@ -329,8 +311,16 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           )}
         </div>
 
-        {/* Bottom Group (1:1 con la captura) */}
+        {/* Secondary actions remain available without competing with the catalog navigation. */}
         <div className="pt-6 space-y-4">
+          <button
+            type="button"
+            onClick={() => setIsOrderHistoryOpen(true)}
+            className="flex items-center gap-3 text-xs text-[#9CA3AF] hover:text-white transition-colors py-0.5 cursor-pointer w-full text-left"
+          >
+            <ShoppingBag size={15} className="shrink-0" />
+            <span>Mis pedidos</span>
+          </button>
           <button onClick={() => setActiveInfoModal('about')} className="flex items-center gap-3 text-xs text-[#9CA3AF] hover:text-white transition-colors py-0.5 cursor-pointer w-full text-left">
             <Info size={15} className="text-[#9CA3AF] shrink-0" />
             <span>Sobre nosotros</span>
@@ -372,7 +362,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       {/* ── MOBILE HEADER / BANNER SUPPORT ── */}
       <div className="md:hidden bg-[#111315] text-white p-4">
         <div className="flex items-center justify-between">
-          <RestaurantWordmark storeName={perfil.store_name} accentColor={accentColor} />
+          <RestaurantWordmark storeName={perfil.store_name} logoUrl={perfil.avatar_url} accentColor={accentColor} />
         </div>
         <button
           type="button"
@@ -398,12 +388,12 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       </div>
 
       {/* ── 3. MAIN CONTENT (RIGHT AREA) ── */}
-      <main className="flex-1 md:ml-[300px] lg:ml-[320px] p-4 sm:p-6 lg:p-8 flex flex-col gap-6 max-w-6xl w-full min-h-[calc(100vh-60px)] pb-32">
+      <main className="flex-1 w-full md:ml-[266px] min-h-[calc(100vh-60px)] pb-32">
 
 
         {/* Closed Store Notice */}
         {storeIsClosed && (
-          <div className="bg-white border border-red-200 rounded-2xl p-4 text-center shadow-sm">
+          <div className="mx-4 mt-4 bg-white border border-red-200 rounded-2xl p-4 text-center shadow-sm sm:mx-6 lg:mx-16">
             <span className="text-xl">🔒</span>
             <p className="font-bold text-sm text-neutral-900 mt-1">Lo sentimos, nuestra tienda se encuentra cerrada.</p>
             <p className="text-xs text-neutral-500 mt-0.5">
@@ -415,7 +405,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
         )}
 
         {/* Hero driven by the store identity and its operational settings. */}
-        <div className="relative w-full rounded-2xl bg-[#0C0D0E] overflow-hidden shadow-lg border border-neutral-800/80 text-white min-h-[220px] lg:min-h-[250px] flex flex-col lg:flex-row items-center justify-between">
+        <div className="relative w-full rounded-2xl bg-[#0C0D0E] overflow-hidden shadow-lg border border-neutral-800/80 text-white min-h-[220px] lg:min-h-[205px] lg:rounded-none lg:border-x-0 flex flex-col lg:flex-row items-center justify-between">
           {/* Left Text */}
           <div className="p-6 sm:p-8 lg:p-10 flex-1 z-20 max-w-xl">
             <h1
@@ -460,7 +450,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </div>
 
           {/* Business-owned imagery, never a stock identity imposed on a merchant. */}
-          <div className="relative w-full lg:w-[52%] h-52 sm:h-60 lg:h-full min-h-[220px] lg:min-h-[250px] flex items-center justify-end overflow-hidden bg-[#16120E]">
+          <div className="relative w-full lg:w-[52%] h-52 sm:h-60 lg:h-full min-h-[220px] lg:min-h-[205px] flex items-center justify-end overflow-hidden bg-[#16120E]">
             {/* Smooth Left Dark Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#0C0D0E] via-[#0C0D0E]/60 to-transparent z-10 pointer-events-none"></div>
 
@@ -470,6 +460,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </div>
         </div>
 
+        <div className="flex flex-col gap-6 px-4 pt-6 sm:px-6 lg:px-16">
         {/* ── CATEGORY PILLS HORIZONTAL BAR ── */}
         <div className="w-full overflow-x-auto custom-scrollbar py-1">
           <div className="flex items-center gap-2 min-w-max">
@@ -504,7 +495,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                 No encontramos productos que coincidan con tu búsqueda.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(230px,280px))] gap-4">
                 {filteredProducts.map(item => (
                   <ProductCardItem
                     key={item.id}
@@ -535,7 +526,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
             </div>
 
             {/* 4 Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(230px,280px))] gap-4">
               {featuredProducts.map((item) => (
                 <ProductCardItem
                   key={item.id}
@@ -549,7 +540,9 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
           </section>
         )}
 
-        <RestaurantTrustStrip mercadopagoActive={Boolean(perfil.mercadopago_active && perfil.mercadopago_public_key)} accentColor={accentColor} />
+        <div className="xl:mr-[340px]">
+          <RestaurantTrustStrip mercadopagoActive={Boolean(perfil.mercadopago_active && perfil.mercadopago_public_key)} accentColor={accentColor} />
+        </div>
 
         {/* ── SECTION: EXPLORA NUESTRO MENÚ ── */}
         <section id="menu-section" className="space-y-6 pt-2">
@@ -571,7 +564,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                   <div className="h-[1px] flex-1 bg-neutral-200"></div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:[grid-template-columns:repeat(auto-fit,minmax(230px,280px))] gap-4">
                   {categorias[cat].map((item) => (
                     <ProductCardItem
                       key={item.id}
@@ -586,6 +579,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
             ))}
           </div>
         </section>
+        </div>
 
       </main>
 
@@ -881,13 +875,17 @@ function normalizeFacebookUrl(value: string) {
   return /^https?:\/\//i.test(value) ? value : `https://facebook.com/${value.replace(/^@/, '')}`
 }
 
-function RestaurantWordmark({ storeName, accentColor }: { storeName?: string; accentColor: string }) {
+function RestaurantWordmark({ storeName, logoUrl, accentColor }: { storeName?: string; logoUrl?: string | null; accentColor: string }) {
   const name = storeName || 'Restaurante'
 
   return (
     <div className="flex flex-col items-center justify-center py-2 text-center select-none">
-      <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/5 text-lg font-bold text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]" style={{ boxShadow: `inset 0 0 0 1px ${accentColor}55, 0 10px 24px rgba(0,0,0,0.2)` }}>
-        {name.charAt(0).toUpperCase()}
+      <div className="mb-2 flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-white/5 text-lg font-bold text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]" style={{ boxShadow: `inset 0 0 0 1px ${accentColor}55, 0 10px 24px rgba(0,0,0,0.2)` }}>
+        {logoUrl ? (
+          <img src={logoUrl} alt={`Logo de ${name}`} className="h-full w-full object-contain p-1.5" />
+        ) : (
+          name.charAt(0).toUpperCase()
+        )}
       </div>
       <h2 className="max-w-[250px] text-balance font-serif text-lg font-bold uppercase leading-tight tracking-[0.16em] text-white">
         {name}

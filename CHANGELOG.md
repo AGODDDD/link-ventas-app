@@ -16,6 +16,11 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Plantilla Restaurante: eliminado el lockup duplicado de la barra superior,
+  priorizado el logo configurado por cada comercio en el lateral y reajustada la
+  composición de escritorio (lateral de 266 px, hero de ancho disponible y
+  franja de confianza sin choque con el carrito). El acceso a **Mis pedidos**
+  se conserva como acción secundaria.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
