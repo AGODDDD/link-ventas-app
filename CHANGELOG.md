@@ -34,6 +34,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   hacia su sección y conserva el eje horizontal en cero, evitando la deriva de
   la vista al navegar desde el lateral; el contenido principal ya no suma un
   ancho completo al margen del lateral en escritorio.
+- Plantilla Restaurante: el lateral de escritorio gana 24 px de ancho para
+  dar aire al CTA de WhatsApp, manteniendo alineado el contenido principal.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y

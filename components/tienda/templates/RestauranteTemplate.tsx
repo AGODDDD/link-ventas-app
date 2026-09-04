@@ -222,7 +222,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       </header>
 
       {/* ── 2. DESKTOP SIDEBAR ── */}
-      <aside className="hidden md:flex flex-col w-[266px] bg-[#111315] text-white fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40 border-r border-white/5 overflow-y-auto custom-scrollbar p-4 justify-between">
+      <aside className="hidden md:flex flex-col w-[290px] bg-[#111315] text-white fixed top-[60px] left-0 h-[calc(100vh-60px)] z-40 border-r border-white/5 overflow-y-auto custom-scrollbar p-4 justify-between">
         
         {/* Top Group */}
         <div className="space-y-4">
@@ -396,7 +396,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
       </div>
 
       {/* ── 3. MAIN CONTENT (RIGHT AREA) ── */}
-      <main className="flex-1 md:ml-[266px] min-h-[calc(100vh-60px)] pb-32">
+      <main className="flex-1 md:ml-[290px] min-h-[calc(100vh-60px)] pb-32">
 
 
         {/* Closed Store Notice */}
