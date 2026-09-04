@@ -25,6 +25,7 @@ import OrderHistoryPanel from './OrderHistoryPanel'
 import SlideOverCart from '../SlideOverCart'
 import PaymentTrustBadges from './PaymentTrustBadges'
 import { isStoreClosed, getTodayScheduleText, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
+import { formatRestaurantMinimumOrder } from '@/lib/restaurantStorefront'
 
 interface Props {
   perfil: Profile
@@ -79,6 +80,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const prepTime = perfil.operations_config?.defaultPreparationTime
   const storeAddress = perfil.store_address || perfil.direccion
   const heroImage = perfil.hero_image_url || perfil.banner_url || perfil.avatar_url
+  const minimumOrderText = formatRestaurantMinimumOrder(perfil.operations_config?.minOrderAmount)
 
   useEffect(() => {
     setMounted(true)
@@ -146,6 +148,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
 
   const handleQuickAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation()
+    if (isReadOnly || product.is_available === false) return
     cartStore.addToCart(perfil.id, product)
     setIsCartWidgetDismissed(false)
   }
@@ -231,12 +234,17 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
               <MapPin size={13} className="text-neutral-500 shrink-0" />
               <span>Entregar a</span>
             </div>
-            <div className="flex items-center justify-between text-[13px] font-bold text-neutral-900 leading-snug cursor-pointer" onClick={handleOpenAddressFromSidebar}>
+            <button
+              type="button"
+              onClick={handleOpenAddressFromSidebar}
+              className="flex w-full items-center justify-between text-left text-[13px] font-bold text-neutral-900 leading-snug transition-colors hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--restaurant-accent)] focus-visible:ring-offset-2 rounded-lg"
+              aria-label="Agregar o cambiar dirección de entrega"
+            >
               <span className="truncate pr-2">
                 {savedAddress ? savedAddress.direccion : 'Agrega tu dirección de entrega'}
               </span>
               <ChevronDown size={14} className="text-neutral-500 shrink-0" />
-            </div>
+            </button>
             <button
               onClick={handleOpenAddressFromSidebar}
               className="text-[11px] font-semibold hover:underline text-left mt-0.5 cursor-pointer"
@@ -271,6 +279,14 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                 <line x1="3" y1="18" x2="3.01" y2="18"/>
               </svg>
               <span className="text-white font-medium text-sm">Menú</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsOrderHistoryOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-white hover:bg-white/5 font-medium text-sm transition-all cursor-pointer select-none"
+            >
+              <ShoppingBag size={18} className="shrink-0" />
+              <span>Mis pedidos</span>
             </button>
           </nav>
 
@@ -348,7 +364,12 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
         <div className="flex items-center justify-between">
           <RestaurantWordmark storeName={perfil.store_name} accentColor={accentColor} />
         </div>
-        <div className="bg-white rounded-xl p-3 shadow-sm text-neutral-800 mt-4 flex items-center justify-between" onClick={handleOpenAddressFromSidebar}>
+        <button
+          type="button"
+          onClick={handleOpenAddressFromSidebar}
+          className="w-full bg-white rounded-xl p-3 shadow-sm text-neutral-800 mt-4 flex items-center justify-between text-left transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--restaurant-accent)] focus-visible:ring-offset-2"
+          aria-label="Agregar o cambiar dirección de entrega"
+        >
           <div className="flex items-center gap-2">
             <MapPin size={15} style={{ color: accentColor }} />
             <span className="text-xs font-bold truncate max-w-[220px]">
@@ -356,7 +377,14 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
             </span>
           </div>
           <span className="text-[11px] font-semibold" style={{ color: accentColor }}>Cambiar</span>
-        </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsOrderHistoryOpen(true)}
+          className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-white/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded-lg"
+        >
+          <ShoppingBag size={15} /> Mis pedidos
+        </button>
       </div>
 
       {/* ── 3. MAIN CONTENT (RIGHT AREA) ── */}
@@ -473,6 +501,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                     item={item}
                     onSelect={() => setSelectedProduct(item)}
                     onQuickAdd={(e) => handleQuickAddToCart(e, item)}
+                    isReadOnly={isReadOnly}
                   />
                 ))}
               </div>
@@ -503,6 +532,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                   item={item}
                   onSelect={() => setSelectedProduct(item)}
                   onQuickAdd={(e) => handleQuickAddToCart(e, item)}
+                  isReadOnly={isReadOnly}
                 />
               ))}
             </div>
@@ -597,6 +627,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                       item={item}
                       onSelect={() => setSelectedProduct(item)}
                       onQuickAdd={(e) => handleQuickAddToCart(e, item)}
+                      isReadOnly={isReadOnly}
                     />
                   ))}
                 </div>
@@ -646,9 +677,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
             Ver carrito
           </button>
 
-          <p className="text-[11px] text-neutral-400 text-center mt-2">
-            Pedido mínimo: S/ {perfil.operations_config?.minOrderAmount ? perfil.operations_config.minOrderAmount.toFixed(2) : '25.00'}
-          </p>
+          {minimumOrderText && <p className="text-[11px] text-neutral-400 text-center mt-2">{minimumOrderText}</p>}
         </div>
       )}
 
@@ -787,18 +816,25 @@ function ProductCardItem({
   item,
   hasBadge = false,
   onSelect,
-  onQuickAdd
+  onQuickAdd,
+  isReadOnly,
 }: {
   item: Product
   hasBadge?: boolean
   onSelect: () => void
   onQuickAdd: (e: React.MouseEvent) => void
+  isReadOnly?: boolean
 }) {
+  const canQuickAdd = !isReadOnly && item.is_available !== false
+
   return (
-    <div
-      onClick={onSelect}
-      className="group bg-white rounded-2xl border border-neutral-100/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden relative cursor-pointer"
-    >
+    <article className="group bg-white rounded-2xl border border-neutral-100/80 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden relative">
+      <button
+        type="button"
+        onClick={onSelect}
+        className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--restaurant-accent)]"
+        aria-label={`Ver detalles de ${item.name}`}
+      >
       {/* Image Container */}
       <div className="aspect-[4/3] relative overflow-hidden bg-neutral-100">
         {item.image_url ? (
@@ -837,38 +873,23 @@ function ProductCardItem({
           </div>
         )}
       </div>
-
-      {/* Card Content */}
-      <div className="p-3.5 flex-1 flex flex-col justify-between">
-        <div>
-          <h3 className="font-bold text-neutral-900 text-sm leading-snug line-clamp-1 group-hover:text-[#B8502E] transition-colors">
-            {item.name}
-          </h3>
-          {item.description && (
-            <p className="text-neutral-500 text-xs leading-snug line-clamp-2 mt-1 min-h-[32px] font-light">
-              {item.description}
-            </p>
-          )}
-        </div>
-
-        {/* Bottom Price & Add Action */}
-        <div className="flex items-center justify-between pt-3 mt-1">
-          <span className="font-bold text-sm" style={{ color: 'var(--restaurant-accent)' }}>
-            S/ {item.price.toFixed(2)}
-          </span>
-
-          {item.is_available !== false && (
-            <button
-              onClick={onQuickAdd}
-              aria-label={`Agregar ${item.name}`}
-              className="w-7 h-7 rounded-full bg-[var(--restaurant-accent)] hover:brightness-95 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer"
-            >
-              <Plus size={16} strokeWidth={2.5} />
-            </button>
-          )}
-        </div>
+      <div className="px-3.5 pt-3.5 text-left">
+        <h3 className="font-bold text-neutral-900 text-sm leading-snug line-clamp-1 group-hover:text-[#B8502E] transition-colors">
+          {item.name}
+        </h3>
+        {item.description && (
+          <p className="text-neutral-500 text-xs leading-snug line-clamp-2 mt-1 min-h-[32px] font-light">
+            {item.description}
+          </p>
+        )}
       </div>
-    </div>
+      </button>
+
+      <div className="px-3.5 pb-3.5 pt-3 flex items-center justify-between gap-3">
+        <span className="font-bold text-sm" style={{ color: 'var(--restaurant-accent)' }}>S/ {item.price.toFixed(2)}</span>
+        {canQuickAdd && <button type="button" onClick={onQuickAdd} aria-label={`Agregar ${item.name}`} className="w-7 h-7 rounded-full bg-[var(--restaurant-accent)] hover:brightness-95 text-white flex items-center justify-center shadow-md active:scale-90 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--restaurant-accent)] focus-visible:ring-offset-2"><Plus size={16} strokeWidth={2.5} /></button>}
+      </div>
+    </article>
   )
 }
 

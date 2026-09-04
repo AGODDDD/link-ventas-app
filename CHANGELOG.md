@@ -91,6 +91,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- La plantilla de restaurante recupera el acceso persistente a **Mis pedidos**
+  en escritorio y móvil. El pedido mínimo solo se muestra cuando está
+  configurado, y la dirección, tarjetas y carrito recuperan controles
+  accesibles por teclado sin alterar la composición editorial.
 - El saludo del Resumen ahora se adapta a la hora de Lima y se actualiza sin
   recargar; la barra superior distingue conexión, reconexión, desconexión y
   errores de Supabase Realtime en vez de mostrar siempre “Sincronizando”.

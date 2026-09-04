@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { formatRestaurantMinimumOrder } from '../lib/restaurantStorefront'
 
 const storefrontPath = new URL('../app/tienda/[id]/page.tsx', import.meta.url)
 const templatePath = new URL('../components/tienda/templates/RestauranteTemplate.tsx', import.meta.url)
@@ -21,4 +22,14 @@ test('la interfaz restaurante deriva identidad y operación de la configuración
   assert.match(source, /const prepTime = perfil\.operations_config\?\.defaultPreparationTime/)
   assert.match(source, /const heroImage = perfil\.hero_image_url \|\| perfil\.banner_url \|\| perfil\.avatar_url/)
   assert.doesNotMatch(source, /Pucusana|51999999999|Av\. La Mar|images\.unsplash\.com/)
+  assert.match(source, /setIsOrderHistoryOpen\(true\)/)
+  assert.match(source, /aria-label="Agregar o cambiar dirección de entrega"/)
+  assert.match(source, /isReadOnly=\{isReadOnly\}/)
+  assert.doesNotMatch(source, /Pedido mínimo: S\/ \{perfil\.operations_config/)
+})
+
+test('el pedido mínimo se muestra solo cuando la tienda lo configuró', () => {
+  assert.equal(formatRestaurantMinimumOrder(undefined), null)
+  assert.equal(formatRestaurantMinimumOrder(0), null)
+  assert.equal(formatRestaurantMinimumOrder(25), 'Pedido mínimo: S/ 25.00')
 })
