@@ -35,7 +35,7 @@ derivándose de `stores`, `store_config`, `products`, `delivery_settings` y
 - La franja de confianza presenta las garantías y los medios de pago como dos
   grupos independientes. Los distintivos de Visa, Mastercard, Yape, Plin y
   efectivo respetan la composición visual de la referencia: Yape conserva su
-  acento turquesa superior y Plin su círculo turquesa, sin recursos remotos.
+  acento turquesa superior y Plin su pastilla turquesa, sin recursos remotos.
 
 ## Validación técnica
 
