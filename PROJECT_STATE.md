@@ -15,6 +15,8 @@ firmado. El detalle verificable vive en
 - SaaS multi-tenant: una tienda por cuenta, propiedad basada en
   `stores.owner_id` y RLS para los datos de comerciantes.
 - Storefront, carrito, pedidos, variantes, reservas de inventario y dashboard.
+  La plantilla Restaurante incorpora una portada operativa y estados visuales
+  útiles para catálogos pequeños, sin alterar el contrato de pedidos o pagos.
 - Cálculo transaccional de precios y stock en servidor; el navegador no puede
   confirmar pagos ni modificar estados de pedido libremente.
 - Pago de tiendas conciliado por webhook firmado y contrato de inventario

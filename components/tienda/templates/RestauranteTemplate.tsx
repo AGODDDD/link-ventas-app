@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Profile, Product } from '@/types/tienda'
-import { Search, ShoppingCart, User, ClipboardList, MapPin } from 'lucide-react'
+import { Search, ShoppingCart, User, ClipboardList, MapPin, Clock3, Bike, Store, MessageCircle, Sparkles, ChevronRight } from 'lucide-react'
 import { useCartStore } from '@/store/useCartStore'
 import { useCustomerStore } from '@/store/useCustomerStore'
 import RestauranteProductModal from './RestauranteProductModal'
@@ -47,6 +47,10 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const deliveryFee = Number.isFinite(configuredDeliveryFee) && configuredDeliveryFee > 0 ? configuredDeliveryFee : 0
   const storeIsClosed = shouldEnforceStoreSchedule(perfil.operations_config?.acceptsOrdersAlways)
     && isStoreClosed(perfil.store_schedule ?? null)
+  const heroImage = perfil.banner_url || perfil.hero_image_url || productos.find((product) => product.image_url)?.image_url
+  const preparationTime = perfil.operations_config?.defaultPreparationTime || '30–45 min'
+  const deliveryEnabled = perfil.operations_config?.deliveryEnabled !== false
+  const pickupEnabled = perfil.operations_config?.pickupEnabled === true
 
   useEffect(() => {
     setMounted(true)
@@ -83,9 +87,9 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   }, [productos, extensionData]);
 
   const catNames = Object.keys(categorias);
-  if (catNames.length > 0 && !activeCategory) {
-    setActiveCategory(catNames[0])
-  }
+  useEffect(() => {
+    if (catNames.length > 0 && !activeCategory) setActiveCategory(catNames[0])
+  }, [activeCategory, catNames])
 
   // Scroll Spy for Categories
   useEffect(() => {
@@ -216,16 +220,14 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
 
           {/* Floating Address Card */}
           <div className="relative -mt-10 px-4 z-10 w-full">
-            <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-neutral-100 flex flex-col items-center text-center gap-2 relative">
-              <span className="font-bold text-sm text-neutral-800 leading-tight block w-2/3 mx-auto">
-                {savedAddress ? savedAddress.direccion : 'Agrega tu dirección para activar promociones'}
-              </span>
-              <button onClick={handleOpenAddressFromSidebar} className="flex items-center gap-2 text-xs font-medium text-neutral-700 mt-2 hover:text-black">
-                <MapPin size={14} /> {savedAddress ? 'Cambiar dirección' : 'Agregar dirección'}
+            <div className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.10)]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-400">Entregar en</p>
+              <p className="mt-1 truncate text-sm font-bold text-neutral-900">
+                {savedAddress ? savedAddress.direccion : 'Elige tu ubicación'}
+              </p>
+              <button onClick={handleOpenAddressFromSidebar} className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#b94e28] transition-colors hover:text-[#8f3518]">
+                <MapPin size={14} /> {savedAddress ? 'Cambiar ubicación' : 'Agregar ubicación'} <ChevronRight size={14} />
               </button>
-              <div className="flex items-center gap-2 mt-1 text-xs text-neutral-500 font-bold">
-                 <span>🛵</span> {savedAddress ? 'Dirección guardada ✓' : '---'}
-              </div>
             </div>
           </div>
 
@@ -314,7 +316,48 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
 
       {/* RIGHT MAIN CONTENT */}
       <main className="flex-1 md:ml-[320px] lg:ml-[350px] p-4 sm:p-6 lg:p-8 pb-32 max-w-6xl w-full mx-auto self-start">
-         <div className="space-y-12">
+         <div className="space-y-10">
+            <section className="relative min-h-[310px] overflow-hidden rounded-[28px] bg-[#20130f] px-6 py-8 text-white shadow-[0_24px_70px_rgba(32,19,15,0.22)] sm:min-h-[340px] sm:px-10 sm:py-10">
+              {heroImage ? (
+                <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-65" />
+              ) : (
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_25%,rgba(219,101,54,0.72),transparent_35%),radial-gradient(circle_at_90%_100%,rgba(247,191,99,0.36),transparent_45%)]" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#160d0b] via-[#160d0b]/80 to-[#160d0b]/10" />
+              <div className="relative flex h-full max-w-xl flex-col justify-end">
+                <div className="mb-5 flex flex-wrap gap-2">
+                  <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold backdrop-blur-xl ${storeIsClosed ? 'border-red-200/25 bg-red-500/20 text-red-100' : 'border-emerald-200/25 bg-emerald-400/15 text-emerald-100'}`}>
+                    <span className={`h-2 w-2 rounded-full ${storeIsClosed ? 'bg-red-300' : 'bg-emerald-300 animate-pulse'}`} />
+                    {storeIsClosed ? 'Cerrado por ahora' : 'Abierto ahora'}
+                  </span>
+                  {(deliveryEnabled || pickupEnabled) && <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-xl"><Bike size={14} /> {deliveryEnabled && pickupEnabled ? 'Delivery y recojo' : deliveryEnabled ? 'Delivery disponible' : 'Recojo disponible'}</span>}
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-xl"><Clock3 size={14} /> {preparationTime}</span>
+                </div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#ffbf8a]">Pide directo al restaurante</p>
+                <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-5xl">{perfil.store_name || 'Tu restaurante'}</h1>
+                <p className="mt-3 max-w-lg text-sm leading-6 text-white/75 sm:text-base">{perfil.description || 'Platos preparados al momento, ingredientes frescos y un pedido simple de principio a fin.'}</p>
+                <button onClick={() => catNames[0] && handleScrollToCategory(catNames[0])} className="mt-6 inline-flex w-fit items-center gap-2 rounded-full bg-[#df6438] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_28px_rgba(223,100,56,0.38)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#ef7549] active:scale-95">
+                  Ver el menú <ChevronRight size={17} />
+                </button>
+              </div>
+            </section>
+
+            <section className="grid gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 sm:grid-cols-3">
+              <div className="flex items-center gap-3 bg-white px-4 py-4"><Bike className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">{deliveryEnabled ? 'Delivery disponible' : 'Recojo en tienda'}</p><p className="mt-0.5 text-[11px] text-neutral-500">{deliveryFee > 0 ? `Envío desde S/ ${deliveryFee.toFixed(2)}` : 'Coordina tu pedido fácilmente'}</p></div></div>
+              <div className="flex items-center gap-3 bg-white px-4 py-4"><Clock3 className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">Preparado al momento</p><p className="mt-0.5 text-[11px] text-neutral-500">Tiempo estimado: {preparationTime}</p></div></div>
+              <div className="flex items-center gap-3 bg-white px-4 py-4"><Store className="text-[#c6532b]" size={20} /><div><p className="text-xs font-bold text-neutral-900">Compra con confianza</p><p className="mt-0.5 text-[11px] text-neutral-500">Pagos y atención directa</p></div></div>
+            </section>
+
+            {catNames.length > 1 && <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              {catNames.map((cat) => <button key={cat} onClick={() => handleScrollToCategory(cat)} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition-all duration-300 active:scale-95 ${activeCategory === cat ? 'border-[#c6532b] bg-[#c6532b] text-white shadow-[0_8px_20px_rgba(198,83,43,0.22)]' : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#c6532b]/35 hover:text-[#a94320]'}`}>{cat}</button>)}
+            </div>}
+
+            {productos.length > 0 && <section>
+              <div className="mb-5 flex items-end justify-between gap-4"><div><p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6532b]"><Sparkles size={14} /> Para pedir ahora</p><h2 className="mt-2 text-2xl font-black tracking-[-0.04em] text-neutral-900">Favoritos del menú</h2></div><button onClick={() => catNames[0] && handleScrollToCategory(catNames[0])} className="hidden items-center gap-1 text-xs font-bold text-[#b94e28] sm:inline-flex">Ver todo <ChevronRight size={15} /></button></div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {productos.slice(0, 4).map((item) => <button key={`featured-${item.id}`} onClick={() => setSelectedProduct(item)} className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white text-left shadow-[0_8px_24px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(15,23,42,0.12)] active:scale-[0.99]"><div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">{item.image_url ? <img src={item.image_url} alt={item.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-xs font-bold uppercase tracking-widest text-neutral-400">Próximamente</div>}<span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1.5 text-xs font-black text-neutral-900 shadow-sm">S/ {item.price.toFixed(2)}</span></div><div className="p-4"><h3 className="line-clamp-1 text-sm font-bold text-neutral-900">{item.name}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-neutral-500">{item.description || 'Preparado especialmente para ti.'}</p></div></button>)}
+              </div>
+            </section>}
             {catNames.map((categoria) => (
               <section key={categoria} id={categoria} className="scroll-mt-28 md:scroll-mt-[100px]">
                 
@@ -328,7 +371,7 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
                 </div>
                 
                 {/* Product Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-5 ${categorias[categoria].length === 1 ? 'max-w-sm' : ''}`}>
                   {categorias[categoria].map((item) => {
                     const priceDiscount = item.original_price && item.original_price > item.price 
                         ? item.original_price - item.price : null;
@@ -386,24 +429,26 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
 
       <footer className="md:ml-[320px] lg:ml-[350px] px-4 pb-28 pt-4 text-center text-neutral-500">
         <PaymentTrustBadges mercadopagoActive={perfil.mercadopago_active === true} className="mx-auto mb-6 text-neutral-800" />
-        <p className="text-xs">© {new Date().getFullYear()} {perfil.store_name || 'Restaurante'}. Todos los derechos reservados.</p>
+        <div className="flex flex-col items-center gap-3"><p className="text-xs">© {new Date().getFullYear()} {perfil.store_name || 'Restaurante'}. Todos los derechos reservados.</p>{perfil.whatsapp_phone && <a href={`https://wa.me/${perfil.whatsapp_phone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-semibold text-[#b94e28] transition-colors hover:text-[#8f3518]"><MessageCircle size={15} /> ¿Necesitas ayuda con tu pedido?</a>}</div>
       </footer>
 
       {/* FLOATING CART BUBBLE BUTTON */}
       {!isReadOnly && (
-      <div 
+      <button
         onClick={() => setIsCartOpen(true)}
-        className="fixed bottom-0 right-0 z-50 cursor-pointer flex flex-col items-end"
+        aria-label="Abrir carrito"
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-full bg-[#17110f] py-3 pl-4 pr-5 text-white shadow-[0_16px_38px_rgba(23,17,15,0.30)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(23,17,15,0.38)] active:scale-95"
       >
-        <div className="w-24 h-24 bg-black rounded-tl-full flex items-end justify-end p-6 shadow-[0_0_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-transform origin-bottom-right relative">
-          <ShoppingCart size={32} className="text-white" strokeWidth={1.5} />
+        <span className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#df6438]">
+          <ShoppingCart size={20} className="text-white" strokeWidth={2} />
           {mounted && totalItems > 0 && (
-            <span className="absolute top-3 left-3 bg-white text-black text-xs w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md">
+            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-black text-[#17110f] shadow-md">
               {totalItems}
             </span>
           )}
-        </div>
-      </div>
+        </span>
+        <span className="text-left"><span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">Tu pedido</span><span className="block text-sm font-bold">Ver carrito</span></span>
+      </button>
       )}
 
       {/* PROFILE PANEL */}

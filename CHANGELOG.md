@@ -14,6 +14,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Rediseñada la plantilla de Restaurante para priorizar la decisión de compra:
+  portada con estado operativo, delivery o recojo, tiempo estimado, favoritos,
+  categorías visibles, señales de confianza y un carrito compacto. El cambio
+  conserva el contrato existente de productos, checkout, pedidos y pagos.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
