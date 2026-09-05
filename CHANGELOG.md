@@ -16,6 +16,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Configuración de tienda: los controles visuales se ajustan a la plantilla
+  seleccionada. El contenido editorial queda disponible solo para Moda, los
+  colores solo para Restaurante y el radio de delivery se retira hasta que el
+  cálculo de cobertura exista realmente en el checkout.
 - Configuración de tienda: el selector de **Color secundario** se oculta al
   tener seleccionada la plantilla Restaurante, que actualmente no lo consume;
   se mantiene disponible para Comercio y Moda.
@@ -117,6 +121,9 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- Pedidos de Restaurante: el pedido mínimo ahora se valida en el servidor con
+  el subtotal recalculado desde los productos y modificadores vigentes, antes
+  de crear una orden o reserva de inventario.
 - Plantilla Restaurante: el botón **+** ya no incorpora directamente productos
   que tienen ingredientes obligatorios; abre su configurador para exigir la
   selección antes de agregarlos al carrito. Los productos sin elección

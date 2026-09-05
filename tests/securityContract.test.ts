@@ -81,6 +81,13 @@ test('public order creation and tracking are rate limited before privileged acce
   assert.match(trackingRoute, /getRateLimitKey\(req, 'order-tracking', \[storeId\]\)/)
 })
 
+test('Restaurante aplica el pedido mínimo en el servidor antes de crear la orden', () => {
+  assert.match(ordersRoute, /store\.template_type === 'restaurante'/)
+  assert.match(ordersRoute, /operations\.min_order_amount/)
+  assert.match(ordersRoute, /El pedido mínimo es S\/ \$\{minimumOrder\.toFixed\(2\)\}/)
+  assert.match(ordersRoute, /\.from\('products'\)/)
+})
+
 test('Pro recurring billing is server-created and invoice-confirmed', () => {
   assert.match(billingRoute, /api\.mercadopago\.com\/preapproval/)
   assert.match(billingRoute, /process\.env\.VERCEL_ENV === 'preview'/)
