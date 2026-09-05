@@ -23,18 +23,35 @@ export default function AccountCenter() {
   const [name, setName] = useState('')
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const load = async () => {
-    const headers = await authHeaders()
-    if (!headers) return
-    const response = await fetch('/api/account', { headers })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.error || 'No se pudo cargar tu cuenta.')
-    setAccount(data.account); setName(data.account.fullName)
-  }
-  useEffect(() => { load().catch((error) => toast.error(error.message)).finally(() => setLoading(false)) }, [])
+  useEffect(() => {
+    const controller = new AbortController()
+    const load = async () => {
+      setLoading(true)
+      setLoadError(null)
+      try {
+        const headers = await authHeaders()
+        if (!headers) throw new Error('Tu sesión ha caducado. Vuelve a iniciar sesión.')
+        const response = await fetch('/api/account', { headers, signal: controller.signal })
+        const data = await response.json()
+        if (!response.ok || !data.account) throw new Error(data.error || 'No se pudo cargar tu cuenta.')
+        if (!controller.signal.aborted) {
+          setAccount(data.account)
+          setName(data.account.fullName)
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setLoadError(error instanceof Error ? error.message : 'No se pudo cargar tu cuenta.')
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+    void load()
+    return () => controller.abort()
+  }, [loadAttempt])
 
   const saveName = async (event: FormEvent) => {
     event.preventDefault(); const headers = await authHeaders(); if (!headers) return
@@ -57,8 +74,8 @@ export default function AccountCenter() {
       setAccount((value) => value ? { ...value, deletionRequest: data.deletionRequest } : value); toast.success('Solicitud registrada. Te atenderemos en hasta 7 días.')
     } catch (error) { toast.error(error instanceof Error ? error.message : 'No se pudo registrar la solicitud.') } finally { setDeleting(false) }
   }
-  if (loading) return <div className="h-72 animate-pulse rounded-2xl border border-zinc-200 bg-white/60 dark:border-zinc-800 dark:bg-zinc-900/60" />
-  if (!account) return null
+  if (loading) return <div role="status" className="flex min-h-40 items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white/60 p-6 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400"><Loader2 size={18} className="animate-spin" />Cargando tu perfil…</div>
+  if (loadError || !account) return <div role="alert" className="rounded-2xl border border-zinc-200 p-6 text-sm dark:border-zinc-800"><p>{loadError || 'No se pudo cargar tu cuenta.'}</p><button type="button" onClick={() => setLoadAttempt(value => value + 1)} className="mt-3 font-semibold underline underline-offset-4">Reintentar</button></div>
   const due = account.deletionRequest ? new Intl.DateTimeFormat('es-PE', { dateStyle: 'long' }).format(new Date(account.deletionRequest.due_at)) : null
   return <section data-tour="settings-account" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
     <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-[radial-gradient(circle_at_top_right,_rgba(47,126,218,0.14),transparent_36%),linear-gradient(135deg,#ffffff,#f6f7fb)] p-6 shadow-[0_16px_45px_rgba(15,23,42,0.06)] dark:border-zinc-800 dark:bg-[radial-gradient(circle_at_top_right,_rgba(47,126,218,0.16),transparent_35%),linear-gradient(135deg,#18181b,#09090b)] sm:p-8">

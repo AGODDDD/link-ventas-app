@@ -47,7 +47,7 @@ test('security migration removes public profile access and legacy order policies
   assert.match(migration, /REVOKE ALL ON TABLE public\.profiles FROM anon, authenticated/)
   assert.match(migration, /GRANT SELECT \(id, plan, plan_expires_at\) ON TABLE public\.profiles TO authenticated/)
   assert.match(migration, /DROP POLICY IF EXISTS "Merchants ven sus propias órdenes"/)
-  assert.doesNotMatch(migration, /CREATE POLICY[^;]+auth\.uid\(\)\s*=\s*merchant_id/s)
+  assert.doesNotMatch(migration, /CREATE POLICY[^;]+auth\.uid\(\)\s*=\s*merchant_id/)
 })
 
 test('payment signatures are isolated between platform and merchant applications', () => {

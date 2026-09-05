@@ -82,6 +82,8 @@ const TABS = [
 export default function ConfiguracionPage() {
   const dashboardSession = useDashboardSession()
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
@@ -115,18 +117,23 @@ export default function ConfiguracionPage() {
   const [savingTemplate, setSavingTemplate] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
     const cargarPerfil = async () => {
+      setLoading(true)
+      setLoadError(null)
       const { userId, userEmail, planStatus, planExpiresAt, store } = dashboardSession
       if (!store) {
-        toast.error('No se encontró la tienda principal.')
-        setLoading(false)
-        return
+        throw new Error('No se encontró la tienda principal.')
       }
 
-      const [{ data: config }, { data: delivery }] = await Promise.all([
+      const [{ data: config, error: configError }, { data: delivery, error: deliveryError }] = await Promise.all([
         supabase.from('store_config').select('*').eq('store_id', store.id).maybeSingle(),
         supabase.from('delivery_settings').select('base_delivery_fee').eq('store_id', store.id).maybeSingle(),
       ])
+
+      if (cancelled) return
+      if (configError || deliveryError) throw new Error('No se pudieron cargar los ajustes de la tienda.')
+      if (!config) throw new Error('No se encontró la configuración de la tienda.')
 
       if (config) {
         const operations = config.operations_config || {}
@@ -185,8 +192,13 @@ export default function ConfiguracionPage() {
       }
       setLoading(false)
     }
-    void cargarPerfil()
-  }, [dashboardSession])
+    void cargarPerfil().catch((error) => {
+      if (!cancelled) setLoadError(error instanceof Error ? error.message : 'No se pudieron cargar los ajustes.')
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [dashboardSession, loadAttempt])
 
   const hasChanges = initialData && formData ? JSON.stringify(initialData) !== JSON.stringify(formData) : false
 
@@ -383,9 +395,6 @@ export default function ConfiguracionPage() {
     }
   }
 
-  if (loading || !formData) {
-    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-zinc-400" /></div>
-  }
 
   return (
     <div id="tour-page-settings" className="max-w-6xl mx-auto pb-32">
@@ -434,11 +443,19 @@ export default function ConfiguracionPage() {
         {/* CONTENIDO ACTIVO */}
         <div className="md:col-span-3 space-y-6">
 
+          <div hidden={activeTab !== 'general'}>
+            <AccountCenter key={dashboardSession.userId} />
+          </div>
+
+          {loading ? (
+            <div role="status" className="flex min-h-40 items-center justify-center gap-3 rounded-xl border border-zinc-200 p-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"><Loader2 size={18} className="animate-spin" />Cargando ajustes de la tienda…</div>
+          ) : loadError || !formData ? (
+            <div role="alert" className="rounded-xl border border-zinc-200 p-6 text-sm dark:border-zinc-800"><p>{loadError || 'No se pudieron cargar los ajustes.'}</p><Button variant="outline" className="mt-3" onClick={() => setLoadAttempt(value => value + 1)}>Reintentar</Button></div>
+          ) : (<>
           {/* 1. GENERAL & PERFIL */}
           {activeTab === 'general' && (
             <div data-tour="settings-panel-general" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              <AccountCenter />
 
               <Card data-tour="settings-identity" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
@@ -1058,6 +1075,7 @@ export default function ConfiguracionPage() {
             </div>
           )}
 
+          </>)}
         </div>
       </div>
 
