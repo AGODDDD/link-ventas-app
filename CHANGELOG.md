@@ -114,6 +114,10 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- Plantilla Restaurante: el botón **+** ya no incorpora directamente productos
+  que tienen ingredientes obligatorios; abre su configurador para exigir la
+  selección antes de agregarlos al carrito. Los productos sin elección
+  obligatoria conservan la adición rápida.
 - La tarjeta lateral de WhatsApp y la franja de confianza de la plantilla
   Restaurante se alinean con la composición editorial aprobada: imagen lateral,
   CTA verde, tres mensajes de confianza y medios de pago en una sola banda.

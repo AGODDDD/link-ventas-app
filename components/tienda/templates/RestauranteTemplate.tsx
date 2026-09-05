@@ -27,7 +27,7 @@ import AddressMapModal from './AddressMapModal'
 import OrderHistoryPanel from './OrderHistoryPanel'
 import SlideOverCart from '../SlideOverCart'
 import { isStoreClosed, getTodayScheduleText, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
-import { formatRestaurantMinimumOrder } from '@/lib/restaurantStorefront'
+import { formatRestaurantMinimumOrder, requiresRestaurantProductConfiguration } from '@/lib/restaurantStorefront'
 
 interface Props {
   perfil: Profile
@@ -162,6 +162,12 @@ export default function RestauranteTemplate({ perfil, productos, extensionData, 
   const handleQuickAddToCart = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation()
     if (isReadOnly || product.is_available === false) return
+
+    if (requiresRestaurantProductConfiguration(product)) {
+      setSelectedProduct(product)
+      return
+    }
+
     cartStore.addToCart(perfil.id, product)
     setIsCartWidgetDismissed(false)
   }

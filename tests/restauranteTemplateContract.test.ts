@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
-import { formatRestaurantMinimumOrder } from '../lib/restaurantStorefront'
+import { formatRestaurantMinimumOrder, requiresRestaurantProductConfiguration } from '../lib/restaurantStorefront'
+import { Product } from '../types/tienda'
 
 const storefrontPath = new URL('../app/tienda/[id]/page.tsx', import.meta.url)
 const templatePath = new URL('../components/tienda/templates/RestauranteTemplate.tsx', import.meta.url)
@@ -48,4 +49,35 @@ test('el pedido mínimo se muestra solo cuando la tienda lo configuró', () => {
   assert.equal(formatRestaurantMinimumOrder(undefined), null)
   assert.equal(formatRestaurantMinimumOrder(0), null)
   assert.equal(formatRestaurantMinimumOrder(25), 'Pedido mínimo: S/ 25.00')
+})
+
+test('el atajo de producto exige configurar modificadores obligatorios', () => {
+  const product = {
+    id: 'combo-1',
+    user_id: 'store-owner',
+    name: 'Combo 1',
+    price: 89,
+    variants: [{
+      id: 'garnish',
+      name: 'Elige tu guarnición',
+      required: true,
+      min_selections: 1,
+      max_selections: 1,
+      options: [],
+    }],
+  } satisfies Product
+
+  assert.equal(requiresRestaurantProductConfiguration(product), true)
+  assert.equal(requiresRestaurantProductConfiguration({ ...product, variants: [] }), false)
+  assert.equal(requiresRestaurantProductConfiguration({
+    ...product,
+    variants: [{
+      id: 'extra-salsa',
+      name: 'Salsas extra',
+      required: false,
+      min_selections: 0,
+      max_selections: 2,
+      options: [],
+    }],
+  }), false)
 })
