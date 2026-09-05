@@ -622,13 +622,15 @@ export default function ConfiguracionPage() {
                         <Input value={formData.primaryColor} onChange={(e) => updateForm('primaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Color Secundario</Label>
-                      <div className="flex gap-3">
-                        <Input type="color" className="w-12 h-10 p-1 cursor-pointer border-zinc-200 dark:border-zinc-700" value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} />
-                        <Input value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
+                    {formData.templateType !== 'restaurante' && (
+                      <div className="space-y-2">
+                        <Label>Color Secundario</Label>
+                        <div className="flex gap-3">
+                          <Input type="color" className="w-12 h-10 p-1 cursor-pointer border-zinc-200 dark:border-zinc-700" value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} />
+                          <Input value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

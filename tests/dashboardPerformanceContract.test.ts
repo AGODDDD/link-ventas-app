@@ -27,3 +27,10 @@ test('las vistas del dashboard reutilizan la sesión compartida', async () => {
   assert.doesNotMatch(files[3], /from\('profiles'\)/)
   assert.doesNotMatch(files[3], /from\('stores'\)[\s\S]*owner_id/)
 })
+
+test('Restaurante no muestra un color secundario que su plantilla no consume', async () => {
+  const source = await read('app/dashboard/configuracion/page.tsx')
+
+  assert.match(source, /formData\.templateType !== 'restaurante'/)
+  assert.match(source, /<Label>Color Secundario<\/Label>/)
+})
