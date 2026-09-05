@@ -16,6 +16,7 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- General & Perfil: identidad, correo, avatar, proveedor y plan visibles desde la sesión compartida, sin esperar `/api/account`. La actualización en segundo plano conserva los borradores y sólo habilita las acciones de cuenta cuando termina de verificar su estado.
 - Pruebas de contratos: expresiones regulares compatibles con el objetivo ES2017 del proyecto, manteniendo las mismas comprobaciones.
 - Ajustes de Tienda: el perfil carga en paralelo a la configuración y permanece montado al cambiar de pestaña; se muestran estados de carga explícitos y errores con reintento, evitando bloques vacíos y consultas repetidas al regresar a General & Perfil.
 - Plantilla Restaurante: eliminado el lockup duplicado de la barra superior,

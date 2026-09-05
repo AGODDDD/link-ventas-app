@@ -93,6 +93,13 @@ export default function DashboardLayout({
           userId: user.id,
           userEmail: user.email || '',
           userDisplayName: fullName || emailName || 'Administrador',
+          userAvatarUrl: typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null,
+          userProvider: user.identities?.some(identity => identity.provider === 'google')
+            ? 'Google'
+            : user.identities?.some(identity => identity.provider === 'facebook')
+              ? 'Facebook (acceso anterior)'
+              : 'Correo y contraseña',
+          userCreatedAt: user.created_at,
           planStatus: planActual as PlanStatus,
           planExpiresAt: expiresAt,
           store,

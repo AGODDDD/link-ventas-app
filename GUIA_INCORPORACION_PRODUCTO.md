@@ -53,9 +53,9 @@ dispositivos y no crea tablas ni datos de perfil en Supabase.
 
 ## Recorrido de Configuración
 
-El centro de cuenta carga de forma independiente de los ajustes de tienda y conserva sus datos y la edición en curso al cambiar de pestaña. Durante la consulta muestra “Cargando tu perfil…”; si falla, ofrece un mensaje y **Reintentar**. Los ajustes tienen su propio estado de carga y reintento. La información se vuelve a consultar al entrar nuevamente en la ruta de Configuración.
+El centro de cuenta carga de forma independiente de los ajustes de tienda y conserva sus datos y la edición en curso al cambiar de pestaña. La identidad y el plan se muestran inmediatamente desde la sesión compartida, sin esperar otra consulta. La actualización ocurre en segundo plano; sólo el estado de privacidad muestra una espera y, si falla, **Reintentar**. Las acciones de guardar el nombre o solicitar eliminación esperan la verificación del servidor; el borrador del nombre se conserva aunque llegue una respuesta durante la edición. Los ajustes tienen su propio estado de carga y reintento. La información se vuelve a consultar al entrar nuevamente en la ruta de Configuración.
 
-Validación de esta carga: 49 pruebas unitarias, build de producción y navegación Chromium con respuestas simuladas (perfil visible antes de terminar la configuración, tres cambios de pestaña sin repetir la consulta, borrador conservado, recuperación de error con reintento y navegación móvil). La latencia con una sesión real depende de la respuesta del servidor y no se mide con esta prueba simulada.
+Validación de esta carga: 49 pruebas unitarias, build de producción y navegación Chromium con respuestas simuladas (perfil visible antes de una respuesta de cuenta retrasada tres segundos y antes de terminar la configuración, tres cambios de pestaña sin repetir la consulta, borrador conservado al llegar la respuesta, acciones de privacidad bloqueadas hasta verificar su estado, identidad visible ante errores, recuperación con reintento y navegación móvil). La latencia con una sesión real depende de la respuesta del servidor y no se mide con esta prueba simulada.
 
 Configuración necesita una guía más profunda porque contiene siete pestañas.
 Cada paso puede declarar `settingsTab`; al entrar en ese paso,
