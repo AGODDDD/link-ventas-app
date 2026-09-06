@@ -27,3 +27,19 @@ test('las vistas del dashboard reutilizan la sesión compartida', async () => {
   assert.doesNotMatch(files[3], /from\('profiles'\)/)
   assert.doesNotMatch(files[3], /from\('stores'\)[\s\S]*owner_id/)
 })
+
+test('Restaurante no muestra un color secundario que su plantilla no consume', async () => {
+  const source = await read('app/dashboard/configuracion/page.tsx')
+
+  assert.doesNotMatch(source, /<Label>Color Secundario<\/Label>/)
+  assert.match(source, /formData\.templateType === 'restaurante' && <div className="grid grid-cols-1 gap-6">/)
+})
+
+test('los ajustes solo muestran contenido y colores donde la plantilla los consume', async () => {
+  const source = await read('app/dashboard/configuracion/page.tsx')
+
+  assert.match(source, /formData\?\.templateType === 'moda' \? TABS : TABS\.filter/)
+  assert.match(source, /formData\.templateType === 'restaurante' && <div className="grid grid-cols-1 gap-6">/)
+  assert.match(source, /formData\.templateType === 'comercio' && <div className="space-y-3">/)
+  assert.doesNotMatch(source, /htmlFor="delivery-radius"/)
+})

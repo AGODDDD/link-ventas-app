@@ -19,6 +19,8 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   Estos cambios todavía no están aplicados a producción.
 
 ### Added
+- Rediseño adaptable de la plantilla de restaurantes (`RestauranteTemplate`) con navegación editorial, búsqueda, carrito flotante y tarjeta de producto premium, todos alimentados por la identidad, catálogo y configuración operacional de cada comercio.
+- La plantilla muestra sólo los canales, horarios, modalidades de entrega, tiempo de preparación y pagos realmente configurados por cada restaurante; no añade demos públicas, catálogos ficticios ni información comercial fija.
 - Kit externo de LinkVentas con favicon, avatar, portada y plantilla social,
   construido a partir del símbolo aprobado y con reglas de aplicación.
 - Centro de cuenta profesional con identidad editable, proveedor de acceso, estado de suscripción, identificador técnico de soporte y controles de privacidad.
@@ -28,6 +30,36 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 - Acceso simplificado a Google y correo/contraseña; se retira Facebook Login y la dependencia de la revisión de Meta.
 
 ### Changed
+- Configuración de tienda: los controles visuales se ajustan a la plantilla
+  seleccionada. El contenido editorial queda disponible solo para Moda, los
+  colores solo para Restaurante y el radio de delivery se retira hasta que el
+  cálculo de cobertura exista realmente en el checkout.
+- Configuración de tienda: el selector de **Color secundario** se oculta al
+  tener seleccionada la plantilla Restaurante, que actualmente no lo consume;
+  se mantiene disponible para Comercio y Moda.
+- General & Perfil: identidad, correo, avatar, proveedor y plan visibles desde la sesión compartida, sin esperar `/api/account`. La actualización en segundo plano conserva los borradores y sólo habilita las acciones de cuenta cuando termina de verificar su estado.
+- Pruebas de contratos: expresiones regulares compatibles con el objetivo ES2017 del proyecto, manteniendo las mismas comprobaciones.
+- Ajustes de Tienda: el perfil carga en paralelo a la configuración y permanece montado al cambiar de pestaña; se muestran estados de carga explícitos y errores con reintento, evitando bloques vacíos y consultas repetidas al regresar a General & Perfil.
+- Plantilla Restaurante: eliminado el lockup duplicado de la barra superior,
+  priorizado el logo configurado por cada comercio en el lateral y reajustada la
+  composición de escritorio (lateral de 266 px, hero de ancho disponible y
+  franja de confianza sin choque con el carrito). El acceso a **Mis pedidos**
+  se conserva como acción secundaria.
+- Plantilla Restaurante: reagrupados los mensajes de confianza y los medios de
+  pago para una lectura más ordenada; Visa, Mastercard, Yape y Plin conservan
+  su distintivo visual y etiquetas accesibles.
+- Plantilla Restaurante: corregidos los distintivos Yape y Plin para respetar
+  la referencia visual y mantener su legibilidad a tamaños compactos, como
+  recursos locales accesibles.
+- Plantilla Restaurante: actualizados los cinco medios de pago de la franja
+  de confianza (Visa, Mastercard, Yape, Plin y efectivo) con marcas compactas
+  y un ícono de efectivo identificable, sin cargar recursos de terceros.
+- Plantilla Restaurante: la acción **Menú** usa un desplazamiento controlado
+  hacia su sección y conserva el eje horizontal en cero, evitando la deriva de
+  la vista al navegar desde el lateral; el contenido principal ya no suma un
+  ancho completo al margen del lateral en escritorio.
+- Plantilla Restaurante: el lateral de escritorio gana 24 px de ancho para
+  dar aire al CTA de WhatsApp, manteniendo alineado el contenido principal.
 - Rediseñada la bandeja de Pedidos para priorizar los pedidos abiertos y
   convertir el historial completado o cancelado en registros compactos,
   expandibles y legibles en móvil y escritorio. La vista conserva impresión y
@@ -103,6 +135,20 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
   y limpieza pendiente de datos temporales de sandbox.
 
 ### Fixed
+- Pedidos de Restaurante: el pedido mínimo ahora se valida en el servidor con
+  el subtotal recalculado desde los productos y modificadores vigentes, antes
+  de crear una orden o reserva de inventario.
+- Plantilla Restaurante: el botón **+** ya no incorpora directamente productos
+  que tienen ingredientes obligatorios; abre su configurador para exigir la
+  selección antes de agregarlos al carrito. Los productos sin elección
+  obligatoria conservan la adición rápida.
+- La tarjeta lateral de WhatsApp y la franja de confianza de la plantilla
+  Restaurante se alinean con la composición editorial aprobada: imagen lateral,
+  CTA verde, tres mensajes de confianza y medios de pago en una sola banda.
+- La plantilla de restaurante recupera el acceso persistente a **Mis pedidos**
+  en escritorio y móvil. El pedido mínimo solo se muestra cuando está
+  configurado, y la dirección, tarjetas y carrito recuperan controles
+  accesibles por teclado sin alterar la composición editorial.
 - El saludo del Resumen ahora se adapta a la hora de Lima y se actualiza sin
   recargar; la barra superior distingue conexión, reconexión, desconexión y
   errores de Supabase Realtime en vez de mostrar siempre “Sincronizando”.

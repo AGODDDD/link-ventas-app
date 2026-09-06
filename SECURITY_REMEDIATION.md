@@ -1,6 +1,6 @@
 # Correcciones de la auditoría de seguridad
 
-Fecha: 2026-09-05. Alcance: cambios locales; no aplicados a Supabase remoto ni desplegados.
+Fecha: 2026-09-05. Publicación autorizada el 2026-09-06. Destinos verificados: Supabase `lpgxkijtnhguwfdsowpj` (LinkVentas-MVP) y Vercel `link-ventas-app`.
 
 ## Controles corregidos
 
@@ -58,4 +58,4 @@ El navegador usa una instancia local con catálogo ficticio. No escribe en tiend
 - Repositorio/desarrollo: tests, fixture SQL, este documento, `DATABASE_SCHEMA.md`, `PROJECT_MAP.md` y `CHANGELOG.md`; no se sirven en la web.
 - Temporal: `.next/`, `node_modules/`, cachés de herramientas y capturas fuera del repositorio; no son entregables publicados.
 
-La aplicación remota, pagos reales, commit/push y despliegue no forman parte de la verificación local efectuada.
+Preparación de producción (2026-09-06): integrados los 17 commits de `origin/main` hasta `0cb1edf`, conservando la configuración y el checkout de restaurante. 72/72 pruebas, lint y build aprobados después de la integración. El índice único y las políticas de Storage requeridos existen en remoto; cero colores inválidos y cero pedidos pendientes en la comprobación previa. La migración histórica ya consta aplicada y no se reejecuta. El resultado del despliegue se comprueba por su SHA en Vercel. Pagos sandbox y pruebas concurrentes de Storage siguen pendientes; no se realizan cobros reales como prueba.

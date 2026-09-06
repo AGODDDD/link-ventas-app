@@ -1,6 +1,6 @@
 # Fuente única de verdad sobre el estado actual
 
-Última actualización: **2026-08-13**.
+Última actualización: **2026-09-04**.
 
 ## Veredicto
 
@@ -15,6 +15,9 @@ firmado. El detalle verificable vive en
 - SaaS multi-tenant: una tienda por cuenta, propiedad basada en
   `stores.owner_id` y RLS para los datos de comerciantes.
 - Storefront, carrito, pedidos, variantes, reservas de inventario y dashboard.
+- Plantilla Restaurante con identidad y operación por comercio, catálogo,
+  carrito, checkout, historial de pedidos y controles accesibles; la evidencia
+  técnica vive en `VERIFICACION_PLANTILLA_RESTAURANTE_2026-09-04.md`.
 - Cálculo transaccional de precios y stock en servidor; el navegador no puede
   confirmar pagos ni modificar estados de pedido libremente.
 - Pago de tiendas conciliado por webhook firmado y contrato de inventario

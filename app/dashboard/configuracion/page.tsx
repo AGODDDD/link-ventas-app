@@ -82,6 +82,8 @@ const TABS = [
 export default function ConfiguracionPage() {
   const dashboardSession = useDashboardSession()
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
@@ -113,20 +115,30 @@ export default function ConfiguracionPage() {
   // Para la confirmación de plantilla
   const [pendingTemplate, setPendingTemplate] = useState<string | null>(null)
   const [savingTemplate, setSavingTemplate] = useState(false)
+  const visibleTabs = formData?.templateType === 'moda' ? TABS : TABS.filter(tab => tab.id !== 'contenido')
 
   useEffect(() => {
+    if (!visibleTabs.some(tab => tab.id === activeTab)) setActiveTab('general')
+  }, [activeTab, visibleTabs])
+
+  useEffect(() => {
+    let cancelled = false
     const cargarPerfil = async () => {
+      setLoading(true)
+      setLoadError(null)
       const { userId, userEmail, planStatus, planExpiresAt, store } = dashboardSession
       if (!store) {
-        toast.error('No se encontró la tienda principal.')
-        setLoading(false)
-        return
+        throw new Error('No se encontró la tienda principal.')
       }
 
-      const [{ data: config }, { data: delivery }] = await Promise.all([
+      const [{ data: config, error: configError }, { data: delivery, error: deliveryError }] = await Promise.all([
         supabase.from('store_config').select('*').eq('store_id', store.id).maybeSingle(),
         supabase.from('delivery_settings').select('base_delivery_fee').eq('store_id', store.id).maybeSingle(),
       ])
+
+      if (cancelled) return
+      if (configError || deliveryError) throw new Error('No se pudieron cargar los ajustes de la tienda.')
+      if (!config) throw new Error('No se encontró la configuración de la tienda.')
 
       if (config) {
         const operations = config.operations_config || {}
@@ -185,8 +197,13 @@ export default function ConfiguracionPage() {
       }
       setLoading(false)
     }
-    void cargarPerfil()
-  }, [dashboardSession])
+    void cargarPerfil().catch((error) => {
+      if (!cancelled) setLoadError(error instanceof Error ? error.message : 'No se pudieron cargar los ajustes.')
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [dashboardSession, loadAttempt])
 
   const hasChanges = initialData && formData ? JSON.stringify(initialData) !== JSON.stringify(formData) : false
 
@@ -383,9 +400,6 @@ export default function ConfiguracionPage() {
     }
   }
 
-  if (loading || !formData) {
-    return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="animate-spin text-zinc-400" /></div>
-  }
 
   return (
     <div id="tour-page-settings" className="max-w-6xl mx-auto pb-32">
@@ -405,7 +419,7 @@ export default function ConfiguracionPage() {
               onChange={(e) => setActiveTab(e.target.value)}
               className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg h-12 px-4"
             >
-              {TABS.map(tab => (
+              {visibleTabs.map(tab => (
                 <option key={tab.id} value={tab.id}>{tab.label}</option>
               ))}
             </select>
@@ -413,7 +427,7 @@ export default function ConfiguracionPage() {
           
           {/* Desktop Menu */}
           <nav data-tour="settings-navigation" className="hidden md:flex flex-col space-y-1 sticky top-24">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
               return (
@@ -434,11 +448,19 @@ export default function ConfiguracionPage() {
         {/* CONTENIDO ACTIVO */}
         <div className="md:col-span-3 space-y-6">
 
+          <div hidden={activeTab !== 'general'}>
+            <AccountCenter key={dashboardSession.userId} />
+          </div>
+
+          {loading ? (
+            <div role="status" className="flex min-h-40 items-center justify-center gap-3 rounded-xl border border-zinc-200 p-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400"><Loader2 size={18} className="animate-spin" />Cargando ajustes de la tienda…</div>
+          ) : loadError || !formData ? (
+            <div role="alert" className="rounded-xl border border-zinc-200 p-6 text-sm dark:border-zinc-800"><p>{loadError || 'No se pudieron cargar los ajustes.'}</p><Button variant="outline" className="mt-3" onClick={() => setLoadAttempt(value => value + 1)}>Reintentar</Button></div>
+          ) : (<>
           {/* 1. GENERAL & PERFIL */}
           {activeTab === 'general' && (
             <div data-tour="settings-panel-general" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               
-              <AccountCenter />
 
               <Card data-tour="settings-identity" className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 rounded-xl">
                 <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800/50">
@@ -560,7 +582,7 @@ export default function ConfiguracionPage() {
                   <CardDescription>Colores y portada de la tienda.</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-3">
+                  {formData.templateType === 'comercio' && <div className="space-y-3">
                     <Label>Imagen de Portada (Banner)</Label>
                     <div className="relative w-full h-32 bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
                       {formData.bannerUrl ? (
@@ -576,11 +598,11 @@ export default function ConfiguracionPage() {
                       </Label>
                       <Input id="banner" type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, 'avatars', 'bannerUrl')} disabled={uploading} />
                     </div>
-                  </div>
+                  </div>}
 
                   <div className="space-y-3 mt-6">
-                    <Label>Foto Hero (Plantilla Moda)</Label>
-                    <p className="text-xs text-zinc-500">Imagen principal que aparece en el encabezado de tu tienda Moda. Recomendado: foto vertical de producto o modelo, mínimo 800x1000px.</p>
+                    <Label>Foto principal ({formData.templateType === 'restaurante' ? 'Restaurante' : formData.templateType === 'moda' ? 'Moda' : 'carrusel de Comercio'})</Label>
+                    <p className="text-xs text-zinc-500">Imagen destacada de la plantilla seleccionada.</p>
                     <div className="relative w-full h-48 bg-zinc-50 dark:bg-zinc-950 border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg overflow-hidden flex items-center justify-center group">
                       {formData.heroImageUrl ? (
                         <img src={formData.heroImageUrl} className="w-full h-full object-cover" alt="Hero" />
@@ -597,7 +619,7 @@ export default function ConfiguracionPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {formData.templateType === 'restaurante' && <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-2">
                       <Label>Color Principal</Label>
                       <div className="flex gap-3">
@@ -605,14 +627,7 @@ export default function ConfiguracionPage() {
                         <Input value={formData.primaryColor} onChange={(e) => updateForm('primaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Color Secundario</Label>
-                      <div className="flex gap-3">
-                        <Input type="color" className="w-12 h-10 p-1 cursor-pointer border-zinc-200 dark:border-zinc-700" value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} />
-                        <Input value={formData.secondaryColor} onChange={(e) => updateForm('secondaryColor', e.target.value)} className="font-mono uppercase" maxLength={7} />
-                      </div>
-                    </div>
-                  </div>
+                  </div>}
                 </CardContent>
               </Card>
 
@@ -774,7 +789,6 @@ export default function ConfiguracionPage() {
                         {formData.deliveryEnabled && (
                           <div className="grid gap-4 sm:grid-cols-3">
                             <div className="space-y-2"><Label htmlFor="delivery-fee">Tarifa base (S/)</Label><Input id="delivery-fee" type="number" min="0" step="0.50" value={formData.deliveryFee} onChange={event => updateForm('deliveryFee', Number(event.target.value))} /></div>
-                            <div className="space-y-2"><Label htmlFor="delivery-radius">Radio de cobertura (km)</Label><Input id="delivery-radius" type="number" min="1" value={formData.deliveryRadiusKm} onChange={event => updateForm('deliveryRadiusKm', Number(event.target.value))} /></div>
                             <div className="space-y-2"><Label htmlFor="minimum-order">Pedido mínimo (S/)</Label><Input id="minimum-order" type="number" min="0" step="0.50" value={formData.minOrderAmount} onChange={event => updateForm('minOrderAmount', Number(event.target.value))} /></div>
                           </div>
                         )}
@@ -1058,6 +1072,7 @@ export default function ConfiguracionPage() {
             </div>
           )}
 
+          </>)}
         </div>
       </div>
 

@@ -16,7 +16,7 @@ export async function generateMetadata({ params: paramsPromise }: { params: Prom
     .select('id, name, description')
     .eq(isUUID ? 'id' : 'slug', params.id)
     .single();
-    
+
   return {
     title: store?.name || 'Tienda LinkVentas',
     description: store?.description || 'Tienda online en LinkVentas.',
@@ -27,7 +27,6 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
   const params = await paramsPromise;
   
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
-
   // stores + store_config son la fuente de verdad del storefront.
   const { data: store } = await supabase
     .from('stores')
@@ -110,8 +109,7 @@ export default async function TiendaPage({ params: paramsPromise }: { params: Pr
     .from('products')
     .select('*')
     .eq('user_id', perfil.id)
-    .eq('is_active', true)
-
+    .eq('is_active', true);
   const productos = (productosBase || []) as any[];
 
   const storeName = perfil.store_name || "TU TIENDA";

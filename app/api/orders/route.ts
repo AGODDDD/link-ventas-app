@@ -87,6 +87,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La tienda está cerrada en este momento.' }, { status: 409 })
     }
 
+    if (store.template_type === 'restaurante') {
+      const minimumOrder = Number(operations.min_order_amount)
+      if (Number.isFinite(minimumOrder) && minimumOrder > 0) {
+        const productIds = [...new Set(normalizedItems.map(item => item.product_id))]
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('id, price, variants')
+          .in('id', productIds)
+          .eq('user_id', storeId)
+          .eq('is_active', true)
+
+        if (productsError || !products || products.length !== productIds.length) {
+          return NextResponse.json({ error: 'No se pudo validar el total del pedido.' }, { status: 409 })
+        }
+
+        const subtotal = normalizedItems.reduce((total, item) => {
+          const product = products.find(candidate => candidate.id === item.product_id)
+          const selectedOptions = (item.variant_details as { options?: Record<string, string[]> } | null)?.options || {}
+          const modifiers = Array.isArray(product?.variants) ? product.variants.reduce((sum: number, group: any) => {
+            const selected = selectedOptions[group?.id] || []
+            return sum + (Array.isArray(group?.options) ? group.options.reduce((optionSum: number, option: any) => (
+              selected.includes(option?.id) ? optionSum + Number(option?.price_modifier || 0) : optionSum
+            ), 0) : 0)
+          }, 0) : 0
+          return total + (Number(product?.price || 0) + modifiers) * item.quantity
+        }, 0)
+
+        if (subtotal < minimumOrder) {
+          return NextResponse.json({ error: `El pedido mínimo es S/ ${minimumOrder.toFixed(2)}.` }, { status: 409 })
+        }
+      }
+    }
+
     // A public order creates an inventory reservation. Bound it per client and
     // store so automated traffic cannot hold a merchant's stock hostage.
     const { data: allowed, error: limitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {

@@ -9,6 +9,9 @@ export interface DashboardSession {
   userId: string
   userEmail: string
   userDisplayName: string
+  userAvatarUrl: string | null
+  userProvider: string
+  userCreatedAt: string
   planStatus: DashboardPlanStatus
   planExpiresAt: string | null
   store: Store | null
