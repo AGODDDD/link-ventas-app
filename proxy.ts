@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { randomBytes } from 'node:crypto'
+import { storefrontCsp } from '@/lib/storefrontCsp'
 
 /**
  * LINKVENTAS REQUEST PROXY
@@ -13,6 +15,17 @@ import { NextResponse, type NextRequest } from 'next/server'
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
+  if (pathname.startsWith('/tienda/')) {
+    const nonce = randomBytes(16).toString('base64')
+    const policy = storefrontCsp(nonce, process.env.NODE_ENV !== 'production')
+    const headers = new Headers(request.headers)
+    headers.set('x-nonce', nonce)
+    headers.set('Content-Security-Policy', policy)
+    const response = NextResponse.next({ request: { headers } })
+    response.headers.set('Content-Security-Policy', policy)
+    response.headers.set('Cache-Control', 'private, no-store')
+    return response
+  }
 
   // ── Rutas siempre públicas ────────────────────────────────────────────────
   const isPublicRoute =
@@ -44,5 +57,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/pendiente', '/auth/callback', '/admin'],
+  matcher: ['/dashboard/:path*', '/pendiente', '/auth/callback', '/admin', '/tienda/:path*'],
 }

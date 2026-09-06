@@ -115,6 +115,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: 'Credenciales guardadas de forma segura' })
   } catch (error: any) {
     console.error('Error in /api/settings/payment:', error)
-    return NextResponse.json({ error: 'Error del Servidor: ' + error.message }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo guardar la configuración de pago.' }, { status: 500 })
   }
 }

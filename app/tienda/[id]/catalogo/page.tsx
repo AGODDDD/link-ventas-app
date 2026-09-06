@@ -4,6 +4,7 @@ import { Profile, Product } from '@/types/tienda'
 import ClientCatalog from '@/components/tienda/ClientCatalog'
 import StoreNavbarKinetic from '@/components/tienda/StoreNavbarKinetic'
 import StoreFooterKinetic from '@/components/tienda/StoreFooterKinetic'
+import { storeColor } from '@/lib/storeColors'
 
 export async function generateMetadata({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = await paramsPromise;
@@ -74,8 +75,8 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   const productos = (productosBase || []) as Product[];
 
   const storeName = perfil.store_name || "TU TIENDA";
-  const primaryColor = perfil.primary_color || '#bdbefe';
-  const secondaryColor = perfil.secondary_color || '#9193ff';
+  const primaryColor = storeColor(perfil.primary_color);
+  const secondaryColor = storeColor(perfil.secondary_color, '#9193ff');
 
   if (perfil.template_type === 'comercio') {
     const { redirect } = await import('next/navigation')
@@ -85,12 +86,12 @@ export default async function CatalogoPage({ params: paramsPromise }: { params: 
   return (
     <div className="font-body selection:bg-primary-container selection:text-on-primary-container bg-background text-on-background min-h-screen flex flex-col pt-24">
       {/* Inyección Dinámica de Colores del Merchant 🎨 */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style>{`
         :root {
           --primary-color: ${primaryColor};
           --secondary-color: ${secondaryColor};
         }
-      `}} />
+      `}</style>
 
       {/* TopAppBar */}
       <StoreNavbarKinetic 

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
 
+// The storefront CSP uses a fresh nonce for each HTML response.
+export const dynamic = 'force-dynamic'
+
 type StoreLayoutProps = {
   children: React.ReactNode
   params: Promise<{ id: string }>

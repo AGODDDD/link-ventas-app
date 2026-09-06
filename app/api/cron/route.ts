@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAuthorizedCronRequest } from '@/lib/cron'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { cleanAbandonedProofs } from '@/lib/proofCleanup'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,7 +19,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Maintenance failed' }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true, result: data?.[0] ?? null })
+    const removedProofs = await cleanAbandonedProofs(getSupabaseServiceClient())
+    return NextResponse.json({ ok: true, result: data?.[0] ?? null, removed_proofs: removedProofs })
   } catch (error) {
     console.error('Cron maintenance error:', error)
     return NextResponse.json({ error: 'Maintenance failed' }, { status: 500 })

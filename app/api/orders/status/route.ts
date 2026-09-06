@@ -25,11 +25,14 @@ export async function PATCH(req: Request) {
     const { data: order } = await supabase.from('orders').select('id').eq('id', orderId).eq('store_id', store.id).maybeSingle()
     if (!order) return NextResponse.json({ error: 'Pedido no encontrado.' }, { status: 404 })
 
+    const { error: expiryError } = await getSupabaseServiceClient().rpc('expire_order_reservations', { p_store_id: store.id })
+    if (expiryError) throw expiryError
+
     const { error } = await supabase.rpc('transition_order_status', {
       p_order_id: order.id,
       p_next_status: nextStatus,
     })
-    if (error) return NextResponse.json({ error: error.message }, { status: 409 })
+    if (error) return NextResponse.json({ error: 'El pedido ya no permite ese cambio de estado. Actualiza la lista.' }, { status: 409 })
 
     return NextResponse.json({ success: true, status: nextStatus })
   } catch (error) {
@@ -55,6 +58,9 @@ export async function GET(req: Request) {
   })
   if (limitError) return NextResponse.json({ error: 'No se pudo verificar la orden.' }, { status: 500 })
   if (!allowed) return NextResponse.json({ error: 'Demasiadas consultas. Intenta nuevamente más tarde.' }, { status: 429 })
+
+  const { error: expiryError } = await supabase.rpc('expire_order_reservations', { p_store_id: storeId })
+  if (expiryError) return NextResponse.json({ error: 'No se pudo verificar la orden.' }, { status: 500 })
 
   let query = supabase
     .from('orders')

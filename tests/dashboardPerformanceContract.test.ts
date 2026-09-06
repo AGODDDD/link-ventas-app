@@ -25,5 +25,5 @@ test('las vistas del dashboard reutilizan la sesión compartida', async () => {
   }
 
   assert.doesNotMatch(files[3], /from\('profiles'\)/)
-  assert.doesNotMatch(files[3], /from\('stores'\).*owner_id/s)
+  assert.doesNotMatch(files[3], /from\('stores'\)[\s\S]*owner_id/)
 })

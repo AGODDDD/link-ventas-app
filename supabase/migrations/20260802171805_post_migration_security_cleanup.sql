@@ -44,12 +44,14 @@ CREATE INDEX IF NOT EXISTS platform_billing_payments_user_idx
 -- FOR ALL generated a second authenticated SELECT policy. Split mutations so
 -- each role/action has a single permissive policy.
 DROP POLICY IF EXISTS "Owners manage delivery settings" ON public.delivery_settings;
+DROP POLICY IF EXISTS "Owners insert delivery settings" ON public.delivery_settings;
 CREATE POLICY "Owners insert delivery settings" ON public.delivery_settings
   FOR INSERT TO authenticated
   WITH CHECK (EXISTS (
     SELECT 1 FROM public.stores s
     WHERE s.id = delivery_settings.store_id AND s.owner_id = (SELECT auth.uid())
   ));
+DROP POLICY IF EXISTS "Owners update delivery settings" ON public.delivery_settings;
 CREATE POLICY "Owners update delivery settings" ON public.delivery_settings
   FOR UPDATE TO authenticated
   USING (EXISTS (
@@ -60,6 +62,7 @@ CREATE POLICY "Owners update delivery settings" ON public.delivery_settings
     SELECT 1 FROM public.stores s
     WHERE s.id = delivery_settings.store_id AND s.owner_id = (SELECT auth.uid())
   ));
+DROP POLICY IF EXISTS "Owners delete delivery settings" ON public.delivery_settings;
 CREATE POLICY "Owners delete delivery settings" ON public.delivery_settings
   FOR DELETE TO authenticated
   USING (EXISTS (
@@ -68,12 +71,14 @@ CREATE POLICY "Owners delete delivery settings" ON public.delivery_settings
   ));
 
 DROP POLICY IF EXISTS "Owners manage menu categories" ON public.menu_categories;
+DROP POLICY IF EXISTS "Owners insert menu categories" ON public.menu_categories;
 CREATE POLICY "Owners insert menu categories" ON public.menu_categories
   FOR INSERT TO authenticated
   WITH CHECK (EXISTS (
     SELECT 1 FROM public.stores s
     WHERE s.id = menu_categories.store_id AND s.owner_id = (SELECT auth.uid())
   ));
+DROP POLICY IF EXISTS "Owners update menu categories" ON public.menu_categories;
 CREATE POLICY "Owners update menu categories" ON public.menu_categories
   FOR UPDATE TO authenticated
   USING (EXISTS (
@@ -84,6 +89,7 @@ CREATE POLICY "Owners update menu categories" ON public.menu_categories
     SELECT 1 FROM public.stores s
     WHERE s.id = menu_categories.store_id AND s.owner_id = (SELECT auth.uid())
   ));
+DROP POLICY IF EXISTS "Owners delete menu categories" ON public.menu_categories;
 CREATE POLICY "Owners delete menu categories" ON public.menu_categories
   FOR DELETE TO authenticated
   USING (EXISTS (

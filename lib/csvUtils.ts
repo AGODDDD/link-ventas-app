@@ -12,9 +12,12 @@ export function jsonToCSV(data: Record<string, unknown>[]): string {
   const headers = Object.keys(data[0]);
   const rows = data.map(obj => 
     headers.map(header => {
-      let val = obj[header] === null || obj[header] === undefined ? "" : String(obj[header]);
+      const original = obj[header];
+      let val = original === null || original === undefined ? "" : String(original);
+      // Quoting CSV syntax alone does not prevent spreadsheet formula execution.
+      if (typeof original === 'string' && /^[\s\u0000-\u001f]*[=+@-]|^[\t\r\n]/.test(val)) val = "'" + val;
       // Escapado para CSV: Envolver en comillas si tiene comas, saltos o comillas
-      if (val.includes(",") || val.includes("\n") || val.includes('"')) {
+      if (val.includes(",") || val.includes("\n") || val.includes("\r") || val.includes('"')) {
         val = `"${val.replace(/"/g, '""')}"`;
       }
       return val;

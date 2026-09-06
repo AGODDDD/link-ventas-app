@@ -9,6 +9,9 @@ El kit externo descargable y sus reglas de aplicación están en
 [BRAND_KIT.md](./BRAND_KIT.md).
 
 - `app/api/orders`: crea pedidos y reservas.
+- `SECURITY_REMEDIATION.md`: correcciones de seguridad locales, límites y requisitos de publicación.
+- `supabase/migrations/20260905165315_security_audit_remediation.sql`: vencimientos, validación de opciones, cuotas, comprobantes y deduplicación de webhook.
+- `tests/securityDatabase.test.ts`: ejecución SQL real de migraciones y pruebas de aislamiento con datos ficticios.
 - `app/api/checkout/mercadopago`: inicia cobros de tiendas.
 - `app/api/webhooks/mercadopago`: concilia cobros y activa inventario/planes.
 - `app/api/billing/mercadopago`: inicia el cobro del plan Pro.

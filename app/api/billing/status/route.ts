@@ -87,12 +87,12 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error('Supabase update error:', error)
-      return NextResponse.json({ error: 'No se pudo actualizar el plan: ' + error.message }, { status: 500 })
+      return NextResponse.json({ error: 'No se pudo actualizar el plan.' }, { status: 500 })
     }
 
     return NextResponse.json({ plan: 'free', plan_expires_at: null, active: true })
   } catch (error: any) {
     console.error('Billing downgrade error:', error.message || error)
-    return NextResponse.json({ error: 'Error interno de billing: ' + (error.message || String(error)) }, { status: 500 })
+    return NextResponse.json({ error: 'No se pudo actualizar el plan.' }, { status: 500 })
   }
 }

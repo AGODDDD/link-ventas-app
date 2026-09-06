@@ -3,6 +3,7 @@ import { getSupabaseServiceClient } from '@/lib/supabaseServer'
 import { isStoreClosed, shouldEnforceStoreSchedule } from '@/lib/storeSchedule'
 import { normalizeOrderPaymentMethod } from '@/lib/orderPayment'
 import { getRateLimitKey } from '@/lib/rateLimit'
+import { boundedJson, InvalidRequestBody } from '@/lib/requestBody'
 
 type CartLine = {
   product_id?: unknown
@@ -20,7 +21,7 @@ function asText(value: unknown, maxLength: number) {
 
 export async function POST(req: Request) {
   try {
-    const body: Record<string, unknown> = await req.json()
+    const body = await boundedJson(req)
     const storeId = asText(body.store_id, 64)
     const orderType = asText(body.order_type, 24)
     const requestedPaymentMethod = asText(body.payment_method, 32)
@@ -51,6 +52,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Adjunta un comprobante de transferencia válido.' }, { status: 400 })
     }
 
+    if (items.length > 50) return NextResponse.json({ error: 'El carrito supera el límite de productos.' }, { status: 400 })
     const normalizedItems = items.map((item: CartLine) => ({
       product_id: asText(item?.product_id, 64),
       quantity: Number(item?.quantity),
@@ -95,6 +97,13 @@ export async function POST(req: Request) {
     if (limitError) throw limitError
     if (!allowed) return NextResponse.json({ error: 'Demasiados pedidos en poco tiempo. Intenta nuevamente más tarde.' }, { status: 429 })
 
+    const { data: phoneAllowed, error: phoneLimitError } = await supabase.rpc('consume_abandoned_cart_rate_limit', {
+      p_client_key: getRateLimitKey(req, 'order-phone', [storeId, customerPhone.replace(/\s/g, '')]),
+      p_limit: 3, p_window_seconds: 900,
+    })
+    if (phoneLimitError) throw phoneLimitError
+    if (!phoneAllowed) return NextResponse.json({ error: 'Demasiados pedidos pendientes. Intenta más tarde.' }, { status: 429 })
+
     const latitude = typeof body.lat === 'number' && Number.isFinite(body.lat) ? body.lat : null
     const longitude = typeof body.lng === 'number' && Number.isFinite(body.lng) ? body.lng : null
     const { data, error } = await supabase.rpc('create_order_from_cart', {
@@ -119,6 +128,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ order: data[0] }, { status: 201 })
   } catch (error) {
+    if (error instanceof InvalidRequestBody) return NextResponse.json({ error: error.message }, { status: error.status })
     console.error('Order API error:', error)
     return NextResponse.json({ error: 'Error interno al crear la orden.' }, { status: 500 })
   }

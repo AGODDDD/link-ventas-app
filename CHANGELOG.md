@@ -4,6 +4,20 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 ## [Unreleased]
 
+### Security
+- Corregido XSS de colores con validación y restricciones SQL; añadidos CSP con
+  nonce en tiendas y headers generales, conservando el filtro de sesión del panel.
+- Añadidos vencimientos de reservas y validación SQL de variantes, opciones y stock
+  agregado, conservando precios de servidor y confirmación firmada de pagos.
+- Protegidas cargas con cuotas RLS, decodificación de imágenes y comprobantes de
+  uso único; eliminación física por Storage API y limpieza de cargas abandonadas.
+- Neutralizadas fórmulas CSV y errores expuestos; deduplicación de entregas firmadas
+  del webhook con ventana temporal y recuperación de fallos.
+- Actualizadas dependencias vulnerables y añadidas pruebas SQL de aislamiento,
+  inventario, cuotas y webhook. Corregida la recreación duplicada de seis políticas.
+- Migración y runtime requieren publicación coordinada; ver `SECURITY_REMEDIATION.md`.
+  Estos cambios todavía no están aplicados a producción.
+
 ### Added
 - Kit externo de LinkVentas con favicon, avatar, portada y plantilla social,
   construido a partir del símbolo aprobado y con reglas de aplicación.

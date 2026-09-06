@@ -23,6 +23,8 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabaseServiceClient()
+    const { error: expiryError } = await supabase.rpc('expire_order_reservations', { p_store_id: storeId })
+    if (expiryError) throw expiryError
     const [{ data: order }, { data: config }, { data: store }] = await Promise.all([
       supabase.from('orders').select('id, total, status, store_id').eq('id', orderId).eq('store_id', storeId).single(),
       supabase.from('store_config').select('mercadopago_active').eq('store_id', storeId).single(),
@@ -52,8 +54,8 @@ export async function POST(request: Request) {
     })
     const payment: { id?: number | string; status?: string; transaction_amount?: number; currency_id?: string; status_detail?: string; message?: string } = await mpResponse.json()
     if (!mpResponse.ok || Number(payment.transaction_amount) !== amount || payment.currency_id !== 'PEN' || !payment.id) {
-      console.error('Mercado Pago API Rechazó el pago:', payment)
-      return NextResponse.json({ error: payment.message || payment.status_detail || 'Pago no pudo ser procesado.' }, { status: 400 })
+      console.error('Mercado Pago rechazó el pago:', { httpStatus: mpResponse.status })
+      return NextResponse.json({ error: 'Pago no pudo ser procesado. Revisa los datos o utiliza otro medio de pago.' }, { status: 400 })
     }
 
     // La confirmación final y el descuento de stock ocurren exclusivamente en el webhook.

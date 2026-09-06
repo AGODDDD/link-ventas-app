@@ -12,6 +12,15 @@ migraciones divergente autoriza un `db push`.
 
 No existen columnas alternativas de pedidos. Las migraciones de `supabase/migrations` son la fuente de verdad.
 
+## Seguridad preparada para el próximo release
+
+`20260905165315_security_audit_remediation.sql` agrega `orders.reservation_expires_at`,
+colores hexadecimales restringidos, validación de opciones de checkout, cuotas de
+Storage y tablas privadas `payment_proof_uploads`/`webhook_deliveries` con RLS y
+acceso reservado a servidor. Las reservas repetidas se agregan por producto/variante.
+El estado remoto aún no está verificado: límites y publicación coordinada en
+[SECURITY_REMEDIATION.md](./SECURITY_REMEDIATION.md).
+
 `delivery_orders` puede mantenerse temporalmente como archivo histórico, sin permisos para `anon` ni `authenticated`. Ningún flujo activo consulta o escribe esa tabla.
 
 Las reseñas guardan `order_id` y solo se crean desde la API después de verificar pedido completado, teléfono, correo y producto comprado. Los campos privados de verificación no tienen privilegio de lectura pública.

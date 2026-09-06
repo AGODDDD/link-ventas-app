@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { decryptText } from '@/lib/encryption'
 import { hasValidMercadoPagoSignature } from '@/lib/mercadoPagoWebhook'
 import { getSupabaseServiceClient } from '@/lib/supabaseServer'
+import { createHash, randomUUID } from 'crypto'
 
 type MercadoPagoPayment = {
   id?: string | number
@@ -67,7 +68,7 @@ function subscriptionStatus(value: string | undefined) {
   return 'pending'
 }
 
-export async function POST(request: Request) {
+async function processNotification(request: Request, onVerified: (scope: string, id: string) => Promise<NextResponse | null>) {
   try {
     const url = new URL(request.url)
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
@@ -81,6 +82,9 @@ export async function POST(request: Request) {
       if (!paymentId || !hasValidMercadoPagoSignature(
         request.headers.get('x-signature'), request.headers.get('x-request-id'), paymentId, webhookSecret,
       )) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
+
+      const duplicate = await onVerified('platform', paymentId)
+      if (duplicate) return duplicate
 
       const topic = String(body.type ?? body.topic ?? '').trim()
       if (topic === 'subscription_preapproval') {
@@ -150,6 +154,8 @@ export async function POST(request: Request) {
     if (!paymentId || !hasValidMercadoPagoSignature(
       request.headers.get('x-signature'), request.headers.get('x-request-id'), paymentId, decryptText(profile.mercadopago_webhook_secret),
     )) return NextResponse.json({ error: 'Notificación inválida.' }, { status: 401 })
+    const duplicate = await onVerified(storeId, paymentId)
+    if (duplicate) return duplicate
     const payment = await fetchPayment(decryptText(profile.mercadopago_access_token), paymentId)
     const orderId = payment.external_reference
     const order = orderId ? await supabase.from('orders').select('id, total, store_id').eq('id', orderId).eq('store_id', storeId).maybeSingle() : { data: null }
@@ -165,5 +171,33 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Mercado Pago webhook error:', error)
     return NextResponse.json({ error: 'No se pudo procesar la notificación.' }, { status: 500 })
+  }
+}
+
+// Only a successfully authenticated delivery may enter the deduplication ledger.
+// Failed processing releases its lease so provider retries remain possible.
+export async function POST(request: Request) {
+  const supabase = getSupabaseServiceClient()
+  let claimedKey: string | null = null
+  const claimToken = randomUUID()
+  try {
+    const response = await processNotification(request, async (scope, id) => {
+      const key = createHash('sha256').update(JSON.stringify([scope, id, request.headers.get('x-request-id'), request.headers.get('x-signature')])).digest('hex')
+      const { data, error } = await supabase.rpc('claim_webhook_delivery', { p_key: key, p_token: claimToken })
+      if (error) throw error
+      if (data === 'done') return NextResponse.json({ ok: true })
+      if (data !== 'claimed') return NextResponse.json({ error: 'Notificación en proceso.' }, { status: 503 })
+      claimedKey = key
+      return null
+    })
+    if (claimedKey) {
+      const result = response.ok
+        ? await supabase.from('webhook_deliveries').update({ completed_at: new Date().toISOString() }).eq('delivery_key', claimedKey).eq('claim_token', claimToken)
+        : await supabase.from('webhook_deliveries').delete().eq('delivery_key', claimedKey).eq('claim_token', claimToken)
+      if (result.error) return NextResponse.json({ error: 'No se pudo registrar la notificación.' }, { status: 503 })
+    }
+    return response
+  } catch {
+    return NextResponse.json({ error: 'No se pudo procesar la notificación.' }, { status: 503 })
   }
 }
