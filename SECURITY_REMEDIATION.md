@@ -30,7 +30,7 @@ Fecha: 2026-09-05. Publicación autorizada el 2026-09-06. Destinos verificados: 
 
 ## Publicación coordinada
 
-La migración nueva es `supabase/migrations/20260905165315_security_audit_remediation.sql`.
+La migración nueva es `supabase/migrations/20260906111114_security_audit_remediation.sql`.
 La corrección histórica en `20260802171805_post_migration_security_cleanup.sql` añade seis `DROP POLICY IF EXISTS` justo antes de recrear las mismas políticas, sin cambiar predicados ni permisos finales. Si ya figura aplicada en remoto, no hay que volver a ejecutarla ni reparar su historial por inferencia.
 
 Antes de publicar:
@@ -59,3 +59,5 @@ El navegador usa una instancia local con catálogo ficticio. No escribe en tiend
 - Temporal: `.next/`, `node_modules/`, cachés de herramientas y capturas fuera del repositorio; no son entregables publicados.
 
 Preparación de producción (2026-09-06): integrados los 17 commits de `origin/main` hasta `0cb1edf`, conservando la configuración y el checkout de restaurante. 72/72 pruebas, lint y build aprobados después de la integración. El índice único y las políticas de Storage requeridos existen en remoto; cero colores inválidos y cero pedidos pendientes en la comprobación previa. La migración histórica ya consta aplicada y no se reejecuta. El resultado del despliegue se comprueba por su SHA en Vercel. Pagos sandbox y pruebas concurrentes de Storage siguen pendientes; no se realizan cobros reales como prueba.
+
+Migración aplicada y verificada en Supabase el 2026-09-06, versión remota `20260906111114`. El archivo local se alinea con ese identificador generado por el proveedor para evitar una aplicación duplicada. RPCs internos: anon/authenticated sin EXECUTE y service_role autorizado; tablas nuevas con RLS y sin lectura pública. Los avisos de RLS sin políticas son intencionales para tablas internas; las dos funciones SECURITY DEFINER accesibles a authenticated validan propietario. Supabase también detecta protección de contraseñas filtradas desactivada: pendiente de configuración Auth, fuera del despliegue de código. Referencia: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
